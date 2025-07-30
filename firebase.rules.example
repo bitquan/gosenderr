@@ -1,0 +1,168 @@
+// Firestore Security Rules for GoSender
+// Copy this content to your Firebase Console > Firestore > Rules
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    function hasRole(role) {
+      return isAuthenticated() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
+    }
+    
+    function isAdmin() {
+      return hasRole('admin');
+    }
+    
+    function isCustomer() {
+      return hasRole('customer');
+    }
+    
+    function isDriver() {
+      return hasRole('driver');
+    }
+    
+    function isMerchant() {
+      return hasRole('merchant');
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      allow write: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      allow create: if isAuthenticated() && isOwner(userId);
+    }
+    
+    // Restaurants collection
+    match /restaurants/{restaurantId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && 
+                      (isMerchant() && resource.data.ownerId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && isMerchant();
+    }
+    
+    // Orders collection
+    match /orders/{orderId} {
+      allow read: if isAuthenticated() && (
+        // Customer can read their own orders
+        (isCustomer() && resource.data.customerId == request.auth.uid) ||
+        // Merchant can read orders for their restaurant
+        (isMerchant() && resource.data.restaurantId in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.restaurantIds) ||
+        // Driver can read assigned orders
+        (isDriver() && resource.data.driverId == request.auth.uid) ||
+        // Admin can read all orders
+        isAdmin()
+      );
+      
+      allow create: if isAuthenticated() && isCustomer() && 
+                       request.resource.data.customerId == request.auth.uid;
+      
+      allow update: if isAuthenticated() && (
+        // Customer can update their pending orders
+        (isCustomer() && resource.data.customerId == request.auth.uid && 
+         resource.data.status == 'pending') ||
+        // Merchant can update order status
+        (isMerchant() && resource.data.restaurantId in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.restaurantIds) ||
+        // Driver can update delivery status
+        (isDriver() && resource.data.driverId == request.auth.uid) ||
+        // Admin can update any order
+        isAdmin()
+      );
+      
+      allow delete: if isAuthenticated() && (
+        // Customer can cancel their pending orders
+        (isCustomer() && resource.data.customerId == request.auth.uid && 
+         resource.data.status == 'pending') ||
+        // Admin can delete any order
+        isAdmin()
+      );
+    }
+    
+    // Deliveries collection
+    match /deliveries/{deliveryId} {
+      allow read: if isAuthenticated() && (
+        // Driver can read their deliveries
+        (isDriver() && resource.data.driverId == request.auth.uid) ||
+        // Customer can read deliveries for their orders
+        (isCustomer() && resource.data.customerId == request.auth.uid) ||
+        // Merchant can read deliveries for their orders
+        (isMerchant() && resource.data.restaurantId in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.restaurantIds) ||
+        // Admin can read all deliveries
+        isAdmin()
+      );
+      
+      allow create: if isAuthenticated() && (isMerchant() || isAdmin());
+      
+      allow update: if isAuthenticated() && (
+        // Driver can update their delivery status
+        (isDriver() && resource.data.driverId == request.auth.uid) ||
+        // Admin can update any delivery
+        isAdmin()
+      );
+    }
+    
+    // Drivers collection (driver-specific data)
+    match /drivers/{driverId} {
+      allow read: if isAuthenticated() && (isOwner(driverId) || isAdmin());
+      allow write: if isAuthenticated() && (isOwner(driverId) || isAdmin());
+      allow create: if isAuthenticated() && isOwner(driverId) && isDriver();
+    }
+    
+    // Payments collection
+    match /payments/{paymentId} {
+      allow read: if isAuthenticated() && (
+        // User can read their own payments
+        (resource.data.userId == request.auth.uid) ||
+        // Admin can read all payments
+        isAdmin()
+      );
+      
+      allow create: if isAuthenticated() && 
+                       request.resource.data.userId == request.auth.uid;
+      
+      allow update: if isAdmin(); // Only admin can update payment records
+    }
+    
+    // Reviews collection
+    match /reviews/{reviewId} {
+      allow read: if isAuthenticated();
+      
+      allow create: if isAuthenticated() && 
+                       request.resource.data.reviewerId == request.auth.uid;
+      
+      allow update: if isAuthenticated() && (
+        // Reviewer can update their own review
+        (resource.data.reviewerId == request.auth.uid) ||
+        // Admin can update any review
+        isAdmin()
+      );
+      
+      allow delete: if isAuthenticated() && (
+        // Reviewer can delete their own review
+        (resource.data.reviewerId == request.auth.uid) ||
+        // Admin can delete any review
+        isAdmin()
+      );
+    }
+    
+    // Admin-only collections
+    match /admin/{document=**} {
+      allow read, write: if isAdmin();
+    }
+    
+    // Analytics collection (read-only for merchants, write for admin)
+    match /analytics/{document=**} {
+      allow read: if isAuthenticated() && (isMerchant() || isAdmin());
+      allow write: if isAdmin();
+    }
+  }
+}
