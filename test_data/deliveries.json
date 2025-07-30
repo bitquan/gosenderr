@@ -1,0 +1,317 @@
+{
+  "deliveries": [
+    {
+      "id": "delivery_001",
+      "orderId": "order_001",
+      "courierId": "courier_001",
+      "status": "delivered",
+      "pickupLocation": {
+        "latitude": 40.7128,
+        "longitude": -74.0060,
+        "address": "555 Food Court, Restaurant Row, City, 12352",
+        "timestamp": "2024-02-15T12:45:00.000Z"
+      },
+      "deliveryLocation": {
+        "latitude": 40.7589,
+        "longitude": -73.9851,
+        "address": "123 Main St, Downtown, City, 12345",
+        "timestamp": "2024-02-15T13:10:00.000Z"
+      },
+      "trackingPoints": [
+        {
+          "latitude": 40.7128,
+          "longitude": -74.0060,
+          "address": "Starting delivery from restaurant",
+          "timestamp": "2024-02-15T12:45:00.000Z"
+        },
+        {
+          "latitude": 40.7300,
+          "longitude": -73.9950,
+          "address": "En route - Main Avenue",
+          "timestamp": "2024-02-15T12:55:00.000Z"
+        },
+        {
+          "latitude": 40.7500,
+          "longitude": -73.9900,
+          "address": "Approaching destination",
+          "timestamp": "2024-02-15T13:05:00.000Z"
+        },
+        {
+          "latitude": 40.7589,
+          "longitude": -73.9851,
+          "address": "Delivered to customer",
+          "timestamp": "2024-02-15T13:10:00.000Z"
+        }
+      ],
+      "assignedAt": "2024-02-15T12:35:00.000Z",
+      "pickedUpAt": "2024-02-15T12:45:00.000Z",
+      "deliveredAt": "2024-02-15T13:10:00.000Z",
+      "deliveryNote": "Delivered to customer at front door",
+      "failureReason": null,
+      "rating": 4.8,
+      "customerSignature": "J.Doe",
+      "metadata": {
+        "distance": 4.2,
+        "estimatedTime": 25,
+        "actualTime": 25,
+        "vehicle": "motorcycle"
+      }
+    },
+    {
+      "id": "delivery_002",
+      "orderId": "order_002",
+      "courierId": "courier_002",
+      "status": "delivered",
+      "pickupLocation": {
+        "latitude": 40.7255,
+        "longitude": -73.9900,
+        "address": "778 Italian Way, Little Italy, City, 12353",
+        "timestamp": "2024-02-16T19:00:00.000Z"
+      },
+      "deliveryLocation": {
+        "latitude": 40.7410,
+        "longitude": -73.9897,
+        "address": "456 Oak Ave, Suburbia, City, 12346",
+        "timestamp": "2024-02-16T19:25:00.000Z"
+      },
+      "trackingPoints": [
+        {
+          "latitude": 40.7255,
+          "longitude": -73.9900,
+          "address": "Pizza Palace pickup",
+          "timestamp": "2024-02-16T19:00:00.000Z"
+        },
+        {
+          "latitude": 40.7330,
+          "longitude": -73.9895,
+          "address": "Cycling through Oak Street",
+          "timestamp": "2024-02-16T19:12:00.000Z"
+        },
+        {
+          "latitude": 40.7410,
+          "longitude": -73.9897,
+          "address": "Delivered to customer",
+          "timestamp": "2024-02-16T19:25:00.000Z"
+        }
+      ],
+      "assignedAt": "2024-02-16T18:50:00.000Z",
+      "pickedUpAt": "2024-02-16T19:00:00.000Z",
+      "deliveredAt": "2024-02-16T19:25:00.000Z",
+      "deliveryNote": "Left at front door as requested",
+      "failureReason": null,
+      "rating": 4.9,
+      "customerSignature": null,
+      "metadata": {
+        "distance": 2.8,
+        "estimatedTime": 30,
+        "actualTime": 25,
+        "vehicle": "bicycle"
+      }
+    },
+    {
+      "id": "delivery_003",
+      "orderId": "order_003",
+      "courierId": "courier_001",
+      "status": "picked_up",
+      "pickupLocation": {
+        "latitude": 40.7180,
+        "longitude": -73.9950,
+        "address": "999 Market Square, Commerce District, City, 12354",
+        "timestamp": "2024-02-17T10:00:00.000Z"
+      },
+      "deliveryLocation": {
+        "latitude": 40.7831,
+        "longitude": -73.9712,
+        "address": "789 Pine St, Uptown, City, 12347",
+        "timestamp": "2024-02-17T10:35:00.000Z"
+      },
+      "trackingPoints": [
+        {
+          "latitude": 40.7180,
+          "longitude": -73.9950,
+          "address": "Fresh Market pickup completed",
+          "timestamp": "2024-02-17T10:00:00.000Z"
+        },
+        {
+          "latitude": 40.7350,
+          "longitude": -73.9880,
+          "address": "En route via Central Ave",
+          "timestamp": "2024-02-17T10:15:00.000Z"
+        },
+        {
+          "latitude": 40.7600,
+          "longitude": -73.9800,
+          "address": "Crossing downtown bridge",
+          "timestamp": "2024-02-17T10:25:00.000Z"
+        }
+      ],
+      "assignedAt": "2024-02-17T09:45:00.000Z",
+      "pickedUpAt": "2024-02-17T10:00:00.000Z",
+      "deliveredAt": null,
+      "deliveryNote": null,
+      "failureReason": null,
+      "rating": null,
+      "customerSignature": null,
+      "metadata": {
+        "distance": 5.1,
+        "estimatedTime": 35,
+        "vehicle": "motorcycle"
+      }
+    },
+    {
+      "id": "delivery_004",
+      "orderId": "order_004",
+      "courierId": "courier_003",
+      "status": "assigned",
+      "pickupLocation": {
+        "latitude": 40.7205,
+        "longitude": -73.9830,
+        "address": "333 Tech Plaza, Innovation Hub, City, 12355",
+        "timestamp": "2024-02-18T15:30:00.000Z"
+      },
+      "deliveryLocation": {
+        "latitude": 40.7282,
+        "longitude": -73.9942,
+        "address": "321 Elm St, Riverside, City, 12348",
+        "timestamp": "2024-02-18T15:30:00.000Z"
+      },
+      "trackingPoints": [],
+      "assignedAt": "2024-02-18T15:30:00.000Z",
+      "pickedUpAt": null,
+      "deliveredAt": null,
+      "deliveryNote": null,
+      "failureReason": null,
+      "rating": null,
+      "customerSignature": null,
+      "metadata": {
+        "distance": 3.2,
+        "estimatedTime": 20,
+        "vehicle": "car",
+        "priority": "high"
+      }
+    },
+    {
+      "id": "delivery_005",
+      "orderId": "order_005",
+      "courierId": "courier_002",
+      "status": "assigned",
+      "pickupLocation": {
+        "latitude": 40.7255,
+        "longitude": -73.9900,
+        "address": "778 Italian Way, Little Italy, City, 12353",
+        "timestamp": "2024-02-18T19:45:00.000Z"
+      },
+      "deliveryLocation": {
+        "latitude": 40.7589,
+        "longitude": -73.9851,
+        "address": "123 Main St, Downtown, City, 12345",
+        "timestamp": "2024-02-18T19:45:00.000Z"
+      },
+      "trackingPoints": [],
+      "assignedAt": "2024-02-18T19:45:00.000Z",
+      "pickedUpAt": null,
+      "deliveredAt": null,
+      "deliveryNote": null,
+      "failureReason": null,
+      "rating": null,
+      "customerSignature": null,
+      "metadata": {
+        "distance": 3.8,
+        "estimatedTime": 25,
+        "vehicle": "bicycle",
+        "specialInstructions": "Apartment 3B"
+      }
+    },
+    {
+      "id": "delivery_006",
+      "orderId": "order_008",
+      "courierId": "courier_001",
+      "status": "failed",
+      "pickupLocation": {
+        "latitude": 40.7180,
+        "longitude": -73.9950,
+        "address": "999 Market Square, Commerce District, City, 12354",
+        "timestamp": "2024-02-18T08:30:00.000Z"
+      },
+      "deliveryLocation": {
+        "latitude": 40.7282,
+        "longitude": -73.9942,
+        "address": "321 Elm St, Riverside, City, 12348",
+        "timestamp": "2024-02-18T08:30:00.000Z"
+      },
+      "trackingPoints": [
+        {
+          "latitude": 40.7180,
+          "longitude": -73.9950,
+          "address": "Arrived at pickup location",
+          "timestamp": "2024-02-18T08:30:00.000Z"
+        }
+      ],
+      "assignedAt": "2024-02-18T08:25:00.000Z",
+      "pickedUpAt": null,
+      "deliveredAt": null,
+      "deliveryNote": null,
+      "failureReason": "Order cancelled by customer",
+      "rating": null,
+      "customerSignature": null,
+      "metadata": {
+        "distance": 2.1,
+        "estimatedTime": 15,
+        "vehicle": "motorcycle",
+        "failedAt": "2024-02-18T08:45:00.000Z"
+      }
+    },
+    {
+      "id": "delivery_007",
+      "orderId": "order_002",
+      "courierId": "courier_003",
+      "status": "delivered",
+      "pickupLocation": {
+        "latitude": 40.7128,
+        "longitude": -74.0060,
+        "address": "555 Food Court, Restaurant Row, City, 12352",
+        "timestamp": "2024-02-10T14:15:00.000Z"
+      },
+      "deliveryLocation": {
+        "latitude": 40.7410,
+        "longitude": -73.9897,
+        "address": "456 Oak Ave, Suburbia, City, 12346",
+        "timestamp": "2024-02-10T14:45:00.000Z"
+      },
+      "trackingPoints": [
+        {
+          "latitude": 40.7128,
+          "longitude": -74.0060,
+          "address": "Starting delivery",
+          "timestamp": "2024-02-10T14:15:00.000Z"
+        },
+        {
+          "latitude": 40.7300,
+          "longitude": -74.0000,
+          "address": "Traffic delay on Broadway",
+          "timestamp": "2024-02-10T14:25:00.000Z"
+        },
+        {
+          "latitude": 40.7410,
+          "longitude": -73.9897,
+          "address": "Delivered successfully",
+          "timestamp": "2024-02-10T14:45:00.000Z"
+        }
+      ],
+      "assignedAt": "2024-02-10T14:00:00.000Z",
+      "pickedUpAt": "2024-02-10T14:15:00.000Z",
+      "deliveredAt": "2024-02-10T14:45:00.000Z",
+      "deliveryNote": "Customer met at curb",
+      "failureReason": null,
+      "rating": 4.5,
+      "customerSignature": "S.Wilson",
+      "metadata": {
+        "distance": 6.2,
+        "estimatedTime": 25,
+        "actualTime": 30,
+        "vehicle": "car",
+        "trafficDelay": 5
+      }
+    }
+  ]
+}

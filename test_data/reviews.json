@@ -1,0 +1,276 @@
+{
+  "reviews": [
+    {
+      "id": "review_001",
+      "reviewerId": "user_001",
+      "revieweeId": "merchant_001",
+      "revieweeType": "merchant",
+      "orderId": "order_001",
+      "rating": 4.5,
+      "title": "Great burgers, fast service!",
+      "comment": "The Classic Beef Burger was delicious and the sweet potato fries were amazing. Food arrived hot and fresh. Will definitely order again!",
+      "tags": ["delicious", "fast", "hot food"],
+      "createdAt": "2024-02-15T14:30:00.000Z",
+      "isVerified": true,
+      "metadata": {
+        "helpful_votes": 12,
+        "photo_attached": false
+      }
+    },
+    {
+      "id": "review_002",
+      "reviewerId": "user_003",
+      "revieweeId": "merchant_001",
+      "revieweeType": "merchant",
+      "orderId": null,
+      "rating": 4.0,
+      "title": "Good food, could be better packaged",
+      "comment": "The burger was tasty but arrived a bit soggy. Maybe better packaging would help. Still good value for money.",
+      "tags": ["tasty", "packaging issue"],
+      "createdAt": "2024-02-05T16:45:00.000Z",
+      "isVerified": true,
+      "metadata": {
+        "helpful_votes": 8,
+        "photo_attached": false
+      }
+    },
+    {
+      "id": "review_003",
+      "reviewerId": "user_002",
+      "revieweeId": "merchant_002",
+      "revieweeType": "merchant",
+      "orderId": "order_002",
+      "rating": 5.0,
+      "title": "Best pizza in town!",
+      "comment": "The Margherita pizza was absolutely perfect! Fresh basil, quality mozzarella, and the crust was just right. The Caesar salad was also very fresh. Highly recommend!",
+      "tags": ["excellent", "fresh ingredients", "perfect crust"],
+      "createdAt": "2024-02-16T20:15:00.000Z",
+      "isVerified": true,
+      "metadata": {
+        "helpful_votes": 23,
+        "photo_attached": true
+      }
+    },
+    {
+      "id": "review_004",
+      "reviewerId": "user_001",
+      "revieweeId": "merchant_002",
+      "revieweeType": "merchant",
+      "orderId": "order_005",
+      "rating": 4.5,
+      "title": "Pepperoni Supreme was great",
+      "comment": "Love the extra toppings on the Pepperoni Supreme. Pizza arrived exactly as ordered with all my customizations. Good portion size.",
+      "tags": ["customizable", "generous portions"],
+      "createdAt": "2024-02-18T21:00:00.000Z",
+      "isVerified": true,
+      "metadata": {
+        "helpful_votes": 7,
+        "photo_attached": false
+      }
+    },
+    {
+      "id": "review_005",
+      "reviewerId": "user_004",
+      "revieweeId": "merchant_002",
+      "revieweeType": "merchant",
+      "orderId": null,
+      "rating": 4.0,
+      "title": "Good pizza but delivery took long",
+      "comment": "The pizza itself was delicious, but it took longer than expected to arrive. Not sure if it was the restaurant or delivery issue.",
+      "tags": ["delicious", "slow delivery"],
+      "createdAt": "2024-02-12T19:30:00.000Z",
+      "isVerified": true,
+      "metadata": {
+        "helpful_votes": 15,
+        "photo_attached": false
+      }
+    },
+    {
+      "id": "review_006",
+      "reviewerId": "user_003",
+      "revieweeId": "merchant_003",
+      "revieweeType": "merchant",
+      "orderId": "order_003",
+      "rating": 4.5,
+      "title": "Fresh quality groceries",
+      "comment": "All items were fresh and well-packaged. The organic bananas were perfectly ripe and the eggs were farm fresh as advertised. Great for grocery delivery!",
+      "tags": ["fresh", "well-packaged", "organic"],
+      "createdAt": "2024-02-17T11:45:00.000Z",
+      "isVerified": true,
+      "metadata": {
+        "helpful_votes": 18,
+        "photo_attached": true
+      }
+    },
+    {
+      "id": "review_007",
+      "reviewerId": "user_002",
+      "revieweeId": "merchant_003",
+      "revieweeType": "merchant",
+      "orderId": null,
+      "rating": 4.0,
+      "title": "Good selection, fair prices",
+      "comment": "Good variety of organic and regular products. Prices are reasonable for the quality. Would like to see more local produce options.",
+      "tags": ["good variety", "fair prices"],
+      "createdAt": "2024-02-08T10:20:00.000Z",
+      "isVerified": true,
+      "metadata": {
+        "helpful_votes": 9,
+        "photo_attached": false
+      }
+    },
+    {
+      "id": "review_008",
+      "reviewerId": "user_004",
+      "revieweeId": "merchant_004",
+      "revieweeType": "merchant",
+      "orderId": "order_004",
+      "rating": 4.5,
+      "title": "Quality electronics, fast shipping",
+      "comment": "The Bluetooth headphones are excellent quality and the power bank works perfectly. Items were well-packaged and arrived quickly. Good tech store!",
+      "tags": ["quality products", "fast shipping", "well-packaged"],
+      "createdAt": "2024-02-18T17:30:00.000Z",
+      "isVerified": true,
+      "metadata": {
+        "helpful_votes": 14,
+        "photo_attached": true
+      }
+    },
+    {
+      "id": "review_009",
+      "reviewerId": "user_001",
+      "revieweeId": "merchant_004",
+      "revieweeType": "merchant",
+      "orderId": null,
+      "rating": 4.0,
+      "title": "Good products, could improve descriptions",
+      "comment": "The smartphone charger works great, but the product description could be more detailed about compatibility. Overall satisfied with the purchase.",
+      "tags": ["works well", "improve descriptions"],
+      "createdAt": "2024-02-10T14:15:00.000Z",
+      "isVerified": true,
+      "metadata": {
+        "helpful_votes": 6,
+        "photo_attached": false
+      }
+    },
+    {
+      "id": "review_010",
+      "reviewerId": "user_001",
+      "revieweeId": "courier_001",
+      "revieweeType": "courier",
+      "orderId": "order_001",
+      "rating": 5.0,
+      "title": "Excellent courier service",
+      "comment": "Alex was very professional and delivered my order exactly on time. He even called to confirm the delivery address. Great service!",
+      "tags": ["professional", "on time", "good communication"],
+      "createdAt": "2024-02-15T13:20:00.000Z",
+      "isVerified": true,
+      "metadata": {
+        "helpful_votes": 19,
+        "photo_attached": false
+      }
+    },
+    {
+      "id": "review_011",
+      "reviewerId": "user_003",
+      "revieweeId": "courier_001",
+      "revieweeType": "courier",
+      "orderId": "order_003",
+      "rating": 4.5,
+      "title": "Fast and friendly delivery",
+      "comment": "Quick delivery and the courier was very friendly. Handled the groceries with care. Would request this courier again.",
+      "tags": ["fast", "friendly", "careful handling"],
+      "createdAt": "2024-02-17T10:35:00.000Z",
+      "isVerified": true,
+      "metadata": {
+        "helpful_votes": 11,
+        "photo_attached": false
+      }
+    },
+    {
+      "id": "review_012",
+      "reviewerId": "user_002",
+      "revieweeId": "courier_002",
+      "revieweeType": "courier",
+      "orderId": "order_002",
+      "rating": 5.0,
+      "title": "Amazing service!",
+      "comment": "Maria was fantastic! She delivered the pizza faster than expected and it was still hot. Very polite and professional. Best courier experience I've had!",
+      "tags": ["fast delivery", "hot food", "polite", "professional"],
+      "createdAt": "2024-02-16T19:35:00.000Z",
+      "isVerified": true,
+      "metadata": {
+        "helpful_votes": 25,
+        "photo_attached": false
+      }
+    },
+    {
+      "id": "review_013",
+      "reviewerId": "user_001",
+      "revieweeId": "courier_002",
+      "revieweeType": "courier",
+      "orderId": "order_005",
+      "rating": 4.5,
+      "title": "Great courier, found apartment easily",
+      "comment": "Maria navigated to my apartment complex without any issues and delivered to the right unit. Appreciate the attention to detail!",
+      "tags": ["good navigation", "attention to detail"],
+      "createdAt": "2024-02-18T20:25:00.000Z",
+      "isVerified": true,
+      "metadata": {
+        "helpful_votes": 8,
+        "photo_attached": false
+      }
+    },
+    {
+      "id": "review_014",
+      "reviewerId": "user_004",
+      "revieweeId": "courier_003",
+      "revieweeType": "courier",
+      "orderId": null,
+      "rating": 4.0,
+      "title": "Reliable delivery",
+      "comment": "David delivered my electronics order safely and on time. Items were handled with care. Good experience overall.",
+      "tags": ["reliable", "safe handling", "on time"],
+      "createdAt": "2024-02-10T15:00:00.000Z",
+      "isVerified": true,
+      "metadata": {
+        "helpful_votes": 13,
+        "photo_attached": false
+      }
+    },
+    {
+      "id": "review_015",
+      "reviewerId": "user_002",
+      "revieweeId": "merchant_001",
+      "revieweeType": "merchant",
+      "orderId": null,
+      "rating": 3.5,
+      "title": "Average experience",
+      "comment": "The food was okay but nothing special. Service was standard. Might try other options next time.",
+      "tags": ["average", "standard service"],
+      "createdAt": "2024-01-28T13:15:00.000Z",
+      "isVerified": true,
+      "metadata": {
+        "helpful_votes": 5,
+        "photo_attached": false
+      }
+    },
+    {
+      "id": "review_016",
+      "reviewerId": "user_004",
+      "revieweeId": "courier_001",
+      "revieweeType": "courier",
+      "orderId": null,
+      "rating": 4.0,
+      "title": "Good delivery but slight delay",
+      "comment": "Alex delivered my order but it was about 10 minutes later than expected. Still good service and he apologized for the delay.",
+      "tags": ["slight delay", "apologetic", "good service"],
+      "createdAt": "2024-01-30T18:45:00.000Z",
+      "isVerified": true,
+      "metadata": {
+        "helpful_votes": 7,
+        "photo_attached": false
+      }
+    }
+  ]
+}
