@@ -59,7 +59,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Create Account'),
@@ -82,7 +82,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   color: theme.colorScheme.primary,
                 ),
                 const SizedBox(height: 32),
-                
+
                 // Welcome text
                 Text(
                   'Join GoSender',
@@ -139,7 +139,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     if (value == null || value.isEmpty) {
                       return 'Please enter your email';
                     }
-                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                        .hasMatch(value)) {
                       return 'Please enter a valid email';
                     }
                     return null;
@@ -155,8 +156,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     labelText: 'Password',
                     prefixIcon: const Icon(Icons.lock),
                     suffixIcon: IconButton(
-                      icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off),
-                      onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                      icon: Icon(_obscurePassword
+                          ? Icons.visibility
+                          : Icons.visibility_off),
+                      onPressed: () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
                     ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -182,8 +186,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     labelText: 'Confirm Password',
                     prefixIcon: const Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
-                      icon: Icon(_obscureConfirmPassword ? Icons.visibility : Icons.visibility_off),
-                      onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                      icon: Icon(_obscureConfirmPassword
+                          ? Icons.visibility
+                          : Icons.visibility_off),
+                      onPressed: () => setState(() =>
+                          _obscureConfirmPassword = !_obscureConfirmPassword),
                     ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -212,9 +219,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     ),
                   ),
                   items: const [
-                    DropdownMenuItem(value: 'customer', child: Text('Customer')),
-                    DropdownMenuItem(value: 'vendor', child: Text('Vendor/Restaurant')),
-                    DropdownMenuItem(value: 'delivery-agent', child: Text('Delivery Agent')),
+                    DropdownMenuItem(
+                        value: 'customer', child: Text('Customer')),
+                    DropdownMenuItem(
+                        value: 'vendor', child: Text('Vendor/Restaurant')),
+                    DropdownMenuItem(
+                        value: 'delivery-agent', child: Text('Delivery Agent')),
                     DropdownMenuItem(value: 'admin', child: Text('Admin')),
                   ],
                   onChanged: (value) => setState(() => _selectedRole = value!),
@@ -238,7 +248,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         )
                       : const Text(
                           'Create Account',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.w600),
                         ),
                 ),
                 const SizedBox(height: 24),
@@ -250,7 +261,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     Text(
                       'Already have an account? ',
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                     ),
                     TextButton(

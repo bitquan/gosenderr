@@ -9,18 +9,21 @@ The application is deployed and available at: **https://bitquan.github.io/gosend
 ## ✨ Features
 
 ### Multi-Role Authentication
+
 - **Customer**: Browse products, place orders, track deliveries
 - **Vendor**: Manage inventory, process orders, view analytics
 - **Delivery Agent**: Accept deliveries, track earnings, manage availability
 - **Admin**: Platform oversight, user management, system analytics
 
 ### Modern UI/UX
+
 - Material 3 design system
 - Responsive web design
 - Light/Dark theme support
 - Intuitive navigation with role-based dashboards
 
 ### Technical Features
+
 - Built with Flutter 3.24+ for web
 - GoRouter for type-safe navigation
 - Form validation and user input handling
@@ -37,10 +40,12 @@ The application is deployed and available at: **https://bitquan.github.io/gosend
 ## 🚀 Getting Started
 
 ### Prerequisites
+
 - Flutter SDK 3.24 or higher
 - Web browser with modern JavaScript support
 
 ### Local Development
+
 ```bash
 # Clone the repository
 git clone https://github.com/bitquan/gosenderr.git
@@ -54,6 +59,7 @@ flutter run -d web-server --web-port 8080
 ```
 
 ### Building for Production
+
 ```bash
 # Build the web app
 flutter build web --release
@@ -81,23 +87,27 @@ lib/
 ## 🎯 User Roles & Capabilities
 
 ### Customer Dashboard
+
 - Quick actions for shipping and shopping
 - Order tracking and history
 - User-friendly interface for marketplace browsing
 
 ### Vendor Dashboard
+
 - Store status management
 - Order processing workflow
 - Revenue and analytics tracking
 - Product inventory management
 
 ### Delivery Agent Dashboard
+
 - Delivery queue management
 - Earnings tracking
 - Availability toggle
 - Route optimization tools
 
 ### Admin Dashboard
+
 - Platform-wide analytics
 - User management across all roles
 - System monitoring and configuration
@@ -108,6 +118,7 @@ lib/
 The application is automatically deployed to GitHub Pages using GitHub Actions. Every push to the main branch triggers a new deployment.
 
 ### Manual Deployment
+
 You can also deploy to other platforms:
 
 - **Netlify**: Drag and drop the `build/web` folder
@@ -117,6 +128,7 @@ You can also deploy to other platforms:
 ## 📝 Development Notes
 
 This is a demonstration application showcasing Flutter web capabilities with a focus on:
+
 - Clean architecture and code organization
 - Modern Flutter development practices
 - Responsive design principles
