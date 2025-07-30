@@ -7,6 +7,7 @@ import 'core/theme/app_theme.dart';
 // Import screens
 import 'features/auth/screens/login_screen.dart';
 import 'features/auth/screens/signup_screen.dart';
+import 'features/marketplace/screens/marketplace_landing_screen.dart';
 import 'features/customer/screens/customer_home_screen.dart';
 import 'features/vendor/screens/vendor_home_screen.dart';
 import 'features/delivery_agent/screens/delivery_agent_home_screen.dart';
@@ -30,8 +31,12 @@ class GoSenderApp extends StatelessWidget {
 
 // Basic router configuration
 final GoRouter _router = GoRouter(
-  initialLocation: '/login',
+  initialLocation: '/',
   routes: [
+    GoRoute(
+      path: '/',
+      builder: (context, state) => const MarketplaceLandingScreen(),
+    ),
     GoRoute(
       path: '/login',
       builder: (context, state) => const LoginScreen(),
