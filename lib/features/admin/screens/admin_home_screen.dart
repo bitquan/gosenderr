@@ -39,9 +39,10 @@ class AdminHomeScreen extends StatelessWidget {
                   children: [
                     Text(
                       'Admin Dashboard',
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style:
+                          Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
                     ),
                     const SizedBox(height: 8),
                     const Text('Monitor and manage the GoSender platform'),
@@ -49,16 +50,16 @@ class AdminHomeScreen extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Key metrics
             Text(
               'Platform Overview',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 16),
-            
+
             // First row of metrics
             Row(
               children: [
@@ -85,9 +86,9 @@ class AdminHomeScreen extends StatelessWidget {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Second row of metrics
             Row(
               children: [
@@ -114,9 +115,9 @@ class AdminHomeScreen extends StatelessWidget {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Third row of metrics
             Row(
               children: [
@@ -143,16 +144,16 @@ class AdminHomeScreen extends StatelessWidget {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Quick actions
             Text(
               'Management Tools',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 16),
-            
+
             GridView.count(
               crossAxisCount: 2,
               shrinkWrap: true,
@@ -216,16 +217,16 @@ class AdminHomeScreen extends StatelessWidget {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Recent activity
             Text(
               'Recent Activity',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 16),
-            
+
             Column(
               children: [
                 _buildActivityItem(
@@ -262,9 +263,9 @@ class AdminHomeScreen extends StatelessWidget {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // System status
             const FloatingCard(
               title: 'System Status',
@@ -321,7 +322,7 @@ class AdminHomeScreen extends StatelessWidget {
       ),
     );
   }
-  
+
   Widget _buildMetricCard(
     BuildContext context,
     String title,
@@ -341,7 +342,8 @@ class AdminHomeScreen extends StatelessWidget {
               children: [
                 Icon(icon, color: color, size: 24),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
                     color: Colors.green.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
@@ -361,9 +363,9 @@ class AdminHomeScreen extends StatelessWidget {
             Text(
               value,
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
             ),
             Text(
               title,
@@ -374,7 +376,7 @@ class AdminHomeScreen extends StatelessWidget {
       ),
     );
   }
-  
+
   Widget _buildActionCard(
     BuildContext context,
     String title,
@@ -399,8 +401,8 @@ class AdminHomeScreen extends StatelessWidget {
               Text(
                 title,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                      fontWeight: FontWeight.bold,
+                    ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
@@ -417,7 +419,7 @@ class AdminHomeScreen extends StatelessWidget {
       ),
     );
   }
-  
+
   Widget _buildActivityItem(
     BuildContext context,
     String title,

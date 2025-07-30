@@ -1,25 +1,27 @@
 import 'package:flutter/material.dart';
-import '../../../shared_widgets/floating_card.dart';
+import 'package:go_router/go_router.dart';
 
 class CustomerHomeScreen extends StatelessWidget {
   const CustomerHomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('GoSender - Customer'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.person),
+            icon: const Icon(Icons.notifications),
             onPressed: () {
-              // TODO: Navigate to profile
+              // TODO: Navigate to notifications
             },
           ),
           IconButton(
-            icon: const Icon(Icons.shopping_cart),
+            icon: const Icon(Icons.account_circle),
             onPressed: () {
-              // TODO: Navigate to cart
+              // TODO: Navigate to profile
             },
           ),
         ],
@@ -29,196 +31,166 @@ class CustomerHomeScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Welcome section
+            // Welcome card
             Card(
+              color: theme.colorScheme.primaryContainer,
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Welcome back!',
-                      style: Theme.of(context).textTheme.headlineSmall,
+                      'Welcome to GoSender!',
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      'What would you like to order today?',
-                      style: Theme.of(context).textTheme.bodyLarge,
-                    ),
+                    const Text('Your delivery solution awaits'),
                   ],
                 ),
               ),
             ),
-            
-            const SizedBox(height: 24),
-            
-            // Search bar
-            TextField(
-              decoration: const InputDecoration(
-                hintText: 'Search for restaurants, food, groceries...',
-                prefixIcon: Icon(Icons.search),
-              ),
-              onChanged: (value) {
-                // TODO: Implement search functionality
-              },
-            ),
-            
-            const SizedBox(height: 24),
-            
-            // Categories
+            const SizedBox(height: 20),
+
+            // Quick actions
             Text(
-              'Categories',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              height: 120,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: [
-                  _buildCategoryCard(context, 'Food', Icons.restaurant, () {
-                    // TODO: Navigate to food category
-                  }),
-                  _buildCategoryCard(context, 'Groceries', Icons.local_grocery_store, () {
-                    // TODO: Navigate to groceries category
-                  }),
-                  _buildCategoryCard(context, 'Pharmacy', Icons.local_pharmacy, () {
-                    // TODO: Navigate to pharmacy category
-                  }),
-                  _buildCategoryCard(context, 'Electronics', Icons.devices, () {
-                    // TODO: Navigate to electronics category
-                  }),
-                ],
+              'Quick Actions',
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
               ),
             ),
-            
-            const SizedBox(height: 24),
-            
-            // Recent orders
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            const SizedBox(height: 16),
+
+            GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
               children: [
-                Text(
-                  'Recent Orders',
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-                TextButton(
-                  onPressed: () {
-                    // TODO: Navigate to all orders
+                _buildActionCard(
+                  context,
+                  icon: Icons.local_shipping,
+                  title: 'Send Package',
+                  subtitle: 'Ship your items',
+                  onTap: () {
+                    // TODO: Navigate to send package
                   },
-                  child: const Text('View All'),
+                ),
+                _buildActionCard(
+                  context,
+                  icon: Icons.shopping_cart,
+                  title: 'Shop Now',
+                  subtitle: 'Browse products',
+                  onTap: () {
+                    // TODO: Navigate to shop
+                  },
+                ),
+                _buildActionCard(
+                  context,
+                  icon: Icons.track_changes,
+                  title: 'Track Order',
+                  subtitle: 'Monitor delivery',
+                  onTap: () {
+                    // TODO: Navigate to tracking
+                  },
+                ),
+                _buildActionCard(
+                  context,
+                  icon: Icons.history,
+                  title: 'Order History',
+                  subtitle: 'View past orders',
+                  onTap: () {
+                    // TODO: Navigate to history
+                  },
                 ),
               ],
+            ),
+            const SizedBox(height: 20),
+
+            // Recent orders
+            Text(
+              'Recent Orders',
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 16),
-            
-            // Recent orders list
-            Column(
-              children: [
-                _buildOrderCard(
-                  context,
-                  'Order #1234',
-                  'Pizza Palace',
-                  'Delivered',
-                  '\$25.99',
-                  DateTime.now().subtract(const Duration(days: 1)),
-                ),
-                _buildOrderCard(
-                  context,
-                  'Order #1235',
-                  'Fresh Groceries',
-                  'In Transit',
-                  '\$45.50',
-                  DateTime.now().subtract(const Duration(hours: 2)),
-                ),
-              ],
+
+            _buildOrderCard(
+              context,
+              orderId: '#12345',
+              status: 'In Transit',
+              vendor: 'Tech Store',
+              items: 'iPhone 15 Pro',
+              statusColor: Colors.orange,
             ),
-            
-            const SizedBox(height: 24),
-            
-            // Floating card example
-            const FloatingCard(
-              title: 'Special Offer!',
-              subtitle: 'Get 20% off on your next order',
-              icon: Icons.local_offer,
+            const SizedBox(height: 8),
+            _buildOrderCard(
+              context,
+              orderId: '#12344',
+              status: 'Delivered',
+              vendor: 'Fashion Hub',
+              items: 'Summer Dress',
+              statusColor: Colors.green,
+            ),
+            const SizedBox(height: 20),
+
+            // Logout button
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => context.go('/login'),
+                icon: const Icon(Icons.logout),
+                label: const Text('Logout'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.colorScheme.error,
+                  foregroundColor: theme.colorScheme.onError,
+                ),
+              ),
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // TODO: Quick order or search
-        },
-        child: const Icon(Icons.add_shopping_cart),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        currentIndex: 0,
-        onTap: (index) {
-          switch (index) {
-            case 0:
-              // Already on home
-              break;
-            case 1:
-              // TODO: Navigate to orders
-              break;
-            case 2:
-              // TODO: Navigate to favorites
-              break;
-            case 3:
-              // TODO: Navigate to profile
-              break;
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.receipt_long),
-            label: 'Orders',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.favorite),
-            label: 'Favorites',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
-      ),
     );
   }
-  
-  Widget _buildCategoryCard(BuildContext context, String title, IconData icon, VoidCallback onTap) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 16),
+
+  Widget _buildActionCard(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+
+    return Card(
       child: InkWell(
         onTap: onTap,
-        child: Container(
-          width: 100,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
           padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
-            ),
-          ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
                 icon,
                 size: 32,
-                color: Theme.of(context).colorScheme.primary,
+                color: theme.colorScheme.primary,
               ),
               const SizedBox(height: 8),
               Text(
                 title,
-                style: Theme.of(context).textTheme.labelMedium,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                style: theme.textTheme.bodySmall,
                 textAlign: TextAlign.center,
               ),
             ],
@@ -227,85 +199,80 @@ class CustomerHomeScreen extends StatelessWidget {
       ),
     );
   }
-  
-  Widget _buildOrderCard(BuildContext context, String orderNumber, String vendorName, 
-                         String status, String amount, DateTime date) {
+
+  Widget _buildOrderCard(
+    BuildContext context, {
+    required String orderId,
+    required String status,
+    required String vendor,
+    required String items,
+    required Color statusColor,
+  }) {
+    final theme = Theme.of(context);
+
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          child: const Icon(Icons.receipt, color: Colors.white),
-        ),
-        title: Text(orderNumber),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
           children: [
-            Text(vendorName),
-            Text(
-              'Ordered ${_formatDate(date)}',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ],
-        ),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              amount,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              width: 4,
+              height: 60,
               decoration: BoxDecoration(
-                color: _getStatusColor(status).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
+                color: statusColor,
+                borderRadius: BorderRadius.circular(2),
               ),
-              child: Text(
-                status,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: _getStatusColor(status),
-                  fontWeight: FontWeight.w500,
-                ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        orderId,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: statusColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          status,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: statusColor,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'From: $vendor',
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                  Text(
+                    items,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
         ),
-        onTap: () {
-          // TODO: Navigate to order details
-        },
       ),
     );
-  }
-  
-  Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'delivered':
-        return Colors.green;
-      case 'in transit':
-      case 'preparing':
-        return Colors.orange;
-      case 'cancelled':
-        return Colors.red;
-      default:
-        return Colors.blue;
-    }
-  }
-  
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final difference = now.difference(date);
-    
-    if (difference.inDays > 0) {
-      return '${difference.inDays} day${difference.inDays == 1 ? '' : 's'} ago';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours} hour${difference.inHours == 1 ? '' : 's'} ago';
-    } else {
-      return '${difference.inMinutes} minute${difference.inMinutes == 1 ? '' : 's'} ago';
-    }
   }
 }

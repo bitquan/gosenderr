@@ -52,14 +52,15 @@ class VendorHomeScreen extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 8),
-                    const Text('Your store is currently open and accepting orders'),
+                    const Text(
+                        'Your store is currently open and accepting orders'),
                   ],
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Quick stats
             Row(
               children: [
@@ -84,9 +85,9 @@ class VendorHomeScreen extends StatelessWidget {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             Row(
               children: [
                 Expanded(
@@ -110,9 +111,9 @@ class VendorHomeScreen extends StatelessWidget {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Recent orders section
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -130,7 +131,7 @@ class VendorHomeScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-            
+
             // Orders list
             Column(
               children: [
@@ -160,16 +161,16 @@ class VendorHomeScreen extends StatelessWidget {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Quick actions
             Text(
               'Quick Actions',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 16),
-            
+
             Row(
               children: [
                 Expanded(
@@ -195,9 +196,9 @@ class VendorHomeScreen extends StatelessWidget {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             Row(
               children: [
                 Expanded(
@@ -223,9 +224,9 @@ class VendorHomeScreen extends StatelessWidget {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Floating card example
             const FloatingCard(
               title: 'Boost Your Sales!',
@@ -288,9 +289,9 @@ class VendorHomeScreen extends StatelessWidget {
       ),
     );
   }
-  
-  Widget _buildStatCard(BuildContext context, String title, String value, 
-                       IconData icon, Color color) {
+
+  Widget _buildStatCard(BuildContext context, String title, String value,
+      IconData icon, Color color) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -304,9 +305,9 @@ class VendorHomeScreen extends StatelessWidget {
                 Text(
                   value,
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: color,
-                  ),
+                        fontWeight: FontWeight.bold,
+                        color: color,
+                      ),
                 ),
               ],
             ),
@@ -320,8 +321,9 @@ class VendorHomeScreen extends StatelessWidget {
       ),
     );
   }
-  
-  Widget _buildActionCard(BuildContext context, String title, IconData icon, VoidCallback onTap) {
+
+  Widget _buildActionCard(
+      BuildContext context, String title, IconData icon, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
       child: Card(
@@ -346,9 +348,9 @@ class VendorHomeScreen extends StatelessWidget {
       ),
     );
   }
-  
-  Widget _buildOrderCard(BuildContext context, String orderNumber, String customerName, 
-                         String status, String amount, DateTime date) {
+
+  Widget _buildOrderCard(BuildContext context, String orderNumber,
+      String customerName, String status, String amount, DateTime date) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
@@ -374,8 +376,8 @@ class VendorHomeScreen extends StatelessWidget {
             Text(
               amount,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -400,7 +402,7 @@ class VendorHomeScreen extends StatelessWidget {
       ),
     );
   }
-  
+
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'pending':
@@ -417,11 +419,11 @@ class VendorHomeScreen extends StatelessWidget {
         return Colors.grey;
     }
   }
-  
+
   String _formatDate(DateTime date) {
     final now = DateTime.now();
     final difference = now.difference(date);
-    
+
     if (difference.inDays > 0) {
       return '${difference.inDays} day${difference.inDays == 1 ? '' : 's'} ago';
     } else if (difference.inHours > 0) {
