@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:logger/logger.dart';
@@ -169,8 +170,7 @@ class FirebaseService {
       Reference ref = _storage.ref().child('$path/$fileName');
       
       UploadTask uploadTask = ref.putData(
-        fileBytes as Uint8List,
-        SettingsMetadata(contentType: contentType),
+        Uint8List.fromList(fileBytes),
       );
       
       TaskSnapshot snapshot = await uploadTask;

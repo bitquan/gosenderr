@@ -1,0 +1,51 @@
+{
+  "@@locale": "en",
+  "appTitle": "GoSender",
+  "@appTitle": {
+    "description": "The title of the application"
+  },
+  "welcomeMessage": "Welcome to GoSender!",
+  "@welcomeMessage": {
+    "description": "Welcome message shown on the home screen"
+  },
+  "login": "Sign In",
+  "@login": {
+    "description": "Login button text"
+  },
+  "logout": "Sign Out",
+  "@logout": {
+    "description": "Logout button text"
+  },
+  "email": "Email",
+  "@email": {
+    "description": "Email field label"
+  },
+  "password": "Password",
+  "@password": {
+    "description": "Password field label"
+  },
+  "customer": "Customer",
+  "@customer": {
+    "description": "Customer role label"
+  },
+  "driver": "Driver",
+  "@driver": {
+    "description": "Driver role label"
+  },
+  "merchant": "Merchant",
+  "@merchant": {
+    "description": "Merchant role label"
+  },
+  "orders": "Orders",
+  "@orders": {
+    "description": "Orders menu item"
+  },
+  "profile": "Profile",
+  "@profile": {
+    "description": "Profile menu item"
+  },
+  "home": "Home",
+  "@home": {
+    "description": "Home menu item"
+  }
+}
