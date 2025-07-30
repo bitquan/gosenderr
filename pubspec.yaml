@@ -1,0 +1,75 @@
+name: gosenderr
+description: "A modular Flutter + Firebase delivery/marketplace platform supporting multiple user roles"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.1.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # Firebase
+  firebase_core: ^2.24.2
+  firebase_auth: ^4.15.3
+  cloud_firestore: ^4.13.6
+  firebase_storage: ^11.5.6
+  firebase_messaging: ^14.7.10
+  
+  # State Management
+  flutter_bloc: ^8.1.3
+  bloc: ^8.1.2
+  
+  # Navigation
+  go_router: ^12.1.3
+  
+  # UI & Utilities
+  cupertino_icons: ^1.0.2
+  google_fonts: ^6.1.0
+  flutter_svg: ^2.0.9
+  cached_network_image: ^3.3.0
+  image_picker: ^1.0.4
+  
+  # Location & Maps
+  geolocator: ^10.1.0
+  google_maps_flutter: ^2.5.0
+  
+  # Utilities
+  intl: ^0.18.1
+  shared_preferences: ^2.2.2
+  http: ^1.1.0
+  uuid: ^4.2.1
+  
+  # Validation
+  formz: ^0.6.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  build_runner: ^2.4.7
+
+flutter:
+  uses-material-design: true
+  
+  # Assets
+  assets:
+    - assets/images/
+    - assets/icons/
+    - assets/fonts/
+  
+  # Fonts
+  fonts:
+    - family: Roboto
+      fonts:
+        - asset: assets/fonts/Roboto-Regular.ttf
+        - asset: assets/fonts/Roboto-Bold.ttf
+          weight: 700
+
+flutter_intl:
+  enabled: true
+  class_name: S
+  main_locale: en
+  arb_dir: lib/l10n
+  output_dir: lib/l10n/generated
