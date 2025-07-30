@@ -1,0 +1,362 @@
+{
+  "products": [
+    {
+      "id": "prod_001",
+      "name": "Classic Beef Burger",
+      "description": "Juicy beef patty with lettuce, tomato, onion, and special sauce on a sesame bun",
+      "price": 12.99,
+      "currency": "USD",
+      "category": "food",
+      "subcategory": "burgers",
+      "merchantId": "merchant_001",
+      "images": [
+        "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400",
+        "https://images.unsplash.com/photo-1550547660-d9450f859349?w=400"
+      ],
+      "isAvailable": true,
+      "stockQuantity": 50,
+      "discountPrice": null,
+      "attributes": {
+        "calories": 650,
+        "allergens": ["gluten", "dairy"],
+        "preparationTime": "8-12 minutes",
+        "spiceLevel": "mild"
+      },
+      "createdAt": "2024-01-15T00:00:00.000Z",
+      "rating": 4.5,
+      "reviewCount": 89
+    },
+    {
+      "id": "prod_002",
+      "name": "Chicken Deluxe",
+      "description": "Grilled chicken breast with avocado, bacon, and ranch dressing",
+      "price": 14.99,
+      "currency": "USD",
+      "category": "food",
+      "subcategory": "burgers",
+      "merchantId": "merchant_001",
+      "images": [
+        "https://images.unsplash.com/photo-1606755962773-d324e9eec6e8?w=400"
+      ],
+      "isAvailable": true,
+      "stockQuantity": 35,
+      "discountPrice": null,
+      "attributes": {
+        "calories": 720,
+        "allergens": ["gluten", "dairy"],
+        "preparationTime": "10-15 minutes",
+        "spiceLevel": "mild"
+      },
+      "createdAt": "2024-01-15T00:00:00.000Z",
+      "rating": 4.7,
+      "reviewCount": 156
+    },
+    {
+      "id": "prod_003",
+      "name": "Sweet Potato Fries",
+      "description": "Crispy sweet potato fries with a hint of cinnamon",
+      "price": 6.99,
+      "currency": "USD",
+      "category": "food",
+      "subcategory": "sides",
+      "merchantId": "merchant_001",
+      "images": [
+        "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400"
+      ],
+      "isAvailable": true,
+      "stockQuantity": 80,
+      "discountPrice": null,
+      "attributes": {
+        "calories": 320,
+        "allergens": [],
+        "preparationTime": "5-8 minutes",
+        "isVegan": true
+      },
+      "createdAt": "2024-01-15T00:00:00.000Z",
+      "rating": 4.3,
+      "reviewCount": 67
+    },
+    {
+      "id": "prod_004",
+      "name": "Margherita Pizza",
+      "description": "Classic pizza with fresh mozzarella, basil, and tomato sauce",
+      "price": 18.99,
+      "currency": "USD",
+      "category": "food",
+      "subcategory": "pizza",
+      "merchantId": "merchant_002",
+      "images": [
+        "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400",
+        "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400"
+      ],
+      "isAvailable": true,
+      "stockQuantity": 25,
+      "discountPrice": null,
+      "attributes": {
+        "size": "large",
+        "calories": 890,
+        "allergens": ["gluten", "dairy"],
+        "preparationTime": "15-20 minutes",
+        "isVegetarian": true
+      },
+      "createdAt": "2024-01-10T00:00:00.000Z",
+      "rating": 4.8,
+      "reviewCount": 203
+    },
+    {
+      "id": "prod_005",
+      "name": "Pepperoni Supreme",
+      "description": "Loaded with pepperoni, mushrooms, bell peppers, and extra cheese",
+      "price": 22.99,
+      "currency": "USD",
+      "category": "food",
+      "subcategory": "pizza",
+      "merchantId": "merchant_002",
+      "images": [
+        "https://images.unsplash.com/photo-1628840042765-356cda07504e?w=400"
+      ],
+      "isAvailable": true,
+      "stockQuantity": 20,
+      "discountPrice": null,
+      "attributes": {
+        "size": "large",
+        "calories": 1150,
+        "allergens": ["gluten", "dairy"],
+        "preparationTime": "18-25 minutes",
+        "spiceLevel": "medium"
+      },
+      "createdAt": "2024-01-10T00:00:00.000Z",
+      "rating": 4.6,
+      "reviewCount": 178
+    },
+    {
+      "id": "prod_006",
+      "name": "Caesar Salad",
+      "description": "Fresh romaine lettuce with Caesar dressing, croutons, and parmesan",
+      "price": 11.99,
+      "currency": "USD",
+      "category": "food",
+      "subcategory": "salads",
+      "merchantId": "merchant_002",
+      "images": [
+        "https://images.unsplash.com/photo-1546793665-c74683f339c1?w=400"
+      ],
+      "isAvailable": true,
+      "stockQuantity": 40,
+      "discountPrice": null,
+      "attributes": {
+        "calories": 420,
+        "allergens": ["gluten", "dairy"],
+        "preparationTime": "5-10 minutes",
+        "isVegetarian": true
+      },
+      "createdAt": "2024-01-10T00:00:00.000Z",
+      "rating": 4.2,
+      "reviewCount": 92
+    },
+    {
+      "id": "prod_007",
+      "name": "Organic Bananas",
+      "description": "Fresh organic bananas, perfect for snacking or smoothies",
+      "price": 3.99,
+      "currency": "USD",
+      "category": "grocery",
+      "subcategory": "fruits",
+      "merchantId": "merchant_003",
+      "images": [
+        "https://images.unsplash.com/photo-1603833665858-e61d17a86224?w=400"
+      ],
+      "isAvailable": true,
+      "stockQuantity": 150,
+      "discountPrice": null,
+      "attributes": {
+        "weight": "2 lbs",
+        "organic": true,
+        "origin": "Ecuador",
+        "shelfLife": "5-7 days"
+      },
+      "createdAt": "2024-02-01T00:00:00.000Z",
+      "rating": 4.4,
+      "reviewCount": 45
+    },
+    {
+      "id": "prod_008",
+      "name": "Free-Range Eggs",
+      "description": "Farm-fresh free-range eggs, dozen pack",
+      "price": 5.99,
+      "currency": "USD",
+      "category": "grocery",
+      "subcategory": "dairy",
+      "merchantId": "merchant_003",
+      "images": [
+        "https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=400"
+      ],
+      "isAvailable": true,
+      "stockQuantity": 60,
+      "discountPrice": null,
+      "attributes": {
+        "quantity": "12 eggs",
+        "freeRange": true,
+        "protein": "high",
+        "shelfLife": "3-4 weeks"
+      },
+      "createdAt": "2024-02-01T00:00:00.000Z",
+      "rating": 4.6,
+      "reviewCount": 78
+    },
+    {
+      "id": "prod_009",
+      "name": "Whole Grain Bread",
+      "description": "Artisan whole grain bread, freshly baked daily",
+      "price": 4.49,
+      "currency": "USD",
+      "category": "grocery",
+      "subcategory": "bakery",
+      "merchantId": "merchant_003",
+      "images": [
+        "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400"
+      ],
+      "isAvailable": true,
+      "stockQuantity": 30,
+      "discountPrice": null,
+      "attributes": {
+        "weight": "24 oz",
+        "wholeGrain": true,
+        "allergens": ["gluten"],
+        "shelfLife": "5-7 days"
+      },
+      "createdAt": "2024-02-01T00:00:00.000Z",
+      "rating": 4.3,
+      "reviewCount": 34
+    },
+    {
+      "id": "prod_010",
+      "name": "Organic Milk",
+      "description": "Fresh organic whole milk, locally sourced",
+      "price": 4.99,
+      "currency": "USD",
+      "category": "grocery",
+      "subcategory": "dairy",
+      "merchantId": "merchant_003",
+      "images": [
+        "https://images.unsplash.com/photo-1563636619-e9143da7973b?w=400"
+      ],
+      "isAvailable": true,
+      "stockQuantity": 45,
+      "discountPrice": null,
+      "attributes": {
+        "volume": "1 gallon",
+        "organic": true,
+        "fatContent": "whole",
+        "shelfLife": "7-10 days"
+      },
+      "createdAt": "2024-02-01T00:00:00.000Z",
+      "rating": 4.5,
+      "reviewCount": 67
+    },
+    {
+      "id": "prod_011",
+      "name": "Wireless Bluetooth Headphones",
+      "description": "High-quality wireless headphones with noise cancellation",
+      "price": 199.99,
+      "currency": "USD",
+      "category": "electronics",
+      "subcategory": "audio",
+      "merchantId": "merchant_004",
+      "images": [
+        "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400",
+        "https://images.unsplash.com/photo-1484704849700-f032a568e944?w=400"
+      ],
+      "isAvailable": true,
+      "stockQuantity": 15,
+      "discountPrice": null,
+      "attributes": {
+        "brand": "TechSound",
+        "batteryLife": "30 hours",
+        "connectivity": "Bluetooth 5.0",
+        "noiseCancellation": true,
+        "warranty": "2 years"
+      },
+      "createdAt": "2024-01-20T00:00:00.000Z",
+      "rating": 4.4,
+      "reviewCount": 127
+    },
+    {
+      "id": "prod_012",
+      "name": "Smartphone Fast Charger",
+      "description": "USB-C fast charger compatible with most smartphones",
+      "price": 29.99,
+      "currency": "USD",
+      "category": "electronics",
+      "subcategory": "accessories",
+      "merchantId": "merchant_004",
+      "images": [
+        "https://images.unsplash.com/photo-1583394838336-acd977736f90?w=400"
+      ],
+      "isAvailable": true,
+      "stockQuantity": 50,
+      "discountPrice": null,
+      "attributes": {
+        "wattage": "65W",
+        "compatibility": "USB-C",
+        "fastCharging": true,
+        "warranty": "1 year"
+      },
+      "createdAt": "2024-01-20T00:00:00.000Z",
+      "rating": 4.2,
+      "reviewCount": 89
+    },
+    {
+      "id": "prod_013",
+      "name": "Portable Power Bank",
+      "description": "10000mAh portable power bank with LED display",
+      "price": 39.99,
+      "currency": "USD",
+      "category": "electronics",
+      "subcategory": "accessories",
+      "merchantId": "merchant_004",
+      "images": [
+        "https://images.unsplash.com/photo-1609592827234-0b15cb38160b?w=400"
+      ],
+      "isAvailable": true,
+      "stockQuantity": 25,
+      "discountPrice": 34.99,
+      "attributes": {
+        "capacity": "10000mAh",
+        "display": "LED",
+        "ports": "USB-A, USB-C",
+        "warranty": "1 year"
+      },
+      "createdAt": "2024-01-20T00:00:00.000Z",
+      "rating": 4.6,
+      "reviewCount": 156
+    },
+    {
+      "id": "prod_014",
+      "name": "Smart Fitness Watch",
+      "description": "Feature-rich fitness tracker with heart rate monitoring",
+      "price": 149.99,
+      "currency": "USD",
+      "category": "electronics",
+      "subcategory": "wearables",
+      "merchantId": "merchant_004",
+      "images": [
+        "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400",
+        "https://images.unsplash.com/photo-1434493789847-2f02dc6ca35d?w=400"
+      ],
+      "isAvailable": true,
+      "stockQuantity": 12,
+      "discountPrice": null,
+      "attributes": {
+        "brand": "FitTech",
+        "batteryLife": "7 days",
+        "waterResistant": true,
+        "heartRateMonitor": true,
+        "warranty": "2 years"
+      },
+      "createdAt": "2024-01-20T00:00:00.000Z",
+      "rating": 4.3,
+      "reviewCount": 98
+    }
+  ]
+}
