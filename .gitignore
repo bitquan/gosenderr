@@ -81,7 +81,6 @@ app.*.map.json
 **/android/**/GeneratedPluginRegistrant.java
 
 # Web related
-lib/generated_plugin_registrant.dart
 
 # Firebase
 firebase_options.dart

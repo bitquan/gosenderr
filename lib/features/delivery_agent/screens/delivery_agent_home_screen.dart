@@ -63,9 +63,9 @@ class DeliveryAgentHomeScreen extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Quick stats
             Row(
               children: [
@@ -90,9 +90,9 @@ class DeliveryAgentHomeScreen extends StatelessWidget {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             Row(
               children: [
                 Expanded(
@@ -116,16 +116,16 @@ class DeliveryAgentHomeScreen extends StatelessWidget {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Current delivery (if any)
             Text(
               'Current Delivery',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 16),
-            
+
             Card(
               color: Theme.of(context).colorScheme.secondaryContainer,
               child: Padding(
@@ -138,12 +138,14 @@ class DeliveryAgentHomeScreen extends StatelessWidget {
                       children: [
                         Text(
                           'Order #1239',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 4),
                           decoration: BoxDecoration(
                             color: Colors.orange,
                             borderRadius: BorderRadius.circular(12),
@@ -159,7 +161,6 @@ class DeliveryAgentHomeScreen extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    
                     Row(
                       children: [
                         const Icon(Icons.store, size: 16),
@@ -173,7 +174,6 @@ class DeliveryAgentHomeScreen extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 8),
-                    
                     Row(
                       children: [
                         const Icon(Icons.location_on, size: 16),
@@ -187,7 +187,6 @@ class DeliveryAgentHomeScreen extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    
                     Row(
                       children: [
                         Expanded(
@@ -215,9 +214,9 @@ class DeliveryAgentHomeScreen extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Available deliveries
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -235,7 +234,7 @@ class DeliveryAgentHomeScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-            
+
             // Available deliveries list
             Column(
               children: [
@@ -265,9 +264,9 @@ class DeliveryAgentHomeScreen extends StatelessWidget {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Floating card example
             const FloatingCard(
               title: 'Bonus Opportunity!',
@@ -323,9 +322,9 @@ class DeliveryAgentHomeScreen extends StatelessWidget {
       ),
     );
   }
-  
-  Widget _buildStatCard(BuildContext context, String title, String value, 
-                       IconData icon, Color color) {
+
+  Widget _buildStatCard(BuildContext context, String title, String value,
+      IconData icon, Color color) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -339,9 +338,9 @@ class DeliveryAgentHomeScreen extends StatelessWidget {
                 Text(
                   value,
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: color,
-                  ),
+                        fontWeight: FontWeight.bold,
+                        color: color,
+                      ),
                 ),
               ],
             ),
@@ -355,7 +354,7 @@ class DeliveryAgentHomeScreen extends StatelessWidget {
       ),
     );
   }
-  
+
   Widget _buildAvailableDeliveryCard(
     BuildContext context,
     String orderNumber,
@@ -377,13 +376,15 @@ class DeliveryAgentHomeScreen extends StatelessWidget {
                 Text(
                   orderNumber,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    color:
+                        Theme.of(context).colorScheme.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -398,7 +399,6 @@ class DeliveryAgentHomeScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            
             Row(
               children: [
                 const Icon(Icons.route, size: 16),
@@ -412,7 +412,6 @@ class DeliveryAgentHomeScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -429,7 +428,7 @@ class DeliveryAgentHomeScreen extends StatelessWidget {
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                     const SizedBox(width: 16),
-                    Icon(
+                    const Icon(
                       Icons.payments,
                       size: 16,
                       color: Colors.green,
@@ -438,9 +437,9 @@ class DeliveryAgentHomeScreen extends StatelessWidget {
                     Text(
                       payment,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.green,
-                        fontWeight: FontWeight.w600,
-                      ),
+                            color: Colors.green,
+                            fontWeight: FontWeight.w600,
+                          ),
                     ),
                   ],
                 ),
@@ -449,7 +448,8 @@ class DeliveryAgentHomeScreen extends StatelessWidget {
                     // TODO: Accept delivery
                   },
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                   ),
                   child: const Text('Accept'),
                 ),
