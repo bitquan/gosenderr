@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import '../../../shared_widgets/floating_card.dart';
 
 class CustomerHomeScreen extends StatelessWidget {
