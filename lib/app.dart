@@ -6,7 +6,7 @@ import 'core/theme/app_theme.dart';
 
 // Import screens
 import 'features/auth/screens/login_screen.dart';
-import 'features/auth/screens/signup_screen.dart';
+import 'features/auth/screens/register_screen.dart';
 import 'features/marketplace/screens/marketplace_landing_screen.dart';
 import 'features/customer/screens/customer_home_screen.dart';
 import 'features/vendor/screens/vendor_home_screen.dart';
@@ -43,7 +43,7 @@ final GoRouter _router = GoRouter(
     ),
     GoRoute(
       path: '/register',
-      builder: (context, state) => const SignUpScreen(),
+      builder: (context, state) => const RegisterPageScreen(),
     ),
     GoRoute(
       path: '/customer',

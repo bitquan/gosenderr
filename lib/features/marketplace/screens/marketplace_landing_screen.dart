@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import '../../../shared_widgets/common_widgets.dart';
+import '../../../shared_widgets/dialog_helpers.dart';
 
 class MarketplaceLandingScreen extends StatefulWidget {
   const MarketplaceLandingScreen({super.key});
@@ -12,458 +15,546 @@ class MarketplaceLandingScreen extends StatefulWidget {
 class _MarketplaceLandingScreenState extends State<MarketplaceLandingScreen> {
   final TextEditingController _searchController = TextEditingController();
 
+  // Color constants
+  static const Color primaryYellow = Color(0xFFFFC107);
+
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
   }
 
+  void _handleSearch() {
+    HapticFeedback.lightImpact();
+    DialogHelpers.showSearchDialog(context);
+  }
+
+  void _handleCategoryTap(String category) {
+    HapticFeedback.lightImpact();
+    DialogHelpers.showCategoryDialog(context, category);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          children: [
-            Icon(
-              Icons.local_shipping,
-              color: theme.colorScheme.primary,
-            ),
-            const SizedBox(width: 8),
-            const Text('GoSender Marketplace'),
-          ],
+      body: GradientBackground(
+        child: ResponsiveLayout(
+          mobile: _buildMobileLayout(),
+          tablet: _buildTabletLayout(),
+          desktop: _buildDesktopLayout(),
         ),
-        actions: [
-          TextButton.icon(
-            onPressed: () => context.go('/login'),
-            icon: const Icon(Icons.login),
-            label: const Text('Login'),
-          ),
-          const SizedBox(width: 8),
-          ElevatedButton.icon(
-            onPressed: () => context.go('/register'),
-            icon: const Icon(Icons.person_add),
-            label: const Text('Sign Up'),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            ),
-          ),
-          const SizedBox(width: 16),
-        ],
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Hero Section
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    theme.colorScheme.primary,
-                    theme.colorScheme.primary.withOpacity(0.8),
-                  ],
-                ),
-              ),
-              child: Column(
-                children: [
-                  Text(
-                    'Your One-Stop Delivery Marketplace',
-                    style: theme.textTheme.headlineLarge?.copyWith(
-                      color: theme.colorScheme.onPrimary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Shop from local vendors • Send packages • Fast delivery',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: theme.colorScheme.onPrimary.withOpacity(0.9),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 32),
-
-                  // Search Bar
-                  Container(
-                    constraints: const BoxConstraints(maxWidth: 500),
-                    child: TextField(
-                      controller: _searchController,
-                      decoration: InputDecoration(
-                        hintText:
-                            'Search for products, restaurants, services...',
-                        prefixIcon: const Icon(Icons.search),
-                        suffixIcon: IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () => _searchController.clear(),
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(25),
-                          borderSide: BorderSide.none,
-                        ),
-                        filled: true,
-                        fillColor: theme.colorScheme.surface,
-                      ),
-                      onSubmitted: (value) {
-                        // TODO: Implement search functionality
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Searching for: $value')),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 32),
-
-            // Quick Actions Section
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'What do you need?',
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  GridView.count(
-                    crossAxisCount:
-                        MediaQuery.of(context).size.width > 600 ? 3 : 2,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                    childAspectRatio: 1.2,
-                    children: [
-                      _buildQuickActionCard(
-                        context,
-                        icon: Icons.shopping_cart,
-                        title: 'Shop Products',
-                        subtitle: 'Browse from local vendors',
-                        color: Colors.blue,
-                        onTap: () => _showShopProducts(context),
-                      ),
-                      _buildQuickActionCard(
-                        context,
-                        icon: Icons.local_shipping,
-                        title: 'Send Package',
-                        subtitle: 'Quick delivery service',
-                        color: Colors.green,
-                        onTap: () => _showSendPackage(context),
-                      ),
-                      _buildQuickActionCard(
-                        context,
-                        icon: Icons.restaurant,
-                        title: 'Food Delivery',
-                        subtitle: 'Order from restaurants',
-                        color: Colors.orange,
-                        onTap: () => _showFoodDelivery(context),
-                      ),
-                      _buildQuickActionCard(
-                        context,
-                        icon: Icons.store,
-                        title: 'Start Selling',
-                        subtitle: 'Become a vendor',
-                        color: Colors.purple,
-                        onTap: () => _showBecomeVendor(context),
-                      ),
-                      _buildQuickActionCard(
-                        context,
-                        icon: Icons.delivery_dining,
-                        title: 'Earn as Driver',
-                        subtitle: 'Join delivery team',
-                        color: Colors.teal,
-                        onTap: () => _showBecomeDriver(context),
-                      ),
-                      _buildQuickActionCard(
-                        context,
-                        icon: Icons.support_agent,
-                        title: 'Customer Support',
-                        subtitle: 'Get help & support',
-                        color: Colors.indigo,
-                        onTap: () => _showSupport(context),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 32),
-
-            // Featured Vendors Section
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Featured Vendors',
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    height: 200,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: 5,
-                      itemBuilder: (context, index) {
-                        return _buildVendorCard(context, index);
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 32),
-
-            // Popular Products Section
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Popular Products',
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount:
-                          MediaQuery.of(context).size.width > 600 ? 4 : 2,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                      childAspectRatio: 0.8,
-                    ),
-                    itemCount: 8,
-                    itemBuilder: (context, index) {
-                      return _buildProductCard(context, index);
-                    },
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 32),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showQuickDelivery(context),
-        icon: const Icon(Icons.flash_on),
-        label: const Text('Quick Delivery'),
-        backgroundColor: theme.colorScheme.secondary,
       ),
     );
   }
 
-  Widget _buildQuickActionCard(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    final theme = Theme.of(context);
+  Widget _buildMobileLayout() {
+    return CustomScrollView(
+      slivers: [
+        // App Bar
+        SliverToBoxAdapter(
+          child: FadeInAnimation(
+            child: _buildAppBar(isMobile: true),
+          ),
+        ),
 
-    return Card(
-      elevation: 4,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+        // Hero Section
+        SliverToBoxAdapter(
+          child: FadeInAnimation(
+            delay: const Duration(milliseconds: 200),
+            child: _buildHeroSection(isMobile: true),
+          ),
+        ),
+
+        // Search Section
+        SliverToBoxAdapter(
+          child: FadeInAnimation(
+            delay: const Duration(milliseconds: 400),
+            child: _buildSearchSection(isMobile: true),
+          ),
+        ),
+
+        // Categories Section
+        SliverToBoxAdapter(
+          child: FadeInAnimation(
+            delay: const Duration(milliseconds: 600),
+            child: _buildCategoriesSection(isMobile: true),
+          ),
+        ),
+
+        // Features Section
+        SliverToBoxAdapter(
+          child: FadeInAnimation(
+            delay: const Duration(milliseconds: 800),
+            child: _buildFeaturesSection(isMobile: true),
+          ),
+        ),
+
+        // Footer
+        SliverToBoxAdapter(
+          child: FadeInAnimation(
+            delay: const Duration(milliseconds: 1000),
+            child: _buildFooter(isMobile: true),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTabletLayout() {
+    return CustomScrollView(
+      slivers: [
+        SliverToBoxAdapter(
+            child: FadeInAnimation(child: _buildAppBar(isMobile: false))),
+        SliverToBoxAdapter(
+            child: FadeInAnimation(
+                delay: const Duration(milliseconds: 200),
+                child: _buildHeroSection(isMobile: false))),
+        SliverToBoxAdapter(
+            child: FadeInAnimation(
+                delay: const Duration(milliseconds: 400),
+                child: _buildSearchSection(isMobile: false))),
+        SliverToBoxAdapter(
+            child: FadeInAnimation(
+                delay: const Duration(milliseconds: 600),
+                child: _buildCategoriesSection(isMobile: false))),
+        SliverToBoxAdapter(
+            child: FadeInAnimation(
+                delay: const Duration(milliseconds: 800),
+                child: _buildFeaturesSection(isMobile: false))),
+        SliverToBoxAdapter(
+            child: FadeInAnimation(
+                delay: const Duration(milliseconds: 1000),
+                child: _buildFooter(isMobile: false))),
+      ],
+    );
+  }
+
+  Widget _buildDesktopLayout() {
+    return CustomScrollView(
+      slivers: [
+        SliverToBoxAdapter(
+            child: FadeInAnimation(child: _buildAppBar(isMobile: false))),
+        SliverToBoxAdapter(
+            child: FadeInAnimation(
+                delay: const Duration(milliseconds: 200),
+                child: _buildHeroSection(isMobile: false))),
+        SliverToBoxAdapter(
+            child: FadeInAnimation(
+                delay: const Duration(milliseconds: 400),
+                child: _buildSearchSection(isMobile: false))),
+        SliverToBoxAdapter(
+            child: FadeInAnimation(
+                delay: const Duration(milliseconds: 600),
+                child: _buildCategoriesSection(isMobile: false))),
+        SliverToBoxAdapter(
+            child: FadeInAnimation(
+                delay: const Duration(milliseconds: 800),
+                child: _buildFeaturesSection(isMobile: false))),
+        SliverToBoxAdapter(
+            child: FadeInAnimation(
+                delay: const Duration(milliseconds: 1000),
+                child: _buildFooter(isMobile: false))),
+      ],
+    );
+  }
+
+  Widget _buildAppBar({required bool isMobile}) {
+    return GlassmorphismContainer(
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 20 : 40,
+        vertical: 16,
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Logo
+          Row(
             children: [
               Icon(
-                icon,
-                size: 32,
-                color: color,
+                Icons.local_shipping_rounded,
+                size: isMobile ? 28 : 32,
+                color: primaryYellow,
               ),
-              const SizedBox(height: 8),
+              SizedBox(width: isMobile ? 8 : 12),
               Text(
-                title,
-                style: theme.textTheme.titleMedium?.copyWith(
+                'GoSender',
+                style: TextStyle(
+                  fontSize: isMobile ? 20 : 24,
                   fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-                textAlign: TextAlign.center,
               ),
             ],
           ),
-        ),
+
+          // Auth Buttons
+          if (!isMobile) ...[
+            Row(
+              children: [
+                AnimatedButton(
+                  onPressed: () {
+                    HapticFeedback.lightImpact();
+                    context.go('/auth/login');
+                  },
+                  backgroundColor: Colors.transparent,
+                  foregroundColor: Colors.white,
+                  child: const Text('Login'),
+                ),
+                const SizedBox(width: 12),
+                AnimatedButton(
+                  onPressed: () {
+                    HapticFeedback.lightImpact();
+                    context.go('/auth/register');
+                  },
+                  child: const Text('Sign Up'),
+                ),
+              ],
+            ),
+          ] else ...[
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.menu, color: Colors.white),
+              onSelected: (value) {
+                HapticFeedback.lightImpact();
+                if (value == 'login') {
+                  context.go('/auth/login');
+                } else if (value == 'register') {
+                  context.go('/auth/register');
+                }
+              },
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 'login',
+                  child: Text('Login'),
+                ),
+                const PopupMenuItem(
+                  value: 'register',
+                  child: Text('Sign Up'),
+                ),
+              ],
+            ),
+          ],
+        ],
       ),
     );
   }
 
-  Widget _buildVendorCard(BuildContext context, int index) {
-    final theme = Theme.of(context);
-    final vendors = [
-      {'name': 'Fresh Foods Market', 'rating': '4.8', 'category': 'Groceries'},
-      {'name': 'Pizza Palace', 'rating': '4.6', 'category': 'Restaurant'},
-      {'name': 'Tech Store Plus', 'rating': '4.9', 'category': 'Electronics'},
-      {'name': 'Fashion Hub', 'rating': '4.7', 'category': 'Clothing'},
-      {'name': 'Green Pharmacy', 'rating': '4.8', 'category': 'Health'},
-    ];
+  Widget _buildHeroSection({required bool isMobile}) {
+    return Padding(
+      padding: EdgeInsets.all(isMobile ? 20 : 80),
+      child: GlassmorphismContainer(
+        padding: EdgeInsets.all(isMobile ? 24 : 48),
+        child: Column(
+          children: [
+            Icon(
+              Icons.local_shipping_rounded,
+              size: isMobile ? 64 : 80,
+              color: primaryYellow,
+            ),
+            SizedBox(height: isMobile ? 20 : 24),
+            Text(
+              'Welcome to GoSender',
+              style: TextStyle(
+                fontSize: isMobile ? 28 : 36,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: isMobile ? 12 : 16),
+            Text(
+              'Your trusted delivery platform connecting customers, vendors, and delivery agents for seamless service experiences.',
+              style: TextStyle(
+                fontSize: isMobile ? 16 : 18,
+                color: Colors.white.withOpacity(0.9),
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: isMobile ? 24 : 32),
 
-    final vendor = vendors[index];
-
-    return Container(
-      width: 160,
-      margin: const EdgeInsets.only(right: 16),
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                height: 80,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Center(
-                  child: Icon(
-                    Icons.store,
-                    size: 32,
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                vendor['name']!,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                vendor['category']!,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Row(
+            // CTA Buttons
+            if (isMobile) ...[
+              Column(
                 children: [
-                  const Icon(
-                    Icons.star,
-                    size: 16,
-                    color: Colors.amber,
+                  SizedBox(
+                    width: double.infinity,
+                    child: AnimatedButton(
+                      onPressed: () {
+                        HapticFeedback.mediumImpact();
+                        context.go('/auth/register');
+                      },
+                      height: 50,
+                      child: const Text(
+                        'Get Started',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
                   ),
-                  const SizedBox(width: 4),
-                  Text(
-                    vendor['rating']!,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.bold,
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: AnimatedButton(
+                      onPressed: () => HapticFeedback.lightImpact(),
+                      backgroundColor: Colors.transparent,
+                      foregroundColor: Colors.white,
+                      child: const Text('Learn More'),
                     ),
                   ),
                 ],
               ),
+            ] else ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  AnimatedButton(
+                    onPressed: () {
+                      HapticFeedback.mediumImpact();
+                      context.go('/auth/register');
+                    },
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 32, vertical: 16),
+                    child: const Text(
+                      'Get Started',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  AnimatedButton(
+                    onPressed: () => HapticFeedback.lightImpact(),
+                    backgroundColor: Colors.transparent,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 32, vertical: 16),
+                    child: const Text('Learn More'),
+                  ),
+                ],
+              ),
             ],
-          ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildProductCard(BuildContext context, int index) {
-    final theme = Theme.of(context);
-    final products = [
-      {'name': 'Fresh Apples', 'price': '\$3.99', 'store': 'Fresh Market'},
-      {'name': 'Margherita Pizza', 'price': '\$12.99', 'store': 'Pizza Palace'},
-      {
-        'name': 'Wireless Headphones',
-        'price': '\$79.99',
-        'store': 'Tech Store'
-      },
-      {'name': 'Summer Dress', 'price': '\$29.99', 'store': 'Fashion Hub'},
-      {'name': 'Vitamin C', 'price': '\$15.99', 'store': 'Green Pharmacy'},
-      {'name': 'Organic Bread', 'price': '\$4.99', 'store': 'Fresh Market'},
-      {'name': 'Smartphone Case', 'price': '\$19.99', 'store': 'Tech Store'},
-      {'name': 'Coffee Beans', 'price': '\$8.99', 'store': 'Coffee Shop'},
+  Widget _buildSearchSection({required bool isMobile}) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: isMobile ? 20 : 80),
+      child: GlassmorphismContainer(
+        padding: EdgeInsets.all(isMobile ? 20 : 24),
+        child: Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _searchController,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  hintText: 'Search for services...',
+                  hintStyle: TextStyle(
+                    color: Colors.white.withOpacity(0.6),
+                    fontSize: isMobile ? 14 : 16,
+                  ),
+                  border: InputBorder.none,
+                  prefixIcon: Icon(
+                    Icons.search,
+                    color: Colors.white.withOpacity(0.7),
+                  ),
+                ),
+              ),
+            ),
+            AnimatedButton(
+              onPressed: _handleSearch,
+              child: Text(
+                'Search',
+                style: TextStyle(
+                  fontSize: isMobile ? 14 : 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategoriesSection({required bool isMobile}) {
+    final categories = [
+      {'name': 'Food Delivery', 'icon': Icons.restaurant},
+      {'name': 'Package Delivery', 'icon': Icons.inbox},
+      {'name': 'Document Delivery', 'icon': Icons.description},
+      {'name': 'Medical Delivery', 'icon': Icons.medical_services},
+      {'name': 'Grocery Delivery', 'icon': Icons.shopping_cart},
+      {'name': 'Express Delivery', 'icon': Icons.flash_on},
     ];
 
-    final product = products[index];
-
-    return Card(
+    return Padding(
+      padding: EdgeInsets.all(isMobile ? 20 : 80),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primaryContainer,
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(12)),
-              ),
-              child: Center(
-                child: Icon(
-                  Icons.shopping_bag,
-                  size: 32,
-                  color: theme.colorScheme.primary,
-                ),
-              ),
+          Text(
+            'Our Services',
+            style: TextStyle(
+              fontSize: isMobile ? 24 : 32,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(8),
+          SizedBox(height: isMobile ? 20 : 32),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount:
+                  isMobile ? 2 : (ResponsiveLayout.isDesktop(context) ? 3 : 3),
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              childAspectRatio: 1.1,
+            ),
+            itemCount: categories.length,
+            itemBuilder: (context, index) {
+              final category = categories[index];
+              return AnimatedButton(
+                onPressed: () => _handleCategoryTap(category['name'] as String),
+                child: GlassmorphismContainer(
+                  padding: EdgeInsets.all(isMobile ? 16 : 20),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        category['icon'] as IconData,
+                        size: isMobile ? 32 : 40,
+                        color: primaryYellow,
+                      ),
+                      SizedBox(height: isMobile ? 8 : 12),
+                      Text(
+                        category['name'] as String,
+                        style: TextStyle(
+                          fontSize: isMobile ? 12 : 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFeaturesSection({required bool isMobile}) {
+    final features = [
+      {
+        'title': 'Fast Delivery',
+        'description': 'Quick and reliable delivery services',
+        'icon': Icons.speed,
+      },
+      {
+        'title': 'Real-time Tracking',
+        'description': 'Track your orders in real-time',
+        'icon': Icons.location_on,
+      },
+      {
+        'title': 'Secure Payments',
+        'description': 'Safe and secure payment options',
+        'icon': Icons.security,
+      },
+      {
+        'title': '24/7 Support',
+        'description': 'Round-the-clock customer support',
+        'icon': Icons.support_agent,
+      },
+    ];
+
+    return Padding(
+      padding: EdgeInsets.all(isMobile ? 20 : 80),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Why Choose GoSender?',
+            style: TextStyle(
+              fontSize: isMobile ? 24 : 32,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          SizedBox(height: isMobile ? 20 : 32),
+          if (isMobile) ...[
+            Column(
+              children: features
+                  .map(
+                    (feature) => Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: _buildFeatureCard(feature, isMobile: true),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ] else ...[
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 20,
+                mainAxisSpacing: 20,
+                childAspectRatio: 1.5,
+              ),
+              itemCount: features.length,
+              itemBuilder: (context, index) =>
+                  _buildFeatureCard(features[index], isMobile: false),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFeatureCard(Map<String, dynamic> feature,
+      {required bool isMobile}) {
+    return GlassmorphismContainer(
+      padding: EdgeInsets.all(isMobile ? 20 : 24),
+      child: Row(
+        children: [
+          Icon(
+            feature['icon'] as IconData,
+            size: isMobile ? 32 : 40,
+            color: primaryYellow,
+          ),
+          SizedBox(width: isMobile ? 16 : 20),
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  product['name']!,
-                  style: theme.textTheme.titleSmall?.copyWith(
+                  feature['title'] as String,
+                  style: TextStyle(
+                    fontSize: isMobile ? 16 : 18,
                     fontWeight: FontWeight.bold,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  product['store']!,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                    color: Colors.white,
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: isMobile ? 4 : 8),
                 Text(
-                  product['price']!,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: theme.colorScheme.primary,
-                    fontWeight: FontWeight.bold,
+                  feature['description'] as String,
+                  style: TextStyle(
+                    fontSize: isMobile ? 14 : 16,
+                    color: Colors.white.withOpacity(0.8),
                   ),
                 ),
               ],
@@ -474,126 +565,51 @@ class _MarketplaceLandingScreenState extends State<MarketplaceLandingScreen> {
     );
   }
 
-  void _showShopProducts(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Opening product catalog...')),
-    );
-    // TODO: Navigate to product catalog
-  }
-
-  void _showSendPackage(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Send Package'),
-        content: const Text(
-            'Quick delivery service coming soon! Please login to access full features.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              context.go('/login');
-            },
-            child: const Text('Login'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showFoodDelivery(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Loading restaurants...')),
-    );
-    // TODO: Navigate to restaurant listings
-  }
-
-  void _showBecomeVendor(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Become a Vendor'),
-        content: const Text(
-            'Start selling on GoSender! Sign up as a vendor to list your products.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              context.go('/register');
-            },
-            child: const Text('Sign Up'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showBecomeDriver(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Become a Delivery Agent'),
-        content: const Text(
-            'Earn money delivering packages! Sign up as a delivery agent.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              context.go('/register');
-            },
-            child: const Text('Sign Up'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showSupport(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Opening support center...')),
-    );
-    // TODO: Navigate to support/help center
-  }
-
-  void _showQuickDelivery(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Row(
+  Widget _buildFooter({required bool isMobile}) {
+    return Padding(
+      padding: EdgeInsets.all(isMobile ? 20 : 80),
+      child: GlassmorphismContainer(
+        padding: EdgeInsets.all(isMobile ? 24 : 40),
+        child: Column(
           children: [
-            Icon(Icons.flash_on,
-                color: Theme.of(context).colorScheme.secondary),
-            const SizedBox(width: 8),
-            const Text('Quick Delivery'),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.local_shipping_rounded,
+                  size: isMobile ? 24 : 32,
+                  color: primaryYellow,
+                ),
+                SizedBox(width: isMobile ? 8 : 12),
+                Text(
+                  'GoSender',
+                  style: TextStyle(
+                    fontSize: isMobile ? 20 : 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: isMobile ? 16 : 20),
+            Text(
+              'Connecting people, delivering possibilities.',
+              style: TextStyle(
+                fontSize: isMobile ? 14 : 16,
+                color: Colors.white.withOpacity(0.8),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: isMobile ? 16 : 20),
+            Text(
+              '© 2024 GoSender. All rights reserved.',
+              style: TextStyle(
+                fontSize: isMobile ? 12 : 14,
+                color: Colors.white.withOpacity(0.6),
+              ),
+            ),
           ],
         ),
-        content: const Text(
-            'Need something delivered fast? Our quick delivery service can help!'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              context.go('/login');
-            },
-            child: const Text('Login to Continue'),
-          ),
-        ],
       ),
     );
   }
