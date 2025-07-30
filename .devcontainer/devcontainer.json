@@ -1,4 +1,20 @@
 {
-  "image": "mcr.microsoft.com/devcontainers/universal:2",
-  "features": {}
+  "name": "Flutter Development",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "dart.flutterSdkPath": "/usr/local/flutter",
+        "dart.sdkPath": "/usr/local/flutter/bin/cache/dart-sdk"
+      },
+      "extensions": [
+        "Dart-Code.dart-code",
+        "Dart-Code.flutter"
+      ]
+    }
+  },
+  "remoteUser": "vscode",
+  "postCreateCommand": "flutter doctor"
 }
