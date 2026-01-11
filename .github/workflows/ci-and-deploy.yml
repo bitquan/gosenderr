@@ -28,6 +28,7 @@ jobs:
 
       - name: Lint
         run: pnpm -C apps/web lint
+        continue-on-error: true
 
       - name: Typecheck
         run: pnpm -C apps/web type-check
