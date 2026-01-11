@@ -18,8 +18,8 @@ importers:
   apps/web:
     dependencies:
       '@gosenderr/shared':
-        specifier: '*'
-        version: link:../../packages/shared
+        specifier: file:../../packages/shared
+        version: file:packages/shared
       firebase:
         specifier: ^11.1.0
         version: 11.10.0
@@ -4285,3 +4285,12 @@ packages:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
     dev: true
+
+  file:packages/shared:
+    resolution: {directory: packages/shared, type: directory}
+    name: '@gosenderr/shared'
+    dependencies:
+      firebase: 11.10.0
+    transitivePeerDependencies:
+      - '@react-native-async-storage/async-storage'
+    dev: false

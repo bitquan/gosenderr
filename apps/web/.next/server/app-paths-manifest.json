@@ -1,13 +1,13 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
   "/page": "app/page.js",
+  "/v2/login/page": "app/v2/login/page.js",
   "/v2/page": "app/v2/page.js",
   "/v2/select-role/page": "app/v2/select-role/page.js",
-  "/v2/login/page": "app/v2/login/page.js",
-  "/v2/courier/dashboard/page": "app/v2/courier/dashboard/page.js",
   "/v2/courier/jobs/[jobId]/page": "app/v2/courier/jobs/[jobId]/page.js",
   "/v2/courier/setup/page": "app/v2/courier/setup/page.js",
+  "/v2/courier/dashboard/page": "app/v2/courier/dashboard/page.js",
   "/v2/customer/jobs/[jobId]/page": "app/v2/customer/jobs/[jobId]/page.js",
-  "/v2/customer/jobs/new/page": "app/v2/customer/jobs/new/page.js",
-  "/v2/customer/jobs/page": "app/v2/customer/jobs/page.js"
+  "/v2/customer/jobs/page": "app/v2/customer/jobs/page.js",
+  "/v2/customer/jobs/new/page": "app/v2/customer/jobs/new/page.js"
 }
