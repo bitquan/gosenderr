@@ -93,7 +93,10 @@ jobs:
       - name: Verify esbuild
         run: |
           pnpm exec esbuild --version
-          which esbuild
+          pnpm exec which esbuild
+
+      - name: Install node-which (for firebase-tools)
+        run: npm i -g which@6.0.0
 
       - name: Deploy (Next SSR on Firebase)
         env:
