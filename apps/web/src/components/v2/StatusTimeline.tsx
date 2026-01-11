@@ -8,9 +8,11 @@ const steps: { status: JobStatus; label: string }[] = [
   { status: 'open', label: 'Job Posted' },
   { status: 'assigned', label: 'Courier Assigned' },
   { status: 'enroute_pickup', label: 'En Route to Pickup' },
+  { status: 'arrived_pickup', label: 'Arrived at Pickup' },
   { status: 'picked_up', label: 'Package Picked Up' },
   { status: 'enroute_dropoff', label: 'En Route to Dropoff' },
-  { status: 'delivered', label: 'Delivered' },
+  { status: 'arrived_dropoff', label: 'Arrived at Dropoff' },
+  { status: 'completed', label: 'Completed' },
 ];
 
 export function StatusTimeline({ currentStatus }: StatusTimelineProps) {

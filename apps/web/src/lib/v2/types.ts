@@ -41,14 +41,16 @@ export interface UserDoc {
   location?: CourierLocation;
 }
 
-// Job statuses (simplified for MVP)
+// Job statuses - full delivery loop
 export type JobStatus = 
   | 'open'
   | 'assigned'
   | 'enroute_pickup'
+  | 'arrived_pickup'
   | 'picked_up'
   | 'enroute_dropoff'
-  | 'delivered'
+  | 'arrived_dropoff'
+  | 'completed'
   | 'cancelled';
 
 // Location data

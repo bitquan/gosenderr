@@ -10,27 +10,8 @@ import { StatusTimeline } from '@/components/v2/StatusTimeline';
 import { MapboxMap } from '@/components/v2/MapboxMap';
 import { updateJobStatus } from '@/lib/v2/jobs';
 import { JobStatus } from '@/lib/v2/types';
+import { getNextStatus, canCourierAdvance, STATUS_BUTTON_LABELS } from '@/lib/v2/status';
 import Link from 'next/link';
-
-const statusFlow: Record<JobStatus, JobStatus | null> = {
-  open: null,
-  assigned: 'enroute_pickup',
-  enroute_pickup: 'picked_up',
-  picked_up: 'enroute_dropoff',
-  enroute_dropoff: 'delivered',
-  delivered: null,
-  cancelled: null,
-};
-
-const statusButtons: Record<JobStatus, string> = {
-  assigned: 'Start Pickup',
-  enroute_pickup: 'Mark Picked Up',
-  picked_up: 'Start Delivery',
-  enroute_dropoff: 'Mark Delivered',
-  delivered: '',
-  open: '',
-  cancelled: '',
-};
 
 export default function CourierJobDetail() {
   const params = useParams();
@@ -42,14 +23,21 @@ export default function CourierJobDetail() {
   const [updating, setUpdating] = useState(false);
 
   const handleStatusUpdate = async () => {
-    if (!job) return;
-    const nextStatus = statusFlow[job.status];
+    if (!job || !uid) return;
+    
+    // Check if courier can advance this job
+    if (!canCourierAdvance(job, uid)) {
+      alert('You cannot advance this job');
+      return;
+    }
+    
+    const nextStatus = getNextStatus(job.status);
     if (!nextStatus) return;
 
     setUpdating(true);
     try {
-      await updateJobStatus(jobId, nextStatus);
-      if (nextStatus === 'delivered') {
+      await updateJobStatus(jobId, nextStatus, uid);
+      if (nextStatus === 'completed') {
         // Redirect to dashboard after delivery
         setTimeout(() => router.push('/v2/courier/dashboard'), 1000);
       }
@@ -91,7 +79,7 @@ export default function CourierJobDetail() {
     );
   }
 
-  const nextStatus = statusFlow[job.status];
+  const nextStatus = getNextStatus(job.status);
   const pickupGoogleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${job.pickup.lat},${job.pickup.lng}`;
   const dropoffGoogleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${job.dropoff.lat},${job.dropoff.lng}`;
 
@@ -199,12 +187,12 @@ export default function CourierJobDetail() {
                   cursor: updating ? 'not-allowed' : 'pointer',
                 }}
               >
-                {updating ? 'Updating...' : statusButtons[job.status]}
+                {updating ? 'Updating...' : STATUS_BUTTON_LABELS[job.status]}
               </button>
             </div>
           )}
 
-          {job.status === 'delivered' && (
+          {job.status === 'completed' && (
             <div
               style={{
                 marginTop: '24px',
