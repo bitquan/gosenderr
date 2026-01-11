@@ -59,8 +59,8 @@ export function calcFee(
   }
 
   // Apply minimum fee if configured
-  if (rateCard.minFee && fee < rateCard.minFee) {
-    fee = rateCard.minFee;
+  if (rateCard.minimumFee && fee < rateCard.minimumFee) {
+    fee = rateCard.minimumFee;
   }
 
   return Math.round(fee * 100) / 100; // Round to 2 decimals
@@ -68,21 +68,38 @@ export function calcFee(
 
 /**
  * Check if a courier is eligible for a job based on their rate card rules
+ * Returns eligibility status and reason if ineligible
+ */
+export function checkEligibility(
+  rateCard: RateCard,
+  jobMiles: number,
+  pickupMiles: number
+): { eligible: boolean; reason?: string } {
+  // Check discovery radius (if configured)
+  if (rateCard.maxRadiusMiles !== undefined && pickupMiles > rateCard.maxRadiusMiles) {
+    return { eligible: false, reason: `Outside service area (${rateCard.maxRadiusMiles}mi max)` };
+  }
+
+  // Check pickup distance limit
+  if (rateCard.maxPickupMiles !== undefined && pickupMiles > rateCard.maxPickupMiles) {
+    return { eligible: false, reason: `Too far to pickup (${rateCard.maxPickupMiles}mi max)` };
+  }
+
+  // Check job distance limit
+  if (rateCard.maxJobMiles !== undefined && jobMiles > rateCard.maxJobMiles) {
+    return { eligible: false, reason: `Trip too long (${rateCard.maxJobMiles}mi max)` };
+  }
+
+  return { eligible: true };
+}
+
+/**
+ * Legacy compatibility - returns boolean only
  */
 export function isEligible(
   rateCard: RateCard,
   jobMiles: number,
   pickupMiles: number
 ): boolean {
-  // Check pickup distance limit
-  if (rateCard.maxPickupMiles !== undefined && pickupMiles > rateCard.maxPickupMiles) {
-    return false;
-  }
-
-  // Check job distance limit
-  if (rateCard.maxJobMiles !== undefined && jobMiles > rateCard.maxJobMiles) {
-    return false;
-  }
-
-  return true;
+  return checkEligibility(rateCard, jobMiles, pickupMiles).eligible;
 }

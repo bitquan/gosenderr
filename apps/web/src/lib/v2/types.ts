@@ -8,11 +8,13 @@ export type TransportMode = 'walk' | 'scooter' | 'car';
 export interface RateCard {
   baseFee: number;          // required base fee per delivery
   perMile: number;          // required cost per job mile (pickup -> dropoff)
-  minFee?: number;          // optional minimum charge
+  minimumFee?: number;      // optional minimum charge
   pickupPerMile?: number;   // optional extra cost for courier -> pickup distance ("deadhead")
   perMinute?: number;       // optional time-based pricing
   maxPickupMiles?: number;  // optional radius rule (courier -> pickup distance limit)
   maxJobMiles?: number;     // optional job distance rule (pickup -> dropoff limit)
+  maxRadiusMiles?: number;  // optional discovery radius (customer search radius)
+  updatedAt?: Timestamp;    // timestamp of last rate card update
 }
 
 export interface CourierData {

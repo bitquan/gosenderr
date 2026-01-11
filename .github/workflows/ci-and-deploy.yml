@@ -60,9 +60,6 @@ jobs:
       - name: Build
         run: pnpm -C apps/web build
 
-      - name: Enable Firebase Experiments
-        run: npx firebase-tools experiments:enable webframeworks
-
       - name: Deploy
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
@@ -73,4 +70,3 @@ jobs:
           target: gosenderr-6773f
         env:
           FIREBASE_CLI_EXPERIMENTS: webframeworks
-          COREPACK_ENABLE_AUTO_PIN: "0"

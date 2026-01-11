@@ -99,9 +99,9 @@ export function CourierJobPreview({
           {rateCard.pickupPerMile && <span> + ${rateCard.pickupPerMile.toFixed(2)}/mi pickup</span>}
           {rateCard.perMinute && <span> + ${rateCard.perMinute.toFixed(2)}/min</span>}
         </div>
-        {rateCard.minFee && (
+        {rateCard.minimumFee && (
           <div style={{ fontSize: '11px', color: '#999', marginTop: '4px' }}>
-            Minimum: ${rateCard.minFee.toFixed(2)}
+            Minimum: ${rateCard.minimumFee.toFixed(2)}
           </div>
         )}
         <div style={{ marginTop: '12px', fontSize: '20px', fontWeight: '600', color: '#16a34a' }}>
