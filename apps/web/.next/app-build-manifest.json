@@ -1,0 +1,65 @@
+{
+  "pages": {
+    "/layout": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/css/app/layout.css",
+      "static/chunks/app/layout.js"
+    ],
+    "/v2/login/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/v2/login/page.js"
+    ],
+    "/v2/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/v2/page.js"
+    ],
+    "/v2/select-role/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/v2/select-role/page.js"
+    ],
+    "/v2/customer/jobs/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/v2/customer/jobs/page.js"
+    ],
+    "/v2/courier/dashboard/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/v2/courier/dashboard/page.js"
+    ],
+    "/v2/courier/setup/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/v2/courier/setup/page.js"
+    ],
+    "/v2/courier/layout": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/v2/courier/layout.js"
+    ],
+    "/v2/customer/layout": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/v2/customer/layout.js"
+    ],
+    "/v2/customer/jobs/[jobId]/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/v2/customer/jobs/[jobId]/page.js"
+    ],
+    "/v2/courier/jobs/[jobId]/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/v2/courier/jobs/[jobId]/page.js"
+    ],
+    "/v2/customer/jobs/new/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/v2/customer/jobs/new/page.js"
+    ]
+  }
+}

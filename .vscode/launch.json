@@ -1,0 +1,43 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "gosenderr",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "gosenderr (profile mode)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "gosenderr (release mode)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        },
+        {
+            "name": "gosenderr (driver - simulator)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "debug",
+            "program": "lib/main.dart",
+            "deviceId": "C3CECD8E-BB84-4F07-A84B-E84F29704870",
+            "args": ["--dart-define=APP_ROLE=driver"]
+        },
+                {
+                    "name": "gosenderr (customer - device)",
+                    "request": "launch",
+                    "type": "dart",
+                    "flutterMode": "debug",
+                    "program": "lib/main.dart",
+                    "deviceId": "199AC40E-7AFC-458F-BC93-8D833F3BEB44",
+                    "args": ["--dart-define=APP_ROLE=customer"]
+                }
+            ]
+        }

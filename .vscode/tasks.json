@@ -1,0 +1,26 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Flutter Driver (Simulator)",
+			"type": "shell",
+			"command": "flutter run -d C3CECD8E-BB84-4F07-A84B-E84F29704870 --dart-define=APP_ROLE=driver",
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "Flutter Driver (Simulator)",
+			"type": "shell",
+			"command": "flutter run -d C3CECD8E-BB84-4F07-A84B-E84F29704870 --dart-define=APP_ROLE=driver",
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "Web Dev Server",
+			"type": "shell",
+			"command": "pnpm dev",
+			"isBackground": true,
+			"problemMatcher": []
+		}
+	]
+}

@@ -1,0 +1,73 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function uid() {
+      return request.auth.uid;
+    }
+
+    function isDriverOfJob(jobId) {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/jobs/$(jobId))
+        && get(/databases/$(database)/documents/jobs/$(jobId)).data.driverId == uid();
+    }
+
+    function validStatus(s) {
+      return s in ['open','assigned','arrived_pickup','picked_up','arrived_dropoff','delivered','completed','canceled'];
+    }
+
+    // ---- DRIVERS (online/busy/offline) ----
+    match /drivers/{driverId} {
+      allow read: if isSignedIn() && driverId == uid();
+      allow create: if isSignedIn() && driverId == uid();
+      allow update: if isSignedIn() && driverId == uid();
+      allow delete: if false;
+    }
+
+    // Optional: write location snapshots
+    match /driver_locations/{driverId} {
+      allow read: if isSignedIn() && driverId == uid();
+      allow create, update: if isSignedIn() && driverId == uid();
+      allow delete: if false;
+    }
+
+    // ---- JOBS ----
+    match /jobs/{jobId} {
+      // For testing: any signed-in user can read jobs.
+      allow read: if isSignedIn();
+
+      // For testing: allow create (your admin/rider app can tighten later).
+      allow create: if isSignedIn();
+
+      // Update rules: driver can claim and progress their own job.
+      allow update: if isSignedIn() && (
+        // 1) Claim an open job: open -> assigned AND set driverId to self
+        (
+          resource.data.status == 'open'
+          && request.resource.data.status == 'assigned'
+          && request.resource.data.driverId == uid()
+          && request.resource.data.driverId is string
+        )
+        ||
+        // 2) After claimed: driver can update ONLY if already assigned to them
+        (
+          resource.data.driverId == uid()
+          && request.resource.data.driverId == uid()
+          && validStatus(request.resource.data.status)
+          && (
+            // Enforce photo before picked_up / completed (light enforcement)
+            (request.resource.data.status != 'picked_up' || request.resource.data.pickupPhotoUrl is string)
+            &&
+            (request.resource.data.status != 'completed' || request.resource.data.dropoffPhotoUrl is string)
+          )
+        )
+      );
+
+      allow delete: if false;
+    }
+  }
+}
