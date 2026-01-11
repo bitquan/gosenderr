@@ -18,7 +18,7 @@ importers:
   apps/web:
     dependencies:
       '@gosenderr/shared':
-        specifier: workspace:*
+        specifier: '*'
         version: link:../../packages/shared
       firebase:
         specifier: ^11.1.0
