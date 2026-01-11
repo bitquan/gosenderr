@@ -108,4 +108,5 @@ jobs:
           pnpm dlx firebase-tools@15.2.1 deploy \
             --project gosenderr-6773f \
             --only hosting:gosenderr-6773f \
+            --debug \
             --non-interactive
