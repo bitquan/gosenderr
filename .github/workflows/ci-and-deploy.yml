@@ -90,10 +90,16 @@ jobs:
       - name: Build
         run: pnpm -C apps/web build
 
+      - name: Verify esbuild
+        run: |
+          pnpm exec esbuild --version
+          which esbuild
+
       - name: Deploy (Next SSR on Firebase)
         env:
           FIREBASE_CLI_EXPERIMENTS: webframeworks
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/gcloud.json
+          PATH: ${{ github.workspace }}/node_modules/.bin:/usr/local/bin:/usr/bin:/bin
         run: |
           echo '${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}' > ${{ runner.temp }}/gcloud.json
           pnpm dlx firebase-tools@15.2.1 deploy \
