@@ -9,9 +9,10 @@ import {
   getDoc,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
-import { GeoPoint, JobStatus, UserDoc } from './types';
+import { GeoPoint, JobStatus, UserDoc, Job } from './types';
 import { calcMiles } from './pricing';
 import { getEligibilityReason } from './eligibility';
+import { getNextStatus } from './status';
 
 interface CreateJobPayload {
   pickup: GeoPoint;
@@ -94,11 +95,41 @@ export async function claimJob(
 
 export async function updateJobStatus(
   jobId: string,
-  nextStatus: JobStatus
+  nextStatus: JobStatus,
+  actorUid?: string
 ): Promise<void> {
   const jobRef = doc(db, 'jobs', jobId);
-  await updateDoc(jobRef, {
-    status: nextStatus,
-    updatedAt: serverTimestamp(),
+
+  await runTransaction(db, async (transaction) => {
+    const jobDoc = await transaction.get(jobRef);
+
+    if (!jobDoc.exists()) {
+      throw new Error('Job not found');
+    }
+
+    const jobData = jobDoc.data() as Job;
+
+    // Server-side guard: Only assigned courier can update status
+    if (actorUid && jobData.courierUid !== actorUid) {
+      throw new Error('Only the assigned courier can update job status');
+    }
+
+    // Validate status progression
+    const expectedNextStatus = getNextStatus(jobData.status);
+    if (!expectedNextStatus) {
+      throw new Error(`Cannot advance from status: ${jobData.status}`);
+    }
+
+    if (nextStatus !== expectedNextStatus) {
+      throw new Error(
+        `Invalid status transition. Expected: ${expectedNextStatus}, Received: ${nextStatus}`
+      );
+    }
+
+    // All checks passed - update status
+    transaction.update(jobRef, {
+      status: nextStatus,
+      updatedAt: serverTimestamp(),
+    });
   });
 }

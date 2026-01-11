@@ -21,6 +21,20 @@
 			"command": "pnpm dev",
 			"isBackground": true,
 			"problemMatcher": []
+		},
+		{
+			"label": "Deploy to Firebase Hosting",
+			"type": "shell",
+			"command": "firebase deploy --only hosting",
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "Deploy to Firebase Hosting",
+			"type": "shell",
+			"command": "firebase deploy --only hosting",
+			"isBackground": true,
+			"problemMatcher": []
 		}
 	]
 }

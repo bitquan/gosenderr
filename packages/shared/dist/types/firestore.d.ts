@@ -38,9 +38,11 @@ export declare enum JobStatus {
     OPEN = "open",
     ASSIGNED = "assigned",
     ENROUTE_PICKUP = "enroute_pickup",
+    ARRIVED_PICKUP = "arrived_pickup",
     PICKED_UP = "picked_up",
     ENROUTE_DROPOFF = "enroute_dropoff",
-    DELIVERED = "delivered",
+    ARRIVED_DROPOFF = "arrived_dropoff",
+    COMPLETED = "completed",
     CANCELLED = "cancelled"
 }
 export interface JobDoc {

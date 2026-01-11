@@ -11,7 +11,7 @@ service cloud.firestore {
     }
 
     function validJobStatus(s) {
-      return s in ['open', 'assigned', 'enroute_pickup', 'picked_up', 'enroute_dropoff', 'delivered', 'cancelled'];
+      return s in ['open', 'assigned', 'enroute_pickup', 'arrived_pickup', 'picked_up', 'enroute_dropoff', 'arrived_dropoff', 'completed', 'cancelled'];
     }
 
     // ---- USERS ----
@@ -69,7 +69,11 @@ service cloud.firestore {
         // 3) Assigned courier can update job progress
         (
           isAssignedCourier()
-          && request.resource.data.courierUid == request.auth.uid
+          && request.resource.data.courierUid == resource.data.courierUid
+          && request.resource.data.createdByUid == resource.data.createdByUid
+          && request.resource.data.agreedFee == resource.data.agreedFee
+          && request.resource.data.pickup == resource.data.pickup
+          && request.resource.data.dropoff == resource.data.dropoff
           && validJobStatus(request.resource.data.status)
         )
       );

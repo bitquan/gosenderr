@@ -8,9 +8,11 @@ const statusColors: Record<JobStatus, string> = {
   open: '#808080',
   assigned: '#2563eb',
   enroute_pickup: '#7c3aed',
+  arrived_pickup: '#a855f7',
   picked_up: '#ea580c',
   enroute_dropoff: '#dc2626',
-  delivered: '#16a34a',
+  arrived_dropoff: '#ef4444',
+  completed: '#16a34a',
   cancelled: '#52525b',
 };
 
@@ -18,9 +20,11 @@ const statusLabels: Record<JobStatus, string> = {
   open: 'Open',
   assigned: 'Assigned',
   enroute_pickup: 'En Route to Pickup',
+  arrived_pickup: 'Arrived at Pickup',
   picked_up: 'Picked Up',
   enroute_dropoff: 'En Route to Dropoff',
-  delivered: 'Delivered',
+  arrived_dropoff: 'Arrived at Dropoff',
+  completed: 'Completed',
   cancelled: 'Cancelled',
 };
 

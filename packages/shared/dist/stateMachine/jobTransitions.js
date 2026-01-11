@@ -10,10 +10,12 @@ const firestore_1 = require("../types/firestore");
 exports.allowedTransitions = {
     [firestore_1.JobStatus.OPEN]: [firestore_1.JobStatus.ASSIGNED, firestore_1.JobStatus.CANCELLED],
     [firestore_1.JobStatus.ASSIGNED]: [firestore_1.JobStatus.ENROUTE_PICKUP, firestore_1.JobStatus.CANCELLED],
-    [firestore_1.JobStatus.ENROUTE_PICKUP]: [firestore_1.JobStatus.PICKED_UP, firestore_1.JobStatus.CANCELLED],
+    [firestore_1.JobStatus.ENROUTE_PICKUP]: [firestore_1.JobStatus.ARRIVED_PICKUP, firestore_1.JobStatus.CANCELLED],
+    [firestore_1.JobStatus.ARRIVED_PICKUP]: [firestore_1.JobStatus.PICKED_UP, firestore_1.JobStatus.CANCELLED],
     [firestore_1.JobStatus.PICKED_UP]: [firestore_1.JobStatus.ENROUTE_DROPOFF, firestore_1.JobStatus.CANCELLED],
-    [firestore_1.JobStatus.ENROUTE_DROPOFF]: [firestore_1.JobStatus.DELIVERED, firestore_1.JobStatus.CANCELLED],
-    [firestore_1.JobStatus.DELIVERED]: [],
+    [firestore_1.JobStatus.ENROUTE_DROPOFF]: [firestore_1.JobStatus.ARRIVED_DROPOFF, firestore_1.JobStatus.CANCELLED],
+    [firestore_1.JobStatus.ARRIVED_DROPOFF]: [firestore_1.JobStatus.COMPLETED, firestore_1.JobStatus.CANCELLED],
+    [firestore_1.JobStatus.COMPLETED]: [],
     [firestore_1.JobStatus.CANCELLED]: [],
 };
 /**
