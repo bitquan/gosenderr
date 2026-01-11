@@ -1,0 +1,95 @@
+{
+  "@@locale": "en",
+  "appName": "GoSender",
+  "@appName": {
+    "description": "The name of the application"
+  },
+  "welcome": "Welcome",
+  "@welcome": {
+    "description": "Welcome message"
+  },
+  "login": "Login",
+  "@login": {
+    "description": "Login button text"
+  },
+  "logout": "Logout",
+  "@logout": {
+    "description": "Logout button text"
+  },
+  "email": "Email",
+  "@email": {
+    "description": "Email field label"
+  },
+  "password": "Password",
+  "@password": {
+    "description": "Password field label"
+  },
+  "signUp": "Sign Up",
+  "@signUp": {
+    "description": "Sign up button text"
+  },
+  "home": "Home",
+  "@home": {
+    "description": "Home screen title"
+  },
+  "orders": "Orders",
+  "@orders": {
+    "description": "Orders screen title"
+  },
+  "profile": "Profile",
+  "@profile": {
+    "description": "Profile screen title"
+  },
+  "settings": "Settings",
+  "@settings": {
+    "description": "Settings screen title"
+  },
+  "search": "Search",
+  "@search": {
+    "description": "Search placeholder text"
+  },
+  "addToCart": "Add to Cart",
+  "@addToCart": {
+    "description": "Add to cart button text"
+  },
+  "checkout": "Checkout",
+  "@checkout": {
+    "description": "Checkout button text"
+  },
+  "orderPlaced": "Order placed successfully!",
+  "@orderPlaced": {
+    "description": "Order placed success message"
+  },
+  "orderUpdated": "Order updated successfully!",
+  "@orderUpdated": {
+    "description": "Order updated success message"
+  },
+  "error": "Error",
+  "@error": {
+    "description": "Error message title"
+  },
+  "tryAgain": "Try Again",
+  "@tryAgain": {
+    "description": "Try again button text"
+  },
+  "loading": "Loading...",
+  "@loading": {
+    "description": "Loading text"
+  },
+  "customer": "Customer",
+  "@customer": {
+    "description": "Customer role"
+  },
+  "vendor": "Vendor",
+  "@vendor": {
+    "description": "Vendor role"
+  },
+  "deliveryAgent": "Delivery Agent",
+  "@deliveryAgent": {
+    "description": "Delivery Agent role"
+  },
+  "admin": "Admin",
+  "@admin": {
+    "description": "Admin role"
+  }
+}
