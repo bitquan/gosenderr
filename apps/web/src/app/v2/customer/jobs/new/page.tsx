@@ -110,6 +110,8 @@ export default function NewJob() {
                 <div style={{ fontSize: '11px', color: '#999', marginTop: '2px', fontStyle: 'italic' }}>
                   {estimateSource === 'couriers' 
                     ? 'from nearby couriers' 
+                    : estimateSource === 'floor'
+                    ? 'No eligible couriers online'
                     : 'typical courier rates'}
                 </div>
               </div>
@@ -162,7 +164,7 @@ export default function NewJob() {
                             borderRadius: '4px',
                           }}
                         >
-                          {courier.eligible ? 'Eligible' : 'Too far'}
+                          {courier.eligible ? 'Eligible' : 'Not eligible'}
                         </div>
                       </div>
 

@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { UserDoc, GeoPoint } from '@/lib/v2/types';
-import { calcMiles, calcFee, isEligible } from '@/lib/v2/pricing';
+import { calcMiles, calcFee } from '@/lib/v2/pricing';
+import { getEligibilityReason } from '@/lib/v2/eligibility';
 import geohash from 'ngeohash';
 
 export interface NearbyCourier {
@@ -64,18 +65,10 @@ export function useNearbyCouriers(pickup: GeoPoint | null, dropoff: GeoPoint | n
           const pickupMiles = calcMiles(courierLocation, pickup);
           const rateCard = data.courier.rateCard;
           
-          // Check eligibility
-          const eligible = isEligible(rateCard, jobMiles, pickupMiles);
-          
-          // Determine reason if not eligible
-          let reason: string | undefined;
-          if (!eligible) {
-            if (rateCard.maxPickupMiles && pickupMiles > rateCard.maxPickupMiles) {
-              reason = `Pickup too far (max ${rateCard.maxPickupMiles} mi)`;
-            } else if (rateCard.maxJobMiles && jobMiles > rateCard.maxJobMiles) {
-              reason = `Job distance too far (max ${rateCard.maxJobMiles} mi)`;
-            }
-          }
+          // Check eligibility using new helper
+          const eligibilityResult = getEligibilityReason(rateCard, jobMiles, pickupMiles);
+          const eligible = eligibilityResult.eligible;
+          const reason = eligibilityResult.reason;
           
           // Calculate estimated fee
           const estimatedFee = calcFee(

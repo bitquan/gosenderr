@@ -1,7 +1,8 @@
 'use client';
 
 import { Job, RateCard, TransportMode } from '@/lib/v2/types';
-import { calcMiles, calcFee, isEligible } from '@/lib/v2/pricing';
+import { calcMiles, calcFee } from '@/lib/v2/pricing';
+import { getEligibilityReason } from '@/lib/v2/eligibility';
 
 interface CourierJobPreviewProps {
   job: Job;
@@ -23,7 +24,12 @@ export function CourierJobPreview({
   const jobMiles = calcMiles(job.pickup, job.dropoff);
   const pickupMiles = courierLocation ? calcMiles(courierLocation, job.pickup) : undefined;
   
-  const eligible = pickupMiles !== undefined ? isEligible(rateCard, jobMiles, pickupMiles) : true;
+  const eligibilityResult = pickupMiles !== undefined 
+    ? getEligibilityReason(rateCard, jobMiles, pickupMiles)
+    : { eligible: true };
+  
+  const eligible = eligibilityResult.eligible;
+  const reason = eligibilityResult.reason;
   const fee = calcFee(rateCard, jobMiles, pickupMiles, transportMode);
 
   return (
@@ -39,8 +45,21 @@ export function CourierJobPreview({
       <h3 style={{ marginTop: 0, marginBottom: '16px' }}>Job Preview</h3>
 
       {!eligible && (
-        <div style={{ padding: '12px', background: '#fee', border: '1px solid #fcc', borderRadius: '6px', marginBottom: '16px', fontSize: '13px', color: '#c00' }}>
-          ⚠️ This job exceeds your distance limits
+        <div style={{ 
+          padding: '12px', 
+          background: '#fee2e2', 
+          border: '1px solid #fca5a5', 
+          borderRadius: '6px', 
+          marginBottom: '16px', 
+        }}>
+          <div style={{ fontSize: '13px', fontWeight: '600', color: '#dc2626', marginBottom: '4px' }}>
+            ⚠️ Not Eligible
+          </div>
+          {reason && (
+            <div style={{ fontSize: '12px', color: '#991b1b' }}>
+              {reason}
+            </div>
+          )}
         </div>
       )}
 
@@ -93,6 +112,7 @@ export function CourierJobPreview({
       <button
         onClick={() => onAccept(job.id, fee)}
         disabled={loading || !eligible}
+        title={!eligible ? 'You are not eligible for this job' : ''}
         style={{
           width: '100%',
           padding: '12px',
@@ -105,7 +125,7 @@ export function CourierJobPreview({
           cursor: loading || !eligible ? 'not-allowed' : 'pointer',
         }}
       >
-        {loading ? 'Accepting...' : !eligible ? 'Too Far' : 'Accept Job'}
+        {loading ? 'Accepting...' : !eligible ? 'Cannot Accept' : 'Accept Job'}
       </button>
     </div>
   );
