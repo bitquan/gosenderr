@@ -15,6 +15,7 @@ export interface NearbyCourier {
   jobMiles: number;
   estimatedFee: number;
   eligible: boolean;
+  reason?: string;
   rateCard: any;
 }
 
@@ -66,6 +67,16 @@ export function useNearbyCouriers(pickup: GeoPoint | null, dropoff: GeoPoint | n
           // Check eligibility
           const eligible = isEligible(rateCard, jobMiles, pickupMiles);
           
+          // Determine reason if not eligible
+          let reason: string | undefined;
+          if (!eligible) {
+            if (rateCard.maxPickupMiles && pickupMiles > rateCard.maxPickupMiles) {
+              reason = `Pickup too far (max ${rateCard.maxPickupMiles} mi)`;
+            } else if (rateCard.maxJobMiles && jobMiles > rateCard.maxJobMiles) {
+              reason = `Job distance too far (max ${rateCard.maxJobMiles} mi)`;
+            }
+          }
+          
           // Calculate estimated fee
           const estimatedFee = calcFee(
             rateCard,
@@ -82,6 +93,7 @@ export function useNearbyCouriers(pickup: GeoPoint | null, dropoff: GeoPoint | n
             jobMiles,
             estimatedFee,
             eligible,
+            reason,
             rateCard,
           });
         });

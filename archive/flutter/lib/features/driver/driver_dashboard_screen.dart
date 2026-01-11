@@ -503,8 +503,9 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
     if (_me == null ||
         job == null ||
         job.dropoffLat == null ||
-        job.dropoffLng == null)
+        job.dropoffLng == null) {
       return;
+    }
 
     final meters = Geolocator.distanceBetween(
       _me!.latitude,
