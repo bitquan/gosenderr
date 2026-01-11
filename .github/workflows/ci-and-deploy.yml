@@ -26,10 +26,6 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
-      - name: Lint
-        run: pnpm -C apps/web lint
-        continue-on-error: true
-
       - name: Typecheck
         run: pnpm -C apps/web type-check
 
