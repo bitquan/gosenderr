@@ -3,19 +3,15 @@
     "rules": "firebase/firestore.rules"
   },
   "hosting": {
-    "public": "apps/web/out",
+    "source": "apps/web",
     "ignore": [
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
     ],
-    "cleanUrls": true,
-    "rewrites": [
-      {
-        "source": "**",
-        "destination": "/index.html"
-      }
-    ]
+    "frameworksBackend": {
+      "region": "us-central1"
+    }
   },
   "flutter": {
     "platforms": {
