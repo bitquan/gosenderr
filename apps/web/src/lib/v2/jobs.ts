@@ -6,9 +6,12 @@ import {
   serverTimestamp,
   updateDoc,
   Timestamp,
+  getDoc,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
-import { GeoPoint, JobStatus } from './types';
+import { GeoPoint, JobStatus, UserDoc } from './types';
+import { calcMiles } from './pricing';
+import { getEligibilityReason } from './eligibility';
 
 interface CreateJobPayload {
   pickup: GeoPoint;
@@ -39,20 +42,47 @@ export async function claimJob(
   agreedFee: number
 ): Promise<void> {
   const jobRef = doc(db, 'jobs', jobId);
+  const courierRef = doc(db, 'users', courierUid);
 
   await runTransaction(db, async (transaction) => {
     const jobDoc = await transaction.get(jobRef);
+    const courierDoc = await transaction.get(courierRef);
 
     if (!jobDoc.exists()) {
       throw new Error('Job not found');
     }
 
+    if (!courierDoc.exists()) {
+      throw new Error('Courier not found');
+    }
+
     const jobData = jobDoc.data();
+    const courierData = courierDoc.data() as UserDoc;
 
     if (jobData.status !== 'open' || jobData.courierUid !== null) {
       throw new Error('Job already claimed or not available');
     }
 
+    // Server-side eligibility check
+    if (!courierData.location || !courierData.courier?.rateCard) {
+      throw new Error('Courier location or rate card not configured');
+    }
+
+    const courierLocation = courierData.location;
+    const rateCard = courierData.courier.rateCard;
+    const pickup = jobData.pickup as GeoPoint;
+    const dropoff = jobData.dropoff as GeoPoint;
+
+    const pickupMiles = calcMiles(courierLocation, pickup);
+    const jobMiles = calcMiles(pickup, dropoff);
+
+    const eligibilityResult = getEligibilityReason(rateCard, jobMiles, pickupMiles);
+
+    if (!eligibilityResult.eligible) {
+      throw new Error(`not-eligible: ${eligibilityResult.reason || 'Job exceeds distance limits'}`);
+    }
+
+    // All checks passed - claim the job
     transaction.update(jobRef, {
       courierUid,
       agreedFee,
