@@ -11,7 +11,7 @@
     "clean": "rm -rf .next"
   },
   "dependencies": {
-    "@gosenderr/shared": "*",
+    "@gosenderr/shared": "file:../../packages/shared",
     "firebase": "^11.1.0",
     "mapbox-gl": "^3.8.0",
     "next": "^15.1.3",

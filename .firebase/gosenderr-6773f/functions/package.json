@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
-    "@gosenderr/shared": "workspace:*",
+    "@gosenderr/shared": "file:../../packages/shared",
     "firebase": "^11.1.0",
     "mapbox-gl": "^3.8.0",
     "next": "^15.1.3",
