@@ -17,11 +17,12 @@ export default function V2CourierSetup() {
   const [transportMode, setTransportMode] = useState<TransportMode>('car');
   const [baseFee, setBaseFee] = useState('5');
   const [perMile, setPerMile] = useState('1.5');
-  const [minFee, setMinFee] = useState('');
+  const [minimumFee, setMinimumFee] = useState('');
   const [pickupPerMile, setPickupPerMile] = useState('');
   const [perMinute, setPerMinute] = useState('');
   const [maxPickupMiles, setMaxPickupMiles] = useState('');
   const [maxJobMiles, setMaxJobMiles] = useState('');
+  const [maxRadiusMiles, setMaxRadiusMiles] = useState('');
   const [isOnline, setIsOnline] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -32,11 +33,12 @@ export default function V2CourierSetup() {
       setTransportMode(userDoc.courier.transportMode);
       setBaseFee(String(userDoc.courier.rateCard.baseFee));
       setPerMile(String(userDoc.courier.rateCard.perMile));
-      setMinFee(userDoc.courier.rateCard.minFee ? String(userDoc.courier.rateCard.minFee) : '');
+      setMinimumFee(userDoc.courier.rateCard.minimumFee ? String(userDoc.courier.rateCard.minimumFee) : '');
       setPickupPerMile(userDoc.courier.rateCard.pickupPerMile ? String(userDoc.courier.rateCard.pickupPerMile) : '');
       setPerMinute(userDoc.courier.rateCard.perMinute ? String(userDoc.courier.rateCard.perMinute) : '');
       setMaxPickupMiles(userDoc.courier.rateCard.maxPickupMiles ? String(userDoc.courier.rateCard.maxPickupMiles) : '');
       setMaxJobMiles(userDoc.courier.rateCard.maxJobMiles ? String(userDoc.courier.rateCard.maxJobMiles) : '');
+      setMaxRadiusMiles(userDoc.courier.rateCard.maxRadiusMiles ? String(userDoc.courier.rateCard.maxRadiusMiles) : '');
       setIsOnline(userDoc.courier.isOnline);
     }
   }, [userDoc]);
@@ -54,8 +56,8 @@ export default function V2CourierSetup() {
         perMile: parseFloat(perMile) || 0,
       };
 
-      const minFeeVal = parseFloat(minFee);
-      if (minFeeVal > 0) rateCard.minFee = minFeeVal;
+      const minimumFeeVal = parseFloat(minimumFee);
+      if (minimumFeeVal > 0) rateCard.minimumFee = minimumFeeVal;
 
       const pickupPerMileVal = parseFloat(pickupPerMile);
       if (pickupPerMileVal > 0) rateCard.pickupPerMile = pickupPerMileVal;
@@ -68,6 +70,9 @@ export default function V2CourierSetup() {
 
       const maxJobVal = parseFloat(maxJobMiles);
       if (maxJobVal > 0) rateCard.maxJobMiles = maxJobVal;
+
+      const maxRadiusVal = parseFloat(maxRadiusMiles);
+      if (maxRadiusVal > 0) rateCard.maxRadiusMiles = maxRadiusVal;
 
       await updateDoc(doc(db, 'users', uid), {
         'courier.transportMode': transportMode,
@@ -91,11 +96,12 @@ export default function V2CourierSetup() {
     const rateCard = {
       baseFee: parseFloat(baseFee) || 0,
       perMile: parseFloat(perMile) || 0,
-      minFee: parseFloat(minFee) || undefined,
+      minimumFee: parseFloat(minimumFee) || undefined,
       pickupPerMile: parseFloat(pickupPerMile) || undefined,
       perMinute: parseFloat(perMinute) || undefined,
       maxPickupMiles: parseFloat(maxPickupMiles) || undefined,
       maxJobMiles: parseFloat(maxJobMiles) || undefined,
+      maxRadiusMiles: parseFloat(maxRadiusMiles) || undefined,
     };
 
     return calcFee(rateCard, jobMiles, pickupMiles, transportMode).toFixed(2);
@@ -251,8 +257,8 @@ export default function V2CourierSetup() {
               </label>
               <input
                 type="number"
-                value={minFee}
-                onChange={(e) => setMinFee(e.target.value)}
+                value={minimumFee}
+                onChange={(e) => setMinimumFee(e.target.value)}
                 min="0"
                 step="0.50"
                 placeholder="No minimum"
@@ -313,6 +319,30 @@ export default function V2CourierSetup() {
             />
             <p style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>
               Max pickup to dropoff distance
+            </p>
+          </div>
+
+          <div style={{ marginBottom: '24px' }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+              Max Radius Miles
+            </label>
+            <input
+              type="number"
+              value={maxRadiusMiles}
+              onChange={(e) => setMaxRadiusMiles(e.target.value)}
+              min="0"
+              step="1"
+              placeholder="No limit"
+              style={{
+                width: '100%',
+                padding: '10px',
+                border: '1px solid #ddd',
+                borderRadius: '6px',
+                fontSize: '14px',
+              }}
+            />
+            <p style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>
+              Discovery radius - customers within this distance can see you
             </p>
           </div>
 
@@ -410,12 +440,12 @@ export default function V2CourierSetup() {
               </div>
             </div>
 
-            {(parseFloat(minFee) > 0 || parseFloat(maxPickupMiles) > 0 || parseFloat(maxJobMiles) > 0) && (
+            {(parseFloat(minimumFee) > 0 || parseFloat(maxPickupMiles) > 0 || parseFloat(maxJobMiles) > 0 || parseFloat(maxRadiusMiles) > 0) && (
               <div style={{ borderTop: '1px solid #eee', paddingTop: '16px', marginTop: '16px' }}>
                 <div style={{ fontSize: '12px', fontWeight: '600', marginBottom: '8px' }}>Active Limits:</div>
-                {parseFloat(minFee) > 0 && (
+                {parseFloat(minimumFee) > 0 && (
                   <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>
-                    • Minimum fee: ${parseFloat(minFee).toFixed(2)}
+                    • Minimum fee: ${parseFloat(minimumFee).toFixed(2)}
                   </div>
                 )}
                 {parseFloat(maxPickupMiles) > 0 && (
@@ -426,6 +456,11 @@ export default function V2CourierSetup() {
                 {parseFloat(maxJobMiles) > 0 && (
                   <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>
                     • Max job: {maxJobMiles} mi
+                  </div>
+                )}
+                {parseFloat(maxRadiusMiles) > 0 && (
+                  <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>
+                    • Service radius: {maxRadiusMiles} mi
                   </div>
                 )}
               </div>

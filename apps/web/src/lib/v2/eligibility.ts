@@ -17,11 +17,19 @@ export function getEligibilityReason(
   jobMiles: number,
   pickupMiles: number
 ): EligibilityResult {
+  // Check discovery radius (maxRadiusMiles)
+  if (rateCard.maxRadiusMiles !== undefined && pickupMiles > rateCard.maxRadiusMiles) {
+    return {
+      eligible: false,
+      reason: `Outside service area (${rateCard.maxRadiusMiles}mi max)`,
+    };
+  }
+
   // Check pickup distance limit
   if (rateCard.maxPickupMiles !== undefined && pickupMiles > rateCard.maxPickupMiles) {
     return {
       eligible: false,
-      reason: 'Pickup is outside courier radius',
+      reason: `Too far to pickup (${rateCard.maxPickupMiles}mi max)`,
     };
   }
 
@@ -29,7 +37,7 @@ export function getEligibilityReason(
   if (rateCard.maxJobMiles !== undefined && jobMiles > rateCard.maxJobMiles) {
     return {
       eligible: false,
-      reason: 'Trip distance exceeds courier max',
+      reason: `Trip too long (${rateCard.maxJobMiles}mi max)`,
     };
   }
 

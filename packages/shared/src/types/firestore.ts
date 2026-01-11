@@ -6,6 +6,13 @@ export type TransportMode = 'walk' | 'scooter' | 'car';
 export interface RateCard {
   baseFee: number;
   perMile: number;
+  perMinute?: number;
+  pickupPerMile?: number;
+  minimumFee?: number;
+  maxPickupMiles?: number;
+  maxJobMiles?: number;
+  maxRadiusMiles?: number;
+  updatedAt?: Timestamp;
 }
 
 export interface CourierData {

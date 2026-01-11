@@ -3,6 +3,7 @@
     "rules": "firebase/firestore.rules"
   },
   "hosting": {
+    "site": "gosenderr-6773f",
     "source": "apps/web",
     "ignore": [
       "firebase.json",
