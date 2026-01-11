@@ -13,6 +13,11 @@ import { JobStatus } from '@/lib/v2/types';
 import { getNextStatus, canCourierAdvance, STATUS_BUTTON_LABELS } from '@/lib/v2/status';
 import Link from 'next/link';
 
+export function generateStaticParams() {
+  // Return empty array - pages will be generated on-demand
+  return [];
+}
+
 export default function CourierJobDetail() {
   const params = useParams();
   const router = useRouter();

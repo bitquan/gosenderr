@@ -8,6 +8,11 @@ import { StatusTimeline } from '@/components/v2/StatusTimeline';
 import { MapboxMap } from '@/components/v2/MapboxMap';
 import Link from 'next/link';
 
+export function generateStaticParams() {
+  // Return empty array - pages will be generated on-demand
+  return [];
+}
+
 export default function CustomerJobDetail() {
   const params = useParams();
   const jobId = params?.jobId as string;
