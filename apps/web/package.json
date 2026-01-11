@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@gosenderr/shared": "file:../../packages/shared",
+    "esbuild": "^0.19.2",
     "firebase": "^11.1.0",
     "mapbox-gl": "^3.8.0",
     "next": "^15.1.3",
@@ -25,7 +26,6 @@
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "esbuild": "^0.19.2",
     "eslint": "^9",
     "eslint-config-next": "^15.1.3",
     "typescript": "^5"

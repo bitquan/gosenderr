@@ -45,14 +45,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: "pnpm"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
 
       - name: Install
         run: pnpm install --frozen-lockfile
@@ -60,13 +62,13 @@ jobs:
       - name: Build
         run: pnpm -C apps/web build
 
-      - name: Deploy
-        uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: "${{ secrets.GITHUB_TOKEN }}"
-          firebaseServiceAccount: "${{ secrets.FIREBASE_SERVICE_ACCOUNT_GOSENDERR_6773F }}"
-          projectId: gosenderr-6773f
-          channelId: live
-          target: gosenderr-6773f
+      - name: Deploy (Next SSR on Firebase)
         env:
           FIREBASE_CLI_EXPERIMENTS: webframeworks
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/gcloud.json
+        run: |
+          echo '${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}' > ${{ runner.temp }}/gcloud.json
+          pnpm dlx firebase-tools@15.2.1 deploy \
+            --project gosenderr-6773f \
+            --only hosting:gosenderr-6773f \
+            --non-interactive
