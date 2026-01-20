@@ -58,10 +58,18 @@ export function Navbar({ children }: NavbarProps) {
         </div>
         
         <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+          <a href="/marketplace" style={{ color: 'white', textDecoration: 'none', fontSize: '14px' }}>
+            🛍️ Marketplace
+          </a>
           {role === 'customer' && (
-            <a href="/customer/jobs" style={{ color: 'white', textDecoration: 'none', fontSize: '14px' }}>
-              My Jobs
-            </a>
+            <>
+              <a href="/customer/jobs" style={{ color: 'white', textDecoration: 'none', fontSize: '14px' }}>
+                My Deliveries
+              </a>
+              <a href="/vendor/items" style={{ color: 'white', textDecoration: 'none', fontSize: '14px' }}>
+                My Items
+              </a>
+            </>
           )}
           {role === 'courier' && (
             <>
