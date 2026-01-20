@@ -2,6 +2,8 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ========== HELPER FUNCTIONS ==========
+    
     function signedIn() {
       return request.auth != null;
     }
@@ -9,9 +11,18 @@ service cloud.firestore {
     function isSelf(uid) {
       return signedIn() && request.auth.uid == uid;
     }
+    
+    function isAdmin() {
+      return signedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    function validRole(role) {
+      return role in ['buyer', 'seller', 'courier', 'admin', 'customer']; // 'customer' for backward compat
+    }
 
     function validJobStatus(s) {
-      return s in ['open', 'assigned', 'enroute_pickup', 'arrived_pickup', 'picked_up', 'enroute_dropoff', 'arrived_dropoff', 'completed', 'cancelled'];
+      return s in ['open', 'assigned', 'enroute_pickup', 'arrived_pickup', 'picked_up', 
+                   'enroute_dropoff', 'arrived_dropoff', 'completed', 'cancelled', 'disputed'];
     }
 
     function validPackageSize(size) {
@@ -35,23 +46,134 @@ service cloud.firestore {
         && validPackageFlags(pkg.get('flags', null))
         && (!('notes' in pkg) || (pkg.notes is string && pkg.notes.size() <= 300));
     }
+    
+    function validItemCategory(cat) {
+      return cat in ['electronics', 'furniture', 'clothing', 'food', 'other'];
+    }
+    
+    function validItemCondition(cond) {
+      return cond in ['new', 'like_new', 'good', 'fair', 'poor'];
+    }
+    
+    function validItemStatus(status) {
+      return status in ['available', 'pending', 'sold'];
+    }
 
-    // ---- USERS ----
+    // ========== USERS ==========
     match /users/{uid} {
-      // user can read/write ONLY their own doc
+      // User can read/write their own document
       allow read: if isSelf(uid);
-      allow create: if isSelf(uid);
+      allow create: if isSelf(uid) && validRole(request.resource.data.role);
       allow update: if isSelf(uid);
       allow delete: if false;
       
-      // Couriers can be read by anyone (for location tracking)
-      // but only if they're online
+      // Couriers can be read by anyone when online (for location tracking)
       allow read: if signedIn() && 
                      resource.data.role == 'courier' && 
-                     resource.data.courier.isOnline == true;
+                     resource.data.get('courier', {}).get('isOnline', false) == true;
+      
+      // Admins can read all users
+      allow read: if isAdmin();
+      
+      // Only admins can change role or courier status
+      allow update: if isAdmin() 
+                    && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['courierProfile', 'role', 'averageRating', 'totalRatings', 'totalDeliveries', 'updatedAt']));
     }
 
-    // ---- JOBS ----
+    // ========== ITEMS (Marketplace) ==========
+    match /items/{itemId} {
+      // Anyone can read available items
+      allow read: if signedIn();
+      
+      // Any user can create items (they become the seller)
+      allow create: if signedIn()
+        && request.resource.data.sellerId == request.auth.uid
+        && validItemCategory(request.resource.data.category)
+        && validItemCondition(request.resource.data.condition)
+        && validItemStatus(request.resource.data.status)
+        && request.resource.data.photos is list
+        && request.resource.data.photos.size() <= 10;
+      
+      // Only seller can update/delete their items
+      allow update, delete: if signedIn() && resource.data.sellerId == request.auth.uid;
+      
+      // Admins can read/update/delete any item
+      allow read, update, delete: if isAdmin();
+    }
+
+    // ========== DELIVERY JOBS ==========
+    match /deliveryJobs/{jobId} {
+      function isCustomer() {
+        return signedIn() && resource.data.customerId == request.auth.uid;
+      }
+      
+      function isSeller() {
+        return signedIn() && resource.data.sellerId == request.auth.uid;
+      }
+
+      function isCourier() {
+        return signedIn() && resource.data.get('courierId', null) == request.auth.uid;
+      }
+      
+      function isParticipant() {
+        return isCustomer() || isSeller() || isCourier();
+      }
+      
+      // Read: customer, seller, courier, or admin
+      allow read: if signedIn() && (isParticipant() || isAdmin());
+      
+      // Create: customer or seller can create delivery jobs
+      allow create: if signedIn()
+        && (request.resource.data.customerId == request.auth.uid || request.resource.data.sellerId == request.auth.uid)
+        && request.resource.data.status == 'open'
+        && request.resource.data.get('courierId', null) == null
+        && validJobStatus(request.resource.data.status)
+        && request.resource.data.jobType in ['package', 'food'];
+      
+      // Update: various scenarios
+      allow update: if signedIn() && (
+        // 1) Customer/Seller can cancel if status is 'open' or 'assigned'
+        (
+          (isCustomer() || isSeller())
+          && request.resource.data.status == 'cancelled'
+          && resource.data.status in ['open', 'assigned']
+        )
+        ||
+        // 2) Any courier can claim an open job
+        (
+          resource.data.status == 'open'
+          && resource.data.get('courierId', null) == null
+          && request.resource.data.courierId == request.auth.uid
+          && request.resource.data.status == 'assigned'
+        )
+        ||
+        // 3) Assigned courier can update job progress
+        (
+          isCourier()
+          && validJobStatus(request.resource.data.status)
+        )
+        ||
+        // 4) Customer can confirm delivery or dispute
+        (
+          isCustomer()
+          && resource.data.status == 'completed'
+          && (
+            // Confirm receipt
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['customerConfirmation', 'updatedAt'])
+            ||
+            // Open dispute
+            request.resource.data.status == 'disputed'
+          )
+        )
+        ||
+        // 5) Admin can update any job
+        isAdmin()
+      );
+      
+      allow delete: if false;
+    }
+
+    // ========== LEGACY JOBS (backward compatibility) ==========
     match /jobs/{jobId} {
       function isCreator() {
         return signedIn() && resource.data.createdByUid == request.auth.uid;
@@ -106,6 +228,49 @@ service cloud.firestore {
         )
       );
 
+      allow delete: if false;
+    }
+    
+    // ========== RATINGS ==========
+    match /ratings/{ratingId} {
+      // Anyone can read ratings
+      allow read: if signedIn();
+      
+      // Only the fromUserId can create their rating
+      allow create: if signedIn()
+        && request.resource.data.fromUserId == request.auth.uid
+        && request.resource.data.stars >= 1
+        && request.resource.data.stars <= 5
+        && request.resource.data.role in ['customer_to_courier', 'courier_to_customer'];
+      
+      // Cannot update or delete ratings
+      allow update, delete: if false;
+      
+      // Admins can read all ratings
+      allow read: if isAdmin();
+    }
+    
+    // ========== DISPUTES ==========
+    match /disputes/{disputeId} {
+      function isReporter() {
+        return signedIn() && resource.data.reportedBy == request.auth.uid;
+      }
+      
+      function isReportedAgainst() {
+        return signedIn() && resource.data.reportedAgainst == request.auth.uid;
+      }
+      
+      // Read: reporter, reported user, or admin
+      allow read: if signedIn() && (isReporter() || isReportedAgainst() || isAdmin());
+      
+      // Create: any user can create a dispute for a delivery they're involved in
+      allow create: if signedIn()
+        && request.resource.data.reportedBy == request.auth.uid
+        && request.resource.data.status == 'open';
+      
+      // Update: only admins can update disputes
+      allow update: if isAdmin();
+      
       allow delete: if false;
     }
   }
