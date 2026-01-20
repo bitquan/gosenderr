@@ -19,7 +19,7 @@ export function Navbar({ children }: NavbarProps) {
   const handleSignOut = async () => {
     try {
       await signOut(auth);
-      router.push('/v2/login');
+      router.push('/login');
     } catch (error) {
       console.error('Sign out error:', error);
     }
@@ -59,16 +59,16 @@ export function Navbar({ children }: NavbarProps) {
         
         <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
           {role === 'customer' && (
-            <a href="/v2/customer/jobs" style={{ color: 'white', textDecoration: 'none', fontSize: '14px' }}>
+            <a href="/customer/jobs" style={{ color: 'white', textDecoration: 'none', fontSize: '14px' }}>
               My Jobs
             </a>
           )}
           {role === 'courier' && (
             <>
-              <a href="/v2/courier/dashboard" style={{ color: 'white', textDecoration: 'none', fontSize: '14px' }}>
+              <a href="/courier/dashboard" style={{ color: 'white', textDecoration: 'none', fontSize: '14px' }}>
                 Dashboard
               </a>
-              <a href="/v2/courier/setup" style={{ color: 'white', textDecoration: 'none', fontSize: '14px' }}>
+              <a href="/courier/setup" style={{ color: 'white', textDecoration: 'none', fontSize: '14px' }}>
                 Setup
               </a>
             </>

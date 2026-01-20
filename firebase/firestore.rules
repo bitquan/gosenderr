@@ -14,6 +14,28 @@ service cloud.firestore {
       return s in ['open', 'assigned', 'enroute_pickup', 'arrived_pickup', 'picked_up', 'enroute_dropoff', 'arrived_dropoff', 'completed', 'cancelled'];
     }
 
+    function validPackageSize(size) {
+      return size in ['small', 'medium', 'large', 'xl'];
+    }
+
+    function validPackageFlags(flags) {
+      return flags == null || (
+        flags is map
+        && (!('needsSuvVan' in flags) || flags.needsSuvVan is bool)
+        && (!('fragile' in flags) || flags.fragile is bool)
+        && (!('heavyTwoPerson' in flags) || flags.heavyTwoPerson is bool)
+        && (!('oversized' in flags) || flags.oversized is bool)
+        && (!('stairs' in flags) || flags.stairs is bool)
+      );
+    }
+
+    function validPackageInfo(pkg) {
+      return pkg is map
+        && validPackageSize(pkg.size)
+        && validPackageFlags(pkg.get('flags', null))
+        && (!('notes' in pkg) || (pkg.notes is string && pkg.notes.size() <= 300));
+    }
+
     // ---- USERS ----
     match /users/{uid} {
       // user can read/write ONLY their own doc
@@ -43,7 +65,9 @@ service cloud.firestore {
       allow create: if signedIn()
         && request.resource.data.createdByUid == request.auth.uid
         && request.resource.data.status == 'open'
-        && request.resource.data.courierUid == null;
+        && request.resource.data.courierUid == null
+        && validPackageInfo(request.resource.data.package)
+        && request.resource.data.photos is list;
 
       // read job: creator, assigned courier, or any signed-in user for open jobs
       allow read: if signedIn() && (
@@ -54,8 +78,12 @@ service cloud.firestore {
 
       // update job
       allow update: if signedIn() && (
-        // 1) Creator can cancel their own job
-        (isCreator() && request.resource.data.status == 'cancelled')
+        // 1) Creator can cancel their own job if status is 'open' or 'assigned'
+        (
+          isCreator() 
+          && request.resource.data.status == 'cancelled'
+          && (resource.data.status == 'open' || resource.data.status == 'assigned')
+        )
         ||
         // 2) Any courier can claim an open job (atomic claim)
         (

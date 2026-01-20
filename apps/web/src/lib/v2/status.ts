@@ -27,6 +27,8 @@ export const STATUS_FLOW: Record<JobStatus, JobStatus | null> = {
   arrived_dropoff: 'completed',
   completed: null,
   cancelled: null,
+  expired: null,
+  failed: null,
 };
 
 /**
@@ -42,6 +44,8 @@ export const STATUS_BUTTON_LABELS: Record<JobStatus, string> = {
   arrived_dropoff: 'Complete Delivery',
   completed: '',
   cancelled: '',
+  expired: '',
+  failed: '',
 };
 
 /**
@@ -57,6 +61,8 @@ export const STATUS_LABELS: Record<JobStatus, string> = {
   arrived_dropoff: 'Arrived at Dropoff',
   completed: 'Completed',
   cancelled: 'Cancelled',
+  expired: 'Expired',
+  failed: 'Failed',
 };
 
 /**
@@ -72,6 +78,8 @@ export const STATUS_COLORS: Record<JobStatus, string> = {
   arrived_dropoff: '#ef4444',
   completed: '#16a34a',
   cancelled: '#52525b',
+  expired: '#9ca3af',
+  failed: '#dc2626',
 };
 
 /**
