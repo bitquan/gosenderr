@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.JobStatus = void 0;
+// ==================== JOB STATUS ====================
 var JobStatus;
 (function (JobStatus) {
     JobStatus["OPEN"] = "open";
@@ -12,4 +13,5 @@ var JobStatus;
     JobStatus["ARRIVED_DROPOFF"] = "arrived_dropoff";
     JobStatus["COMPLETED"] = "completed";
     JobStatus["CANCELLED"] = "cancelled";
+    JobStatus["DISPUTED"] = "disputed";
 })(JobStatus || (exports.JobStatus = JobStatus = {}));

@@ -27,6 +27,7 @@ export function CourierJobActions({ job, courierUid, estimatedFee, onJobUpdated 
       arrived_dropoff: 'completed',
       completed: null,
       cancelled: null,
+      disputed: null,
       expired: null,
       failed: null,
     };
@@ -95,6 +96,7 @@ export function CourierJobActions({ job, courierUid, estimatedFee, onJobUpdated 
       arrived_dropoff: 'Mark Completed',
       completed: 'Completed',
       cancelled: 'Cancelled',
+      disputed: 'Disputed',
       expired: 'Expired',
       failed: 'Failed',
     };
