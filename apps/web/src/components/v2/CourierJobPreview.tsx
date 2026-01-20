@@ -1,11 +1,14 @@
 'use client';
 
-import { Job, RateCard, TransportMode } from '@/lib/v2/types';
 import { calcMiles, calcFee } from '@/lib/v2/pricing';
 import { getEligibilityReason } from '@/lib/v2/eligibility';
+import { Job as LibJob, RateCard, TransportMode } from '@/lib/v2/types';
+import { JobDetailsPanel } from '@/features/jobs/shared/JobDetailsPanel';
+import { Job, JobViewer } from '@/features/jobs/shared/types';
+import { getJobVisibility } from '@/features/jobs/shared/privacy';
 
 interface CourierJobPreviewProps {
-  job: Job;
+  job: LibJob;
   rateCard: RateCard;
   courierLocation?: { lat: number; lng: number } | null;
   transportMode: TransportMode;
@@ -13,14 +16,20 @@ interface CourierJobPreviewProps {
   loading?: boolean;
 }
 
+// Convert lib Job to features Job (they're compatible)
+function convertJob(libJob: LibJob): Job {
+  return libJob as unknown as Job;
+}
+
 export function CourierJobPreview({
-  job,
+  job: libJob,
   rateCard,
   courierLocation,
   transportMode,
   onAccept,
   loading = false,
 }: CourierJobPreviewProps) {
+  const job = convertJob(libJob);
   const jobMiles = calcMiles(job.pickup, job.dropoff);
   const pickupMiles = courierLocation ? calcMiles(courierLocation, job.pickup) : undefined;
   
@@ -32,16 +41,12 @@ export function CourierJobPreview({
   const reason = eligibilityResult.reason;
   const fee = calcFee(rateCard, jobMiles, pickupMiles, transportMode);
 
+  // Courier viewing open job gets limited visibility
+  const viewer: JobViewer = { uid: 'courier-preview', role: 'courier' };
+  const visibility = getJobVisibility(job, viewer);
+
   return (
-    <div
-      style={{
-        padding: '20px',
-        background: 'white',
-        border: eligible ? '1px solid #ddd' : '2px solid #dc2626',
-        borderRadius: '8px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-      }}
-    >
+    <div>
       <h3 style={{ marginTop: 0, marginBottom: '16px' }}>Job Preview</h3>
 
       {!eligible && (
@@ -63,70 +68,57 @@ export function CourierJobPreview({
         </div>
       )}
 
-      <div style={{ marginBottom: '16px' }}>
-        <div style={{ marginBottom: '8px' }}>
-          <strong>📍 Pickup:</strong>
-          <div style={{ color: '#666', fontSize: '14px', marginTop: '4px' }}>
-            {job.pickup.label || `${job.pickup.lat.toFixed(4)}, ${job.pickup.lng.toFixed(4)}`}
-          </div>
-        </div>
-        <div style={{ marginBottom: '8px' }}>
-          <strong>📍 Dropoff:</strong>
-          <div style={{ color: '#666', fontSize: '14px', marginTop: '4px' }}>
-            {job.dropoff.label || `${job.dropoff.lat.toFixed(4)}, ${job.dropoff.lng.toFixed(4)}`}
-          </div>
-        </div>
-      </div>
-
-      <div
-        style={{
-          padding: '12px',
-          background: '#f5f5f5',
-          borderRadius: '4px',
-          marginBottom: '16px',
-        }}
-      >
-        {pickupMiles !== undefined && (
+      <JobDetailsPanel job={job} visibility={visibility} showStatus={false}>
+        <div
+          style={{
+            padding: '12px',
+            background: '#f5f5f5',
+            borderRadius: '4px',
+            marginBottom: '16px',
+          }}
+        >
+          {pickupMiles !== undefined && (
+            <div style={{ marginBottom: '8px', fontSize: '14px' }}>
+              <strong>Distance to Pickup:</strong> {pickupMiles.toFixed(2)} mi
+            </div>
+          )}
           <div style={{ marginBottom: '8px', fontSize: '14px' }}>
-            <strong>Distance to Pickup:</strong> {pickupMiles.toFixed(2)} mi
+            <strong>Job Distance:</strong> {jobMiles.toFixed(2)} mi
           </div>
-        )}
-        <div style={{ marginBottom: '8px', fontSize: '14px' }}>
-          <strong>Job Distance:</strong> {jobMiles.toFixed(2)} mi
-        </div>
-        <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
-          ${rateCard.baseFee.toFixed(2)} base + ${rateCard.perMile.toFixed(2)}/mi
-          {rateCard.pickupPerMile && <span> + ${rateCard.pickupPerMile.toFixed(2)}/mi pickup</span>}
-          {rateCard.perMinute && <span> + ${rateCard.perMinute.toFixed(2)}/min</span>}
-        </div>
-        {rateCard.minimumFee && (
-          <div style={{ fontSize: '11px', color: '#999', marginTop: '4px' }}>
-            Minimum: ${rateCard.minimumFee.toFixed(2)}
+          <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+            ${rateCard.baseFee.toFixed(2)} base + ${rateCard.perMile.toFixed(2)}/mi
+            {rateCard.pickupPerMile && <span> + ${rateCard.pickupPerMile.toFixed(2)}/mi pickup</span>}
+            {rateCard.perMinute && <span> + ${rateCard.perMinute.toFixed(2)}/min</span>}
           </div>
-        )}
-        <div style={{ marginTop: '12px', fontSize: '20px', fontWeight: '600', color: '#16a34a' }}>
-          ${fee.toFixed(2)}
+          {rateCard.minimumFee && (
+            <div style={{ fontSize: '11px', color: '#999', marginTop: '4px' }}>
+              Minimum: ${rateCard.minimumFee.toFixed(2)}
+            </div>
+          )}
+          <div style={{ marginTop: '12px', fontSize: '20px', fontWeight: '600', color: '#16a34a' }}>
+            ${fee.toFixed(2)}
+          </div>
         </div>
-      </div>
 
-      <button
-        onClick={() => onAccept(job.id, fee)}
-        disabled={loading || !eligible}
-        title={!eligible ? 'You are not eligible for this job' : ''}
-        style={{
-          width: '100%',
-          padding: '12px',
-          background: loading || !eligible ? '#ccc' : '#16a34a',
-          color: 'white',
-          border: 'none',
-          borderRadius: '8px',
-          fontSize: '16px',
-          fontWeight: '600',
-          cursor: loading || !eligible ? 'not-allowed' : 'pointer',
-        }}
-      >
-        {loading ? 'Accepting...' : !eligible ? 'Cannot Accept' : 'Accept Job'}
-      </button>
+        <button
+          onClick={() => onAccept(job.id, fee)}
+          disabled={loading || !eligible}
+          title={!eligible ? 'You are not eligible for this job' : ''}
+          style={{
+            width: '100%',
+            padding: '12px',
+            background: loading || !eligible ? '#ccc' : '#16a34a',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            fontSize: '16px',
+            fontWeight: '600',
+            cursor: loading || !eligible ? 'not-allowed' : 'pointer',
+          }}
+        >
+          {loading ? 'Accepting...' : !eligible ? 'Cannot Accept' : 'Accept Job'}
+        </button>
+      </JobDetailsPanel>
     </div>
   );
 }

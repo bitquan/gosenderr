@@ -23,15 +23,25 @@ migrate_working_dir/
 # is commented out by default.
 #.vscode/
 
-# Flutter/Dart/Pub related
+# Flutter/Dart/Pub related (archived - not in use)
 **/doc/api/
 **/ios/Flutter/.last_build_id
 .dart_tool/
+.metadata
+.flutter-plugins
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
 /build/
 /coverage/
+pubspec.yaml
+pubspec.lock
+/ios/
+/android/
+/macos/
+/windows/
+/linux/
+archive/
 
 # Symbolication related
 app.*.symbols
@@ -57,3 +67,13 @@ firestore-debug.log
 
 # Turbo
 .turbo/
+
+# Secrets / env files
+.env*
+!.env.example
+!.env.local.example
+!.env.production.example
+
+# Keys / credentials
+**/*.pem
+**/*serviceAccount*.json

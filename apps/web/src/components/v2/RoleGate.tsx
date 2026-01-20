@@ -10,7 +10,7 @@ interface RoleGateProps {
 }
 
 /**
- * v2 RoleGate - enforces role, redirects if missing or wrong
+ * RoleGate - enforces role, redirects if missing or wrong
  */
 export function RoleGate({ children, allowedRole }: RoleGateProps) {
   const { role, loading } = useUserRole();
@@ -21,16 +21,16 @@ export function RoleGate({ children, allowedRole }: RoleGateProps) {
 
     if (!role) {
       // No role set, go to select-role
-      router.push('/v2/select-role');
+      router.push('/select-role');
       return;
     }
 
     if (role !== allowedRole) {
       // Wrong role, redirect to correct home
       if (role === 'customer') {
-        router.push('/v2/customer/jobs');
+        router.push('/customer/jobs');
       } else {
-        router.push('/v2/courier/dashboard');
+        router.push('/courier/dashboard');
       }
     }
   }, [role, loading, allowedRole, router]);

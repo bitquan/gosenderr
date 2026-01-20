@@ -1,6 +1,6 @@
 # GoSenderr Monorepo
 
-A modern on-demand delivery platform with React/Next.js web app, Flutter mobile apps, and shared TypeScript types.
+A modern on-demand delivery platform with a React/Next.js web app and shared TypeScript types.
 
 ## 🏗️ Project Structure
 
@@ -11,7 +11,6 @@ A modern on-demand delivery platform with React/Next.js web app, Flutter mobile 
 ├── packages/
 │   └── shared/           # Shared TypeScript types and utilities
 ├── firebase/             # Firebase security rules
-├── lib/                  # Flutter mobile app (Driver)
 └── ...
 ```
 
@@ -21,7 +20,7 @@ A modern on-demand delivery platform with React/Next.js web app, Flutter mobile 
 
 - Node.js >= 18.0.0
 - pnpm >= 8.0.0
-- Flutter SDK (for mobile apps)
+- gcloud CLI (only required for Cloud Run deploy)
 - Firebase project with Auth, Firestore, and Storage enabled
 - Mapbox account with access token
 
@@ -35,13 +34,15 @@ pnpm install
 
 2. **Configure environment variables:**
 
-Copy `.env.example` to `apps/web/.env.local` and fill in your credentials:
+Copy `.env.example` to `apps/web/.env.local` and fill in your credentials.
+`apps/web/.env.local` is gitignored and should never be committed.
 
 ```bash
 cp .env.example apps/web/.env.local
 ```
 
 Required variables:
+
 - `NEXT_PUBLIC_FIREBASE_API_KEY` - From Firebase Console > Project Settings
 - `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
 - `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
@@ -49,7 +50,6 @@ Required variables:
 - `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
 - `NEXT_PUBLIC_FIREBASE_APP_ID`
 - `NEXT_PUBLIC_MAPBOX_TOKEN` - From https://mapbox.com
-- `NEXT_PUBLIC_AUTH_FALLBACK_EMAIL` - Set to `true` to enable email/password auth fallback
 
 3. **Build shared package:**
 
@@ -67,15 +67,23 @@ pnpm dev
 
 The web app will be available at http://localhost:3000
 
-### Flutter Mobile App
+## 🚢 Deployment
 
-The Flutter driver app is located in `lib/` directory. See Flutter-specific setup in the original README sections below.
+Production deploy is split into two steps:
+
+- Cloud Run (Next.js SSR): `pnpm deploy:web:run`
+- Firebase Hosting proxy (custom domain): `pnpm deploy:web:hosting`
+
+Combined: `pnpm deploy:web`
+
+Docs: `docs/deploy/cloud-run.md`
 
 ## 📱 Features
 
 ### Customer Web App (`apps/web`)
 
 - **Authentication**
+
   - Phone Auth with Firebase reCAPTCHA
   - Email/Password fallback (configurable via env)
   - Role selection (Customer/Driver)
@@ -88,14 +96,6 @@ The Flutter driver app is located in `lib/` directory. See Flutter-specific setu
     - Mapbox map showing pickup/dropoff markers
     - Driver location marker (when available)
     - Pickup/dropoff photos (when uploaded by driver)
-
-### Driver Mobile App (`lib/`)
-
-- Flutter-based driver interface
-- Real-time job claiming
-- GPS tracking
-- Photo capture for proof of delivery
-- Mapbox navigation
 
 ### Shared Package (`packages/shared`)
 
@@ -110,6 +110,7 @@ The Flutter driver app is located in `lib/` directory. See Flutter-specific setu
 The app uses the following Firestore structure:
 
 **`users/{uid}`**
+
 ```typescript
 {
   role: "customer" | "driver" | "admin"
@@ -120,6 +121,7 @@ The app uses the following Firestore structure:
 ```
 
 **`jobs/{jobId}`**
+
 ```typescript
 {
   createdByUid: string
@@ -200,7 +202,7 @@ pnpm dev        # Watch mode for development
 All Firestore operations are typed using `@gosenderr/shared` package. Import types:
 
 ```typescript
-import { JobDoc, JobStatus, UserDoc } from '@gosenderr/shared';
+import { JobDoc, JobStatus, UserDoc } from "@gosenderr/shared";
 ```
 
 ---
