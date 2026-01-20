@@ -7,56 +7,57 @@ interface ItemCardProps {
   item: Item;
 }
 
-const CATEGORY_LABELS: Record<string, string> = {
-  furniture: 'Furniture',
-  electronics: 'Electronics',
-  clothing: 'Clothing',
-  books: 'Books',
-  sports: 'Sports & Outdoors',
-  home: 'Home & Garden',
-  toys: 'Toys & Games',
-  other: 'Other',
-};
-
-const CONDITION_COLORS: Record<string, string> = {
-  new: 'bg-green-100 text-green-800',
-  like_new: 'bg-blue-100 text-blue-800',
-  good: 'bg-yellow-100 text-yellow-800',
-  fair: 'bg-orange-100 text-orange-800',
-  poor: 'bg-red-100 text-red-800',
-};
-
-const CONDITION_LABELS: Record<string, string> = {
-  new: 'New',
-  like_new: 'Like New',
-  good: 'Good',
-  fair: 'Fair',
-  poor: 'Poor',
-};
-
 export function ItemCard({ item }: ItemCardProps) {
-  const primaryPhoto = item.photos?.[0]; // string URL
-  const conditionColor = CONDITION_COLORS[item.condition] || 'bg-gray-100 text-gray-800';
-  const conditionLabel = CONDITION_LABELS[item.condition] || item.condition;
-  const categoryLabel = CATEGORY_LABELS[item.category] || item.category;
+  const primaryPhoto = item.photos?.[0];
 
   return (
     <Link
       href={`/marketplace/${item.id}`}
-      className="block bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+      style={{
+        display: 'block',
+        background: 'white',
+        border: '1px solid #e5e7eb',
+        borderRadius: '8px',
+        overflow: 'hidden',
+        cursor: 'pointer',
+        textDecoration: 'none',
+        color: 'inherit',
+        transition: 'box-shadow 0.2s',
+      }}
+      onMouseOver={(e) => (e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)')}
+      onMouseOut={(e) => (e.currentTarget.style.boxShadow = 'none')}
     >
-      {/* Image */}
-      <div className="relative aspect-square bg-gray-100">
+      {/* Image - Smaller */}
+      <div style={{ position: 'relative', paddingBottom: '100%', background: '#f3f4f6' }}>
         {primaryPhoto ? (
           <img
             src={primaryPhoto}
             alt={item.title}
-            className="w-full h-full object-cover"
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+            }}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-gray-300">
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#9ca3af',
+            }}
+          >
             <svg
-              className="w-16 h-16"
+              style={{ width: '48px', height: '48px' }}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -72,16 +73,26 @@ export function ItemCard({ item }: ItemCardProps) {
         )}
       </div>
 
-      {/* Content */}
-      <div className="p-3">
-        <h3 className="font-medium text-sm text-gray-900 line-clamp-2 mb-1">{item.title}</h3>
-        <p className="font-semibold text-base text-gray-900">${item.price.toFixed(0)}</p>
-        
-        {item.pickupLocation?.address && (
-          <p className="text-xs text-gray-500 line-clamp-1 mt-1">
-            {item.pickupLocation.address}
-          </p>
-        )}
+      {/* Content - More compact */}
+      <div style={{ padding: '8px' }}>
+        <h3
+          style={{
+            fontWeight: '600',
+            fontSize: '13px',
+            color: '#111827',
+            marginBottom: '4px',
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+            lineHeight: '1.3',
+          }}
+        >
+          {item.title}
+        </h3>
+        <p style={{ fontWeight: '700', fontSize: '15px', color: '#6E56CF', margin: 0 }}>
+          ${item.price.toFixed(0)}
+        </p>
       </div>
     </Link>
   );

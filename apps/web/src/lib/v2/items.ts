@@ -61,15 +61,17 @@ export async function getItemsBySeller(sellerId: string): Promise<Item[]> {
   const itemsRef = collection(db, 'items');
   const q = query(
     itemsRef,
-    where('sellerId', '==', sellerId),
-    orderBy('createdAt', 'desc')
+    where('sellerId', '==', sellerId)
   );
 
   const snapshot = await getDocs(q);
-  return snapshot.docs.map((doc) => ({
+  const items = snapshot.docs.map((doc) => ({
     id: doc.id,
     ...doc.data(),
   })) as Item[];
+  
+  // Sort in memory instead of in query (avoids need for index)
+  return items.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
 }
 
 // Get single item by ID
