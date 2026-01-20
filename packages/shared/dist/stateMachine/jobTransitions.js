@@ -15,8 +15,9 @@ exports.allowedTransitions = {
     [firestore_1.JobStatus.PICKED_UP]: [firestore_1.JobStatus.ENROUTE_DROPOFF, firestore_1.JobStatus.CANCELLED],
     [firestore_1.JobStatus.ENROUTE_DROPOFF]: [firestore_1.JobStatus.ARRIVED_DROPOFF, firestore_1.JobStatus.CANCELLED],
     [firestore_1.JobStatus.ARRIVED_DROPOFF]: [firestore_1.JobStatus.COMPLETED, firestore_1.JobStatus.CANCELLED],
-    [firestore_1.JobStatus.COMPLETED]: [],
+    [firestore_1.JobStatus.COMPLETED]: [firestore_1.JobStatus.DISPUTED], // Can dispute after completion
     [firestore_1.JobStatus.CANCELLED]: [],
+    [firestore_1.JobStatus.DISPUTED]: [], // Terminal state - admin resolves
 };
 /**
  * Check if a transition from currentStatus to nextStatus is valid

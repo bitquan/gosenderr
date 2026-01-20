@@ -14,6 +14,7 @@ export type JobStatus =
   | 'arrived_dropoff'
   | 'completed'
   | 'cancelled'
+  | 'disputed'
   | 'expired'
   | 'failed';
 
