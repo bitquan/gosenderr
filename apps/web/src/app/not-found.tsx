@@ -17,7 +17,7 @@ export default function NotFound() {
         The page you're looking for doesn't exist.
       </p>
       <Link 
-        href="/v2/login" 
+        href="/login" 
         style={{ 
           marginTop: '30px',
           padding: '12px 24px', 

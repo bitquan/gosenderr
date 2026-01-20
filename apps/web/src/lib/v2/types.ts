@@ -53,7 +53,9 @@ export type JobStatus =
   | 'enroute_dropoff'
   | 'arrived_dropoff'
   | 'completed'
-  | 'cancelled';
+  | 'cancelled'
+  | 'expired'
+  | 'failed';
 
 // Location data
 export interface GeoPoint {
@@ -67,6 +69,33 @@ export interface CourierSnapshot {
   transportMode?: TransportMode;
 }
 
+// Package sizes
+export type PackageSize = 'small' | 'medium' | 'large' | 'xl';
+
+// Package flags for handling requirements
+export interface PackageFlags {
+  needsSuvVan?: boolean;
+  fragile?: boolean;
+  heavyTwoPerson?: boolean;
+  oversized?: boolean;
+  stairs?: boolean;
+}
+
+// Package information
+export interface PackageInfo {
+  size: PackageSize;
+  flags?: PackageFlags;
+  notes?: string;
+}
+
+// Job photo
+export interface JobPhoto {
+  url: string;
+  path: string;
+  uploadedAt: Timestamp;
+  uploadedBy: string;
+}
+
 // Job document
 export interface JobDoc {
   createdByUid: string;
@@ -75,6 +104,8 @@ export interface JobDoc {
   status: JobStatus;
   pickup: GeoPoint;
   dropoff: GeoPoint;
+  package?: PackageInfo;  // Optional for backward compatibility
+  photos?: JobPhoto[];  // Optional for backward compatibility
   courierSnapshot?: CourierSnapshot;
   createdAt: Timestamp;
   updatedAt: Timestamp;
