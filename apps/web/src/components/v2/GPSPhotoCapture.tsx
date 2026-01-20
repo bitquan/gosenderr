@@ -257,7 +257,7 @@ export function GPSPhotoCapture({
       >
         {capturing ? (
           <>
-            <span style={{ animation: 'spin 1s linear infinite' }}>🔄</span>
+            <span>🔄</span>
             Processing...
           </>
         ) : (

@@ -170,12 +170,12 @@ export interface ItemLocation {
 }
 
 export interface ItemDetails {
-  weight?: number; // lbs
+  weight?: number; // lbs (pounds)
   dimensions?: {
-    length: number;
-    width: number;
-    height: number;
-  }; // inches
+    length: number; // inches
+    width: number; // inches
+    height: number; // inches
+  };
   requiresHelp: boolean; // heavy/bulky items
 }
 
