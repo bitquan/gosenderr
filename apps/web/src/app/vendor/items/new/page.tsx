@@ -128,168 +128,199 @@ export default function CreateItemPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-3">
-            ✨ Create New Listing
-          </h1>
-          <p className="text-gray-600 text-lg">
-            List your item and connect with buyers instantly
-          </p>
+    <div style={{ padding: '30px', maxWidth: '900px', margin: '0 auto' }}>
+      <div style={{ marginBottom: '30px' }}>
+        <h1 style={{ margin: '0 0 8px 0' }}>Create New Listing</h1>
+        <p style={{ color: '#666', margin: 0 }}>
+          List your item and connect with buyers
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '30px' }}>
+        {/* Title */}
+        <div style={{ marginBottom: '24px' }}>
+          <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+            Item Title *
+          </label>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="e.g., iPhone 13 Pro Max 256GB"
+            style={{
+              width: '100%',
+              padding: '10px 12px',
+              border: '1px solid #d1d5db',
+              borderRadius: '8px',
+              fontSize: '14px',
+            }}
+            required
+          />
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-xl p-8">
-          {/* Title */}
-          <div className="mb-6">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Item Title *
+        {/* Description */}
+        <div style={{ marginBottom: '24px' }}>
+          <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+            Description *
+          </label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Describe your item in detail..."
+            rows={6}
+            style={{
+              width: '100%',
+              padding: '10px 12px',
+              border: '1px solid #d1d5db',
+              borderRadius: '8px',
+              fontSize: '14px',
+              resize: 'vertical',
+            }}
+            required
+          />
+        </div>
+
+        {/* Category & Condition */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+              Category *
             </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g., iPhone 13 Pro Max 256GB"
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value as ItemCategory)}
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                border: '1px solid #d1d5db',
+                borderRadius: '8px',
+                fontSize: '14px',
+                background: 'white',
+              }}
               required
-            />
-          </div>
-
-          {/* Description */}
-          <div className="mb-6">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Description *
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe your item in detail... What's the condition? Any defects? Why are you selling?"
-              rows={6}
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
-              required
-            />
-            <p className="text-xs text-gray-500 mt-2">💡 Detailed descriptions get more interest!</p>
-          </div>
-
-          {/* Category & Condition */}
-          <div className="grid md:grid-cols-2 gap-6 mb-6">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Category *
-              </label>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value as ItemCategory)}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white"
-                required
-              >
-                {CATEGORIES.map((cat) => (
-                  <option key={cat.value} value={cat.value}>
-                    {cat.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Condition *
-              </label>
-              <select
-                value={condition}
-                onChange={(e) => setCondition(e.target.value as ItemCondition)}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white"
-                required
-              >
-                {CONDITIONS.map((cond) => (
-                  <option key={cond.value} value={cond.value}>
-                    {cond.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Price */}
-          <div className="mb-6">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Price (USD) *
-            </label>
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-lg font-semibold">$</span>
-              <input
-                type="number"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                placeholder="0.00"
-                step="0.01"
-                min="0"
-                className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                required
-              />
-            </div>
-          </div>
-
-          {/* Location */}
-          <div className="mb-8">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              📍 Pickup Location *
-            </label>
-            <input
-              type="text"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder="City, State or Full Address"
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              required
-            />
-            <p className="text-xs text-gray-500 mt-2">Where buyers can pick up the item</p>
-          </div>
-
-          {/* Photos */}
-          <div className="mb-8">
-            <label className="block text-sm font-semibold text-gray-700 mb-3">
-              📸 Photos (up to 5)
-            </label>
-            
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 mb-4">
-              {photos.map((photo, index) => (
-                <div key={index} className="relative aspect-square group">
-                  <img
-                    src={photo.preview}
-                    alt={`Preview ${index + 1}`}
-                    className="w-full h-full object-cover rounded-xl shadow-md"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removePhoto(index)}
-                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:bg-red-600 transform hover:scale-110"
-                  >
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </button>
-                </div>
+            >
+              {CATEGORIES.map((cat) => (
+                <option key={cat.value} value={cat.value}>
+                  {cat.label}
+                </option>
               ))}
+            </select>
+          </div>
 
-              {photos.length < 5 && (
+          <div>
+            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+              Condition *
+            </label>
+            <select
+              value={condition}
+              onChange={(e) => setCondition(e.target.value as ItemCondition)}
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                border: '1px solid #d1d5db',
+                borderRadius: '8px',
+                fontSize: '14px',
+                background: 'white',
+              }}
+              required
+            >
+              {CONDITIONS.map((cond) => (
+                <option key={cond.value} value={cond.value}>
+                  {cond.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Price */}
+        <div style={{ marginBottom: '24px' }}>
+          <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+            Price (USD) *
+          </label>
+          <div style={{ position: 'relative' }}>
+            <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#6b7280', fontWeight: '600' }}>$</span>
+            <input
+              type="number"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              placeholder="0.00"
+              step="0.01"
+              min="0"
+              style={{
+                width: '100%',
+                paddingLeft: '32px',
+                paddingRight: '12px',
+                paddingTop: '10px',
+                paddingBottom: '10px',
+                border: '1px solid #d1d5db',
+                borderRadius: '8px',
+                fontSize: '14px',
+              }}
+              required
+            />
+          </div>
+        </div>
+
+        {/* Location */}
+        <div style={{ marginBottom: '30px' }}>
+          <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+            Pickup Location *
+          </label>
+          <input
+            type="text"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            placeholder="City, State or Full Address"
+            style={{
+              width: '100%',
+              padding: '10px 12px',
+              border: '1px solid #d1d5db',
+              borderRadius: '8px',
+              fontSize: '14px',
+            }}
+            required
+          />
+        </div>
+
+        {/* Photos */}
+        <div style={{ marginBottom: '30px' }}>
+          <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '12px' }}>
+            Photos (up to 5)
+          </label>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px', marginBottom: '12px' }}>
+            {photos.map((photo, index) => (
+              <div key={index} style={{ position: 'relative', aspectRatio: '1/1' }}>
+                <img
+                  src={photo.preview}
+                  alt={`Preview ${index + 1}`}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    borderRadius: '8px',
+                    border: '1px solid #e5e7eb',
+                  }}
+                />
                 <button
                   type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="aspect-square border-3 border-dashed border-blue-300 rounded-xl hover:border-blue-500 hover:bg-blue-50 flex flex-col items-center justify-center text-blue-400 hover:text-blue-600 transition-all group"
+                  onClick={() => removePhoto(index)}
+                  style={{
+                    position: 'absolute',
+                    top: '-6px',
+                    right: '-6px',
+                    background: '#ef4444',
+                    color: 'white',
+                    borderRadius: '50%',
+                    padding: '6px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                  }}
                 >
                   <svg
-                    className="w-10 h-10 mb-2 group-hover:scale-110 transition-transform"
+                    style={{ width: '14px', height: '14px' }}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -298,56 +329,96 @@ export default function CreateItemPage() {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
-                      d="M12 4v16m8-8H4"
+                      d="M6 18L18 6M6 6l12 12"
                     />
                   </svg>
-                  <span className="text-xs font-medium">Add Photo</span>
                 </button>
-              )}
-            </div>
+              </div>
+            ))}
 
-            <p className="text-xs text-gray-500">💡 Items with photos sell 3x faster!</p>
-
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handlePhotoSelect}
-              className="hidden"
-            />
+            {photos.length < 5 && (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                style={{
+                  aspectRatio: '1/1',
+                  border: '2px dashed #d1d5db',
+                  borderRadius: '8px',
+                  background: 'transparent',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#9ca3af',
+                  cursor: 'pointer',
+                }}
+              >
+                <svg
+                  style={{ width: '32px', height: '32px', marginBottom: '4px' }}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 4v16m8-8H4"
+                  />
+                </svg>
+                <span style={{ fontSize: '12px' }}>Add</span>
+              </button>
+            )}
           </div>
 
-          {/* Submit */}
-          <div className="flex gap-4 pt-6 border-t">
-            <button
-              type="button"
-              onClick={() => router.push('/vendor/items')}
-              className="flex-1 px-6 py-4 border-2 border-gray-300 rounded-xl font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={uploading}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-4 rounded-xl font-bold hover:shadow-xl transform hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-              disabled={uploading}
-            >
-              {uploading ? (
-                <span className="flex items-center justify-center">
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Creating Listing...
-                </span>
-              ) : (
-                '🚀 Create Listing'
-              )}
-            </button>
-          </div>
-        </form>
-      </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={handlePhotoSelect}
+            style={{ display: 'none' }}
+          />
+        </div>
+
+        {/* Submit */}
+        <div style={{ display: 'flex', gap: '12px', paddingTop: '24px', borderTop: '1px solid #e5e7eb' }}>
+          <button
+            type="button"
+            onClick={() => router.push('/vendor/items')}
+            style={{
+              flex: 1,
+              padding: '12px 24px',
+              border: '1px solid #d1d5db',
+              borderRadius: '8px',
+              fontWeight: '600',
+              background: 'white',
+              cursor: uploading ? 'not-allowed' : 'pointer',
+              opacity: uploading ? 0.5 : 1,
+            }}
+            disabled={uploading}
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            style={{
+              flex: 1,
+              background: '#6E56CF',
+              color: 'white',
+              padding: '12px 24px',
+              borderRadius: '8px',
+              fontWeight: '700',
+              border: 'none',
+              cursor: uploading ? 'not-allowed' : 'pointer',
+              opacity: uploading ? 0.5 : 1,
+            }}
+            disabled={uploading}
+          >
+            {uploading ? 'Creating Listing...' : 'Create Listing'}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

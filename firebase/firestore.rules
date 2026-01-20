@@ -82,8 +82,8 @@ service cloud.firestore {
 
     // ========== ITEMS (Marketplace) ==========
     match /items/{itemId} {
-      // Anyone can read available items
-      allow read: if signedIn();
+      // Anyone can read available items (public marketplace)
+      allow read: if true;
       
       // Any user can create items (they become the seller)
       allow create: if signedIn()

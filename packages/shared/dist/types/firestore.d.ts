@@ -1,6 +1,6 @@
 import { Timestamp } from 'firebase/firestore';
 export type UserRole = 'buyer' | 'seller' | 'courier' | 'admin';
-export type TransportMode = 'walk' | 'scooter' | 'car';
+export type TransportMode = 'walk' | 'bike' | 'scooter' | 'car';
 export type LegacyUserRole = 'customer' | 'courier' | 'admin';
 export interface PackageRateCard {
     baseFare: number;

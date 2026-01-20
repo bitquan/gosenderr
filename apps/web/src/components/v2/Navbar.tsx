@@ -1,11 +1,12 @@
 'use client';
 
 import { ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase/auth';
 import { useAuthUser } from '@/hooks/v2/useAuthUser';
 import { useUserRole } from '@/hooks/v2/useUserRole';
+import Link from 'next/link';
 
 interface NavbarProps {
   children: ReactNode;
@@ -15,6 +16,7 @@ export function Navbar({ children }: NavbarProps) {
   const { user } = useAuthUser();
   const { role } = useUserRole();
   const router = useRouter();
+  const pathname = usePathname();
 
   const handleSignOut = async () => {
     try {
@@ -25,80 +27,128 @@ export function Navbar({ children }: NavbarProps) {
     }
   };
 
-  if (!user) {
+  // Don't show navbar on login/select-role pages
+  const hideNavbar = pathname === '/login' || pathname === '/select-role';
+
+  if (hideNavbar) {
     return <>{children}</>;
   }
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <nav style={{ 
-        background: '#6E56CF', 
-        color: 'white', 
-        padding: '12px 24px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <a href="/v2" style={{ color: 'white', textDecoration: 'none', fontWeight: '600', fontSize: '18px' }}>
-            GoSenderr
-          </a>
-          {role && (
-            <span style={{ 
-              padding: '4px 12px', 
-              background: 'rgba(255,255,255,0.2)', 
-              borderRadius: '12px',
-              fontSize: '12px',
-              textTransform: 'capitalize'
-            }}>
-              {role === 'customer' ? '📦 Customer' : '🚗 Courier'}
-            </span>
-          )}
-        </div>
-        
-        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-          <a href="/marketplace" style={{ color: 'white', textDecoration: 'none', fontSize: '14px' }}>
-            🛍️ Marketplace
-          </a>
-          {role === 'customer' && (
-            <>
-              <a href="/customer/jobs" style={{ color: 'white', textDecoration: 'none', fontSize: '14px' }}>
-                My Deliveries
-              </a>
-              <a href="/vendor/items" style={{ color: 'white', textDecoration: 'none', fontSize: '14px' }}>
-                My Items
-              </a>
-            </>
-          )}
-          {role === 'courier' && (
-            <>
-              <a href="/courier/dashboard" style={{ color: 'white', textDecoration: 'none', fontSize: '14px' }}>
-                Dashboard
-              </a>
-              <a href="/courier/setup" style={{ color: 'white', textDecoration: 'none', fontSize: '14px' }}>
-                Setup
-              </a>
-            </>
-          )}
-          <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '14px' }}>
-            {user.email}
-          </span>
-          <button
-            onClick={handleSignOut}
+      <nav
+        style={{
+          background: 'white',
+          borderBottom: '1px solid #e5e7eb',
+          padding: '12px 16px',
+          position: 'sticky',
+          top: 0,
+          zIndex: 1000,
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '1400px', margin: '0 auto' }}>
+          {/* Logo */}
+          <Link
+            href="/marketplace"
             style={{
-              padding: '6px 12px',
-              background: 'rgba(255,255,255,0.2)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '500'
+              fontSize: '18px',
+              fontWeight: '700',
+              color: '#6E56CF',
+              textDecoration: 'none',
             }}
           >
-            Sign Out
-          </button>
+            GoSenderr
+          </Link>
+
+          {/* Navigation Links */}
+          <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+            <Link
+              href="/marketplace"
+              style={{
+                fontSize: '14px',
+                fontWeight: pathname.startsWith('/marketplace') ? '600' : '400',
+                color: pathname.startsWith('/marketplace') ? '#6E56CF' : '#666',
+                textDecoration: 'none',
+              }}
+            >
+              Marketplace
+            </Link>
+
+            {user && role === 'customer' && (
+              <Link
+                href="/customer/jobs"
+                style={{
+                  fontSize: '14px',
+                  fontWeight: pathname.startsWith('/customer') ? '600' : '400',
+                  color: pathname.startsWith('/customer') ? '#6E56CF' : '#666',
+                  textDecoration: 'none',
+                }}
+              >
+                My Jobs
+              </Link>
+            )}
+
+            {user && role === 'courier' && (
+              <Link
+                href="/courier/dashboard"
+                style={{
+                  fontSize: '14px',
+                  fontWeight: pathname.startsWith('/courier') ? '600' : '400',
+                  color: pathname.startsWith('/courier') ? '#6E56CF' : '#666',
+                  textDecoration: 'none',
+                }}
+              >
+                Dashboard
+              </Link>
+            )}
+
+            {user && (
+              <Link
+                href="/vendor/items"
+                style={{
+                  fontSize: '14px',
+                  fontWeight: pathname.startsWith('/vendor') ? '600' : '400',
+                  color: pathname.startsWith('/vendor') ? '#6E56CF' : '#666',
+                  textDecoration: 'none',
+                }}
+              >
+                My Items
+              </Link>
+            )}
+
+            {/* User Menu */}
+            {user ? (
+              <button
+                onClick={handleSignOut}
+                style={{
+                  fontSize: '14px',
+                  color: '#666',
+                  background: 'none',
+                  border: '1px solid #ddd',
+                  borderRadius: '6px',
+                  padding: '6px 12px',
+                  cursor: 'pointer',
+                }}
+              >
+                Sign Out
+              </button>
+            ) : (
+              <Link
+                href="/login"
+                style={{
+                  fontSize: '14px',
+                  color: 'white',
+                  background: '#6E56CF',
+                  textDecoration: 'none',
+                  borderRadius: '6px',
+                  padding: '6px 12px',
+                  fontWeight: '600',
+                }}
+              >
+                Sign In
+              </Link>
+            )}
+          </div>
         </div>
       </nav>
       

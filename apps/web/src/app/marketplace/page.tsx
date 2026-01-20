@@ -40,95 +40,82 @@ export default function MarketplacePage() {
       ? items
       : items.filter((item) => item.category === selectedCategory);
 
+  if (loading) {
+    return (
+      <div style={{ padding: '30px' }}>
+        <h1 style={{ margin: '0 0 30px 0' }}>Marketplace</h1>
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <h1 className="text-xl font-bold text-gray-900">Marketplace</h1>
+    <div style={{ padding: '12px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <h1 style={{ margin: 0, fontSize: '20px' }}>Marketplace</h1>
+        <a
+          href="/vendor/items/new"
+          style={{
+            padding: '8px 14px',
+            background: '#6E56CF',
+            color: 'white',
+            textDecoration: 'none',
+            borderRadius: '6px',
+            fontWeight: '600',
+            fontSize: '14px',
+          }}
+        >
+          + List Item
+        </a>
+      </div>
+
+      {/* Category Filter - Compact */}
+      <div style={{ marginBottom: '16px' }}>
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+          {CATEGORIES.map((category) => (
+            <button
+              key={category.value}
+              onClick={() => setSelectedCategory(category.value)}
+              style={{
+                padding: '6px 12px',
+                border: selectedCategory === category.value ? '2px solid #6E56CF' : '1px solid #ddd',
+                background: selectedCategory === category.value ? '#f5f3ff' : 'white',
+                color: selectedCategory === category.value ? '#6E56CF' : '#666',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontWeight: selectedCategory === category.value ? '600' : '400',
+                fontSize: '13px',
+              }}
+            >
+              {category.label}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Category Filter */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 py-3">
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-            {CATEGORIES.map((category) => (
-              <button
-                key={category.value}
-                onClick={() => setSelectedCategory(category.value)}
-                className={`px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap transition-all ${
-                  selectedCategory === category.value
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                {category.label}
-              </button>
+      {filteredItems.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+          <p style={{ fontSize: '14px' }}>
+            {selectedCategory === 'all'
+              ? 'No items yet. Be the first to list an item!'
+              : `No ${selectedCategory} items available yet.`}
+          </p>
+        </div>
+      ) : (
+        <>
+          <div style={{ marginBottom: '12px', color: '#666', fontSize: '13px' }}>
+            {filteredItems.length} {filteredItems.length === 1 ? 'item' : 'items'}
+            {selectedCategory !== 'all' && ` in ${CATEGORIES.find(c => c.value === selectedCategory)?.label}`}
+          </div>
+
+          {/* Grid - Compact for mobile (2-3 columns) */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '10px' }}>
+            {filteredItems.map((item) => (
+              <ItemCard key={item.id} item={item} />
             ))}
           </div>
-        </div>
-      </div>
-
-      {/* Items Grid */}
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        {loading ? (
-          <div className="text-center py-20">
-            <div className="animate-spin rounded-full h-10 w-10 border-3 border-gray-300 border-t-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-500 text-sm">Loading items...</p>
-          </div>
-        ) : filteredItems.length === 0 ? (
-          <div className="text-center py-20">
-            <div className="bg-gray-100 rounded-full w-24 h-24 mx-auto flex items-center justify-center mb-4">
-              <svg
-                className="w-12 h-12 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-                />
-              </svg>
-            </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              No items found
-            </h3>
-            <p className="text-gray-600 mb-6">
-              {selectedCategory === 'all'
-                ? 'Be the first to list an item'
-                : `No ${selectedCategory} items available`}
-            </p>
-            <a
-              href="/vendor/items/new"
-              className="inline-flex items-center px-5 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Create Listing
-            </a>
-          </div>
-        ) : (
-          <>
-            <div className="mb-4">
-              <p className="text-sm font-medium text-gray-700">
-                {filteredItems.length} {filteredItems.length === 1 ? 'item' : 'items'}
-                {selectedCategory !== 'all' && ` in ${CATEGORIES.find(c => c.value === selectedCategory)?.label}`}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-              {filteredItems.map((item) => (
-                <ItemCard key={item.id} item={item} />
-              ))}
-            </div>
-          </>
-        )}
-      </div>
+        </>
+      )}
     </div>
   );
 }

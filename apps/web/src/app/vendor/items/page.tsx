@@ -13,13 +13,6 @@ const STATUS_LABELS: Record<string, string> = {
   deleted: 'Deleted',
 };
 
-const STATUS_COLORS: Record<string, string> = {
-  available: 'bg-green-100 text-green-800',
-  sold: 'bg-gray-100 text-gray-800',
-  pending: 'bg-yellow-100 text-yellow-800',
-  deleted: 'bg-red-100 text-red-800',
-};
-
 export default function VendorItemsPage() {
   const { user, loading: authLoading } = useAuthUser();
   const router = useRouter();
@@ -78,170 +71,181 @@ export default function VendorItemsPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div style={{ padding: '30px' }}>
+        <h1 style={{ margin: '0 0 30px 0' }}>My Items</h1>
+        <p>Loading...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">My Items</h1>
-            <p className="text-gray-600 mt-1">Manage your marketplace listings</p>
-          </div>
-          <Link
-            href="/vendor/items/new"
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-          >
-            + Create Listing
-          </Link>
-        </div>
-
-        {items.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-lg p-12 text-center">
-            <svg
-              className="w-16 h-16 mx-auto text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-              />
-            </svg>
-            <h3 className="mt-4 text-lg font-medium text-gray-900">
-              No items yet
-            </h3>
-            <p className="mt-2 text-gray-600 mb-6">
-              Start selling by creating your first item listing
-            </p>
-            <Link
-              href="/vendor/items/new"
-              className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-            >
-              Create Your First Listing
-            </Link>
-          </div>
-        ) : (
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Item
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Price
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Created
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {items.map((item) => {
-                  const primaryPhoto = item.photos?.[0];
-                  const statusLabel = STATUS_LABELS[item.status] || item.status;
-                  const statusColor = STATUS_COLORS[item.status] || 'bg-gray-100 text-gray-800';
-
-                  return (
-                    <tr key={item.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-16 w-16">
-                            {primaryPhoto ? (
-                              <img
-                                src={primaryPhoto}
-                                alt={item.title}
-                                className="h-16 w-16 rounded object-cover"
-                              />
-                            ) : (
-                              <div className="h-16 w-16 rounded bg-gray-100 flex items-center justify-center">
-                                <svg
-                                  className="w-8 h-8 text-gray-400"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                                  />
-                                </svg>
-                              </div>
-                            )}
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">
-                              {item.title}
-                            </div>
-                            <div className="text-sm text-gray-500 line-clamp-1">
-                              {item.description}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          ${item.price.toFixed(2)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${statusColor}`}
-                        >
-                          {statusLabel}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {item.createdAt?.toDate().toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex items-center justify-end gap-2">
-                          <Link
-                            href={`/marketplace/${item.id}`}
-                            className="text-blue-600 hover:text-blue-900"
-                          >
-                            View
-                          </Link>
-                          {item.status === 'available' && (
-                            <button
-                              onClick={() => handleMarkAsSold(item.id)}
-                              className="text-green-600 hover:text-green-900"
-                            >
-                              Mark Sold
-                            </button>
-                          )}
-                          <button
-                            onClick={() => handleDelete(item.id)}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+    <div style={{ padding: '30px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+        <h1 style={{ margin: 0 }}>My Items</h1>
+        <Link
+          href="/vendor/items/new"
+          style={{
+            padding: '10px 20px',
+            background: '#6E56CF',
+            color: 'white',
+            textDecoration: 'none',
+            borderRadius: '8px',
+            fontWeight: '600',
+          }}
+        >
+          + Create Listing
+        </Link>
       </div>
+
+      {items.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+          <p>No items yet. Start selling by creating your first item listing.</p>
+        </div>
+      ) : (
+        <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', overflow: 'hidden' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead style={{ background: '#f9fafb' }}>
+              <tr>
+                <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase' }}>
+                  Item
+                </th>
+                <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase' }}>
+                  Price
+                </th>
+                <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase' }}>
+                  Status
+                </th>
+                <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase' }}>
+                  Created
+                </th>
+                <th style={{ padding: '12px 16px', textAlign: 'right', fontSize: '12px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase' }}>
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((item) => {
+                const primaryPhoto = item.photos?.[0];
+                const statusLabel = STATUS_LABELS[item.status] || item.status;
+
+                return (
+                  <tr key={item.id} style={{ borderTop: '1px solid #e5e7eb' }}>
+                    <td style={{ padding: '16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        {primaryPhoto ? (
+                          <img
+                            src={primaryPhoto}
+                            alt={item.title}
+                            style={{
+                              width: '60px',
+                              height: '60px',
+                              borderRadius: '8px',
+                              objectFit: 'cover',
+                              flexShrink: 0,
+                            }}
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              width: '60px',
+                              height: '60px',
+                              background: '#f3f4f6',
+                              borderRadius: '8px',
+                              flexShrink: 0,
+                            }}
+                          ></div>
+                        )}
+                        <div>
+                          <div style={{ fontSize: '14px', fontWeight: '600', color: '#111827' }}>
+                            {item.title}
+                          </div>
+                          <div style={{ fontSize: '13px', color: '#6b7280', marginTop: '2px' }}>
+                            {item.description}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td style={{ padding: '16px' }}>
+                      <div style={{ fontSize: '14px', fontWeight: '600', color: '#111827' }}>
+                        ${item.price.toFixed(2)}
+                      </div>
+                    </td>
+                    <td style={{ padding: '16px' }}>
+                      <span
+                        style={{
+                          padding: '4px 12px',
+                          borderRadius: '9999px',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          background: item.status === 'available' ? '#dcfce7' : '#f3f4f6',
+                          color: item.status === 'available' ? '#166534' : '#6b7280',
+                          display: 'inline-block',
+                        }}
+                      >
+                        {statusLabel}
+                      </span>
+                    </td>
+                    <td style={{ padding: '16px', fontSize: '14px', color: '#6b7280' }}>
+                      {item.createdAt?.toDate().toLocaleDateString()}
+                    </td>
+                    <td style={{ padding: '16px', textAlign: 'right' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
+                        <Link
+                          href={`/marketplace/${item.id}`}
+                          style={{
+                            padding: '6px 12px',
+                            fontSize: '14px',
+                            color: '#6E56CF',
+                            background: 'white',
+                            border: '1px solid #ddd',
+                            borderRadius: '6px',
+                            textDecoration: 'none',
+                            fontWeight: '500',
+                          }}
+                        >
+                          View
+                        </Link>
+                        {item.status === 'available' && (
+                          <button
+                            onClick={() => handleMarkAsSold(item.id)}
+                            style={{
+                              padding: '6px 12px',
+                              fontSize: '14px',
+                              color: '#16a34a',
+                              background: 'white',
+                              border: '1px solid #ddd',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              fontWeight: '500',
+                            }}
+                          >
+                            Mark Sold
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleDelete(item.id)}
+                          style={{
+                            padding: '6px 12px',
+                            fontSize: '14px',
+                            color: '#dc2626',
+                            background: 'white',
+                            border: '1px solid #ddd',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontWeight: '500',
+                          }}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
