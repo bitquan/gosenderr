@@ -57,26 +57,28 @@ export function CustomerConfirmation({
     setConfirming(true);
     try {
       await onConfirm(true);
+      // Success - component will re-render with confirmed state
     } catch (error) {
       console.error('Failed to confirm delivery:', error);
-      alert('Failed to confirm. Please try again.');
       setConfirming(false);
+      // Error message could be displayed via toast/inline here
     }
   };
 
   const handleReportIssue = async () => {
     if (!disputeReason.trim()) {
-      alert('Please provide a reason for the dispute');
+      // Could show inline error message here instead
       return;
     }
 
     setConfirming(true);
     try {
       await onConfirm(false, disputeReason);
+      // Success - component will re-render or navigate away
     } catch (error) {
       console.error('Failed to report issue:', error);
-      alert('Failed to report issue. Please try again.');
       setConfirming(false);
+      // Error message could be displayed via toast/inline here
     }
   };
 
