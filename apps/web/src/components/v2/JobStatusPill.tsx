@@ -14,6 +14,8 @@ const statusColors: Record<JobStatus, string> = {
   arrived_dropoff: '#ef4444',
   completed: '#16a34a',
   cancelled: '#52525b',
+  expired: '#9ca3af',
+  failed: '#dc2626',
 };
 
 const statusLabels: Record<JobStatus, string> = {
@@ -26,6 +28,8 @@ const statusLabels: Record<JobStatus, string> = {
   arrived_dropoff: 'Arrived at Dropoff',
   completed: 'Completed',
   cancelled: 'Cancelled',
+  expired: 'Expired',
+  failed: 'Failed',
 };
 
 export function JobStatusPill({ status }: JobStatusPillProps) {

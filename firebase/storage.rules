@@ -10,21 +10,49 @@ service firebase.storage {
       return request.auth.uid;
     }
 
-    function isDriverOfJob(jobId) {
-      return isSignedIn()
-        && exists(/databases/(default)/documents/jobs/$(jobId))
-        && get(/databases/(default)/documents/jobs/$(jobId)).data.driverId == uid();
+    function jobExists(jobId) {
+      return exists(/databases/(default)/documents/jobs/$(jobId));
     }
 
-    // Jobs photos:
-    // - jobs/{jobId}/pickup.jpg
-    // - jobs/{jobId}/dropoff.jpg
-    match /jobs/{jobId}/{fileName} {
-      allow read: if isSignedIn() && isDriverOfJob(jobId);
+    function getJobData(jobId) {
+      return get(/databases/(default)/documents/jobs/$(jobId)).data;
+    }
 
-      // Allow write only for the assigned driver.
-      // (You can tighten by fileName and job status later.)
-      allow write: if isSignedIn() && isDriverOfJob(jobId);
+    function isJobCreator(jobId) {
+      return isSignedIn() && jobExists(jobId) && getJobData(jobId).createdByUid == uid();
+    }
+
+    function isAssignedCourier(jobId) {
+      return isSignedIn() && jobExists(jobId) && getJobData(jobId).courierUid == uid();
+    }
+
+    function isJobOpen(jobId) {
+      return jobExists(jobId) && getJobData(jobId).status == 'open';
+    }
+
+    function isValidImage() {
+      return request.resource.contentType.matches('image/(jpeg|png|webp)')
+        && request.resource.size < 10 * 1024 * 1024;  // 10MB max
+    }
+
+    // Temporary job photos: jobs/{tempId}/photos/{photoFile}
+    // tempId will be in format temp_1234567890_abc123
+    match /jobs/{tempId}/photos/{photoFile} {
+      // If tempId starts with "temp_", allow authenticated users to upload
+      allow write: if isSignedIn() && isValidImage() && tempId.matches('temp_.*');
+      
+      // Allow authenticated users to read temp uploads
+      allow read: if isSignedIn() && tempId.matches('temp_.*');
+      
+      // For actual job IDs (not starting with temp_), use job creator rules
+      allow write: if isSignedIn() && isJobCreator(tempId) && isValidImage() && !tempId.matches('temp_.*');
+
+      // Read: job creator, assigned courier, or any signed-in courier while job is open
+      allow read: if isSignedIn() && !tempId.matches('temp_.*') && (
+        isJobCreator(tempId)
+        || isAssignedCourier(tempId)
+        || isJobOpen(tempId)
+      );
     }
 
     // Default deny

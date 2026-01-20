@@ -9,7 +9,7 @@ interface AuthGateProps {
 }
 
 /**
- * v2 AuthGate - blocks unsigned users, redirects to /v2/login
+ * AuthGate - blocks unsigned users, redirects to /login
  */
 export function AuthGate({ children }: AuthGateProps) {
   const { user, loading } = useAuthUser();
@@ -17,7 +17,7 @@ export function AuthGate({ children }: AuthGateProps) {
 
   useEffect(() => {
     if (!loading && !user) {
-      router.push('/v2/login');
+      router.push('/login');
     }
   }, [user, loading, router]);
 

@@ -2,16 +2,25 @@
   "firestore": {
     "rules": "firebase/firestore.rules"
   },
+  "storage": {
+    "rules": "firebase/storage.rules"
+  },
   "hosting": {
     "site": "gosenderr-6773f",
-    "source": "apps/web",
+    "public": "public",
     "ignore": [
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
     ],
-    "frameworksBackend": {
-      "region": "us-central1"
-    }
+    "rewrites": [
+      {
+        "source": "**",
+        "run": {
+          "serviceId": "gosenderr-web",
+          "region": "us-central1"
+        }
+      }
+    ]
   }
 }

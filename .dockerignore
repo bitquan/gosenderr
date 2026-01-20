@@ -1,0 +1,38 @@
+# Node / package managers
+node_modules
+**/node_modules
+.pnpm-store
+
+# Next.js
+.next
+**/.next
+out
+**/out
+
+# Firebase
+.firebase
+**/.firebase
+firebase-debug.log
+firestore-debug.log
+
+# Turbo
+.turbo
+
+# Flutter/Dart
+.dart_tool
+.flutter-plugins
+.flutter-plugins-dependencies
+.metadata
+build
+**/build
+
+# Git
+.git
+
+# Misc
+.DS_Store
+*.log
+coverage
+
+# Quarantine
+archive
