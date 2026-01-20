@@ -40,7 +40,7 @@ export function Navbar({ children }: NavbarProps) {
         style={{
           background: 'white',
           borderBottom: '1px solid #e5e7eb',
-          padding: '12px 16px',
+          padding: '10px 12px',
           position: 'sticky',
           top: 0,
           zIndex: 1000,
@@ -51,24 +51,26 @@ export function Navbar({ children }: NavbarProps) {
           <Link
             href="/marketplace"
             style={{
-              fontSize: '18px',
+              fontSize: '16px',
               fontWeight: '700',
               color: '#6E56CF',
               textDecoration: 'none',
+              flexShrink: 0,
             }}
           >
             GoSenderr
           </Link>
 
-          {/* Navigation Links */}
-          <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+          {/* Navigation Links - Responsive */}
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
             <Link
               href="/marketplace"
               style={{
-                fontSize: '14px',
+                fontSize: '13px',
                 fontWeight: pathname.startsWith('/marketplace') ? '600' : '400',
                 color: pathname.startsWith('/marketplace') ? '#6E56CF' : '#666',
                 textDecoration: 'none',
+                whiteSpace: 'nowrap',
               }}
             >
               Marketplace
@@ -78,13 +80,14 @@ export function Navbar({ children }: NavbarProps) {
               <Link
                 href="/customer/jobs"
                 style={{
-                  fontSize: '14px',
+                  fontSize: '13px',
                   fontWeight: pathname.startsWith('/customer') ? '600' : '400',
                   color: pathname.startsWith('/customer') ? '#6E56CF' : '#666',
                   textDecoration: 'none',
+                  whiteSpace: 'nowrap',
                 }}
               >
-                My Jobs
+                Jobs
               </Link>
             )}
 
@@ -92,10 +95,11 @@ export function Navbar({ children }: NavbarProps) {
               <Link
                 href="/courier/dashboard"
                 style={{
-                  fontSize: '14px',
+                  fontSize: '13px',
                   fontWeight: pathname.startsWith('/courier') ? '600' : '400',
                   color: pathname.startsWith('/courier') ? '#6E56CF' : '#666',
                   textDecoration: 'none',
+                  whiteSpace: 'nowrap',
                 }}
               >
                 Dashboard
@@ -106,13 +110,14 @@ export function Navbar({ children }: NavbarProps) {
               <Link
                 href="/vendor/items"
                 style={{
-                  fontSize: '14px',
+                  fontSize: '13px',
                   fontWeight: pathname.startsWith('/vendor') ? '600' : '400',
                   color: pathname.startsWith('/vendor') ? '#6E56CF' : '#666',
                   textDecoration: 'none',
+                  whiteSpace: 'nowrap',
                 }}
               >
-                My Items
+                Items
               </Link>
             )}
 
@@ -121,13 +126,14 @@ export function Navbar({ children }: NavbarProps) {
               <button
                 onClick={handleSignOut}
                 style={{
-                  fontSize: '14px',
+                  fontSize: '12px',
                   color: '#666',
                   background: 'none',
                   border: '1px solid #ddd',
                   borderRadius: '6px',
-                  padding: '6px 12px',
+                  padding: '5px 10px',
                   cursor: 'pointer',
+                  whiteSpace: 'nowrap',
                 }}
               >
                 Sign Out
@@ -136,13 +142,14 @@ export function Navbar({ children }: NavbarProps) {
               <Link
                 href="/login"
                 style={{
-                  fontSize: '14px',
+                  fontSize: '12px',
                   color: 'white',
                   background: '#6E56CF',
                   textDecoration: 'none',
                   borderRadius: '6px',
-                  padding: '6px 12px',
+                  padding: '5px 10px',
                   fontWeight: '600',
+                  whiteSpace: 'nowrap',
                 }}
               >
                 Sign In
