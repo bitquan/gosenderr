@@ -11,8 +11,9 @@ export const allowedTransitions: Record<JobStatus, JobStatus[]> = {
   [JobStatus.PICKED_UP]: [JobStatus.ENROUTE_DROPOFF, JobStatus.CANCELLED],
   [JobStatus.ENROUTE_DROPOFF]: [JobStatus.ARRIVED_DROPOFF, JobStatus.CANCELLED],
   [JobStatus.ARRIVED_DROPOFF]: [JobStatus.COMPLETED, JobStatus.CANCELLED],
-  [JobStatus.COMPLETED]: [],
+  [JobStatus.COMPLETED]: [JobStatus.DISPUTED], // Can dispute after completion
   [JobStatus.CANCELLED]: [],
+  [JobStatus.DISPUTED]: [], // Terminal state - admin resolves
 };
 
 /**

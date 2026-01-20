@@ -1,49 +1,56 @@
 import { Timestamp } from 'firebase/firestore';
+import { JobStatus as SharedJobStatus } from '@gosenderr/shared';
 
-// User roles
-export type UserRole = 'customer' | 'courier';
-export type TransportMode = 'walk' | 'scooter' | 'car';
+// Re-export types from shared package
+export type {
+  TransportMode,
+  PackageRateCard,
+  FoodRateCard,
+  RateCard,
+  EquipmentItem,
+  CourierEquipment,
+  CourierCapabilities,
+  CourierStatus,
+  VehicleType,
+  VehicleDetails,
+  WorkModes,
+  CourierDocuments,
+  CourierProfile,
+  CourierData,
+  CourierLocation,
+  UserDoc,
+  ItemCategory,
+  ItemCondition,
+  ItemStatus,
+  FoodTemperature,
+  ItemLocation,
+  ItemDetails,
+  FoodDetails,
+  ItemDoc,
+  GeoPoint,
+  CourierSnapshot,
+  JobType,
+  PhotoMetadata,
+  JobPhoto as SharedJobPhoto,
+  CourierLocationUpdate,
+  JobPricing,
+  PaymentStatus,
+  FoodDeliveryDetails,
+  JobTimeline,
+  CustomerConfirmation,
+  JobStats,
+  DeliveryJobDoc,
+  RatingRole,
+  RatingCategories,
+  RatingDoc,
+  DisputeStatus,
+  DisputeDoc,
+} from '@gosenderr/shared';
 
-// Courier-specific data
-export interface RateCard {
-  baseFee: number;          // required base fee per delivery
-  perMile: number;          // required cost per job mile (pickup -> dropoff)
-  minimumFee?: number;      // optional minimum charge
-  pickupPerMile?: number;   // optional extra cost for courier -> pickup distance ("deadhead")
-  perMinute?: number;       // optional time-based pricing
-  maxPickupMiles?: number;  // optional radius rule (courier -> pickup distance limit)
-  maxJobMiles?: number;     // optional job distance rule (pickup -> dropoff limit)
-  maxRadiusMiles?: number;  // optional discovery radius (customer search radius)
-  updatedAt?: Timestamp;    // timestamp of last rate card update
-}
+// User roles - backward compatible with 'customer' and forward compatible with 'buyer'
+export type UserRole = 'customer' | 'courier' | 'admin' | 'buyer' | 'seller';
 
-export interface CourierData {
-  isOnline: boolean;
-  transportMode: TransportMode;
-  rateCard: RateCard;
-}
-
-export interface CourierLocation {
-  lat: number;
-  lng: number;
-  heading?: number;
-  geohash?: string; // for geo-queries (precision 6)
-  updatedAt: Timestamp;
-}
-
-// User document
-export interface UserDoc {
-  role: UserRole;
-  phone?: string;
-  displayName?: string;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-  // Courier-only fields
-  courier?: CourierData;
-  location?: CourierLocation;
-}
-
-// Job statuses - full delivery loop
+// Re-export JobStatus enum values as string union type for backward compatibility
 export type JobStatus = 
   | 'open'
   | 'assigned'
@@ -54,25 +61,15 @@ export type JobStatus =
   | 'arrived_dropoff'
   | 'completed'
   | 'cancelled'
+  | 'disputed'
   | 'expired'
   | 'failed';
 
-// Location data
-export interface GeoPoint {
-  lat: number;
-  lng: number;
-  label?: string;
-}
+export { SharedJobStatus };
 
-export interface CourierSnapshot {
-  displayName?: string;
-  transportMode?: TransportMode;
-}
-
-// Package sizes
+// Additional web-specific types
 export type PackageSize = 'small' | 'medium' | 'large' | 'xl';
 
-// Package flags for handling requirements
 export interface PackageFlags {
   needsSuvVan?: boolean;
   fragile?: boolean;
@@ -81,14 +78,13 @@ export interface PackageFlags {
   stairs?: boolean;
 }
 
-// Package information
 export interface PackageInfo {
   size: PackageSize;
   flags?: PackageFlags;
   notes?: string;
 }
 
-// Job photo
+// Legacy job photo with path field
 export interface JobPhoto {
   url: string;
   path: string;
@@ -96,17 +92,17 @@ export interface JobPhoto {
   uploadedBy: string;
 }
 
-// Job document
+// Legacy job document for backward compatibility
 export interface JobDoc {
   createdByUid: string;
   courierUid: string | null;
   agreedFee: number | null;
   status: JobStatus;
-  pickup: GeoPoint;
-  dropoff: GeoPoint;
-  package?: PackageInfo;  // Optional for backward compatibility
-  photos?: JobPhoto[];  // Optional for backward compatibility
-  courierSnapshot?: CourierSnapshot;
+  pickup: { lat: number; lng: number; label?: string };
+  dropoff: { lat: number; lng: number; label?: string };
+  package?: PackageInfo;
+  photos?: JobPhoto[];
+  courierSnapshot?: { displayName?: string; transportMode?: string };
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
