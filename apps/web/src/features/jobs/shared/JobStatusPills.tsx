@@ -16,6 +16,7 @@ const STATUS_CONFIG: Record<JobStatus, { label: string; color: string; backgroun
   arrived_dropoff: { label: 'Arrived at Dropoff', color: '#ea580c', background: '#ffedd5' },
   completed: { label: 'Completed', color: '#16a34a', background: '#dcfce7' },
   cancelled: { label: 'Cancelled', color: '#dc2626', background: '#fee2e2' },
+  disputed: { label: 'Disputed', color: '#f97316', background: '#ffedd5' },
   expired: { label: 'Expired', color: '#9ca3af', background: '#f3f4f6' },
   failed: { label: 'Failed', color: '#dc2626', background: '#fee2e2' },
 };

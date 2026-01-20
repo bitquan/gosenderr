@@ -27,6 +27,7 @@ export const STATUS_FLOW: Record<JobStatus, JobStatus | null> = {
   arrived_dropoff: 'completed',
   completed: null,
   cancelled: null,
+  disputed: null,
   expired: null,
   failed: null,
 };
@@ -44,6 +45,7 @@ export const STATUS_BUTTON_LABELS: Record<JobStatus, string> = {
   arrived_dropoff: 'Complete Delivery',
   completed: '',
   cancelled: '',
+  disputed: '',
   expired: '',
   failed: '',
 };
@@ -61,6 +63,7 @@ export const STATUS_LABELS: Record<JobStatus, string> = {
   arrived_dropoff: 'Arrived at Dropoff',
   completed: 'Completed',
   cancelled: 'Cancelled',
+  disputed: 'Disputed',
   expired: 'Expired',
   failed: 'Failed',
 };
@@ -78,6 +81,7 @@ export const STATUS_COLORS: Record<JobStatus, string> = {
   arrived_dropoff: '#ef4444',
   completed: '#16a34a',
   cancelled: '#52525b',
+  disputed: '#f97316',
   expired: '#9ca3af',
   failed: '#dc2626',
 };
@@ -101,8 +105,8 @@ export function canCourierAdvance(job: JobDoc | Job, courierUid: string): boolea
     return false;
   }
 
-  // Can't advance if already completed or cancelled
-  if (job.status === 'completed' || job.status === 'cancelled') {
+  // Can't advance if already completed, cancelled, or disputed
+  if (job.status === 'completed' || job.status === 'cancelled' || job.status === 'disputed') {
     return false;
   }
 
