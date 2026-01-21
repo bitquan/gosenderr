@@ -10,12 +10,12 @@ import {
   orderBy,
   Timestamp,
   serverTimestamp,
-} from 'firebase/firestore';
-import { db } from '@/lib/firebase/client';
-import type { ItemDoc, ItemStatus, ItemCategory, ItemCondition } from './types';
+} from "firebase/firestore";
+import { db } from "@/lib/firebase/client";
+import type { ItemDoc, ItemStatus, ItemCategory, ItemCondition } from "./types";
 
 // Client-side item with ID
-export interface Item extends Omit<ItemDoc, 'createdAt' | 'updatedAt'> {
+export interface Item extends Omit<ItemDoc, "createdAt" | "updatedAt"> {
   id: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -23,11 +23,11 @@ export interface Item extends Omit<ItemDoc, 'createdAt' | 'updatedAt'> {
 
 // Get all available items
 export async function getAvailableItems(): Promise<Item[]> {
-  const itemsRef = collection(db, 'items');
+  const itemsRef = collection(db, "items");
   const q = query(
     itemsRef,
-    where('status', '==', 'available'),
-    orderBy('createdAt', 'desc')
+    where("status", "==", "available"),
+    orderBy("createdAt", "desc"),
   );
 
   const snapshot = await getDocs(q);
@@ -39,14 +39,14 @@ export async function getAvailableItems(): Promise<Item[]> {
 
 // Get items by category
 export async function getItemsByCategory(
-  category: ItemCategory
+  category: ItemCategory,
 ): Promise<Item[]> {
-  const itemsRef = collection(db, 'items');
+  const itemsRef = collection(db, "items");
   const q = query(
     itemsRef,
-    where('category', '==', category),
-    where('status', '==', 'available'),
-    orderBy('createdAt', 'desc')
+    where("category", "==", category),
+    where("status", "==", "available"),
+    orderBy("createdAt", "desc"),
   );
 
   const snapshot = await getDocs(q);
@@ -58,35 +58,42 @@ export async function getItemsByCategory(
 
 // Get items by seller
 export async function getItemsBySeller(sellerId: string): Promise<Item[]> {
-  const itemsRef = collection(db, 'items');
-  const q = query(
-    itemsRef,
-    where('sellerId', '==', sellerId)
-  );
+  const itemsRef = collection(db, "items");
+  const q = query(itemsRef, where("sellerId", "==", sellerId));
 
   const snapshot = await getDocs(q);
   const items = snapshot.docs.map((doc) => ({
     id: doc.id,
     ...doc.data(),
   })) as Item[];
-  
+
   // Sort in memory instead of in query (avoids need for index)
   return items.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
 }
 
 // Get single item by ID
 export async function getItem(itemId: string): Promise<Item | null> {
-  const itemRef = doc(db, 'items', itemId);
-  const snapshot = await getDoc(itemRef);
+  console.log("getItem called with itemId:", itemId);
+  console.log("db instance:", db ? "exists" : "null");
 
-  if (!snapshot.exists()) {
-    return null;
+  try {
+    const itemRef = doc(db, "items", itemId);
+    console.log("Attempting to fetch item from Firestore...");
+    const snapshot = await getDoc(itemRef);
+    console.log("Fetch successful, exists:", snapshot.exists());
+
+    if (!snapshot.exists()) {
+      return null;
+    }
+
+    return {
+      id: snapshot.id,
+      ...snapshot.data(),
+    } as Item;
+  } catch (error) {
+    console.error("Error in getItem:", error);
+    throw error;
   }
-
-  return {
-    id: snapshot.id,
-    ...snapshot.data(),
-  } as Item;
 }
 
 // Create new item listing
@@ -105,10 +112,8 @@ export interface CreateItemInput {
   sellerId: string;
 }
 
-export async function createItem(
-  input: CreateItemInput
-): Promise<string> {
-  const itemsRef = collection(db, 'items');
+export async function createItem(input: CreateItemInput): Promise<string> {
+  const itemsRef = collection(db, "items");
 
   const itemData = {
     sellerId: input.sellerId,
@@ -122,8 +127,8 @@ export async function createItem(
     itemDetails: {
       requiresHelp: false,
     },
-    isFoodItem: input.category === 'food',
-    status: 'available' as ItemStatus,
+    isFoodItem: input.category === "food",
+    status: "available" as ItemStatus,
     createdAt: serverTimestamp(),
   };
 
@@ -134,9 +139,9 @@ export async function createItem(
 // Update item status
 export async function updateItemStatus(
   itemId: string,
-  status: ItemStatus
+  status: ItemStatus,
 ): Promise<void> {
-  const itemRef = doc(db, 'items', itemId);
+  const itemRef = doc(db, "items", itemId);
   await updateDoc(itemRef, {
     status,
   });
@@ -144,8 +149,8 @@ export async function updateItemStatus(
 
 // Delete item (mark as deleted)
 export async function deleteItem(itemId: string): Promise<void> {
-  const itemRef = doc(db, 'items', itemId);
+  const itemRef = doc(db, "items", itemId);
   await updateDoc(itemRef, {
-    status: 'sold' as ItemStatus, // Mark as sold since 'deleted' is not in ItemStatus type
+    status: "sold" as ItemStatus, // Mark as sold since 'deleted' is not in ItemStatus type
   });
 }

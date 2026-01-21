@@ -1,4 +1,4 @@
-import { MAPBOX_TOKEN } from './mapbox';
+import { MAPBOX_TOKEN } from "./mapbox";
 
 export interface GeocodedAddress {
   address: string;
@@ -11,13 +11,15 @@ export interface GeocodedAddress {
  * Geocode an address query using Mapbox Geocoding API
  * Returns an array of possible matches
  */
-export async function geocodeAddress(query: string): Promise<GeocodedAddress[]> {
+export async function geocodeAddress(
+  query: string,
+): Promise<GeocodedAddress[]> {
   if (!query || query.trim().length < 3) {
     return [];
   }
 
   if (!MAPBOX_TOKEN) {
-    console.error('Mapbox token not configured');
+    console.error("Mapbox token not configured");
     return [];
   }
 
@@ -26,9 +28,17 @@ export async function geocodeAddress(query: string): Promise<GeocodedAddress[]> 
     const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedQuery}.json?access_token=${MAPBOX_TOKEN}&autocomplete=true&limit=5`;
 
     const response = await fetch(url);
-    
+
     if (!response.ok) {
-      console.error('Geocoding failed:', response.statusText);
+      const errorBody = await response
+        .text()
+        .catch(() => "Unable to read response");
+      console.error("Geocoding failed:", {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorBody,
+        url: url.replace(MAPBOX_TOKEN, "REDACTED"),
+      });
       return [];
     }
 
@@ -45,7 +55,7 @@ export async function geocodeAddress(query: string): Promise<GeocodedAddress[]> 
       place_name: feature.place_name,
     }));
   } catch (error) {
-    console.error('Geocoding error:', error);
+    console.error("Geocoding error:", error);
     return [];
   }
 }
