@@ -8,6 +8,12 @@ export function useAuthUser() {
   const [user, setUser] = useState<User | null | undefined>(undefined);
 
   useEffect(() => {
+    if (!auth) {
+      // Firebase not initialized yet (SSR or initial load)
+      setUser(null);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
     });
