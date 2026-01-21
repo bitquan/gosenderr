@@ -369,3 +369,13 @@ export interface DisputeDoc {
     userBanned?: string;
     createdAt: Timestamp;
 }
+export type FeatureFlagCategory = 'customer' | 'delivery' | 'admin' | 'marketplace';
+export interface FeatureFlagDoc {
+    key: string;
+    category: FeatureFlagCategory;
+    enabled: boolean;
+    description: string;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+    updatedBy?: string;
+}

@@ -273,5 +273,19 @@ service cloud.firestore {
       
       allow delete: if false;
     }
+    
+    // ========== FEATURE FLAGS ==========
+    match /featureFlags/{flagKey} {
+      // Anyone authenticated can read feature flags
+      allow read: if signedIn();
+      
+      // Only admins can create, update, or delete feature flags
+      allow create, update: if isAdmin()
+        && request.resource.data.category in ['customer', 'delivery', 'admin', 'marketplace']
+        && request.resource.data.enabled is bool
+        && request.resource.data.description is string;
+      
+      allow delete: if isAdmin();
+    }
   }
 }

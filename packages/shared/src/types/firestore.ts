@@ -435,3 +435,17 @@ export interface DisputeDoc {
   
   createdAt: Timestamp;
 }
+
+// ==================== FEATURE FLAGS ====================
+
+export type FeatureFlagCategory = 'customer' | 'delivery' | 'admin' | 'marketplace';
+
+export interface FeatureFlagDoc {
+  key: string; // e.g., "customer.packageShipping" or "delivery.routes"
+  category: FeatureFlagCategory;
+  enabled: boolean;
+  description: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  updatedBy?: string; // admin uid who last modified
+}
