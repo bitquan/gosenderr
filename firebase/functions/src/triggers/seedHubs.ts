@@ -129,6 +129,7 @@ export const seedHubs = functions.https.onCall(async (data, context) => {
       const hubId = db.collection("hubs").doc().id;
       const hubRef = db.collection("hubs").doc(hubId);
 
+      // Note: Using 'any' for timestamp compatibility between firebase-admin and firebase client SDKs
       const hubDoc: any = {
         hubId,
         name: hubData.name,
