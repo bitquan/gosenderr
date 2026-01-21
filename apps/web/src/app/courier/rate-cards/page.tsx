@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { PackageRateCardBuilder } from '@/components/v2/PackageRateCardBuilder';
 import { FoodRateCardBuilder } from '@/components/v2/FoodRateCardBuilder';
-import { PackageRateCard, FoodRateCard } from '@gosenderr/shared/types/firestore';
+import { PackageRateCard, FoodRateCard } from '@gosenderr/shared';
 import { auth, db } from '@/lib/firebase/client';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';

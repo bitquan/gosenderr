@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { FoodRateCard } from '@gosenderr/shared/types/firestore';
+import { FoodRateCard } from '@gosenderr/shared';
 
 interface FoodRateCardBuilderProps {
   currentRateCard?: FoodRateCard;

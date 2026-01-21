@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { PackageRateCard } from '@gosenderr/shared/types/firestore';
+import { PackageRateCard } from '@gosenderr/shared';
 
 interface PackageRateCardBuilderProps {
   currentRateCard?: PackageRateCard;

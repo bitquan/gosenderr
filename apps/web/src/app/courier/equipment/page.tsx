@@ -5,7 +5,7 @@ import { auth, db, storage } from '@/lib/firebase/client';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
-import { CourierEquipment, EquipmentItem } from '@gosenderr/shared/types/firestore';
+import { CourierEquipment, EquipmentItem } from '@gosenderr/shared';
 
 type EquipmentType =
   | 'insulated_bag'
