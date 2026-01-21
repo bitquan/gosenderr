@@ -11,10 +11,12 @@ import { MapboxMap } from '@/components/v2/MapboxMap';
 import { StatusTimeline } from '@/components/v2/StatusTimeline';
 import { uploadJobPhoto } from '@/lib/storage/uploadJobPhoto';
 import { PhotoMetadata } from '@gosenderr/shared';
+import { useToast } from '@/components/ui/Toast';
 
 export default function ActiveRoutePage() {
   const router = useRouter();
   const { uid } = useAuthUser();
+  const { showToast, ToastContainer } = useToast();
   const [job, setJob] = useState<(JobDoc & { id: string }) | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -93,7 +95,7 @@ export default function ActiveRoutePage() {
         },
       } as any);
 
-      alert('Pickup photo captured successfully!');
+      showToast('Pickup photo captured successfully!', 'success');
       setUploading(false);
     } catch (err: any) {
       console.error('Error capturing pickup photo:', err);
@@ -140,7 +142,7 @@ export default function ActiveRoutePage() {
         },
       } as any);
 
-      alert('Dropoff photo captured successfully!');
+      showToast('Dropoff photo captured successfully!', 'success');
       setUploading(false);
     } catch (err: any) {
       console.error('Error capturing dropoff photo:', err);
@@ -162,7 +164,7 @@ export default function ActiveRoutePage() {
       setJob({ ...job, status: newStatus });
     } catch (err) {
       console.error('Error updating status:', err);
-      alert('Failed to update status');
+      showToast('Failed to update status', 'error');
     }
   };
 
@@ -292,7 +294,9 @@ export default function ActiveRoutePage() {
   const needsDropoffPhoto = ['arrived_dropoff'].includes(job.status);
 
   return (
-    <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
+    <>
+      <ToastContainer />
+      <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
       <div style={{ marginBottom: '24px' }}>
         <h1 style={{ fontSize: '28px', fontWeight: '700', marginBottom: '8px' }}>
           Active Route
@@ -497,5 +501,6 @@ export default function ActiveRoutePage() {
         />
       </div>
     </div>
+    </>
   );
 }
