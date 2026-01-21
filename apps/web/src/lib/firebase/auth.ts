@@ -6,10 +6,17 @@ import {
   signInWithPhoneNumber,
   ConfirmationResult,
   signOut as firebaseSignOut,
+  Auth,
 } from 'firebase/auth';
 import { app } from './client';
 
-export const auth = getAuth(app);
+// Only initialize auth on client side
+let authInstance: Auth | undefined;
+if (typeof window !== 'undefined' && app) {
+  authInstance = getAuth(app);
+}
+
+export const auth = authInstance as Auth;
 
 export interface PhoneAuthResult {
   confirmationResult: ConfirmationResult;
