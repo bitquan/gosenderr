@@ -34,3 +34,6 @@ export { app };
 
 export const db = dbInstance as Firestore;
 export const storage = storageInstance as FirebaseStorage;
+
+// Export auth from the auth module
+export { auth } from './auth';

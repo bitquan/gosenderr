@@ -273,5 +273,59 @@ service cloud.firestore {
       
       allow delete: if false;
     }
+
+    // ========== PACKAGE RUNNER APPLICATIONS ==========
+    match /runnerApplications/{applicationId} {
+      function isApplicant() {
+        return signedIn() && resource.data.userId == request.auth.uid;
+      }
+
+      // Read: applicant or admin
+      allow read: if signedIn() && (isApplicant() || isAdmin());
+
+      // Create: any signed-in user can apply
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == 'pending';
+
+      // Update: only admins can update (for approval/rejection)
+      allow update: if isAdmin();
+
+      allow delete: if false;
+    }
+
+    // ========== LONG HAUL ROUTES ==========
+    match /longHaulRoutes/{routeId} {
+      function isAssignedRunner() {
+        return signedIn() && resource.data.get('assignedRunnerId', null) == request.auth.uid;
+      }
+
+      function isPackageRunner() {
+        return signedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('packageRunnerProfile', {}).get('isPackageRunner', false) == true;
+      }
+
+      // Read: any package runner or admin
+      allow read: if signedIn() && (isPackageRunner() || isAdmin());
+
+      // Create: only admin or system (Cloud Functions)
+      allow create: if isAdmin();
+
+      // Update: assigned runner can update progress, admin can update anything
+      allow update: if signedIn() && (
+        isAssignedRunner()
+        || isAdmin()
+      );
+
+      allow delete: if isAdmin();
+    }
+
+    // ========== HUBS ==========
+    match /hubs/{hubId} {
+      // Read: any signed-in user
+      allow read: if signedIn();
+
+      // Create/Update/Delete: only admin
+      allow create, update, delete: if isAdmin();
+    }
   }
 }

@@ -435,3 +435,148 @@ export interface DisputeDoc {
   
   createdAt: Timestamp;
 }
+
+// ==================== PACKAGE RUNNER SYSTEM ====================
+
+export type RunnerApplicationStatus = 'pending' | 'approved' | 'rejected';
+
+export interface RunnerVehicleInfo {
+  type: VehicleType;
+  make: string;
+  model: string;
+  year: number;
+  color: string;
+  licensePlate: string;
+}
+
+export interface RunnerEquipmentInfo {
+  hasDolly: boolean;
+  hasStraps: boolean;
+  hasFurnitureBlankets: boolean;
+  maxWeightCapacity: number; // lbs
+  vehicleCapacity: string; // e.g., "sedan", "van", "truck"
+}
+
+export interface RunnerPreferences {
+  interstateDelivery: boolean;
+  longHaulRoutes: boolean;
+  hubToHubOnly: boolean;
+  maxDistancePerRoute: number; // miles
+  preferredRegions: string[]; // e.g., ["West Coast", "Southwest"]
+}
+
+export interface RunnerApplication {
+  userId: string;
+  displayName: string;
+  email: string;
+  phone: string;
+  status: RunnerApplicationStatus;
+  vehicle: RunnerVehicleInfo;
+  equipment: RunnerEquipmentInfo;
+  preferences: RunnerPreferences;
+  
+  // Documents
+  driversLicenseUrl: string;
+  insuranceUrl: string;
+  vehicleRegistrationUrl: string;
+  
+  // Admin review
+  reviewedBy?: string; // admin uid
+  reviewedAt?: Timestamp;
+  reviewNotes?: string;
+  rejectionReason?: string;
+  
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+export type RouteType = 'long_haul' | 'hub_to_hub' | 'regional';
+export type RouteStatus = 'available' | 'assigned' | 'in_progress' | 'completed' | 'cancelled';
+
+export interface RouteStop {
+  hubId?: string; // If this is a hub stop
+  location: {
+    lat: number;
+    lng: number;
+    address: string;
+  };
+  packages: string[]; // Package IDs
+  stopType: 'pickup' | 'dropoff';
+  sequenceNumber: number;
+  estimatedArrival?: Timestamp;
+  actualArrival?: Timestamp;
+  completedAt?: Timestamp;
+}
+
+export interface LongHaulRoute {
+  routeId: string;
+  type: RouteType;
+  status: RouteStatus;
+  assignedRunnerId?: string;
+  
+  origin: {
+    lat: number;
+    lng: number;
+    address: string;
+    hubId?: string;
+  };
+  
+  destination: {
+    lat: number;
+    lng: number;
+    address: string;
+    hubId?: string;
+  };
+  
+  stops: RouteStop[];
+  packageIds: string[];
+  
+  estimatedDistance: number; // miles
+  estimatedDuration: number; // minutes
+  
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  assignedAt?: Timestamp;
+  startedAt?: Timestamp;
+  completedAt?: Timestamp;
+}
+
+export interface Hub {
+  hubId: string;
+  name: string;
+  location: {
+    lat: number;
+    lng: number;
+    address: string;
+    city: string;
+    state: string;
+  };
+  capacity: number;
+  currentPackages: number;
+  operatingHours: {
+    open: string; // "08:00"
+    close: string; // "20:00"
+  };
+  isActive: boolean;
+  createdAt: Timestamp;
+}
+
+// Feature flags for package runner system
+export interface PackageRunnerFeatureFlags {
+  enabled: boolean;
+  hubNetwork: boolean;
+  packageTracking: boolean;
+  routeOptimization: boolean;
+}
+
+// Extended user doc to include package runner status
+export interface PackageRunnerProfile {
+  isPackageRunner: boolean;
+  applicationId?: string;
+  approvedAt?: Timestamp;
+  activeRoutes: string[]; // Route IDs
+  completedRoutes: number;
+  totalMiles: number;
+  averageRating: number;
+  featureFlags: PackageRunnerFeatureFlags;
+}

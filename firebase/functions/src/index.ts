@@ -8,3 +8,6 @@ export { sendNotifications } from "./triggers/notifications";
 export { capturePayment } from "./triggers/capturePayment";
 export { refundPayment } from "./triggers/refundPayment";
 export { enforceRatings } from "./triggers/enforceRatings";
+export { setPackageRunnerClaim, manuallySetRunnerClaim } from "./triggers/setRunnerClaim";
+export { buildLongRoutes } from "./triggers/buildLongRoutes";
+export { buildLongHaulRoutes } from "./triggers/buildLongHaulRoutes";
