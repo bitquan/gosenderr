@@ -9,5 +9,6 @@ export {capturePayment} from "./triggers/capturePayment";
 export {refundPayment} from "./triggers/refundPayment";
 export {enforceRatings} from "./triggers/enforceRatings";
 export {buildRoutes} from "./triggers/buildRoutes";
+export {buildLongRoutes} from "./triggers/buildLongRoutes";
 export {seedHubs} from "./triggers/seedHubs";
 export {buildLongHaulRoutes} from "./triggers/buildLongHaulRoutes";
