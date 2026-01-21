@@ -25,6 +25,7 @@ export function calcMiles(pickup: GeoPoint, dropoff: GeoPoint): number {
 export function estimateMinutes(miles: number, mode: TransportMode): number {
   const speedMph = {
     walk: 3,
+    bike: 12,
     scooter: 10,
     car: 25,
   }[mode];

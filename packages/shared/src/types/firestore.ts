@@ -2,7 +2,7 @@ import { Timestamp } from 'firebase/firestore';
 
 // ==================== USER ROLES ====================
 export type UserRole = 'buyer' | 'seller' | 'courier' | 'admin';
-export type TransportMode = 'walk' | 'scooter' | 'car';
+export type TransportMode = 'walk' | 'bike' | 'scooter' | 'car';
 
 // Legacy support
 export type LegacyUserRole = 'customer' | 'courier' | 'admin';

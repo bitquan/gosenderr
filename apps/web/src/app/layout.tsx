@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import { Navbar } from '@/components/v2/Navbar';
 
 export const metadata: Metadata = {
   title: 'GoSenderr - On-Demand Delivery',
@@ -14,7 +15,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <Navbar>{children}</Navbar>
+      </body>
     </html>
   );
 }
