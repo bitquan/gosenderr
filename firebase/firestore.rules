@@ -119,16 +119,8 @@ service cloud.firestore {
         return isCustomer() || isSeller() || isCourier();
       }
       
-      // Read: customer, seller, courier, admin, or public tracking (read-only, limited fields)
-      // Allow public read for tracking purposes, but users should only access their own tracking numbers
-      // In production, implement rate limiting and consider a separate tracking collection
-      allow read: if true; // Public access for tracking - consider security implications
-      
-      // Note: This is a simplified approach for the MVP. For production:
-      // 1. Consider creating a separate "publicTracking" collection with only necessary fields
-      // 2. Implement rate limiting to prevent abuse
-      // 3. Use field-level security to hide sensitive data
-      // Original rule was: allow read: if signedIn() && (isParticipant() || isAdmin());
+      // Read: customer, seller, courier, or admin
+      allow read: if signedIn() && (isParticipant() || isAdmin());
       
       // Create: customer or seller can create delivery jobs
       allow create: if signedIn()
@@ -199,16 +191,12 @@ service cloud.firestore {
         && validPackageInfo(request.resource.data.package)
         && request.resource.data.photos is list;
 
-      // read job: creator, assigned courier, any signed-in user for open jobs, or public tracking
-      // Public tracking allows anyone to read a job by job ID (used as tracking number)
-      // Security note: Consider rate limiting and field-level security in production
-      allow read: if true; // Public access for tracking - simplified for MVP
-      
-      // Note: Original rule was more restrictive. For production:
-      // 1. Implement rate limiting to prevent abuse
-      // 2. Consider creating a separate tracking collection
-      // 3. Add field-level security to hide sensitive information
-      // Original rule: allow read: if signedIn() && (isCreator() || isAssignedCourier() || resource.data.status == 'open');
+      // read job: creator, assigned courier, or any signed-in user for open jobs
+      allow read: if signedIn() && (
+        isCreator()
+        || isAssignedCourier()
+        || resource.data.status == 'open'
+      );
 
       // update job
       allow update: if signedIn() && (
@@ -284,6 +272,16 @@ service cloud.firestore {
       allow update: if isAdmin();
       
       allow delete: if false;
+    }
+
+    // ========== PUBLIC TRACKING (Secure read-only for customers) ==========
+    match /tracking/{trackingId} {
+      // Public read access with just tracking ID (no auth required)
+      // This is a separate collection with minimal data for public tracking
+      allow read: if true;
+      
+      // Only system/cloud functions can write to tracking
+      allow create, update, delete: if false;
     }
   }
 }
