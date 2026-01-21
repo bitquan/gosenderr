@@ -117,7 +117,7 @@ export default function CourierRoutesPage() {
                     </div>
                     <div className="text-right">
                       <div className="text-lg font-bold text-gray-900">
-                        ${job.pricing?.courierEarnings?.toFixed(2) || 'N/A'}
+                        ${job.agreedFee?.toFixed(2) || 'TBD'}
                       </div>
                       <div className="text-xs text-gray-500">estimated</div>
                     </div>
@@ -127,18 +127,18 @@ export default function CourierRoutesPage() {
                     <div>
                       <div className="text-xs text-gray-500 mb-1">Pickup</div>
                       <div className="text-sm text-gray-700">
-                        📍 {job.pickup?.address?.substring(0, 40) || 'Address masked'}...
+                        📍 {job.pickup?.label?.substring(0, 40) || 'Location set'}
                       </div>
                     </div>
                     <div>
                       <div className="text-xs text-gray-500 mb-1">Dropoff</div>
                       <div className="text-sm text-gray-700">
-                        📍 {job.dropoff?.address?.substring(0, 40) || 'Address masked'}...
+                        📍 {job.dropoff?.label?.substring(0, 40) || 'Location set'}
                       </div>
                     </div>
                     <div>
                       <div className="text-xs text-gray-500">
-                        Distance: ~{job.estimatedDistance?.toFixed(1) || 'N/A'} mi
+                        Package: {job.package?.size || 'Standard'} {job.package?.flags?.fragile ? '💎' : ''}
                       </div>
                     </div>
                   </div>
