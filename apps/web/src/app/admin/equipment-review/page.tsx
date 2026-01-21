@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { auth, db } from '@/lib/firebase/client';
 import { collection, query, where, getDocs, doc, updateDoc, Timestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
-import { CourierEquipment, EquipmentItem } from '@gosenderr/shared/types/firestore';
+import { CourierEquipment, EquipmentItem } from '@gosenderr/shared';
 
 type EquipmentType =
   | 'insulated_bag'
