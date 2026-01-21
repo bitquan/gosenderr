@@ -102,6 +102,7 @@ export const buildRoutes = functions.pubsub
         );
 
         // Create optimized stops
+        // Note: Using 'any' for timestamp compatibility between firebase-admin and firebase client SDKs
         const optimizedStops = optimizedJobs.map((job, index) => ({
           jobId: job.itemId,
           sequence: index + 1,
@@ -123,6 +124,7 @@ export const buildRoutes = functions.pubsub
         const vehicleTypeRequired = getRequiredVehicleType(optimizedJobs);
 
         // Create route document
+        // Note: Using 'any' for timestamp compatibility between firebase-admin and firebase client SDKs
         const routeId = db.collection("routes").doc().id;
         const routeDoc: any = {
           routeId,
