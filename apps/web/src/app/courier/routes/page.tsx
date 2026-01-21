@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { auth } from '@/lib/firebase/auth';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { useRoutes } from '@/hooks/useRoutes';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
@@ -46,7 +46,7 @@ export default function CourierRoutesPage() {
         status: 'claimed',
         courierId: currentUser.uid,
         courierName: currentUser.displayName || 'Unknown',
-        claimedAt: new Date(),
+        claimedAt: serverTimestamp(),
       });
       
       alert('Route accepted! Redirecting to active route...');
