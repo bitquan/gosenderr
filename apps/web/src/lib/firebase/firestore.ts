@@ -14,7 +14,7 @@ import {
   runTransaction,
   Timestamp,
 } from 'firebase/firestore';
-import { app } from './client';
+import { db as clientDb } from './client';
 import { 
   UserDoc, 
   UserRole, 
@@ -25,7 +25,7 @@ import {
   CourierData 
 } from '@gosenderr/shared';
 
-export const db = getFirestore(app);
+export const db = clientDb;
 
 /**
  * User operations
