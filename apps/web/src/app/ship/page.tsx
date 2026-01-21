@@ -103,7 +103,7 @@ export default function ShipPage() {
       setLoading(true);
       
       // Load feature flags
-      const flagsDoc = await getDoc(doc(db, 'featureFlags', 'global'));
+      const flagsDoc = await getDoc(doc(db, 'featureFlags', 'config'));
       if (flagsDoc.exists()) {
         const flags = flagsDoc.data() as FeatureFlags;
         if (!flags.customer?.packageShipping) {
