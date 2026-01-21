@@ -7,3 +7,4 @@ export { autoCancel } from "./triggers/autoCancel";
 export { sendNotifications } from "./triggers/notifications";
 export { capturePayment } from "./triggers/capturePayment";
 export { refundPayment } from "./triggers/refundPayment";
+export { enforceRatings } from "./triggers/enforceRatings";
