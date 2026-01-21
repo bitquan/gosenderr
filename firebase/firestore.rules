@@ -119,8 +119,12 @@ service cloud.firestore {
         return isCustomer() || isSeller() || isCourier();
       }
       
-      // Read: customer, seller, courier, or admin
-      allow read: if signedIn() && (isParticipant() || isAdmin());
+      // Read: customer, seller, courier, admin, or public tracking
+      // Public tracking allows anyone to read a delivery job by job ID (used as tracking number)
+      allow read: if true; // Public access for tracking
+      
+      // Note: Original rule was more restrictive:
+      // allow read: if signedIn() && (isParticipant() || isAdmin());
       
       // Create: customer or seller can create delivery jobs
       allow create: if signedIn()
@@ -191,12 +195,12 @@ service cloud.firestore {
         && validPackageInfo(request.resource.data.package)
         && request.resource.data.photos is list;
 
-      // read job: creator, assigned courier, or any signed-in user for open jobs
-      allow read: if signedIn() && (
-        isCreator()
-        || isAssignedCourier()
-        || resource.data.status == 'open'
-      );
+      // read job: creator, assigned courier, any signed-in user for open jobs, or public tracking
+      // Public tracking allows anyone to read a job by job ID (used as tracking number)
+      allow read: if true; // Public access for tracking
+      
+      // Note: Original rule was more restrictive:
+      // allow read: if signedIn() && (isCreator() || isAssignedCourier() || resource.data.status == 'open');
 
       // update job
       allow update: if signedIn() && (
