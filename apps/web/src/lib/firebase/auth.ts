@@ -10,19 +10,33 @@ import {
 } from 'firebase/auth';
 import { app } from './client';
 
-// Only initialize auth on client side (not during build/SSR)
-const isBrowser = typeof window !== 'undefined';
-let authInstance: Auth | undefined;
+// Lazy initialization - only create auth when needed
+let authInstance: Auth | null = null;
 
-if (isBrowser && app) {
-  try {
-    authInstance = getAuth(app);
-  } catch (error) {
-    console.error('Failed to initialize Firebase Auth:', error);
+function getAuthInstance(): Auth | null {
+  if (typeof window === 'undefined') {
+    return null;
   }
+  
+  if (!authInstance && app) {
+    try {
+      authInstance = getAuth(app);
+    } catch (error) {
+      console.error('Failed to initialize Firebase Auth:', error);
+      return null;
+    }
+  }
+  
+  return authInstance;
 }
 
-export const auth = authInstance as Auth;
+export const auth = new Proxy({} as Auth, {
+  get(target, prop) {
+    const instance = getAuthInstance();
+    if (!instance) return undefined;
+    return (instance as any)[prop];
+  }
+});
 
 export interface PhoneAuthResult {
   confirmationResult: ConfirmationResult;
