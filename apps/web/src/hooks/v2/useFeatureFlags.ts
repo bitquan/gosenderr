@@ -5,6 +5,10 @@ import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase/firestore';
 import { FeatureFlagDoc } from '@gosenderr/shared';
 
+// NOTE: This query requires a Firestore composite index:
+// Collection: featureFlags
+// Fields: category (Ascending), key (Ascending)
+// Create via Firebase Console or auto-generated on first use
 export function useFeatureFlags() {
   const [flags, setFlags] = useState<FeatureFlagDoc[] | null | undefined>(undefined);
 

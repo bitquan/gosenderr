@@ -46,7 +46,7 @@ export default function ShipPage() {
             contact support if you believe this is an error.
           </p>
           <Link
-            href={role === 'customer' ? '/customer/jobs' : '/'}
+            href={role === 'courier' ? '/courier/dashboard' : '/customer/jobs'}
             className="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
           >
             Go to Dashboard

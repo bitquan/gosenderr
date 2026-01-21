@@ -7,13 +7,11 @@ import { FeatureFlagDoc } from '@gosenderr/shared';
 
 export function useFeatureFlag(flagKey: string) {
   const [flag, setFlag] = useState<FeatureFlagDoc | null | undefined>(undefined);
-  const [enabled, setEnabled] = useState<boolean>(false);
 
   useEffect(() => {
     if (!db) {
       // Firebase not initialized yet (SSR or initial load)
       setFlag(null);
-      setEnabled(false);
       return;
     }
 
@@ -24,17 +22,14 @@ export function useFeatureFlag(flagKey: string) {
         if (snapshot.exists()) {
           const data = snapshot.data() as FeatureFlagDoc;
           setFlag(data);
-          setEnabled(data.enabled);
         } else {
           // Flag doesn't exist, default to disabled
           setFlag(null);
-          setEnabled(false);
         }
       },
       (error) => {
         console.error(`Error fetching feature flag ${flagKey}:`, error);
         setFlag(null);
-        setEnabled(false);
       }
     );
 
@@ -43,7 +38,7 @@ export function useFeatureFlag(flagKey: string) {
 
   return {
     flag,
-    enabled,
+    enabled: flag?.enabled ?? false,
     loading: flag === undefined,
   };
 }
