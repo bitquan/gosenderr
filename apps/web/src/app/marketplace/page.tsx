@@ -56,6 +56,10 @@ export default function MarketplacePage() {
         (error) => {
           console.error('Failed to get location:', error);
           setLocationError(true);
+        },
+        {
+          timeout: 10000,
+          enableHighAccuracy: true,
         }
       );
     }
