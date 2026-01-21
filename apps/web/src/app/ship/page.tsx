@@ -28,8 +28,7 @@ export default function ShipPackagePage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuthUser();
   
-  const [step, setStep] = useState<'package' | 'addresses' | 'payment'>(
- | 'payment'>('package');
+  const [step, setStep] = useState<'package' | 'addresses' | 'payment'>('package');
   const [packageDetails, setPackageDetails] = useState<PackageDetails>({
     description: '',
     weight: 0,
