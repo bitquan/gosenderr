@@ -27,6 +27,8 @@ export default function VendorOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('pending');
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
@@ -58,6 +60,7 @@ export default function VendorOrdersPage() {
 
   async function handleMarkReadyForPickup(orderId: string) {
     try {
+      setErrorMessage(null);
       await updateDoc(doc(db, 'deliveryJobs', orderId), {
         sellerReadyForPickup: true,
         sellerReadyAt: serverTimestamp(),
@@ -65,10 +68,12 @@ export default function VendorOrdersPage() {
       });
       
       // In production, this would trigger a notification to the courier
-      alert('Order marked as ready! Courier will be notified.');
+      setSuccessMessage('Order marked as ready! Courier will be notified.');
+      setTimeout(() => setSuccessMessage(null), 5000); // Auto-dismiss after 5 seconds
     } catch (err: any) {
       console.error('Error marking order ready:', err);
-      alert('Failed to mark order as ready: ' + err.message);
+      setErrorMessage('Failed to mark order as ready: ' + err.message);
+      setTimeout(() => setErrorMessage(null), 5000); // Auto-dismiss after 5 seconds
     }
   }
 
@@ -107,6 +112,70 @@ export default function VendorOrdersPage() {
           ← Back to My Items
         </Link>
       </div>
+
+      {/* Success Message */}
+      {successMessage && (
+        <div
+          style={{
+            padding: '15px',
+            marginBottom: '20px',
+            backgroundColor: '#E8F5E9',
+            border: '1px solid #A5D6A7',
+            borderRadius: '8px',
+            color: '#2E7D32',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <span>{successMessage}</span>
+          <button
+            onClick={() => setSuccessMessage(null)}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#2E7D32',
+              cursor: 'pointer',
+              fontSize: '18px',
+              padding: '0 5px',
+            }}
+          >
+            ×
+          </button>
+        </div>
+      )}
+
+      {/* Error Message */}
+      {errorMessage && (
+        <div
+          style={{
+            padding: '15px',
+            marginBottom: '20px',
+            backgroundColor: '#FEE',
+            border: '1px solid #FCC',
+            borderRadius: '8px',
+            color: '#C00',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <span>{errorMessage}</span>
+          <button
+            onClick={() => setErrorMessage(null)}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#C00',
+              cursor: 'pointer',
+              fontSize: '18px',
+              padding: '0 5px',
+            }}
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
         <h1 style={{ margin: 0, fontSize: '28px' }}>My Orders</h1>
