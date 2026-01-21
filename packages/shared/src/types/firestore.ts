@@ -154,6 +154,11 @@ export interface UserDoc {
   
   // New courier profile
   courierProfile?: CourierProfile;
+  
+  // Stripe Connect (for sellers)
+  stripeConnectAccountId?: string;
+  stripeConnectStatus?: 'pending' | 'active' | 'restricted';
+  stripeConnectOnboardingComplete?: boolean;
 }
 
 // ==================== MARKETPLACE ITEMS ====================
@@ -268,6 +273,12 @@ export interface JobPricing {
   courierEarnings: number; // 100% to courier
   platformFee: number; // $2.50 for packages, $1.50 for food
   totalCustomerCharge: number;
+  
+  // Marketplace-specific pricing
+  itemPrice?: number; // Price of marketplace item
+  deliveryFee?: number; // Fee for delivery service
+  sellerPayout?: number; // Amount to transfer to seller
+  platformApplicationFee?: number; // Platform fee on marketplace transaction
 }
 
 export type PaymentStatus = 'pending' | 'authorized' | 'captured' | 'refunded';
@@ -360,6 +371,12 @@ export interface DeliveryJobDoc {
   pricing: JobPricing;
   paymentStatus: PaymentStatus;
   stripePaymentIntentId: string;
+  stripeTransferId?: string; // For Stripe Connect transfers to seller
+  
+  // Marketplace integration
+  isMarketplaceOrder?: boolean; // True if this is a marketplace item + delivery
+  sellerReadyForPickup?: boolean; // Seller marked item as ready
+  sellerReadyAt?: Timestamp;
   
   foodDeliveryDetails?: FoodDeliveryDetails;
   timeline: JobTimeline;

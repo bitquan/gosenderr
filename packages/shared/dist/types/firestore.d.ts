@@ -125,6 +125,9 @@ export interface UserDoc {
     courier?: CourierData;
     location?: CourierLocation;
     courierProfile?: CourierProfile;
+    stripeConnectAccountId?: string;
+    stripeConnectStatus?: 'pending' | 'active' | 'restricted';
+    stripeConnectOnboardingComplete?: boolean;
 }
 export type ItemCategory = 'electronics' | 'furniture' | 'clothing' | 'food' | 'other';
 export type ItemCondition = 'new' | 'like_new' | 'good' | 'fair' | 'poor';
@@ -224,6 +227,10 @@ export interface JobPricing {
     courierEarnings: number;
     platformFee: number;
     totalCustomerCharge: number;
+    itemPrice?: number;
+    deliveryFee?: number;
+    sellerPayout?: number;
+    platformApplicationFee?: number;
 }
 export type PaymentStatus = 'pending' | 'authorized' | 'captured' | 'refunded';
 export interface FoodDeliveryDetails {
@@ -312,6 +319,10 @@ export interface DeliveryJobDoc {
     pricing: JobPricing;
     paymentStatus: PaymentStatus;
     stripePaymentIntentId: string;
+    stripeTransferId?: string;
+    isMarketplaceOrder?: boolean;
+    sellerReadyForPickup?: boolean;
+    sellerReadyAt?: Timestamp;
     foodDeliveryDetails?: FoodDeliveryDetails;
     timeline: JobTimeline;
     customerConfirmation: CustomerConfirmation;
