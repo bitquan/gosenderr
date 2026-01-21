@@ -48,25 +48,25 @@ export const capturePayment = functions.firestore
 
       // Update job document
       await admin.firestore().collection("deliveryJobs").doc(jobId).update({
-        paymentStatus: "captured",
+        "paymentStatus": "captured",
         "paymentDetails.capturedAt": admin.firestore.FieldValue.serverTimestamp(),
         "paymentDetails.captureAmount": paymentIntent.amount_received,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        "updatedAt": admin.firestore.FieldValue.serverTimestamp(),
       });
 
       console.log(`Job ${jobId}: Payment status updated to captured`);
 
-      return { success: true, paymentIntentId };
+      return {success: true, paymentIntentId};
     } catch (error: any) {
       console.error(`Job ${jobId}: Error capturing payment:`, error);
 
       // Update job with error information
       await admin.firestore().collection("deliveryJobs").doc(jobId).update({
-        paymentStatus: "capture_failed",
+        "paymentStatus": "capture_failed",
         "paymentDetails.captureError": error.message,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        "updatedAt": admin.firestore.FieldValue.serverTimestamp(),
       });
 
-      return { success: false, error: error.message };
+      return {success: false, error: error.message};
     }
   });
