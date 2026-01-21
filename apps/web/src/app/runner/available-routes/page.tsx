@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { auth, db } from '@/lib/firebase/client';
-import { collection, query, where, getDocs, doc, updateDoc, onSnapshot, Timestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, updateDoc, onSnapshot, Timestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { LongHaulRoute, RouteStatus } from '@gosenderr/shared';
 
@@ -35,10 +35,11 @@ export default function AvailableRoutesPage() {
       setCurrentUser(user);
 
       // Check if user is a package runner
-      const userDoc = await getDocs(query(collection(db, 'users'), where('__name__', '==', user.uid)));
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDocSnap = await getDoc(userDocRef);
       
-      if (!userDoc.empty) {
-        const userData = userDoc.docs[0].data();
+      if (userDocSnap.exists()) {
+        const userData = userDocSnap.data();
         const hasRunnerProfile = userData.packageRunnerProfile?.isPackageRunner || false;
         setIsPackageRunner(hasRunnerProfile);
 
@@ -98,12 +99,14 @@ export default function AvailableRoutesPage() {
       });
 
       // Update runner's active routes
-      const userDoc = await getDocs(query(collection(db, 'users'), where('__name__', '==', currentUser.uid)));
-      if (!userDoc.empty) {
-        const userData = userDoc.docs[0].data();
+      const userDocRef = doc(db, 'users', currentUser.uid);
+      const userDocSnap = await getDoc(userDocRef);
+      
+      if (userDocSnap.exists()) {
+        const userData = userDocSnap.data();
         const activeRoutes = userData.packageRunnerProfile?.activeRoutes || [];
         
-        await updateDoc(doc(db, 'users', currentUser.uid), {
+        await updateDoc(userDocRef, {
           'packageRunnerProfile.activeRoutes': [...activeRoutes, selectedRoute.id],
         });
       }

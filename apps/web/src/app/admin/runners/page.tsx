@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { auth, db } from '@/lib/firebase/client';
-import { collection, query, where, getDocs, doc, updateDoc, Timestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, updateDoc, Timestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { RunnerApplication, RunnerApplicationStatus } from '@gosenderr/shared';
 
@@ -39,8 +39,10 @@ export default function RunnersPage() {
       }
 
       // Check if user is admin
-      const userDoc = await getDocs(query(collection(db, 'users'), where('__name__', '==', user.uid)));
-      if (userDoc.empty || userDoc.docs[0].data().role !== 'admin') {
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDocSnap = await getDoc(userDocRef);
+      
+      if (!userDocSnap.exists() || userDocSnap.data().role !== 'admin') {
         router.push('/');
         return;
       }
@@ -95,15 +97,14 @@ export default function RunnersPage() {
         reviewNotes: reviewNotes || undefined,
       });
 
-      // TODO: Call Cloud Function to set packageRunner custom claim
-      // This will be implemented in the next step
-      console.log('TODO: Set custom claim for user:', selectedRunner.application.userId);
+      // The Cloud Function setPackageRunnerClaim will automatically set the custom claim
+      // when it detects the status change to 'approved'
 
       // Update local state
       setPendingRunners(pendingRunners.filter((runner) => runner !== selectedRunner));
       setSelectedRunner(null);
       setReviewNotes('');
-      alert('Runner approved successfully! Custom claim will be set via Cloud Function.');
+      alert('Runner approved successfully! Custom claim will be set automatically.');
     } catch (error) {
       console.error('Failed to approve runner:', error);
       alert('Failed to approve runner. Please try again.');

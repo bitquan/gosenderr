@@ -77,16 +77,30 @@ export const buildLongRoutes = functions.pubsub
               lng: lastPackage.dropoff.lng,
               address: lastPackage.dropoff.address,
             },
-            stops: packages.map((pkg, index) => ({
-              location: {
-                lat: pkg.data.pickup.lat,
-                lng: pkg.data.pickup.lng,
-                address: pkg.data.pickup.address,
-              },
-              packages: [pkg.id],
-              stopType: "pickup",
-              sequenceNumber: index * 2,
-            })),
+            stops: [
+              // Add pickup stops
+              ...packages.map((pkg, index) => ({
+                location: {
+                  lat: pkg.data.pickup.lat,
+                  lng: pkg.data.pickup.lng,
+                  address: pkg.data.pickup.address,
+                },
+                packages: [pkg.id],
+                stopType: "pickup" as const,
+                sequenceNumber: index * 2,
+              })),
+              // Add dropoff stops
+              ...packages.map((pkg, index) => ({
+                location: {
+                  lat: pkg.data.dropoff.lat,
+                  lng: pkg.data.dropoff.lng,
+                  address: pkg.data.dropoff.address,
+                },
+                packages: [pkg.id],
+                stopType: "dropoff" as const,
+                sequenceNumber: packages.length * 2 + index * 2,
+              })),
+            ],
             packageIds: packages.map((pkg) => pkg.id),
             estimatedDistance: packages.reduce(
               (sum, pkg) => sum + pkg.data.estimatedDistance,

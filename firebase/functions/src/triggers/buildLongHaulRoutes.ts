@@ -1,6 +1,9 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 
+const AVERAGE_SPEED_MPH = 55; // Average highway speed for route estimation
+const MIN_PACKAGES_FOR_HUB_ROUTE = 5; // Minimum packages required to create a hub-to-hub route
+
 /**
  * Build hub-to-hub routes for interstate shipping
  * This function creates routes between distribution hubs
@@ -87,8 +90,8 @@ export const buildLongHaulRoutes = functions.pubsub
         for (const [destHubId, packages] of Object.entries(
           packagesByDestHub
         )) {
-          if (packages.length >= 5) {
-            // Minimum 5 packages for hub-to-hub route
+          if (packages.length >= MIN_PACKAGES_FOR_HUB_ROUTE) {
+            // Minimum packages for hub-to-hub route
             const destHub = hubs.find((h) => h.id === destHubId);
             if (!destHub) continue;
 
@@ -148,9 +151,9 @@ export const buildLongHaulRoutes = functions.pubsub
                   destHub.location.lat,
                   destHub.location.lng
                 ) /
-                  55 *
+                  AVERAGE_SPEED_MPH *
                   60
-              ), // Assuming 55 mph average
+              ), // Minutes, assuming average highway speed
               createdAt: admin.firestore.FieldValue.serverTimestamp(),
               updatedAt: admin.firestore.FieldValue.serverTimestamp(),
             };

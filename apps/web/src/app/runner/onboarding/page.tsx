@@ -7,6 +7,8 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { VehicleType, RunnerApplication } from '@gosenderr/shared';
 
+// Vehicle types suitable for package runners (long-distance routes)
+// foot, bike, scooter, and motorcycle are excluded as they're not suitable for long-haul package delivery
 const VEHICLE_TYPES: { value: VehicleType; label: string }[] = [
   { value: 'car', label: 'Car 🚗' },
   { value: 'van', label: 'Van 🚐' },
