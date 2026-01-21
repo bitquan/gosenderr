@@ -10,9 +10,11 @@ import {
 } from 'firebase/auth';
 import { app } from './client';
 
-// Only initialize auth on client side
+// Only initialize auth on client side (not during build/SSR)
+const isBrowser = typeof window !== 'undefined';
 let authInstance: Auth | undefined;
-if (typeof window !== 'undefined' && app) {
+
+if (isBrowser && app) {
   authInstance = getAuth(app);
 }
 
