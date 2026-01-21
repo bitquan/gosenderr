@@ -264,29 +264,9 @@ export default function ItemDetailPage() {
           {item.pickupLocation?.address && (
             <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '16px', marginBottom: '16px' }}>
               <h2 style={{ fontSize: '15px', fontWeight: '600', marginBottom: '8px' }}>Pickup Location</h2>
-              <p style={{ fontSize: '14px', color: '#6b7280', margin: '0 0 12px 0' }}>
+              <p style={{ fontSize: '14px', color: '#6b7280', margin: 0 }}>
                 📍 {item.pickupLocation.address}
               </p>
-
-              {/* Simple map placeholder - show map if Mapbox is available */}
-              {typeof window !== 'undefined' && process.env.NEXT_PUBLIC_MAPBOX_TOKEN && (
-                <div
-                  style={{
-                    width: '100%',
-                    height: '200px',
-                    background: '#f3f4f6',
-                    borderRadius: '8px',
-                    border: '1px solid #e5e7eb',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#6b7280',
-                    fontSize: '14px',
-                  }}
-                >
-                  Map: {item.pickupLocation.lat.toFixed(4)}, {item.pickupLocation.lng.toFixed(4)}
-                </div>
-              )}
             </div>
           )}
 
