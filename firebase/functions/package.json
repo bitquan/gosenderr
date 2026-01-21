@@ -14,7 +14,7 @@
     "logs": "firebase functions:log"
   },
   "engines": {
-    "node": "18"
+    "node": "20"
   },
   "dependencies": {
     "@gosenderr/shared": "file:../../packages/shared",
