@@ -15,7 +15,11 @@ const isBrowser = typeof window !== 'undefined';
 let authInstance: Auth | undefined;
 
 if (isBrowser && app) {
-  authInstance = getAuth(app);
+  try {
+    authInstance = getAuth(app);
+  } catch (error) {
+    console.error('Failed to initialize Firebase Auth:', error);
+  }
 }
 
 export const auth = authInstance as Auth;
