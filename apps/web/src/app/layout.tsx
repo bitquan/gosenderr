@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import '@/styles/design-tokens.css';
 import { Navbar } from '@/components/v2/Navbar';
 
 export const metadata: Metadata = {

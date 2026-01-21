@@ -5,9 +5,9 @@ const db = admin.firestore();
 
 /**
  * Enforce ratings and update user statistics
- * 
+ *
  * Triggered when a new rating is created.
- * 
+ *
  * Actions:
  * 1. Query all ratings for the rated user
  * 2. Calculate average rating
@@ -22,7 +22,7 @@ export const enforceRatings = functions.firestore
     const ratingData = snapshot.data();
     const ratingId = context.params.ratingId;
 
-    const { toUserId, role, stars } = ratingData;
+    const {toUserId, role, stars} = ratingData;
 
     if (!toUserId || !role || !stars) {
       console.error(`Rating ${ratingId}: Missing required fields`);
@@ -78,7 +78,7 @@ export const enforceRatings = functions.firestore
           .doc(toUserId)
           .update({
             "courierProfile.status": "suspended",
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            "updatedAt": admin.firestore.FieldValue.serverTimestamp(),
           });
 
         // Create dispute document
@@ -111,12 +111,12 @@ export const enforceRatings = functions.firestore
         );
       }
 
-      return { success: true, averageRating, totalRatings: count };
+      return {success: true, averageRating, totalRatings: count};
     } catch (error: any) {
       console.error(
         `Rating ${ratingId}: Error processing rating:`,
         error
       );
-      return { success: false, error: error.message };
+      return {success: false, error: error.message};
     }
   });
