@@ -1,0 +1,34 @@
+{
+  "marketplace": {
+    "enabled": true,
+    "itemListings": true,
+    "combinedPayments": true
+  },
+  "delivery": {
+    "onDemand": true,
+    "routes": false,
+    "longRoutes": false,
+    "longHaul": false
+  },
+  "courier": {
+    "rateCards": true,
+    "equipmentBadges": true,
+    "workModes": true
+  },
+  "seller": {
+    "stripeConnect": true,
+    "multiplePhotos": true,
+    "foodListings": true
+  },
+  "customer": {
+    "liveTracking": true,
+    "proofPhotos": true,
+    "routeDelivery": false,
+    "packageShipping": false
+  },
+  "packageRunner": {
+    "enabled": false,
+    "onboarding": false,
+    "routeAcceptance": false
+  }
+}

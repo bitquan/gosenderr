@@ -61,8 +61,10 @@ service cloud.firestore {
 
     // ========== USERS ==========
     match /users/{uid} {
-      // User can read/write their own document
-      allow read: if isSelf(uid);
+      // Anyone can read basic seller info (for marketplace)
+      allow read: if true;
+      
+      // User can write their own document
       allow create: if isSelf(uid) && validRole(request.resource.data.role);
       allow update: if isSelf(uid);
       allow delete: if false;
@@ -272,6 +274,110 @@ service cloud.firestore {
       allow update: if isAdmin();
       
       allow delete: if false;
+    }
+
+    // ========== ROUTES (Local Delivery Routes) ==========
+    match /routes/{routeId} {
+      function isCourier() {
+        return signedIn() && resource.data.get('courierId', null) == request.auth.uid;
+      }
+      
+      // Any authenticated courier can view available routes
+      allow read: if signedIn();
+      
+      // Couriers can claim routes (update status to 'claimed')
+      allow update: if signedIn()
+        && (request.resource.data.status == 'claimed' || isCourier());
+      
+      // Only system/cloud functions should create routes
+      allow create, delete: if false;
+    }
+
+    // ========== LONG ROUTES (Regional Routes 50-200mi) ==========
+    match /longRoutes/{routeId} {
+      function isPackageRunner() {
+        return signedIn() && request.auth.token.get('packageRunner', false) == true;
+      }
+      
+      function isAssignedRunner() {
+        return signedIn() && resource.data.get('runnerId', null) == request.auth.uid;
+      }
+      
+      // Only package runners can view long routes
+      allow read: if isPackageRunner();
+      
+      // Package runners can accept routes
+      allow update: if isPackageRunner() && (request.resource.data.status == 'accepted' || isAssignedRunner());
+      
+      // Only system/cloud functions should create routes
+      allow create, delete: if false;
+    }
+
+    // ========== LONG HAUL ROUTES (Interstate Routes 200+mi) ==========
+    match /longHaulRoutes/{routeId} {
+      function isPackageRunner() {
+        return signedIn() && request.auth.token.get('packageRunner', false) == true;
+      }
+      
+      function isAssignedRunner() {
+        return signedIn() && resource.data.get('runnerId', null) == request.auth.uid;
+      }
+      
+      // Only package runners can view long haul routes
+      allow read: if isPackageRunner();
+      
+      // Package runners can accept routes
+      allow update: if isPackageRunner() && (request.resource.data.status == 'accepted' || isAssignedRunner());
+      
+      // Only system/cloud functions should create routes
+      allow create, delete: if false;
+    }
+
+    // ========== HUBS (Distribution Centers) ==========
+    match /hubs/{hubId} {
+      // Anyone can read hub information (needed for package shipping UI)
+      allow read: if true;
+      
+      // Only admins can manage hubs
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ========== PACKAGES (Package Shipping) ==========
+    match /packages/{packageId} {
+      function isCustomer() {
+        return signedIn() && resource.data.customerId == request.auth.uid;
+      }
+      
+      function isRunner() {
+        return signedIn() && resource.data.get('runnerId', null) == request.auth.uid;
+      }
+      
+      function isPackageRunner() {
+        return signedIn() && request.auth.token.get('packageRunner', false) == true;
+      }
+      
+      // Customer, assigned runner, or admin can read package
+      allow read: if signedIn() && (isCustomer() || isRunner() || isAdmin());
+      
+      // Any authenticated user can create a package as customer
+      allow create: if signedIn()
+        && request.resource.data.customerId == request.auth.uid
+        && request.resource.data.status == 'pending';
+      
+      // Package runners and admins can update packages (for status changes)
+      allow update: if isPackageRunner() || isAdmin();
+      
+      // Only admins can delete packages
+      allow delete: if isAdmin();
+    }
+
+    // ========== FEATURE FLAGS ==========
+    match /featureFlags/{doc} {
+      // Anyone can read feature flags (needed for UI feature control)
+      allow read: if true;
+      
+      // Only admins can manage feature flags
+      allow create, update, delete: if isAdmin();
     }
   }
 }
