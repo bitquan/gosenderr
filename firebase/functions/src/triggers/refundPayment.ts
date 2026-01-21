@@ -47,25 +47,25 @@ export const refundPayment = functions.firestore
 
       // Update job document
       await admin.firestore().collection("deliveryJobs").doc(jobId).update({
-        paymentStatus: "refunded",
+        "paymentStatus": "refunded",
         "paymentDetails.refundedAt": admin.firestore.FieldValue.serverTimestamp(),
         "paymentDetails.refundReason": "Job cancelled before delivery",
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        "updatedAt": admin.firestore.FieldValue.serverTimestamp(),
       });
 
       console.log(`Job ${jobId}: Payment status updated to refunded`);
 
-      return { success: true, paymentIntentId };
+      return {success: true, paymentIntentId};
     } catch (error: any) {
       console.error(`Job ${jobId}: Error cancelling payment:`, error);
 
       // Update job with error information
       await admin.firestore().collection("deliveryJobs").doc(jobId).update({
-        paymentStatus: "refund_failed",
+        "paymentStatus": "refund_failed",
         "paymentDetails.refundError": error.message,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        "updatedAt": admin.firestore.FieldValue.serverTimestamp(),
       });
 
-      return { success: false, error: error.message };
+      return {success: false, error: error.message};
     }
   });
