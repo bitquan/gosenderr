@@ -36,10 +36,13 @@ export function useRoutes(options: UseRoutesOptions = {}) {
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
-        const routesData = snapshot.docs.map((doc) => ({
-          ...doc.data(),
-          routeId: doc.id,
-        })) as RouteDoc[];
+        const routesData = snapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            ...data,
+            routeId: data.routeId || doc.id,
+          } as RouteDoc;
+        });
         setRoutes(routesData);
         setLoading(false);
       },

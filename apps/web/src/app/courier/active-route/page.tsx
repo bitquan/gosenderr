@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { auth } from '@/lib/firebase/auth';
-import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { useRoutes } from '@/hooks/useRoutes';
 import { GlassCard, LoadingSkeleton } from '@/components/GlassCard';
@@ -66,7 +66,7 @@ export default function ActiveRoutePage() {
           return {
             ...stop,
             completed: true,
-            completedAt: new Date(),
+            completedAt: serverTimestamp(),
           };
         }
         return stop;
@@ -81,7 +81,7 @@ export default function ActiveRoutePage() {
         currentStopIndex: activeRoute.currentStopIndex + 1,
         ...(allCompleted && {
           status: 'completed',
-          completedAt: new Date(),
+          completedAt: serverTimestamp(),
         }),
       });
 
