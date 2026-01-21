@@ -18,6 +18,7 @@ export default function VendorItemsPage() {
   const router = useRouter();
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
+  const [stripeConnectStatus, setStripeConnectStatus] = useState<string | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
@@ -33,6 +34,15 @@ export default function VendorItemsPage() {
       try {
         const data = await getItemsBySeller(user.uid);
         setItems(data);
+        
+        // Load Stripe Connect status
+        const { doc, getDoc } = await import('firebase/firestore');
+        const { db } = await import('@/lib/firebase');
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setStripeConnectStatus(userData.stripeConnectStatus || null);
+        }
       } catch (error) {
         console.error('Failed to load items:', error);
       } finally {
@@ -80,8 +90,69 @@ export default function VendorItemsPage() {
 
   return (
     <div style={{ padding: '30px' }}>
+      {/* Stripe Connect Status Banner */}
+      {stripeConnectStatus !== 'active' && (
+        <div
+          style={{
+            padding: '15px 20px',
+            backgroundColor: stripeConnectStatus === 'restricted' ? '#FFF3CD' : '#D1ECF1',
+            border: '1px solid ' + (stripeConnectStatus === 'restricted' ? '#FFEAA7' : '#BEE5EB'),
+            borderRadius: '8px',
+            marginBottom: '20px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <div>
+            <strong>
+              {stripeConnectStatus === 'restricted' && '⚠️ Complete your payment setup'}
+              {stripeConnectStatus === 'pending' && 'ℹ️ Payment setup in progress'}
+              {!stripeConnectStatus && '💳 Set up payments to sell items'}
+            </strong>
+            <p style={{ margin: '5px 0 0 0', fontSize: '14px', color: '#666' }}>
+              {stripeConnectStatus === 'restricted' && 'Your account needs additional information.'}
+              {stripeConnectStatus === 'pending' && 'Your account is being verified.'}
+              {!stripeConnectStatus && 'Connect your bank account to receive marketplace payments.'}
+            </p>
+          </div>
+          <Link
+            href="/vendor/onboarding/stripe"
+            style={{
+              padding: '8px 16px',
+              backgroundColor: '#6E56CF',
+              color: '#FFF',
+              textDecoration: 'none',
+              borderRadius: '6px',
+              fontWeight: '600',
+              fontSize: '14px',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {stripeConnectStatus ? 'Continue Setup' : 'Get Started'}
+          </Link>
+        </div>
+      )}
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-        <h1 style={{ margin: 0 }}>My Items</h1>
+        <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+          <h1 style={{ margin: 0 }}>My Items</h1>
+          <Link
+            href="/vendor/orders"
+            style={{
+              padding: '8px 16px',
+              backgroundColor: '#FFF',
+              color: '#6E56CF',
+              border: '1px solid #6E56CF',
+              textDecoration: 'none',
+              borderRadius: '8px',
+              fontWeight: '600',
+              fontSize: '14px',
+            }}
+          >
+            View Orders
+          </Link>
+        </div>
         <Link
           href="/vendor/items/new"
           style={{
