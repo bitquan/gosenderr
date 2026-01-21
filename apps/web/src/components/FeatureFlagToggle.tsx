@@ -10,7 +10,7 @@ interface FeatureFlagToggleProps {
   disabled?: boolean;
 }
 
-export default function FeatureFlagToggle({
+export function FeatureFlagToggle({
   label,
   description,
   enabled,
