@@ -11,12 +11,15 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID!,
 };
 
-// Only initialize on client side
+// Only initialize on client side (not during build/SSR)
+const isBrowser = typeof window !== 'undefined';
+const isValidConfig = firebaseConfig.apiKey && firebaseConfig.apiKey.startsWith('AIza');
+
 let app: FirebaseApp | undefined;
 let dbInstance: Firestore | undefined;
 let storageInstance: FirebaseStorage | undefined;
 
-if (typeof window !== 'undefined') {
+if (isBrowser && isValidConfig) {
   app = getApps().length ? getApp() : initializeApp(firebaseConfig);
   dbInstance = getFirestore(app);
   storageInstance = getStorage(app);
