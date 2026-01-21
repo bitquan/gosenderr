@@ -10,33 +10,24 @@ import {
 } from 'firebase/auth';
 import { app } from './client';
 
-// Lazy initialization - only create auth when needed
-let authInstance: Auth | null = null;
-
+// Lazy getter for auth instance
 function getAuthInstance(): Auth | null {
-  if (typeof window === 'undefined') {
+  if (typeof window === 'undefined' || !app) {
     return null;
   }
   
-  if (!authInstance && app) {
-    try {
-      authInstance = getAuth(app);
-    } catch (error) {
-      console.error('Failed to initialize Firebase Auth:', error);
-      return null;
-    }
+  try {
+    return getAuth(app);
+  } catch (error) {
+    console.error('Failed to initialize Firebase Auth:', error);
+    return null;
   }
-  
-  return authInstance;
 }
 
-export const auth = new Proxy({} as Auth, {
-  get(target, prop) {
-    const instance = getAuthInstance();
-    if (!instance) return undefined;
-    return (instance as any)[prop];
-  }
-});
+export const getAuthSafe = getAuthInstance;
+
+// For backwards compatibility - will be null on server/before init
+export const auth = typeof window !== 'undefined' && app ? getAuth(app) : null;
 
 export interface PhoneAuthResult {
   confirmationResult: ConfirmationResult;
