@@ -10,3 +10,4 @@ export {refundPayment} from "./triggers/refundPayment";
 export {enforceRatings} from "./triggers/enforceRatings";
 export {buildRoutes} from "./triggers/buildRoutes";
 export {seedHubs} from "./triggers/seedHubs";
+export {buildLongHaulRoutes} from "./triggers/buildLongHaulRoutes";
