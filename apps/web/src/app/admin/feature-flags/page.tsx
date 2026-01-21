@@ -8,7 +8,7 @@ import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/fire
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 import type { FeatureFlags } from '@gosenderr/shared';
 import { GlassCard } from '@/components/GlassCard';
-import FeatureFlagToggle from '@/components/FeatureFlagToggle';
+import { FeatureFlagToggle } from '@/components/FeatureFlagToggle';
 
 export default function FeatureFlagsPage() {
   const router = useRouter();
@@ -317,8 +317,11 @@ export default function FeatureFlagsPage() {
               description="Enable feature flags management interface"
               enabled={flags.admin.featureFlagsControl}
               onChange={(value) => handleToggle('admin.featureFlagsControl', value)}
-              disabled={isSaving}
+              disabled={true}
             />
+            <p style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.5)', marginTop: '0.5rem', fontStyle: 'italic' }}>
+              Note: This setting is read-only to prevent self-locking
+            </p>
           </GlassCard>
 
           {/* Advanced Section */}
