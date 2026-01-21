@@ -10,17 +10,15 @@ import {
 } from 'firebase/auth';
 import { app } from './client';
 
-// Lazy initialization - only get auth when needed
-let _auth: Auth | undefined;
+// Only initialize auth on client side (not during build/SSR)
+const isBrowser = typeof window !== 'undefined';
+let authInstance: Auth | undefined;
 
-function getAuthInstance(): Auth {
-  if (!_auth) {
-    _auth = getAuth(app);
-  }
-  return _auth;
+if (isBrowser && app) {
+  authInstance = getAuth(app);
 }
 
-export const auth = typeof window !== 'undefined' ? getAuthInstance() : ({} as Auth);
+export const auth = authInstance as Auth;
 
 export interface PhoneAuthResult {
   confirmationResult: ConfirmationResult;
@@ -31,7 +29,7 @@ export interface PhoneAuthResult {
  * Initialize reCAPTCHA verifier for phone auth
  */
 export function initRecaptchaVerifier(elementId: string): RecaptchaVerifier {
-  return new RecaptchaVerifier(getAuthInstance(), elementId, {
+  return new RecaptchaVerifier(auth, elementId, {
     size: 'normal',
     callback: () => {
       // reCAPTCHA solved
@@ -49,26 +47,26 @@ export async function sendPhoneVerificationCode(
   phoneNumber: string,
   verifier: RecaptchaVerifier
 ): Promise<ConfirmationResult> {
-  return signInWithPhoneNumber(getAuthInstance(), phoneNumber, verifier);
+  return signInWithPhoneNumber(auth, phoneNumber, verifier);
 }
 
 /**
  * Fallback: Email/Password sign in
  */
 export async function signInWithEmail(email: string, password: string) {
-  return signInWithEmailAndPassword(getAuthInstance(), email, password);
+  return signInWithEmailAndPassword(auth, email, password);
 }
 
 /**
  * Fallback: Email/Password sign up
  */
 export async function signUpWithEmail(email: string, password: string) {
-  return createUserWithEmailAndPassword(getAuthInstance(), email, password);
+  return createUserWithEmailAndPassword(auth, email, password);
 }
 
 /**
  * Sign out current user
  */
 export async function signOut() {
-  return firebaseSignOut(getAuthInstance());
+  return firebaseSignOut(auth);
 }
