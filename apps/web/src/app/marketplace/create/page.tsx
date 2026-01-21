@@ -63,6 +63,16 @@ export default function CreateItemPage() {
 
   const [error, setError] = useState('');
 
+  // Cleanup object URLs on unmount
+  useEffect(() => {
+    return () => {
+      photosPreviews.forEach((url) => URL.revokeObjectURL(url));
+      if (pickupPhotoPreview) {
+        URL.revokeObjectURL(pickupPhotoPreview);
+      }
+    };
+  }, [photosPreviews, pickupPhotoPreview]);
+
   // Auth check
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -106,6 +116,9 @@ export default function CreateItemPage() {
   };
 
   const removePhoto = (index: number) => {
+    // Revoke the URL to prevent memory leak
+    URL.revokeObjectURL(photosPreviews[index]);
+    
     const newPhotos = photos.filter((_, i) => i !== index);
     const newPreviews = photosPreviews.filter((_, i) => i !== index);
     setPhotos(newPhotos);
