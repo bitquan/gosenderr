@@ -2,7 +2,7 @@ name: CI + Deploy (Firebase Hosting)
 
 on:
   push:
-    branches: [main]
+    branches: ['**']  # Run on all branches
   pull_request:
     branches: [main]
 
