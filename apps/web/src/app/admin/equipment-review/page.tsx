@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { auth, db } from "@/lib/firebase/client";
+import { db } from "@/lib/firebase/client";
+import { getAuthSafe } from "@/lib/firebase/auth";
 import {
   collection,
   query,
@@ -56,6 +57,12 @@ export default function EquipmentReviewPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
+    const auth = getAuthSafe();
+    if (!auth) {
+      router.push("/login");
+      return;
+    }
+
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (!user) {
         router.push("/login");

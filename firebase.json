@@ -10,8 +10,11 @@
   },
   "hosting": {
     "site": "gosenderr-6773f",
-    "public": "public",
+    "source": "apps/web",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "frameworksBackend": {
+      "region": "us-central1"
+    },
     "headers": [
       {
         "source": "**",
@@ -21,15 +24,6 @@
             "value": "no-cache, no-store, must-revalidate"
           }
         ]
-      }
-    ],
-    "rewrites": [
-      {
-        "source": "**",
-        "run": {
-          "serviceId": "gosenderr-web",
-          "region": "us-central1"
-        }
       }
     ]
   }

@@ -209,6 +209,7 @@ export default function CheckoutPage() {
         customerId: user.uid,
         sellerId: item.sellerId,
         courierId: courier.id,
+        deliveryType: "on_demand",
         jobType: item.isFoodItem ? "food" : "package",
         priority: item.isFoodItem ? 100 : 50,
         status: JobStatus.OPEN,

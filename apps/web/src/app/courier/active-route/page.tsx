@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { auth } from "@/lib/firebase/auth";
+import { getAuthSafe } from "@/lib/firebase/auth";
 import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { useRoutes } from "@/hooks/useRoutes";
@@ -18,11 +18,18 @@ export default function ActiveRoutePage() {
   const [capturedPhoto, setCapturedPhoto] = useState<{
     url: string;
     coordinates: any;
+    timestamp: Date;
   } | null>(null);
   const [completingStop, setCompletingStop] = useState(false);
   const [capturingPhoto, setCapturingPhoto] = useState(false);
 
   useEffect(() => {
+    const auth = getAuthSafe();
+    if (!auth) {
+      router.push("/login");
+      return;
+    }
+
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (!user) {
         router.push("/login");

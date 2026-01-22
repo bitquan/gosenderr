@@ -18,9 +18,11 @@
   "devDependencies": {
     "esbuild": "^0.19.12",
     "firebase-admin": "^13.6.0",
+    "node-which": "^1.0.0",
     "tsx": "^4.21.0",
     "turbo": "^2.3.3",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "which": "^6.0.0"
   },
   "packageManager": "pnpm@8.15.1"
 }

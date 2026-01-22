@@ -130,13 +130,15 @@ export default function AdminRunnersNew() {
     return runner.packageRunnerProfile?.status === `${filter}_review`;
   });
 
-  const getStatusBadge = (status: string) => {
-    const statusMap: Record<string, string> = {
+  const getStatusBadge = (
+    status?: string,
+  ): "pending" | "approved" | "rejected" => {
+    const statusMap: Record<string, "pending" | "approved" | "rejected"> = {
       pending_review: "pending",
       approved: "approved",
       rejected: "rejected",
     };
-    return statusMap[status] || "pending";
+    return statusMap[status || "pending_review"] || "pending";
   };
 
   if (authLoading || loading) {

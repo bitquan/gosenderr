@@ -240,7 +240,7 @@ export default function RequestDeliveryPage() {
     const params = new URLSearchParams({
       itemId,
       courierId: selectedCourier.id,
-      pickupAddress: item.pickupAddress,
+      pickupAddress: item.pickupLocation.address,
       dropoffAddress: dropoffAddress.address,
       dropoffLat: dropoffAddress.lat.toString(),
       dropoffLng: dropoffAddress.lng.toString(),
