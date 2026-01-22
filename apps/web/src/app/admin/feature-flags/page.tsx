@@ -16,7 +16,6 @@ import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import type { FeatureFlags } from "@gosenderr/shared";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { FeatureFlagToggle } from "@/components/FeatureFlagToggle";
-import { BottomNav, adminNavItems } from "@/components/ui/BottomNav";
 import { Avatar } from "@/components/ui/Avatar";
 
 export default function FeatureFlagsPage() {
@@ -440,8 +439,6 @@ export default function FeatureFlagsPage() {
           </CardContent>
         </Card>
       </div>
-
-      <BottomNav items={adminNavItems} />
     </div>
   );
 }

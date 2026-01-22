@@ -133,6 +133,8 @@ export default function ShipPage() {
           return;
         }
         setFeatureEnabled(true);
+      } else {
+        setFeatureEnabled(true);
       }
 
       // Load hubs

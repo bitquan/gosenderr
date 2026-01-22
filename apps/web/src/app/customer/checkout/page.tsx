@@ -25,7 +25,6 @@ import {
 } from "@/lib/pricing/calculateCourierRate";
 import { getItem } from "@/lib/v2/items";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { BottomNav, customerNavItems } from "@/components/ui/BottomNav";
 import { Avatar } from "@/components/ui/Avatar";
 
 interface ItemDocWithId extends ItemDoc {
@@ -498,8 +497,6 @@ export default function CheckoutPage() {
           </CardContent>
         </Card>
       </div>
-
-      <BottomNav items={customerNavItems} />
     </div>
   );
 }

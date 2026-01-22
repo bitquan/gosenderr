@@ -19,8 +19,6 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { StatCard } from "@/components/ui/StatCard";
 import { StatusBadge } from "@/components/ui/Badge";
 import { Avatar } from "@/components/ui/Avatar";
-import { BottomNav, runnerNavItems } from "@/components/ui/BottomNav";
-import { FloatingButton } from "@/components/ui/FloatingButton";
 
 export default function RunnerDashboardNew() {
   const router = useRouter();
@@ -156,7 +154,7 @@ export default function RunnerDashboardNew() {
     <div className="min-h-screen bg-[#F8F9FF] pb-24">
       {/* Header Section */}
       <div className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] rounded-b-[32px] p-6 text-white shadow-lg">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
               <Avatar
@@ -178,7 +176,7 @@ export default function RunnerDashboardNew() {
           </div>
 
           {/* Quick Stats in Header */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             <div className="text-center">
               <p className="text-3xl font-bold">{stats.totalRoutes}</p>
               <p className="text-sm text-purple-100">Total Routes</p>
@@ -198,7 +196,7 @@ export default function RunnerDashboardNew() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-6 -mt-8 space-y-6">
+      <div className="max-w-6xl mx-auto px-6 -mt-8 space-y-6">
         {/* Status Banner */}
         {status === "pending_review" && (
           <Card
@@ -238,7 +236,7 @@ export default function RunnerDashboardNew() {
         )}
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <StatCard
             title="Completion Rate"
             value={
@@ -324,16 +322,6 @@ export default function RunnerDashboardNew() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Bottom Navigation */}
-      <BottomNav items={runnerNavItems} />
-
-      {/* Floating Action Button */}
-      <FloatingButton
-        icon="➕"
-        onClick={() => router.push("/runner/available-routes")}
-        variant="primary"
-      />
     </div>
   );
 }

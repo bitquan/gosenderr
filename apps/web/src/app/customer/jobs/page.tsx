@@ -6,8 +6,6 @@ import { JobSummaryCard } from "@/features/jobs/shared/JobSummaryCard";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { BottomNav, customerNavItems } from "@/components/ui/BottomNav";
-import { FloatingButton } from "@/components/ui/FloatingButton";
 import { Avatar } from "@/components/ui/Avatar";
 
 export default function CustomerJobs() {
@@ -89,13 +87,6 @@ export default function CustomerJobs() {
           </div>
         )}
       </div>
-
-      <BottomNav items={customerNavItems} />
-      <FloatingButton
-        icon="➕"
-        onClick={() => router.push("/customer/jobs/new")}
-        variant="primary"
-      />
     </div>
   );
 }

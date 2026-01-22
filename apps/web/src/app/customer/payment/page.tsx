@@ -13,7 +13,6 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { BottomNav, customerNavItems } from "@/components/ui/BottomNav";
 import { Avatar } from "@/components/ui/Avatar";
 
 interface OrderDetails {
@@ -324,8 +323,6 @@ export default function PaymentPage() {
           )}
         </div>
       </div>
-
-      <BottomNav items={customerNavItems} />
     </div>
   );
 }

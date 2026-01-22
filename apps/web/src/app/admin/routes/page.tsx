@@ -10,11 +10,12 @@ import {
   orderBy,
   doc,
   getDoc,
+  updateDoc,
+  serverTimestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { Card, CardContent } from "@/components/ui/Card";
 import { StatusBadge } from "@/components/ui/Badge";
-import { BottomNav, adminNavItems } from "@/components/ui/BottomNav";
 import { Avatar } from "@/components/ui/Avatar";
 
 export default function AdminRoutesPage() {
@@ -82,6 +83,26 @@ export default function AdminRoutesPage() {
     if (filter === "all") return true;
     return route.status === filter;
   });
+
+  const handleReassign = async (routeId: string) => {
+    const assigneeId = prompt("Reassign to courier/runner ID");
+    if (!assigneeId) return;
+    await updateDoc(doc(db, "routes", routeId), {
+      courierId: assigneeId,
+      updatedAt: serverTimestamp(),
+    });
+  };
+
+  const handleViewMap = (route: any) => {
+    const origin = route.originHub?.location;
+    const destination = route.destinationHub?.location;
+    if (!origin || !destination) {
+      alert("Route locations not available.");
+      return;
+    }
+    const url = `https://www.google.com/maps/dir/?api=1&origin=${origin.lat},${origin.lng}&destination=${destination.lat},${destination.lng}`;
+    window.open(url, "_blank");
+  };
 
   if (authLoading || loading) {
     return (
@@ -226,6 +247,18 @@ export default function AdminRoutesPage() {
 
                   <div className="flex flex-col items-end gap-2">
                     <StatusBadge status={route.status || "available"} />
+                    <button
+                      onClick={() => handleViewMap(route)}
+                      className="text-xs font-semibold text-purple-600"
+                    >
+                      View Map
+                    </button>
+                    <button
+                      onClick={() => handleReassign(route.id)}
+                      className="text-xs font-semibold text-gray-600"
+                    >
+                      Reassign
+                    </button>
                   </div>
                 </div>
               </CardContent>
@@ -233,8 +266,6 @@ export default function AdminRoutesPage() {
           ))
         )}
       </div>
-
-      <BottomNav items={adminNavItems} />
     </div>
   );
 }

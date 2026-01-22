@@ -15,7 +15,6 @@ import {
 import { useRouter } from "next/navigation";
 import { CourierEquipment, EquipmentItem } from "@gosenderr/shared";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { BottomNav, adminNavItems } from "@/components/ui/BottomNav";
 import { Avatar } from "@/components/ui/Avatar";
 
 type EquipmentType =
@@ -334,8 +333,6 @@ export default function EquipmentReviewPage() {
           </div>
         )}
       </div>
-
-      <BottomNav items={adminNavItems} />
     </div>
   );
 }

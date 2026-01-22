@@ -56,7 +56,8 @@ interface StatusBadgeProps {
     | "active"
     | "completed"
     | "cancelled"
-    | "in_progress";
+    | "in_progress"
+    | "ready_for_pickup";
   className?: string;
 }
 
@@ -89,6 +90,10 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
     in_progress: {
       variant: "info" as const,
       label: "In Progress",
+    },
+    ready_for_pickup: {
+      variant: "success" as const,
+      label: "Ready",
     },
   };
 

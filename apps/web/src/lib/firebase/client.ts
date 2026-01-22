@@ -1,5 +1,6 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
 import { getFirestore, Firestore } from "firebase/firestore";
+import { getFunctions, Functions } from "firebase/functions";
 import { getStorage, FirebaseStorage } from "firebase/storage";
 
 const firebaseConfig = {
@@ -19,12 +20,14 @@ const isValidConfig =
 let app: FirebaseApp | undefined;
 let dbInstance: Firestore | undefined;
 let storageInstance: FirebaseStorage | undefined;
+let functionsInstance: Functions | undefined;
 
 if (isBrowser && isValidConfig) {
   try {
     app = getApps().length ? getApp() : initializeApp(firebaseConfig);
     dbInstance = getFirestore(app);
     storageInstance = getStorage(app);
+    functionsInstance = getFunctions(app);
     console.log("Firebase initialized successfully");
   } catch (error) {
     console.error("Failed to initialize Firebase:", error);
@@ -40,6 +43,7 @@ export { app };
 
 export const db = dbInstance as Firestore;
 export const storage = storageInstance as FirebaseStorage;
+export const functions = functionsInstance as Functions;
 
 // Helper to check if Firebase is ready
 export const isFirebaseReady = () => !!dbInstance;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getAuthSafe } from "@/lib/firebase/auth";
 import {
@@ -11,6 +11,10 @@ import {
   orderBy,
   limit,
   onSnapshot,
+  doc,
+  getDoc,
+  updateDoc,
+  serverTimestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import Link from "next/link";
@@ -18,8 +22,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { StatCard } from "@/components/ui/StatCard";
 import { StatusBadge } from "@/components/ui/Badge";
 import { Avatar } from "@/components/ui/Avatar";
-import { BottomNav, customerNavItems } from "@/components/ui/BottomNav";
-import { FloatingButton } from "@/components/ui/FloatingButton";
+import { DonutChart } from "@/components/charts/DonutChart";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 export default function CustomerDashboardNew() {
   const router = useRouter();
@@ -29,6 +33,34 @@ export default function CustomerDashboardNew() {
   const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activities, setActivities] = useState<any[]>([]);
+  const [savedAddresses, setSavedAddresses] = useState<
+    Array<{ label: string; address: string }>
+  >([]);
+
+  const spendingData = useMemo(() => {
+    const deliverySpend = jobs.reduce(
+      (sum, job) => sum + (job.agreedFee || 0),
+      0,
+    );
+    const packageSpend = packages.reduce(
+      (sum, pkg) => sum + (pkg.price || 0),
+      0,
+    );
+    const total = deliverySpend + packageSpend;
+
+    if (total <= 0) {
+      return [
+        { name: "Delivery", value: 120 },
+        { name: "Packages", value: 80 },
+        { name: "Tips", value: 40 },
+      ];
+    }
+
+    return [
+      { name: "Delivery", value: Number(deliverySpend.toFixed(2)) },
+      { name: "Packages", value: Number(packageSpend.toFixed(2)) },
+    ];
+  }, [jobs, packages]);
 
   useEffect(() => {
     const auth = getAuthSafe();
@@ -56,6 +88,12 @@ export default function CustomerDashboardNew() {
 
   const loadDashboardData = async () => {
     try {
+      const userDocRef = doc(db, "users", currentUser.uid);
+      const userSnapshot = await getDoc(userDocRef);
+      if (userSnapshot.exists()) {
+        setSavedAddresses(userSnapshot.data()?.savedAddresses || []);
+      }
+
       const packagesQuery = query(
         collection(db, "packages"),
         where("senderId", "==", currentUser.uid),
@@ -98,6 +136,29 @@ export default function CustomerDashboardNew() {
       console.error("Error loading dashboard:", error);
       setLoading(false);
     }
+  };
+
+  const handleAddAddress = async () => {
+    const label = prompt("Address label (e.g., Home, Office)");
+    if (!label) return;
+    const address = prompt("Full address");
+    if (!address) return;
+
+    const updated = [...savedAddresses, { label, address }];
+    await updateDoc(doc(db, "users", currentUser.uid), {
+      savedAddresses: updated,
+      updatedAt: serverTimestamp(),
+    });
+    setSavedAddresses(updated);
+  };
+
+  const handleRemoveAddress = async (index: number) => {
+    const updated = savedAddresses.filter((_, idx) => idx !== index);
+    await updateDoc(doc(db, "users", currentUser.uid), {
+      savedAddresses: updated,
+      updatedAt: serverTimestamp(),
+    });
+    setSavedAddresses(updated);
   };
 
   const updateActivities = (pkgs: any[], jbs: any[]) => {
@@ -156,12 +217,14 @@ export default function CustomerDashboardNew() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-pulse">
-            <div className="w-16 h-16 bg-purple-200 rounded-full mx-auto mb-4"></div>
-            <div className="h-4 bg-purple-200 rounded w-32 mx-auto"></div>
+      <div className="min-h-screen bg-[#F8F9FF] px-6 py-10">
+        <div className="max-w-6xl mx-auto space-y-6">
+          <Skeleton className="h-24 w-full" variant="purple" />
+          <div className="grid grid-cols-2 gap-4">
+            <Skeleton className="h-24" />
+            <Skeleton className="h-24" />
           </div>
+          <Skeleton className="h-64" />
         </div>
       </div>
     );
@@ -173,7 +236,7 @@ export default function CustomerDashboardNew() {
     <div className="min-h-screen bg-[#F8F9FF] pb-24">
       {/* Header Section */}
       <div className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] rounded-b-[32px] p-6 text-white shadow-lg">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
               <Avatar
@@ -209,7 +272,7 @@ export default function CustomerDashboardNew() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-6 -mt-8 space-y-6">
+      <div className="max-w-6xl mx-auto px-6 -mt-8 space-y-6">
         {/* Stats Grid */}
         <div className="grid grid-cols-2 gap-4">
           <StatCard
@@ -225,6 +288,55 @@ export default function CustomerDashboardNew() {
             variant="warning"
           />
         </div>
+
+        <Card variant="elevated" className="animate-fade-in">
+          <CardHeader>
+            <CardTitle>Spending Breakdown</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <DonutChart data={spendingData} />
+          </CardContent>
+        </Card>
+
+        <Card variant="elevated" className="animate-fade-in">
+          <CardHeader
+            action={
+              <button
+                onClick={handleAddAddress}
+                className="text-sm font-semibold text-purple-600"
+              >
+                + Add
+              </button>
+            }
+          >
+            <CardTitle>Saved Addresses</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {savedAddresses.length === 0 ? (
+              <p className="text-sm text-gray-500">No saved addresses yet.</p>
+            ) : (
+              <div className="space-y-3">
+                {savedAddresses.map((addr, index) => (
+                  <div
+                    key={`${addr.label}-${index}`}
+                    className="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3"
+                  >
+                    <div>
+                      <p className="font-medium text-gray-900">{addr.label}</p>
+                      <p className="text-sm text-gray-500">{addr.address}</p>
+                    </div>
+                    <button
+                      onClick={() => handleRemoveAddress(index)}
+                      className="text-xs text-red-600 font-semibold"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Recent Packages */}
         <Card variant="elevated" className="animate-slide-up">
@@ -338,16 +450,6 @@ export default function CustomerDashboardNew() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Bottom Navigation */}
-      <BottomNav items={customerNavItems} />
-
-      {/* Floating Action Button */}
-      <FloatingButton
-        icon="➕"
-        onClick={() => router.push("/customer/ship")}
-        variant="primary"
-      />
     </div>
   );
 }

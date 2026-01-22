@@ -16,7 +16,7 @@ import { useRouter } from "next/navigation";
 import { getAuthSafe } from "@/lib/firebase/auth";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { StatusBadge } from "@/components/ui/Badge";
-import { BottomNav, runnerNavItems } from "@/components/ui/BottomNav";
+import { SwipeableCard } from "@/components/ui/SwipeableCard";
 
 export default function AvailableRoutesNew() {
   const router = useRouter();
@@ -243,78 +243,77 @@ export default function AvailableRoutesNew() {
             const arrivalDate = route.scheduledArrival?.toDate?.();
 
             return (
-              <Card
-                key={route.id}
-                variant="elevated"
-                className="bg-gradient-to-br from-white to-purple-50 animate-fade-in"
-              >
-                <div className="p-5">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <h3 className="text-xl font-bold text-gray-900 mb-2">
-                        {route.originHub?.name} → {route.destinationHub?.name}
-                      </h3>
-                      <div className="flex gap-3 text-sm text-gray-600">
-                        <span>📍 {route.distance} miles</span>
-                        <span>📦 {route.packageCount} packages</span>
-                        <span>⚖️ {route.totalWeight} lbs</span>
+              <SwipeableCard key={route.id} className="animate-fade-in">
+                <Card
+                  variant="elevated"
+                  className="bg-gradient-to-br from-white to-purple-50"
+                >
+                  <div className="p-5">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">
+                          {route.originHub?.name} → {route.destinationHub?.name}
+                        </h3>
+                        <div className="flex gap-3 text-sm text-gray-600">
+                          <span>📍 {route.distance} miles</span>
+                          <span>📦 {route.packageCount} packages</span>
+                          <span>⚖️ {route.totalWeight} lbs</span>
+                        </div>
+                      </div>
+                      <StatusBadge status="approved" />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 mb-4 p-4 bg-white rounded-xl">
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">Departure</p>
+                        <p className="text-sm font-medium">
+                          {departureDate?.toLocaleDateString()}
+                        </p>
+                        <p className="text-xs text-gray-600">
+                          {departureDate?.toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">Arrival</p>
+                        <p className="text-sm font-medium">
+                          {arrivalDate?.toLocaleDateString()}
+                        </p>
+                        <p className="text-xs text-gray-600">
+                          {arrivalDate?.toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </p>
                       </div>
                     </div>
-                    <StatusBadge status="approved" />
-                  </div>
 
-                  <div className="grid grid-cols-2 gap-4 mb-4 p-4 bg-white rounded-xl">
-                    <div>
-                      <p className="text-xs text-gray-500 mb-1">Departure</p>
-                      <p className="text-sm font-medium">
-                        {departureDate?.toLocaleDateString()}
-                      </p>
-                      <p className="text-xs text-gray-600">
-                        {departureDate?.toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 mb-1">Arrival</p>
-                      <p className="text-sm font-medium">
-                        {arrivalDate?.toLocaleDateString()}
-                      </p>
-                      <p className="text-xs text-gray-600">
-                        {arrivalDate?.toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </p>
+                    <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">
+                          Your Earnings
+                        </p>
+                        <p className="text-3xl font-bold text-green-600">
+                          ${route.pricing?.runnerEarnings?.toFixed(2)}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => handleAcceptRoute(route.id)}
+                        disabled={accepting}
+                        className="bg-purple-600 text-white px-8 py-3 rounded-xl font-medium hover:bg-purple-700 transition-colors disabled:bg-gray-400"
+                      >
+                        {accepting ? "Accepting..." : "Accept Route"}
+                      </button>
                     </div>
                   </div>
-
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                    <div>
-                      <p className="text-xs text-gray-500 mb-1">
-                        Your Earnings
-                      </p>
-                      <p className="text-3xl font-bold text-green-600">
-                        ${route.pricing?.runnerEarnings?.toFixed(2)}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => handleAcceptRoute(route.id)}
-                      disabled={accepting}
-                      className="bg-purple-600 text-white px-8 py-3 rounded-xl font-medium hover:bg-purple-700 transition-colors disabled:bg-gray-400"
-                    >
-                      {accepting ? "Accepting..." : "Accept Route"}
-                    </button>
-                  </div>
-                </div>
-              </Card>
+                </Card>
+              </SwipeableCard>
             );
           })
         )}
       </div>
-
-      <BottomNav items={runnerNavItems} />
     </div>
   );
 }

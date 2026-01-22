@@ -12,12 +12,12 @@ import {
   updateDoc,
   serverTimestamp,
   getDoc,
+  arrayUnion,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/Card";
 import { StatusBadge } from "@/components/ui/Badge";
-import { BottomNav, adminNavItems } from "@/components/ui/BottomNav";
 import { Avatar } from "@/components/ui/Avatar";
 
 export default function AdminPackagesPage() {
@@ -43,6 +43,35 @@ export default function AdminPackagesPage() {
     } finally {
       setUpdating(null);
     }
+  };
+
+  const handleAddNote = async (packageId: string) => {
+    const note = prompt("Add an internal note");
+    if (!note) return;
+    try {
+      await updateDoc(doc(db, "packages", packageId), {
+        internalNotes: arrayUnion({
+          note,
+          createdAt: serverTimestamp(),
+          createdBy: currentUser?.uid || "admin",
+        }),
+        updatedAt: serverTimestamp(),
+      });
+    } catch (error: any) {
+      alert(`Failed to add note: ${error.message}`);
+    }
+  };
+
+  const handleReportIssue = async (
+    packageId: string,
+    issueStatus: "lost" | "damaged",
+  ) => {
+    if (!confirm(`Mark package as ${issueStatus}?`)) return;
+    await updateDoc(doc(db, "packages", packageId), {
+      issueStatus,
+      issueReportedAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
   };
 
   useEffect(() => {
@@ -225,6 +254,12 @@ export default function AdminPackagesPage() {
                   <div className="flex flex-col items-end gap-3">
                     <StatusBadge status={pkg.currentStatus} />
 
+                    {pkg.issueStatus && (
+                      <span className="text-xs font-semibold text-red-600 bg-red-50 px-2 py-1 rounded-full">
+                        {pkg.issueStatus.toUpperCase()}
+                      </span>
+                    )}
+
                     <select
                       value={pkg.currentStatus || ""}
                       onChange={(e) =>
@@ -251,6 +286,27 @@ export default function AdminPackagesPage() {
                     >
                       Track Package →
                     </Link>
+
+                    <div className="flex flex-wrap justify-end gap-2">
+                      <button
+                        onClick={() => handleAddNote(pkg.id)}
+                        className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
+                      >
+                        Add Note
+                      </button>
+                      <button
+                        onClick={() => handleReportIssue(pkg.id, "lost")}
+                        className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-100 text-red-700 hover:bg-red-200 transition"
+                      >
+                        Mark Lost
+                      </button>
+                      <button
+                        onClick={() => handleReportIssue(pkg.id, "damaged")}
+                        className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-yellow-100 text-yellow-700 hover:bg-yellow-200 transition"
+                      >
+                        Mark Damaged
+                      </button>
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -258,8 +314,6 @@ export default function AdminPackagesPage() {
           ))
         )}
       </div>
-
-      <BottomNav items={adminNavItems} />
     </div>
   );
 }

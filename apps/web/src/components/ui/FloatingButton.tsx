@@ -8,6 +8,7 @@ interface FloatingButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   size?: "sm" | "md" | "lg";
   variant?: "primary" | "secondary" | "success";
   position?: "bottom-right" | "bottom-center";
+  haptic?: boolean;
 }
 
 export function FloatingButton({
@@ -16,7 +17,9 @@ export function FloatingButton({
   size = "lg",
   variant = "primary",
   position = "bottom-right",
+  haptic = true,
   className,
+  onClick,
   ...props
 }: FloatingButtonProps) {
   const baseStyles =
@@ -45,6 +48,15 @@ export function FloatingButton({
   // If there's both icon and children, make it pill-shaped
   const isExpanded = icon && children;
 
+  const handleClick: ButtonHTMLAttributes<HTMLButtonElement>["onClick"] = (
+    event,
+  ) => {
+    if (haptic && typeof navigator !== "undefined" && "vibrate" in navigator) {
+      navigator.vibrate(10);
+    }
+    onClick?.(event);
+  };
+
   return (
     <button
       className={cn(
@@ -55,6 +67,7 @@ export function FloatingButton({
         className,
       )}
       {...props}
+      onClick={handleClick}
     >
       {icon && <span className={isExpanded ? "" : "text-2xl"}>{icon}</span>}
       {children && <span>{children}</span>}

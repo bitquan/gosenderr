@@ -1,22 +1,22 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
-import { db } from '@/lib/firebase/client';
-import { GlassCard, LoadingSkeleton } from '@/components/GlassCard';
-import { MapboxMap } from '@/components/v2/MapboxMap';
-import { motion } from 'framer-motion';
-import type { 
-  PackageDoc, 
-  PackageStatus, 
-  LegType, 
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
+import { db } from "@/lib/firebase/client";
+import { GlassCard, LoadingSkeleton } from "@/components/GlassCard";
+import { MapboxMap } from "@/components/v2/MapboxMap";
+import { motion } from "framer-motion";
+import type {
+  PackageDoc,
+  PackageStatus,
+  LegType,
   LegStatus,
   ScanType,
   PackageJourneyLeg,
-  PackageScan 
-} from '@gosenderr/shared';
-import type { Timestamp } from 'firebase/firestore';
+  PackageScan,
+} from "@gosenderr/shared";
+import type { Timestamp } from "firebase/firestore";
 
 interface StatusConfig {
   label: string;
@@ -26,84 +26,88 @@ interface StatusConfig {
 
 const statusMap: Record<PackageStatus, StatusConfig> = {
   pickup_pending: {
-    label: 'Package pickup pending',
-    color: 'text-yellow-600',
-    bgColor: 'bg-yellow-100 border-yellow-300',
+    label: "Package pickup pending",
+    color: "text-yellow-600",
+    bgColor: "bg-yellow-100 border-yellow-300",
   },
   at_origin_hub: {
-    label: 'Package at origin hub',
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-100 border-blue-300',
+    label: "Package at origin hub",
+    color: "text-blue-600",
+    bgColor: "bg-blue-100 border-blue-300",
   },
   in_transit: {
-    label: 'Package in transit',
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-100 border-blue-300',
+    label: "Package in transit",
+    color: "text-blue-600",
+    bgColor: "bg-blue-100 border-blue-300",
   },
   at_destination_hub: {
-    label: 'Package at destination hub',
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-100 border-blue-300',
+    label: "Package at destination hub",
+    color: "text-blue-600",
+    bgColor: "bg-blue-100 border-blue-300",
   },
   out_for_delivery: {
-    label: 'Out for delivery',
-    color: 'text-purple-600',
-    bgColor: 'bg-purple-100 border-purple-300',
+    label: "Out for delivery",
+    color: "text-purple-600",
+    bgColor: "bg-purple-100 border-purple-300",
   },
   delivered: {
-    label: 'Delivered',
-    color: 'text-green-600',
-    bgColor: 'bg-green-100 border-green-300',
+    label: "Delivered",
+    color: "text-green-600",
+    bgColor: "bg-green-100 border-green-300",
   },
 };
 
 const legTypeLabels: Record<LegType, string> = {
-  local_pickup: 'Local Pickup',
-  long_haul: 'Long Haul Transit',
-  hub_transfer: 'Hub Transfer',
-  local_delivery: 'Local Delivery',
+  local_pickup: "Local Pickup",
+  long_haul: "Long Haul Transit",
+  hub_transfer: "Hub Transfer",
+  local_delivery: "Local Delivery",
 };
 
 const scanTypeLabels: Record<ScanType, string> = {
-  picked_up: 'Picked Up',
-  hub_arrival: 'Hub Arrival',
-  hub_departure: 'Hub Departure',
-  hub_transfer: 'Hub Transfer',
-  delivered: 'Delivered',
+  picked_up: "Picked Up",
+  hub_arrival: "Hub Arrival",
+  hub_departure: "Hub Departure",
+  hub_transfer: "Hub Transfer",
+  delivered: "Delivered",
 };
 
 function formatTimestamp(timestamp: Timestamp | undefined): string {
-  if (!timestamp) return 'N/A';
+  if (!timestamp) return "N/A";
   const date = timestamp.toDate();
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  }) + ' at ' + date.toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-  });
+  return (
+    date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    }) +
+    " at " +
+    date.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    })
+  );
 }
 
 function getStatusLabel(pkg: PackageDoc): string {
   const status = pkg.currentStatus;
   const config = statusMap[status];
-  
-  if (status === 'at_origin_hub' || status === 'at_destination_hub') {
+
+  if (status === "at_origin_hub" || status === "at_destination_hub") {
     const currentLeg = pkg.journey[pkg.currentLeg];
     if (currentLeg?.hubId) {
       return `${config.label} - ${currentLeg.hubId}`;
     }
   }
-  
-  if (status === 'in_transit') {
+
+  if (status === "in_transit") {
     const currentLeg = pkg.journey[pkg.currentLeg];
     if (currentLeg?.toHub) {
       return `${config.label} to ${currentLeg.toHub}`;
     }
   }
-  
+
   return config.label;
 }
 
@@ -117,8 +121,8 @@ export default function PackageTrackingPage() {
   useEffect(() => {
     if (!db || !trackingNumber) return;
 
-    const packagesRef = collection(db, 'packages');
-    const q = query(packagesRef, where('trackingNumber', '==', trackingNumber));
+    const packagesRef = collection(db, "packages");
+    const q = query(packagesRef, where("trackingNumber", "==", trackingNumber));
 
     const unsubscribe = onSnapshot(
       q,
@@ -134,9 +138,9 @@ export default function PackageTrackingPage() {
         setLoading(false);
       },
       (error) => {
-        console.error('Error fetching package:', error);
+        console.error("Error fetching package:", error);
         setLoading(false);
-      }
+      },
     );
 
     return () => unsubscribe();
@@ -164,7 +168,7 @@ export default function PackageTrackingPage() {
           <div className="text-6xl mb-4">📦</div>
           <h1 className="text-2xl font-bold mb-2">Package Not Found</h1>
           <p className="text-gray-600">
-            We couldn't find a package with tracking number:{' '}
+            We couldn't find a package with tracking number:{" "}
             <span className="font-mono font-semibold">{trackingNumber}</span>
           </p>
           <p className="text-sm text-gray-500 mt-4">
@@ -177,6 +181,13 @@ export default function PackageTrackingPage() {
 
   const statusConfig = statusMap[packageData.currentStatus];
   const statusLabel = getStatusLabel(packageData);
+  const estimatedDelivery =
+    packageData.estimatedDeliveryAt?.toDate?.() ||
+    (packageData.createdAt?.toDate
+      ? new Date(
+          packageData.createdAt.toDate().getTime() + 2 * 24 * 60 * 60 * 1000,
+        )
+      : null);
 
   return (
     <div className="min-h-screen p-8 bg-gradient-to-br from-purple-50 to-blue-50">
@@ -196,22 +207,33 @@ export default function PackageTrackingPage() {
                   </p>
                 </div>
               </div>
-              {packageData.currentStatus !== 'delivered' && (
-                <div className="mt-4">
-                  <p className="text-sm text-gray-600 mb-1">Estimated Delivery</p>
-                  <p className="text-lg font-semibold">
-                    {formatTimestamp(packageData.estimatedDelivery)}
-                  </p>
-                </div>
-              )}
-              {packageData.currentStatus === 'delivered' && packageData.deliveredAt && (
-                <div className="mt-4">
-                  <p className="text-sm text-gray-600 mb-1">Delivered On</p>
-                  <p className="text-lg font-semibold text-green-600">
-                    {formatTimestamp(packageData.deliveredAt)}
-                  </p>
-                </div>
-              )}
+              {packageData.currentStatus !== "delivered" &&
+                estimatedDelivery && (
+                  <div className="mt-4">
+                    <p className="text-sm text-gray-600 mb-1">
+                      Estimated Delivery Window
+                    </p>
+                    <p className="text-lg font-semibold">
+                      {estimatedDelivery.toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                      })}{" "}
+                      {estimatedDelivery.toLocaleTimeString("en-US", {
+                        hour: "numeric",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  </div>
+                )}
+              {packageData.currentStatus === "delivered" &&
+                packageData.deliveredAt && (
+                  <div className="mt-4">
+                    <p className="text-sm text-gray-600 mb-1">Delivered On</p>
+                    <p className="text-lg font-semibold text-green-600">
+                      {formatTimestamp(packageData.deliveredAt)}
+                    </p>
+                  </div>
+                )}
             </div>
           </div>
         </GlassCard>
@@ -235,7 +257,8 @@ export default function PackageTrackingPage() {
               height="400px"
             />
             <p className="text-sm text-gray-500 mt-2">
-              Last updated: {formatTimestamp(packageData.currentLocation.updatedAt)}
+              Last updated:{" "}
+              {formatTimestamp(packageData.currentLocation.updatedAt)}
             </p>
           </GlassCard>
         )}
@@ -245,9 +268,9 @@ export default function PackageTrackingPage() {
           <h2 className="text-xl font-bold mb-6">Journey Timeline</h2>
           <div className="space-y-6">
             {packageData.journey.map((leg, index) => {
-              const isCompleted = leg.status === 'completed';
-              const isInProgress = leg.status === 'in_progress';
-              const isPending = leg.status === 'pending';
+              const isCompleted = leg.status === "completed";
+              const isInProgress = leg.status === "in_progress";
+              const isPending = leg.status === "pending";
 
               return (
                 <motion.div
@@ -262,18 +285,18 @@ export default function PackageTrackingPage() {
                     <div
                       className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
                         isCompleted
-                          ? 'bg-green-500 border-green-500 text-white'
+                          ? "bg-green-500 border-green-500 text-white"
                           : isInProgress
-                          ? 'bg-blue-500 border-blue-500 text-white animate-pulse'
-                          : 'bg-gray-200 border-gray-300 text-gray-400'
+                            ? "bg-blue-500 border-blue-500 text-white animate-pulse"
+                            : "bg-gray-200 border-gray-300 text-gray-400"
                       }`}
                     >
-                      {isCompleted ? '✓' : index + 1}
+                      {isCompleted ? "✓" : index + 1}
                     </div>
                     {index < packageData.journey.length - 1 && (
                       <div
                         className={`w-0.5 flex-1 min-h-[40px] ${
-                          isCompleted ? 'bg-green-300' : 'bg-gray-300'
+                          isCompleted ? "bg-green-300" : "bg-gray-300"
                         }`}
                       />
                     )}
@@ -292,23 +315,25 @@ export default function PackageTrackingPage() {
                       )}
                     </div>
 
-                    {leg.type === 'local_pickup' && (
+                    {leg.type === "local_pickup" && (
                       <p className="text-sm text-gray-600">
                         {packageData.origin.address}
                       </p>
                     )}
 
-                    {leg.type === 'long_haul' && (
+                    {leg.type === "long_haul" && (
                       <p className="text-sm text-gray-600">
                         {leg.fromHub} → {leg.toHub}
                       </p>
                     )}
 
-                    {leg.type === 'hub_transfer' && (
-                      <p className="text-sm text-gray-600">Transfer at {leg.hubId}</p>
+                    {leg.type === "hub_transfer" && (
+                      <p className="text-sm text-gray-600">
+                        Transfer at {leg.hubId}
+                      </p>
                     )}
 
-                    {leg.type === 'local_delivery' && (
+                    {leg.type === "local_delivery" && (
                       <p className="text-sm text-gray-600">
                         {packageData.destination.address}
                       </p>
@@ -344,7 +369,8 @@ export default function PackageTrackingPage() {
               <div>
                 <p className="text-sm text-gray-600">Dimensions</p>
                 <p className="font-semibold">
-                  {packageData.dimensions.length}" × {packageData.dimensions.width}" ×{' '}
+                  {packageData.dimensions.length}" ×{" "}
+                  {packageData.dimensions.width}" ×{" "}
                   {packageData.dimensions.height}"
                 </p>
               </div>
@@ -395,7 +421,9 @@ export default function PackageTrackingPage() {
                           <p className="font-semibold text-sm">
                             {scanTypeLabels[scan.type]}
                           </p>
-                          <p className="text-xs text-gray-600">{scan.location}</p>
+                          <p className="text-xs text-gray-600">
+                            {scan.location}
+                          </p>
                         </div>
                         <p className="text-xs text-gray-500 whitespace-nowrap ml-2">
                           {formatTimestamp(scan.timestamp)}
@@ -428,7 +456,8 @@ export default function PackageTrackingPage() {
               Hub: {packageData.destination.hubId}
             </p>
             <p className="text-sm text-gray-500">
-              Distance to hub: {packageData.destination.hubDistance.toFixed(1)} miles
+              Distance to hub: {packageData.destination.hubDistance.toFixed(1)}{" "}
+              miles
             </p>
           </GlassCard>
         </div>

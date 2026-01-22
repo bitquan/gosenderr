@@ -24,9 +24,8 @@ import {
   CourierWithRate,
 } from "@/components/v2/CourierSelector";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { BottomNav, customerNavItems } from "@/components/ui/BottomNav";
-import { FloatingButton } from "@/components/ui/FloatingButton";
 import { Avatar } from "@/components/ui/Avatar";
+import { FloatingButton } from "@/components/ui/FloatingButton";
 
 interface DropoffAddress {
   address: string;
@@ -474,7 +473,6 @@ export default function RequestDeliveryPage() {
         )}
       </div>
 
-      <BottomNav items={customerNavItems} />
       <FloatingButton
         icon="💳"
         position="bottom-center"

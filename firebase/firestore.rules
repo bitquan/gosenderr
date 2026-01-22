@@ -376,8 +376,30 @@ service cloud.firestore {
       allow create: if signedIn()
         && request.resource.data.senderId == request.auth.uid;
       
+      function senderCanCancel() {
+        return isPackageSender()
+          && resource.data.currentStatus in ['payment_pending', 'pickup_pending']
+          && request.resource.data.currentStatus == 'cancelled'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'currentStatus',
+            'updatedAt'
+          ]);
+      }
+
+      function senderCanEditMeta() {
+        return isPackageSender()
+          && request.resource.data.currentStatus == resource.data.currentStatus
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'refundRequested',
+            'rating',
+            'deliveryInstructions',
+            'updatedAt'
+          ]);
+      }
+
       // Package runners and admins can update packages (for status changes)
-      allow update: if isPackageRunner() || isAdmin();
+      // Senders can cancel before pickup and manage their own metadata
+      allow update: if isPackageRunner() || isAdmin() || senderCanCancel() || senderCanEditMeta();
       
       // Only admins can delete packages
       allow delete: if isAdmin();

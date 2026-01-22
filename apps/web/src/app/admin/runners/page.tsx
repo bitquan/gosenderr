@@ -12,11 +12,11 @@ import {
   getDoc,
   serverTimestamp,
 } from "firebase/firestore";
-import { db } from "@/lib/firebase/client";
+import { db, functions } from "@/lib/firebase/client";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { StatusBadge, Badge } from "@/components/ui/Badge";
-import { BottomNav, adminNavItems } from "@/components/ui/BottomNav";
 import { Avatar } from "@/components/ui/Avatar";
+import { httpsCallable } from "firebase/functions";
 
 export default function AdminRunnersNew() {
   const router = useRouter();
@@ -95,6 +95,10 @@ export default function AdminRunnersNew() {
         "packageRunnerProfile.approvedAt": serverTimestamp(),
         "packageRunnerProfile.approvedBy": currentUser.uid,
       });
+      if (functions) {
+        const setClaim = httpsCallable(functions, "setPackageRunnerClaim");
+        await setClaim({ runnerId, approved: true });
+      }
       alert("✅ Runner approved!");
     } catch (error: any) {
       console.error("Error approving runner:", error);
@@ -116,6 +120,10 @@ export default function AdminRunnersNew() {
         "packageRunnerProfile.rejectedBy": currentUser.uid,
         "packageRunnerProfile.rejectionReason": reason || "Not specified",
       });
+      if (functions) {
+        const setClaim = httpsCallable(functions, "setPackageRunnerClaim");
+        await setClaim({ runnerId, approved: false });
+      }
       alert("Runner application rejected");
     } catch (error: any) {
       console.error("Error rejecting runner:", error);
@@ -342,8 +350,6 @@ export default function AdminRunnersNew() {
           })
         )}
       </div>
-
-      <BottomNav items={adminNavItems} />
     </div>
   );
 }

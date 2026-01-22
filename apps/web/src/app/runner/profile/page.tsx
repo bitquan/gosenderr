@@ -8,7 +8,6 @@ import { getAuthSafe } from "@/lib/firebase/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { StatusBadge } from "@/components/ui/Badge";
 import { Avatar } from "@/components/ui/Avatar";
-import { BottomNav, runnerNavItems } from "@/components/ui/BottomNav";
 
 export default function RunnerProfilePage() {
   const router = useRouter();
@@ -170,8 +169,6 @@ export default function RunnerProfilePage() {
           </>
         )}
       </div>
-
-      <BottomNav items={runnerNavItems} />
     </div>
   );
 }

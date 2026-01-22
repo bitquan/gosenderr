@@ -24,7 +24,7 @@ export function BottomNav({ items, className }: BottomNavProps) {
     <nav
       className={cn(
         "fixed bottom-0 left-0 right-0 z-40",
-        "bg-white border-t border-gray-200",
+        "bg-white/90 backdrop-blur border-t border-purple-100",
         "pb-safe", // Safe area for mobile notches
         className,
       )}
@@ -40,9 +40,11 @@ export function BottomNav({ items, className }: BottomNavProps) {
                 key={index}
                 href={item.href}
                 className={cn(
-                  "flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all duration-300 min-w-[70px]",
+                  "flex flex-col items-center gap-1 px-4 py-2 rounded-xl min-w-[70px]",
+                  "transition-all duration-200 ease-out",
+                  "active:scale-95",
                   isActive
-                    ? "bg-purple-50 text-purple-600"
+                    ? "bg-purple-50 text-purple-600 -translate-y-0.5"
                     : "text-gray-500 hover:text-gray-700 hover:bg-gray-50",
                 )}
               >
@@ -91,5 +93,6 @@ export const adminNavItems: NavItem[] = [
   { icon: "👥", label: "Users", href: "/admin/users" },
   { icon: "🚚", label: "Runners", href: "/admin/runners" },
   { icon: "📦", label: "Packages", href: "/admin/packages" },
+  { icon: "📊", label: "Analytics", href: "/admin/analytics" },
   { icon: "🚩", label: "Flags", href: "/admin/feature-flags" },
 ];

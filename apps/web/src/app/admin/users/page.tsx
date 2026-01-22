@@ -14,7 +14,6 @@ import {
 import { db } from "@/lib/firebase/client";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { BottomNav, adminNavItems } from "@/components/ui/BottomNav";
 import { Avatar } from "@/components/ui/Avatar";
 
 export default function AdminUsersNew() {
@@ -26,6 +25,31 @@ export default function AdminUsersNew() {
   const [filter, setFilter] = useState<string>("all");
   const [updating, setUpdating] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+
+  const handleExportUsers = () => {
+    const headers = ["User ID", "Name", "Email", "Role", "Suspended"];
+    const rows = filteredUsers.map((user) => [
+      user.id,
+      user.displayName || "",
+      user.email || "",
+      user.role || "",
+      user.suspended ? "yes" : "no",
+    ]);
+
+    const csvContent = [headers, ...rows]
+      .map((row) =>
+        row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","),
+      )
+      .join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "users.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
   useEffect(() => {
     const auth = getAuthSafe();
@@ -150,19 +174,25 @@ export default function AdminUsersNew() {
       {/* Header */}
       <div className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] p-6 text-white shadow-lg">
         <div className="max-w-4xl mx-auto">
-          <div className="flex items-center gap-3 mb-4">
+          <div className="flex items-center justify-between gap-3 mb-4">
             <button
               onClick={() => router.back()}
               className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30 transition-all"
             >
               ←
             </button>
-            <div>
+            <div className="flex-1">
               <h1 className="text-2xl font-bold">User Management</h1>
               <p className="text-purple-100 text-sm">
                 {filteredUsers.length} users
               </p>
             </div>
+            <button
+              onClick={handleExportUsers}
+              className="hidden sm:inline-flex px-4 py-2 rounded-xl bg-white/20 text-white text-sm font-semibold hover:bg-white/30 transition"
+            >
+              Export CSV
+            </button>
           </div>
 
           {/* Search Bar */}
@@ -290,8 +320,6 @@ export default function AdminUsersNew() {
           ))
         )}
       </div>
-
-      <BottomNav items={adminNavItems} />
     </div>
   );
 }

@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { doc, onSnapshot } from 'firebase/firestore';
-import { db } from '@/lib/firebase/client';
-import type { FeatureFlags } from '@gosenderr/shared';
+import { useState, useEffect } from "react";
+import { doc, onSnapshot } from "firebase/firestore";
+import { db } from "@/lib/firebase/client";
+import type { FeatureFlags } from "@gosenderr/shared";
 
 export function useFeatureFlags() {
   const [flags, setFlags] = useState<FeatureFlags | null>(null);
@@ -12,7 +12,7 @@ export function useFeatureFlags() {
 
   useEffect(() => {
     const unsubscribe = onSnapshot(
-      doc(db, 'featureFlags', 'config'),
+      doc(db, "featureFlags", "config"),
       (snapshot) => {
         if (snapshot.exists()) {
           setFlags(snapshot.data() as FeatureFlags);
@@ -26,7 +26,7 @@ export function useFeatureFlags() {
             },
             delivery: {
               onDemand: true,
-              routes: false,
+              routes: true,
               longRoutes: false,
               longHaul: false,
             },
@@ -44,12 +44,12 @@ export function useFeatureFlags() {
               liveTracking: true,
               proofPhotos: true,
               routeDelivery: false,
-              packageShipping: false,
+              packageShipping: true,
             },
             packageRunner: {
-              enabled: false,
-              hubNetwork: false,
-              packageTracking: false,
+              enabled: true,
+              hubNetwork: true,
+              packageTracking: true,
             },
             admin: {
               courierApproval: true,
@@ -74,10 +74,10 @@ export function useFeatureFlags() {
         setLoading(false);
       },
       (err) => {
-        console.error('Error loading feature flags:', err);
+        console.error("Error loading feature flags:", err);
         setError(err as Error);
         setLoading(false);
-      }
+      },
     );
 
     return () => unsubscribe();

@@ -16,7 +16,6 @@ import Link from "next/link";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { StatCard } from "@/components/ui/StatCard";
 import { Avatar } from "@/components/ui/Avatar";
-import { BottomNav, adminNavItems } from "@/components/ui/BottomNav";
 
 export default function AdminDashboardNew() {
   const router = useRouter();
@@ -173,13 +172,21 @@ export default function AdminDashboardNew() {
       color: "bg-pink-50 text-pink-600",
       count: 0,
     },
+    {
+      title: "Analytics",
+      description: "Revenue and growth insights",
+      icon: "📊",
+      href: "/admin/analytics",
+      color: "bg-indigo-50 text-indigo-600",
+      count: 0,
+    },
   ];
 
   return (
     <div className="min-h-screen bg-[#F8F9FF] pb-24">
       {/* Header Section */}
       <div className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] rounded-b-[32px] p-6 text-white shadow-lg">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
               <Avatar
@@ -211,7 +218,7 @@ export default function AdminDashboardNew() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-6 -mt-8 space-y-6">
+      <div className="max-w-6xl mx-auto px-6 -mt-8 space-y-6">
         {/* Pending Actions Alert */}
         {stats.pendingRunners > 0 && (
           <Card
@@ -261,7 +268,7 @@ export default function AdminDashboardNew() {
             <CardTitle>Quick Actions</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {managementItems.map((item) => (
                 <Link key={item.href} href={item.href} className="block">
                   <div
@@ -345,7 +352,6 @@ export default function AdminDashboardNew() {
       </div>
 
       {/* Bottom Navigation */}
-      <BottomNav items={adminNavItems} />
     </div>
   );
 }
