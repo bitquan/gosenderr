@@ -1,28 +1,39 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { auth, db } from '@/lib/firebase/client';
-import { collection, query, where, getDocs, doc, updateDoc, Timestamp } from 'firebase/firestore';
-import { useRouter } from 'next/navigation';
-import { CourierEquipment, EquipmentItem } from '@gosenderr/shared';
+import { useEffect, useState } from "react";
+import { auth, db } from "@/lib/firebase/client";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  doc,
+  updateDoc,
+  Timestamp,
+} from "firebase/firestore";
+import { useRouter } from "next/navigation";
+import { CourierEquipment, EquipmentItem } from "@gosenderr/shared";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { BottomNav, adminNavItems } from "@/components/ui/BottomNav";
+import { Avatar } from "@/components/ui/Avatar";
 
 type EquipmentType =
-  | 'insulated_bag'
-  | 'cooler'
-  | 'hot_bag'
-  | 'drink_carrier'
-  | 'dolly'
-  | 'straps'
-  | 'furniture_blankets';
+  | "insulated_bag"
+  | "cooler"
+  | "hot_bag"
+  | "drink_carrier"
+  | "dolly"
+  | "straps"
+  | "furniture_blankets";
 
 const EQUIPMENT_LABELS: Record<EquipmentType, string> = {
-  insulated_bag: 'Insulated Bag 🧊',
-  cooler: 'Cooler ❄️',
-  hot_bag: 'Hot Bag 🔥',
-  drink_carrier: 'Drink Carrier 🥤',
-  dolly: 'Dolly 🛒',
-  straps: 'Straps 🪢',
-  furniture_blankets: 'Furniture Blankets 🧺',
+  insulated_bag: "Insulated Bag 🧊",
+  cooler: "Cooler ❄️",
+  hot_bag: "Hot Bag 🔥",
+  drink_carrier: "Drink Carrier 🥤",
+  dolly: "Dolly 🛒",
+  straps: "Straps 🪢",
+  furniture_blankets: "Furniture Blankets 🧺",
 };
 
 interface PendingEquipment {
@@ -37,22 +48,26 @@ export default function EquipmentReviewPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [pendingItems, setPendingItems] = useState<PendingEquipment[]>([]);
-  const [selectedItem, setSelectedItem] = useState<PendingEquipment | null>(null);
-  const [rejectionReason, setRejectionReason] = useState('');
+  const [selectedItem, setSelectedItem] = useState<PendingEquipment | null>(
+    null,
+  );
+  const [rejectionReason, setRejectionReason] = useState("");
   const [processing, setProcessing] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (!user) {
-        router.push('/login');
+        router.push("/login");
         return;
       }
 
       // Check if user is admin
-      const userDoc = await getDocs(query(collection(db, 'users'), where('__name__', '==', user.uid)));
-      if (userDoc.empty || userDoc.docs[0].data().role !== 'admin') {
-        router.push('/');
+      const userDoc = await getDocs(
+        query(collection(db, "users"), where("__name__", "==", user.uid)),
+      );
+      if (userDoc.empty || userDoc.docs[0].data().role !== "admin") {
+        router.push("/");
         return;
       }
 
@@ -68,7 +83,7 @@ export default function EquipmentReviewPage() {
     try {
       // Get all users with courier profiles
       const usersSnapshot = await getDocs(
-        query(collection(db, 'users'), where('courierProfile', '!=', null))
+        query(collection(db, "users"), where("courierProfile", "!=", null)),
       );
 
       const pending: PendingEquipment[] = [];
@@ -76,13 +91,18 @@ export default function EquipmentReviewPage() {
       usersSnapshot.docs.forEach((userDoc) => {
         const data = userDoc.data();
         const equipment = data.courierProfile?.equipment as CourierEquipment;
-        const courierName = data.displayName || 'Unknown Courier';
+        const courierName = data.displayName || "Unknown Courier";
 
         if (equipment) {
           // Check each equipment type for pending approval
           (Object.keys(equipment) as EquipmentType[]).forEach((type) => {
             const item = equipment[type];
-            if (item.has && !item.approved && item.photoUrl && !item.rejectedReason) {
+            if (
+              item.has &&
+              !item.approved &&
+              item.photoUrl &&
+              !item.rejectedReason
+            ) {
               pending.push({
                 courierId: userDoc.id,
                 courierName,
@@ -97,7 +117,7 @@ export default function EquipmentReviewPage() {
 
       setPendingItems(pending);
     } catch (error) {
-      console.error('Failed to load pending equipment:', error);
+      console.error("Failed to load pending equipment:", error);
     }
   };
 
@@ -114,17 +134,17 @@ export default function EquipmentReviewPage() {
         approvedAt: Timestamp.now(),
       };
 
-      await updateDoc(doc(db, 'users', selectedItem.courierId), {
+      await updateDoc(doc(db, "users", selectedItem.courierId), {
         [`courierProfile.equipment.${selectedItem.equipmentType}`]: updatedItem,
       });
 
       // Update local state
       setPendingItems(pendingItems.filter((item) => item !== selectedItem));
       setSelectedItem(null);
-      alert('Equipment approved successfully!');
+      alert("Equipment approved successfully!");
     } catch (error) {
-      console.error('Failed to approve equipment:', error);
-      alert('Failed to approve equipment. Please try again.');
+      console.error("Failed to approve equipment:", error);
+      alert("Failed to approve equipment. Please try again.");
     } finally {
       setProcessing(false);
     }
@@ -132,7 +152,7 @@ export default function EquipmentReviewPage() {
 
   const handleReject = async () => {
     if (!selectedItem || !currentUser || !rejectionReason.trim()) {
-      alert('Please provide a rejection reason');
+      alert("Please provide a rejection reason");
       return;
     }
 
@@ -146,18 +166,18 @@ export default function EquipmentReviewPage() {
         rejectedReason: rejectionReason,
       };
 
-      await updateDoc(doc(db, 'users', selectedItem.courierId), {
+      await updateDoc(doc(db, "users", selectedItem.courierId), {
         [`courierProfile.equipment.${selectedItem.equipmentType}`]: updatedItem,
       });
 
       // Update local state
       setPendingItems(pendingItems.filter((item) => item !== selectedItem));
       setSelectedItem(null);
-      setRejectionReason('');
-      alert('Equipment rejected. Courier has been notified.');
+      setRejectionReason("");
+      alert("Equipment rejected. Courier has been notified.");
     } catch (error) {
-      console.error('Failed to reject equipment:', error);
-      alert('Failed to reject equipment. Please try again.');
+      console.error("Failed to reject equipment:", error);
+      alert("Failed to reject equipment. Please try again.");
     } finally {
       setProcessing(false);
     }
@@ -165,177 +185,150 @@ export default function EquipmentReviewPage() {
 
   if (loading) {
     return (
-      <div style={{ padding: '20px', textAlign: 'center' }}>
-        <p>Loading...</p>
+      <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center">
+        <div className="animate-pulse">
+          <div className="w-16 h-16 bg-purple-200 rounded-full mx-auto mb-4"></div>
+          <div className="h-4 bg-purple-200 rounded w-32 mx-auto"></div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '20px' }}>
-      <h1 style={{ marginBottom: '32px', fontSize: '28px', fontWeight: '600' }}>
-        Equipment Pending Review ({pendingItems.length})
-      </h1>
-
-      {pendingItems.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
-          <p style={{ fontSize: '16px' }}>No pending equipment reviews at this time.</p>
+    <div className="min-h-screen bg-[#F8F9FF] pb-24">
+      <div className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] rounded-b-[32px] p-6 text-white shadow-lg">
+        <div className="max-w-5xl mx-auto">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-4">
+              <Avatar
+                fallback={currentUser?.displayName || "Admin"}
+                size="lg"
+              />
+              <div>
+                <h1 className="text-2xl font-bold">Equipment Review</h1>
+                <p className="text-purple-100 text-sm">
+                  {pendingItems.length} pending submission
+                  {pendingItems.length === 1 ? "" : "s"}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
-      ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: '350px 1fr', gap: '24px' }}>
-          {/* List of pending items */}
-          <div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      </div>
+
+      <div className="max-w-5xl mx-auto px-6 -mt-8">
+        {pendingItems.length === 0 ? (
+          <Card variant="elevated">
+            <CardContent>
+              <div className="text-center py-12">
+                <div className="text-6xl mb-4">✅</div>
+                <p className="text-gray-600 text-lg">
+                  No pending equipment reviews at this time.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-6">
+            <div className="space-y-3">
               {pendingItems.map((item, index) => (
                 <button
                   key={index}
                   onClick={() => {
                     setSelectedItem(item);
-                    setRejectionReason('');
+                    setRejectionReason("");
                   }}
-                  style={{
-                    padding: '16px',
-                    background: selectedItem === item ? '#eff6ff' : 'white',
-                    border: selectedItem === item ? '2px solid #3b82f6' : '2px solid #e5e7eb',
-                    borderRadius: '8px',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                  }}
+                  className={`w-full text-left rounded-2xl border-2 p-4 transition-all ${
+                    selectedItem === item
+                      ? "border-purple-400 bg-purple-50"
+                      : "border-gray-200 bg-white hover:border-purple-200"
+                  }`}
                 >
-                  <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '4px' }}>
+                  <div className="text-sm font-bold text-gray-900">
                     {item.courierName}
                   </div>
-                  <div style={{ fontSize: '13px', color: '#6b7280' }}>
+                  <div className="text-xs text-gray-600">
                     {EQUIPMENT_LABELS[item.equipmentType]}
                   </div>
-                  <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>
+                  <div className="text-xs text-gray-400 mt-2">
                     Submitted: {item.submittedAt.toLocaleDateString()}
                   </div>
                 </button>
               ))}
             </div>
+
+            <div>
+              {selectedItem ? (
+                <Card variant="elevated" className="animate-fade-in">
+                  <CardHeader>
+                    <CardTitle>{selectedItem.courierName}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Equipment: {EQUIPMENT_LABELS[selectedItem.equipmentType]}
+                    </p>
+
+                    <div className="mb-6">
+                      <img
+                        src={selectedItem.photoUrl}
+                        alt={selectedItem.equipmentType}
+                        className="w-full max-h-[520px] object-contain rounded-2xl border border-gray-200"
+                      />
+                    </div>
+
+                    <div className="mb-6">
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Rejection Reason (if rejecting)
+                      </label>
+                      <textarea
+                        value={rejectionReason}
+                        onChange={(e) => setRejectionReason(e.target.value)}
+                        placeholder="Explain why the equipment photo is being rejected..."
+                        className="w-full min-h-[120px] p-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-300"
+                      />
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <button
+                        onClick={handleApprove}
+                        disabled={processing}
+                        className={`flex-1 py-3 rounded-2xl font-semibold text-white transition ${
+                          processing
+                            ? "bg-gray-400 cursor-not-allowed"
+                            : "bg-green-500 hover:bg-green-600"
+                        }`}
+                      >
+                        ✅ Approve
+                      </button>
+                      <button
+                        onClick={handleReject}
+                        disabled={processing || !rejectionReason.trim()}
+                        className={`flex-1 py-3 rounded-2xl font-semibold text-white transition ${
+                          processing || !rejectionReason.trim()
+                            ? "bg-gray-400 cursor-not-allowed"
+                            : "bg-red-500 hover:bg-red-600"
+                        }`}
+                      >
+                        ❌ Reject
+                      </button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card variant="elevated">
+                  <CardContent>
+                    <div className="text-center py-12 text-gray-600">
+                      Select an item from the list to review
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           </div>
+        )}
+      </div>
 
-          {/* Review panel */}
-          <div>
-            {selectedItem ? (
-              <div
-                style={{
-                  padding: '24px',
-                  background: 'white',
-                  border: '2px solid #e5e7eb',
-                  borderRadius: '12px',
-                }}
-              >
-                <h2 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '8px' }}>
-                  {selectedItem.courierName}
-                </h2>
-                <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '20px' }}>
-                  Equipment: {EQUIPMENT_LABELS[selectedItem.equipmentType]}
-                </p>
-
-                {/* Photo Preview */}
-                <div style={{ marginBottom: '24px' }}>
-                  <img
-                    src={selectedItem.photoUrl}
-                    alt={selectedItem.equipmentType}
-                    style={{
-                      width: '100%',
-                      maxHeight: '500px',
-                      objectFit: 'contain',
-                      borderRadius: '8px',
-                      border: '1px solid #e5e7eb',
-                    }}
-                  />
-                </div>
-
-                {/* Rejection Reason Input */}
-                <div style={{ marginBottom: '20px' }}>
-                  <label
-                    style={{
-                      display: 'block',
-                      marginBottom: '8px',
-                      fontSize: '14px',
-                      fontWeight: '500',
-                    }}
-                  >
-                    Rejection Reason (if rejecting)
-                  </label>
-                  <textarea
-                    value={rejectionReason}
-                    onChange={(e) => setRejectionReason(e.target.value)}
-                    placeholder="Explain why the equipment photo is being rejected..."
-                    style={{
-                      width: '100%',
-                      minHeight: '100px',
-                      padding: '12px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      fontFamily: 'inherit',
-                    }}
-                  />
-                </div>
-
-                {/* Action Buttons */}
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  <button
-                    onClick={handleApprove}
-                    disabled={processing}
-                    style={{
-                      flex: 1,
-                      padding: '14px',
-                      background: processing ? '#9ca3af' : '#10b981',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '8px',
-                      fontSize: '16px',
-                      fontWeight: '600',
-                      cursor: processing ? 'not-allowed' : 'pointer',
-                    }}
-                  >
-                    ✅ APPROVE
-                  </button>
-                  <button
-                    onClick={handleReject}
-                    disabled={processing || !rejectionReason.trim()}
-                    style={{
-                      flex: 1,
-                      padding: '14px',
-                      background:
-                        processing || !rejectionReason.trim() ? '#9ca3af' : '#ef4444',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '8px',
-                      fontSize: '16px',
-                      fontWeight: '600',
-                      cursor:
-                        processing || !rejectionReason.trim() ? 'not-allowed' : 'pointer',
-                    }}
-                  >
-                    ❌ REJECT
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div
-                style={{
-                  padding: '40px',
-                  background: 'white',
-                  border: '2px solid #e5e7eb',
-                  borderRadius: '12px',
-                  textAlign: 'center',
-                  color: '#6b7280',
-                }}
-              >
-                <p style={{ fontSize: '16px' }}>
-                  Select an item from the list to review
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      <BottomNav items={adminNavItems} />
     </div>
   );
 }

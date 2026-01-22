@@ -8,12 +8,21 @@
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
-    "clean": "rm -rf .next"
+    "clean": "rm -rf .next",
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:debug": "playwright test --debug",
+    "test:screenshots": "playwright test tests/screenshot-all.spec.ts",
+    "test:report": "playwright show-report",
+    "screenshot": "node scripts/screenshot.js",
+    "screenshot:all": "node scripts/screenshot.js all"
   },
   "dependencies": {
     "@gosenderr/shared": "workspace:*",
     "@stripe/react-stripe-js": "^5.4.1",
     "@stripe/stripe-js": "^8.6.3",
+    "browser-image-compression": "^2.0.2",
+    "clsx": "^2.1.1",
     "esbuild": "^0.19.2",
     "firebase": "^11.1.0",
     "framer-motion": "^12.27.5",
@@ -22,16 +31,22 @@
     "ngeohash": "^0.6.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "stripe": "^20.2.0"
+    "stripe": "^20.2.0",
+    "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.57.0",
     "@types/mapbox-gl": "^3.4.0",
     "@types/ngeohash": "^0.6.8",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "autoprefixer": "^10.4.23",
     "eslint": "^9",
     "eslint-config-next": "^15.1.3",
+    "playwright": "^1.57.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "3.4.17",
     "typescript": "^5"
   }
 }

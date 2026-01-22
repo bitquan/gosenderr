@@ -64,6 +64,19 @@ service firebase.storage {
       allow read: if true;
     }
 
+    // Insurance documents: insurance/{userId}/{documentFile}
+    match /insurance/{userId}/{documentFile} {
+      // User can upload their own insurance documents
+      allow write: if isSignedIn() && uid() == userId && isValidImage();
+      
+      // User can read their own insurance documents
+      // Admins can read any insurance documents (check via Firestore)
+      allow read: if isSignedIn() && (
+        uid() == userId
+        || get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      );
+    }
+
     // Default deny
     match /{allPaths=**} {
       allow read, write: if false;

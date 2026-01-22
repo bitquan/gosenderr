@@ -1,26 +1,31 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { auth } from '@/lib/firebase/auth';
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase/client';
-import { useRoutes } from '@/hooks/useRoutes';
-import { GlassCard, LoadingSkeleton } from '@/components/GlassCard';
-import { motion } from 'framer-motion';
-import type { RouteDoc, RouteStop } from '@gosenderr/shared';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { auth } from "@/lib/firebase/auth";
+import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { db } from "@/lib/firebase/client";
+import { useRoutes } from "@/hooks/useRoutes";
+import { GlassCard, LoadingSkeleton } from "@/components/GlassCard";
+import { captureGPSPhoto } from "@/lib/gpsPhoto";
+import { motion } from "framer-motion";
+import type { RouteDoc, RouteStop } from "@gosenderr/shared";
 
 export default function ActiveRoutePage() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
+  const [capturedPhoto, setCapturedPhoto] = useState<{
+    url: string;
+    coordinates: any;
+  } | null>(null);
   const [completingStop, setCompletingStop] = useState(false);
+  const [capturingPhoto, setCapturingPhoto] = useState(false);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (!user) {
-        router.push('/login');
+        router.push("/login");
         return;
       }
       setCurrentUser(user);
@@ -31,13 +36,15 @@ export default function ActiveRoutePage() {
   }, [router]);
 
   const { routes, loading: routesLoading } = useRoutes({
-    status: 'in_progress',
+    status: "in_progress",
     courierId: currentUser?.uid,
   });
 
   const activeRoute = routes[0]; // Get the first (and should be only) active route
 
-  const currentStop = activeRoute?.optimizedStops.find((stop) => !stop.completed);
+  const currentStop = activeRoute?.optimizedStops.find(
+    (stop) => !stop.completed,
+  );
   const completedStops = activeRoute?.completedJobs || 0;
   const totalStops = activeRoute?.totalJobs || 0;
   const progress = totalStops > 0 ? (completedStops / totalStops) * 100 : 0;
@@ -46,10 +53,25 @@ export default function ActiveRoutePage() {
     .filter((stop) => !stop.completed)
     .slice(1, 4); // Show next 3 upcoming stops
 
-  const handleCapturePhoto = () => {
-    // TODO: Implement actual GPS photo capture
-    // For now, simulate with a placeholder
-    setCapturedPhoto('https://via.placeholder.com/400x300?text=GPS+Photo+Captured');
+  const handleCapturePhoto = async () => {
+    if (!currentUser || !currentStop) return;
+
+    setCapturingPhoto(true);
+
+    try {
+      const result = await captureGPSPhoto(currentUser.uid, currentStop.jobId, {
+        quality: 0.7,
+        maxSizeMB: 0.5,
+        maxWidthOrHeight: 1920,
+      });
+
+      setCapturedPhoto(result);
+    } catch (error) {
+      console.error("Failed to capture photo:", error);
+      alert("Failed to capture photo with GPS. Please try again.");
+    } finally {
+      setCapturingPhoto(false);
+    }
   };
 
   const handleCompleteStop = async () => {
@@ -58,8 +80,8 @@ export default function ActiveRoutePage() {
     setCompletingStop(true);
 
     try {
-      const routeRef = doc(db, 'routes', activeRoute.routeId);
-      
+      const routeRef = doc(db, "routes", activeRoute.routeId);
+
       // Update the stop as completed
       const updatedStops = activeRoute.optimizedStops.map((stop) => {
         if (stop.jobId === currentStop.jobId) {
@@ -67,6 +89,11 @@ export default function ActiveRoutePage() {
             ...stop,
             completed: true,
             completedAt: serverTimestamp(),
+            proofOfDelivery: {
+              photoUrl: capturedPhoto.url,
+              coordinates: capturedPhoto.coordinates,
+              timestamp: capturedPhoto.timestamp,
+            },
           };
         }
         return stop;
@@ -80,7 +107,7 @@ export default function ActiveRoutePage() {
         completedJobs: newCompletedJobs,
         currentStopIndex: activeRoute.currentStopIndex + 1,
         ...(allCompleted && {
-          status: 'completed',
+          status: "completed",
           completedAt: serverTimestamp(),
         }),
       });
@@ -88,12 +115,12 @@ export default function ActiveRoutePage() {
       setCapturedPhoto(null);
 
       if (allCompleted) {
-        alert('🎉 Route completed! Great job!');
-        router.push('/courier/dashboard');
+        alert("🎉 Route completed! Great job!");
+        router.push("/courier/dashboard");
       }
     } catch (error) {
-      console.error('Error completing stop:', error);
-      alert('Failed to complete stop. Please try again.');
+      console.error("Error completing stop:", error);
+      alert("Failed to complete stop. Please try again.");
     } finally {
       setCompletingStop(false);
     }
@@ -103,7 +130,7 @@ export default function ActiveRoutePage() {
     if (!currentStop) return;
     const { lat, lng } = currentStop.location;
     const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
-    window.open(mapsUrl, '_blank');
+    window.open(mapsUrl, "_blank");
   };
 
   if (authLoading || routesLoading) {
@@ -128,7 +155,7 @@ export default function ActiveRoutePage() {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => router.push('/courier/routes')}
+            onClick={() => router.push("/courier/routes")}
             className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
           >
             View Available Routes
@@ -143,7 +170,9 @@ export default function ActiveRoutePage() {
       {/* Header with Progress */}
       <div>
         <h1 className="text-3xl font-bold mb-2">Active Route</h1>
-        <p className="text-gray-600 dark:text-gray-400">{activeRoute.area.name}</p>
+        <p className="text-gray-600 dark:text-gray-400">
+          {activeRoute.area.name}
+        </p>
       </div>
 
       {/* Progress Bar */}
@@ -173,7 +202,9 @@ export default function ActiveRoutePage() {
             <div className="flex justify-between items-start">
               <div>
                 <h2 className="text-xl font-bold mb-1">Current Stop</h2>
-                <p className="text-gray-600 dark:text-gray-400">{currentStop.location.address}</p>
+                <p className="text-gray-600 dark:text-gray-400">
+                  {currentStop.location.address}
+                </p>
               </div>
               <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm font-medium">
                 {currentStop.jobType}
@@ -181,16 +212,17 @@ export default function ActiveRoutePage() {
             </div>
 
             {/* Pickup Instructions for Food */}
-            {currentStop.jobType === 'food' && currentStop.specialRequirements && (
-              <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-                <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-1">
-                  Pickup Instructions:
-                </p>
-                <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                  {currentStop.specialRequirements.join(', ')}
-                </p>
-              </div>
-            )}
+            {currentStop.jobType === "food" &&
+              currentStop.specialRequirements && (
+                <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                  <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-1">
+                    Pickup Instructions:
+                  </p>
+                  <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                    {currentStop.specialRequirements.join(", ")}
+                  </p>
+                </div>
+              )}
 
             {/* Navigation Button */}
             <motion.button
@@ -211,18 +243,32 @@ export default function ActiveRoutePage() {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={handleCapturePhoto}
-                  className="w-full px-4 py-3 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors flex items-center justify-center gap-2"
+                  disabled={capturingPhoto}
+                  className="w-full px-4 py-3 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <span>📸</span>
-                  Capture GPS Photo
+                  {capturingPhoto ? "Capturing..." : "Capture GPS Photo"}
                 </motion.button>
               ) : (
                 <div className="space-y-3">
-                  <img
-                    src={capturedPhoto}
-                    alt="Captured delivery proof"
-                    className="w-full h-48 object-cover rounded-lg border border-gray-300 dark:border-gray-600"
-                  />
+                  <div className="space-y-2">
+                    <img
+                      src={capturedPhoto.url}
+                      alt="Captured delivery proof"
+                      className="w-full h-48 object-cover rounded-lg border border-gray-300 dark:border-gray-600"
+                    />
+                    <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                      <span>📍</span>
+                      <span>
+                        GPS: {capturedPhoto.coordinates.latitude.toFixed(6)},{" "}
+                        {capturedPhoto.coordinates.longitude.toFixed(6)}
+                      </span>
+                      <span className="text-gray-400">•</span>
+                      <span>
+                        ±{capturedPhoto.coordinates.accuracy.toFixed(0)}m
+                      </span>
+                    </div>
+                  </div>
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
@@ -230,7 +276,9 @@ export default function ActiveRoutePage() {
                     disabled={completingStop}
                     className="w-full px-4 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {completingStop ? 'Completing...' : '✓ Complete Stop & Continue'}
+                    {completingStop
+                      ? "Completing..."
+                      : "✓ Complete Stop & Continue"}
                   </motion.button>
                 </div>
               )}
@@ -253,8 +301,12 @@ export default function ActiveRoutePage() {
                   {completedStops + index + 2}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{stop.location.address}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{stop.jobType}</p>
+                  <p className="text-sm font-medium truncate">
+                    {stop.location.address}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {stop.jobType}
+                  </p>
                 </div>
               </div>
             ))}

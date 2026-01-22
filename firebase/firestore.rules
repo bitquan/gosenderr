@@ -17,7 +17,11 @@ service cloud.firestore {
     }
     
     function validRole(role) {
-      return role in ['buyer', 'seller', 'courier', 'admin', 'customer']; // 'customer' for backward compat
+      return role in ['buyer', 'seller', 'courier', 'admin', 'customer', 'runner', 'vendor', 'package_runner'];
+    }
+    
+    function validNonAdminRole(role) {
+      return role in ['buyer', 'seller', 'courier', 'customer', 'runner', 'vendor', 'package_runner'];
     }
 
     function validJobStatus(s) {
@@ -61,25 +65,19 @@ service cloud.firestore {
 
     // ========== USERS ==========
     match /users/{uid} {
-      // Anyone can read basic seller info (for marketplace)
+      // Anyone can read user documents (for marketplace, tracking, etc)
       allow read: if true;
       
-      // User can write their own document
-      allow create: if isSelf(uid) && validRole(request.resource.data.role);
-      allow update: if isSelf(uid);
+      // Users can create their own document (but NOT with admin role)
+      allow create: if isSelf(uid) && validNonAdminRole(request.resource.data.role);
+      
+      // Users can update their own document (but cannot change role to admin)
+      allow update: if isSelf(uid) && (!('role' in request.resource.data) || validNonAdminRole(request.resource.data.role));
+      
+      // Admins can do everything
+      allow read, write: if isAdmin();
+      
       allow delete: if false;
-      
-      // Couriers can be read by anyone when online (for location tracking)
-      allow read: if signedIn() && 
-                     resource.data.role == 'courier' && 
-                     resource.data.get('courier', {}).get('isOnline', false) == true;
-      
-      // Admins can read all users
-      allow read: if isAdmin();
-      
-      // Only admins can change role or courier status
-      allow update: if isAdmin() 
-                    && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['courierProfile', 'role', 'averageRating', 'totalRatings', 'totalDeliveries', 'updatedAt']));
     }
 
     // ========== ITEMS (Marketplace) ==========
@@ -229,6 +227,9 @@ service cloud.firestore {
           && validJobStatus(request.resource.data.status)
         )
       );
+      
+      // Admins have full access
+      allow read, write: if isAdmin();
 
       allow delete: if false;
     }
@@ -289,25 +290,31 @@ service cloud.firestore {
       allow update: if signedIn()
         && (request.resource.data.status == 'claimed' || isCourier());
       
+      // Admins have full access
+      allow read, write: if isAdmin();
+      
       // Only system/cloud functions should create routes
       allow create, delete: if false;
     }
 
     // ========== LONG ROUTES (Regional Routes 50-200mi) ==========
     match /longRoutes/{routeId} {
-      function isPackageRunner() {
-        return signedIn() && request.auth.token.get('packageRunner', false) == true;
+      function isRunner() {
+        return signedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'runner';
       }
       
       function isAssignedRunner() {
         return signedIn() && resource.data.get('runnerId', null) == request.auth.uid;
       }
       
-      // Only package runners can view long routes
-      allow read: if isPackageRunner();
+      // Runners can view all long routes
+      allow read: if isRunner();
       
-      // Package runners can accept routes
-      allow update: if isPackageRunner() && (request.resource.data.status == 'accepted' || isAssignedRunner());
+      // Runners can accept routes and update their assigned routes
+      allow update: if isRunner() && (request.resource.data.status == 'accepted' || isAssignedRunner());
+      
+      // Admins have full access
+      allow read, write: if isAdmin();
       
       // Only system/cloud functions should create routes
       allow create, delete: if false;
@@ -315,19 +322,25 @@ service cloud.firestore {
 
     // ========== LONG HAUL ROUTES (Interstate Routes 200+mi) ==========
     match /longHaulRoutes/{routeId} {
-      function isPackageRunner() {
-        return signedIn() && request.auth.token.get('packageRunner', false) == true;
+      function isRunner() {
+        return signedIn() && (
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'runner' ||
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'package_runner'
+        );
       }
       
       function isAssignedRunner() {
         return signedIn() && resource.data.get('runnerId', null) == request.auth.uid;
       }
       
-      // Only package runners can view long haul routes
-      allow read: if isPackageRunner();
+      // Runners can view all long haul routes
+      allow read: if isRunner();
       
-      // Package runners can accept routes
-      allow update: if isPackageRunner() && (request.resource.data.status == 'accepted' || isAssignedRunner());
+      // Runners can accept routes and update their assigned routes
+      allow update: if isRunner() && (request.resource.data.status == 'accepted' || isAssignedRunner());
+      
+      // Admins have full access
+      allow read, write: if isAdmin();
       
       // Only system/cloud functions should create routes
       allow create, delete: if false;
@@ -344,8 +357,8 @@ service cloud.firestore {
 
     // ========== PACKAGES (Package Shipping) ==========
     match /packages/{packageId} {
-      function isCustomer() {
-        return signedIn() && resource.data.customerId == request.auth.uid;
+      function isPackageSender() {
+        return signedIn() && resource.data.senderId == request.auth.uid;
       }
       
       function isRunner() {
@@ -356,13 +369,12 @@ service cloud.firestore {
         return signedIn() && request.auth.token.get('packageRunner', false) == true;
       }
       
-      // Customer, assigned runner, or admin can read package
-      allow read: if signedIn() && (isCustomer() || isRunner() || isAdmin());
+      // Allow public read for tracking - anyone can track with tracking number
+      allow read: if true; // Public tracking enabled
       
-      // Any authenticated user can create a package as customer
+      // Any authenticated user can create a package as sender
       allow create: if signedIn()
-        && request.resource.data.customerId == request.auth.uid
-        && request.resource.data.status == 'pending';
+        && request.resource.data.senderId == request.auth.uid;
       
       // Package runners and admins can update packages (for status changes)
       allow update: if isPackageRunner() || isAdmin();
@@ -378,6 +390,21 @@ service cloud.firestore {
       
       // Only admins can manage feature flags
       allow create, update, delete: if isAdmin();
+    }
+
+    // ========== EQUIPMENT SUBMISSIONS ==========
+    match /equipmentSubmissions/{submissionId} {
+      // Couriers can read their own submissions
+      allow read: if signedIn() && resource.data.courierId == request.auth.uid;
+      
+      // Couriers can create equipment submissions
+      allow create: if signedIn() && request.resource.data.courierId == request.auth.uid;
+      
+      // Only admins can update/delete equipment submissions
+      allow update, delete: if isAdmin();
+      
+      // Admins can read all submissions
+      allow read: if isAdmin();
     }
   }
 }

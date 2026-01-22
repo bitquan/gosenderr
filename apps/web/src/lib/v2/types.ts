@@ -1,5 +1,5 @@
-import { Timestamp } from 'firebase/firestore';
-import { JobStatus as SharedJobStatus } from '@gosenderr/shared';
+import { Timestamp } from "firebase/firestore";
+import { JobStatus as SharedJobStatus } from "@gosenderr/shared";
 
 // Re-export types from shared package
 export type {
@@ -45,30 +45,37 @@ export type {
   RatingDoc,
   DisputeStatus,
   DisputeDoc,
-} from '@gosenderr/shared';
+} from "@gosenderr/shared";
 
 // User roles - backward compatible with 'customer' and forward compatible with 'buyer'
-export type UserRole = 'customer' | 'courier' | 'admin' | 'buyer' | 'seller';
+export type UserRole =
+  | "customer"
+  | "courier"
+  | "admin"
+  | "buyer"
+  | "seller"
+  | "runner"
+  | "vendor";
 
 // Re-export JobStatus enum values as string union type for backward compatibility
-export type JobStatus = 
-  | 'open'
-  | 'assigned'
-  | 'enroute_pickup'
-  | 'arrived_pickup'
-  | 'picked_up'
-  | 'enroute_dropoff'
-  | 'arrived_dropoff'
-  | 'completed'
-  | 'cancelled'
-  | 'disputed'
-  | 'expired'
-  | 'failed';
+export type JobStatus =
+  | "open"
+  | "assigned"
+  | "enroute_pickup"
+  | "arrived_pickup"
+  | "picked_up"
+  | "enroute_dropoff"
+  | "arrived_dropoff"
+  | "completed"
+  | "cancelled"
+  | "disputed"
+  | "expired"
+  | "failed";
 
 export { SharedJobStatus };
 
 // Additional web-specific types
-export type PackageSize = 'small' | 'medium' | 'large' | 'xl';
+export type PackageSize = "small" | "medium" | "large" | "xl";
 
 export interface PackageFlags {
   needsSuvVan?: boolean;

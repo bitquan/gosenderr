@@ -23,6 +23,10 @@ import {
   CourierSelector,
   CourierWithRate,
 } from "@/components/v2/CourierSelector";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { BottomNav, customerNavItems } from "@/components/ui/BottomNav";
+import { FloatingButton } from "@/components/ui/FloatingButton";
+import { Avatar } from "@/components/ui/Avatar";
 
 interface DropoffAddress {
   address: string;
@@ -251,8 +255,11 @@ export default function RequestDeliveryPage() {
   // Auth gate
   if (authLoading) {
     return (
-      <div style={{ padding: "40px 20px", textAlign: "center" }}>
-        <div style={{ fontSize: "16px", color: "#6b7280" }}>Loading...</div>
+      <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center">
+        <div className="animate-pulse">
+          <div className="w-16 h-16 bg-purple-200 rounded-full mx-auto mb-4"></div>
+          <div className="h-4 bg-purple-200 rounded w-32 mx-auto"></div>
+        </div>
       </div>
     );
   }
@@ -267,9 +274,10 @@ export default function RequestDeliveryPage() {
 
   if (loading) {
     return (
-      <div style={{ padding: "40px 20px", textAlign: "center" }}>
-        <div style={{ fontSize: "16px", color: "#6b7280" }}>
-          Loading item...
+      <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center">
+        <div className="animate-pulse">
+          <div className="w-16 h-16 bg-purple-200 rounded-full mx-auto mb-4"></div>
+          <div className="h-4 bg-purple-200 rounded w-32 mx-auto"></div>
         </div>
       </div>
     );
@@ -277,305 +285,205 @@ export default function RequestDeliveryPage() {
 
   if (error || !item) {
     return (
-      <div style={{ padding: "40px 20px", textAlign: "center" }}>
-        <div style={{ fontSize: "48px", marginBottom: "16px" }}>❌</div>
-        <h2
-          style={{ fontSize: "20px", fontWeight: "600", marginBottom: "8px" }}
-        >
-          {error || "Item not found"}
-        </h2>
-        <button
-          onClick={() => router.push("/customer/marketplace")}
-          style={{
-            marginTop: "16px",
-            padding: "10px 20px",
-            backgroundColor: "#2563eb",
-            color: "white",
-            border: "none",
-            borderRadius: "6px",
-            cursor: "pointer",
-            fontSize: "14px",
-            fontWeight: "500",
-          }}
-        >
-          Back to Marketplace
-        </button>
+      <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center px-6">
+        <Card variant="elevated" className="max-w-lg w-full">
+          <CardContent>
+            <div className="text-center py-6">
+              <div className="text-5xl mb-4">❌</div>
+              <h2 className="text-xl font-bold mb-2">
+                {error || "Item not found"}
+              </h2>
+              <p className="text-sm text-gray-600 mb-6">
+                Please choose another item to deliver.
+              </p>
+              <button
+                onClick={() => router.push("/customer/marketplace")}
+                className="px-5 py-2 rounded-xl bg-purple-600 text-white font-medium hover:bg-purple-700 transition"
+              >
+                Back to Marketplace
+              </button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div style={{ maxWidth: "900px", margin: "0 auto", padding: "20px" }}>
-      <h1 style={{ fontSize: "28px", fontWeight: "700", marginBottom: "24px" }}>
-        Request Delivery
-      </h1>
-
-      {/* Step 1: Item Summary */}
-      <div
-        style={{
-          backgroundColor: "white",
-          border: "1px solid #e5e7eb",
-          borderRadius: "12px",
-          padding: "20px",
-          marginBottom: "24px",
-        }}
-      >
-        <h2
-          style={{ fontSize: "18px", fontWeight: "600", marginBottom: "16px" }}
-        >
-          Item Details
-        </h2>
-        <div style={{ display: "flex", gap: "16px" }}>
-          {item.photos && item.photos[0] && (
-            <img
-              src={item.photos[0]}
-              alt={item.title}
-              style={{
-                width: "120px",
-                height: "120px",
-                objectFit: "cover",
-                borderRadius: "8px",
-              }}
-            />
-          )}
-          <div style={{ flex: 1 }}>
-            <h3
-              style={{
-                fontSize: "20px",
-                fontWeight: "600",
-                marginBottom: "8px",
-              }}
-            >
-              {item.title}
-            </h3>
-            <p
-              style={{
-                fontSize: "24px",
-                fontWeight: "700",
-                color: "#059669",
-                marginBottom: "8px",
-              }}
-            >
-              ${item.price.toFixed(2)}
-            </p>
-            <div
-              style={{
-                fontSize: "14px",
-                color: "#6b7280",
-                marginBottom: "4px",
-              }}
-            >
-              <strong>Pickup:</strong> {item.pickupLocation.address}
-            </div>
-            {item.isFoodItem && item.foodDetails && (
-              <div style={{ marginTop: "8px" }}>
-                <span
-                  style={{
-                    display: "inline-block",
-                    padding: "4px 8px",
-                    borderRadius: "12px",
-                    backgroundColor: getTemperatureColor(
-                      item.foodDetails.temperature,
-                    ),
-                    color: "white",
-                    fontSize: "12px",
-                    fontWeight: "500",
-                  }}
-                >
-                  {item.foodDetails.temperature.replace("_", " ").toUpperCase()}
-                </span>
+    <div className="min-h-screen bg-[#F8F9FF] pb-24">
+      {/* Header */}
+      <div className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] rounded-b-[32px] p-6 text-white shadow-lg">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-4">
+              <Avatar fallback={user?.displayName || "Customer"} size="lg" />
+              <div>
+                <h1 className="text-2xl font-bold">Request Delivery</h1>
+                <p className="text-purple-100 text-sm">{item.title}</p>
               </div>
-            )}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-white/15 rounded-2xl p-4">
+              <p className="text-xs text-purple-100">Item Price</p>
+              <p className="text-xl font-bold">${item.price.toFixed(2)}</p>
+            </div>
+            <div className="bg-white/15 rounded-2xl p-4">
+              <p className="text-xs text-purple-100">Pickup</p>
+              <p className="text-sm font-semibold">
+                {item.pickupLocation.address}
+              </p>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Step 2: Dropoff Address */}
-      <div
-        style={{
-          backgroundColor: "white",
-          border: "1px solid #e5e7eb",
-          borderRadius: "12px",
-          padding: "20px",
-          marginBottom: "24px",
-        }}
-      >
-        <h2
-          style={{ fontSize: "18px", fontWeight: "600", marginBottom: "16px" }}
-        >
-          Delivery Address
-        </h2>
-        <AddressAutocomplete
-          label="Where should this be delivered?"
-          placeholder="Enter delivery address..."
-          onSelect={(result) => setDropoffAddress(result)}
-          required
-        />
+      <div className="max-w-4xl mx-auto px-6 -mt-8 space-y-6">
+        {/* Step 1: Item Summary */}
+        <Card variant="elevated" className="animate-fade-in">
+          <CardHeader>
+            <CardTitle>Item Details</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col sm:flex-row gap-4">
+              {item.photos && item.photos[0] && (
+                <img
+                  src={item.photos[0]}
+                  alt={item.title}
+                  className="w-full sm:w-32 h-32 object-cover rounded-2xl"
+                />
+              )}
+              <div className="flex-1">
+                <h3 className="text-lg font-bold mb-1">{item.title}</h3>
+                <p className="text-2xl font-bold text-green-600 mb-2">
+                  ${item.price.toFixed(2)}
+                </p>
+                <p className="text-sm text-gray-600">
+                  <span className="font-semibold">Pickup:</span>{" "}
+                  {item.pickupLocation.address}
+                </p>
+                {item.isFoodItem && item.foodDetails && (
+                  <div className="mt-3">
+                    <span
+                      className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold text-white"
+                      style={{
+                        backgroundColor: getTemperatureColor(
+                          item.foodDetails.temperature,
+                        ),
+                      }}
+                    >
+                      {item.foodDetails.temperature
+                        .replace("_", " ")
+                        .toUpperCase()}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Step 2: Dropoff Address */}
+        <Card variant="elevated" className="animate-fade-in">
+          <CardHeader>
+            <CardTitle>Delivery Address</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <AddressAutocomplete
+              label="Where should this be delivered?"
+              placeholder="Enter delivery address..."
+              onSelect={(result) => setDropoffAddress(result)}
+              required
+            />
+            {dropoffAddress && (
+              <div className="mt-4 rounded-2xl bg-green-50 border border-green-100 p-4">
+                <div className="text-sm text-green-800">
+                  <span className="font-semibold">Distance:</span>{" "}
+                  {distance.toFixed(2)} miles
+                </div>
+                <div className="text-sm text-green-800">
+                  <span className="font-semibold">Estimated time:</span>{" "}
+                  {estimatedMinutes} minutes
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Step 3: Available Couriers */}
         {dropoffAddress && (
-          <div
-            style={{
-              marginTop: "16px",
-              padding: "12px",
-              backgroundColor: "#f0fdf4",
-              borderRadius: "8px",
-            }}
+          <Card variant="elevated" className="animate-fade-in">
+            <CardHeader>
+              <CardTitle>Available Couriers</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {searchingCouriers ? (
+                <div className="py-10 text-center text-sm text-gray-600">
+                  Finding available couriers...
+                </div>
+              ) : (
+                <CourierSelector
+                  couriers={availableCouriers}
+                  selectedCourierId={selectedCourier?.id || null}
+                  onSelect={handleCourierSelect}
+                  isFoodItem={item.isFoodItem}
+                />
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Step 4: Selection Summary & Proceed */}
+        {selectedCourier && (
+          <Card
+            variant="elevated"
+            className="border-2 border-purple-200 animate-fade-in"
           >
-            <div
-              style={{
-                fontSize: "14px",
-                color: "#166534",
-                marginBottom: "4px",
-              }}
-            >
-              <strong>Distance:</strong> {distance.toFixed(2)} miles
-            </div>
-            <div style={{ fontSize: "14px", color: "#166534" }}>
-              <strong>Estimated time:</strong> {estimatedMinutes} minutes
-            </div>
-          </div>
+            <CardHeader>
+              <CardTitle>Order Summary</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Courier earnings</span>
+                  <span className="font-semibold">
+                    ${selectedCourier.rateBreakdown.courierEarnings.toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Platform fee</span>
+                  <span className="font-semibold">
+                    ${selectedCourier.rateBreakdown.platformFee.toFixed(2)}
+                  </span>
+                </div>
+                <div className="border-t border-gray-200 pt-3 flex items-center justify-between text-base font-bold">
+                  <span>Total delivery cost</span>
+                  <span className="text-purple-600">
+                    $
+                    {selectedCourier.rateBreakdown.totalCustomerCharge.toFixed(
+                      2,
+                    )}
+                  </span>
+                </div>
+              </div>
+              <p className="mt-3 text-xs text-gray-500">
+                You'll be charged after the delivery is completed.
+              </p>
+            </CardContent>
+          </Card>
         )}
       </div>
 
-      {/* Step 3: Available Couriers */}
-      {dropoffAddress && (
-        <div
-          style={{
-            backgroundColor: "white",
-            border: "1px solid #e5e7eb",
-            borderRadius: "12px",
-            padding: "20px",
-            marginBottom: "24px",
-          }}
-        >
-          <h2
-            style={{
-              fontSize: "18px",
-              fontWeight: "600",
-              marginBottom: "16px",
-            }}
-          >
-            Available Couriers
-          </h2>
-
-          {searchingCouriers ? (
-            <div style={{ padding: "40px 20px", textAlign: "center" }}>
-              <div style={{ fontSize: "16px", color: "#6b7280" }}>
-                Finding available couriers...
-              </div>
-            </div>
-          ) : (
-            <CourierSelector
-              couriers={availableCouriers}
-              selectedCourierId={selectedCourier?.id || null}
-              onSelect={handleCourierSelect}
-              isFoodItem={item.isFoodItem}
-            />
-          )}
-        </div>
-      )}
-
-      {/* Step 4: Selection Summary & Proceed */}
-      {selectedCourier && (
-        <div
-          style={{
-            backgroundColor: "white",
-            border: "2px solid #2563eb",
-            borderRadius: "12px",
-            padding: "24px",
-            marginBottom: "24px",
-          }}
-        >
-          <h2
-            style={{
-              fontSize: "18px",
-              fontWeight: "600",
-              marginBottom: "16px",
-            }}
-          >
-            Order Summary
-          </h2>
-
-          <div style={{ marginBottom: "16px" }}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                marginBottom: "8px",
-                fontSize: "14px",
-              }}
-            >
-              <span style={{ color: "#6b7280" }}>Courier earnings</span>
-              <span style={{ fontWeight: "500" }}>
-                ${selectedCourier.rateBreakdown.courierEarnings.toFixed(2)}
-              </span>
-            </div>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                marginBottom: "8px",
-                fontSize: "14px",
-              }}
-            >
-              <span style={{ color: "#6b7280" }}>Platform fee</span>
-              <span style={{ fontWeight: "500" }}>
-                ${selectedCourier.rateBreakdown.platformFee.toFixed(2)}
-              </span>
-            </div>
-            <div
-              style={{
-                borderTop: "2px solid #e5e7eb",
-                marginTop: "12px",
-                paddingTop: "12px",
-                display: "flex",
-                justifyContent: "space-between",
-                fontSize: "18px",
-                fontWeight: "700",
-              }}
-            >
-              <span>Total delivery cost</span>
-              <span style={{ color: "#2563eb" }}>
-                ${selectedCourier.rateBreakdown.totalCustomerCharge.toFixed(2)}
-              </span>
-            </div>
-          </div>
-
-          <button
-            onClick={handleProceedToPayment}
-            style={{
-              width: "100%",
-              padding: "14px",
-              backgroundColor: "#2563eb",
-              color: "white",
-              border: "none",
-              borderRadius: "8px",
-              fontSize: "16px",
-              fontWeight: "600",
-              cursor: "pointer",
-              transition: "background-color 0.2s",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "#1d4ed8";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "#2563eb";
-            }}
-          >
-            Confirm & Proceed to Payment
-          </button>
-
-          <p
-            style={{
-              marginTop: "12px",
-              fontSize: "12px",
-              color: "#6b7280",
-              textAlign: "center",
-            }}
-          >
-            You'll be charged after the delivery is completed
-          </p>
-        </div>
-      )}
+      <BottomNav items={customerNavItems} />
+      <FloatingButton
+        icon="💳"
+        position="bottom-center"
+        onClick={handleProceedToPayment}
+        disabled={!selectedCourier}
+        className={!selectedCourier ? "opacity-50 pointer-events-none" : ""}
+      >
+        Checkout
+      </FloatingButton>
     </div>
   );
 }

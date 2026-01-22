@@ -14,8 +14,10 @@ import {
 } from "firebase/firestore";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import type { FeatureFlags } from "@gosenderr/shared";
-import { GlassCard } from "@/components/GlassCard";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { FeatureFlagToggle } from "@/components/FeatureFlagToggle";
+import { BottomNav, adminNavItems } from "@/components/ui/BottomNav";
+import { Avatar } from "@/components/ui/Avatar";
 
 export default function FeatureFlagsPage() {
   const router = useRouter();
@@ -25,43 +27,27 @@ export default function FeatureFlagsPage() {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    console.log("[Admin] Auth state:", {
-      user: user?.email,
-      authLoading,
-      isAdmin,
-    });
-
     if (authLoading) return;
 
     if (!user) {
-      console.log("[Admin] No user, redirecting to login");
       router.push("/login");
       return;
     }
 
     const checkAdmin = async () => {
       try {
-        console.log("[Admin] Checking admin status for:", user.email);
         const usersRef = collection(db, "users");
         const q = query(usersRef, where("email", "==", user.email));
         const querySnapshot = await getDocs(q);
-
-        console.log("[Admin] Query result:", {
-          empty: querySnapshot.empty,
-          count: querySnapshot.docs.length,
-          role: querySnapshot.docs[0]?.data().role,
-        });
 
         if (
           querySnapshot.empty ||
           querySnapshot.docs[0].data().role !== "admin"
         ) {
-          console.log("[Admin] Not admin, redirecting to home");
           router.push("/");
           return;
         }
 
-        console.log("[Admin] Admin verified!");
         setIsAdmin(true);
       } catch (err) {
         console.error("Error checking admin status:", err);
@@ -91,31 +77,10 @@ export default function FeatureFlagsPage() {
 
   if (authLoading || loading) {
     return (
-      <div
-        style={{
-          minHeight: "100vh",
-          background: "linear-gradient(to bottom right, #1e3a8a, #7c3aed)",
-          padding: "2rem",
-        }}
-      >
-        <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-          <h1
-            style={{
-              fontSize: "2rem",
-              fontWeight: "bold",
-              marginBottom: "2rem",
-              color: "white",
-            }}
-          >
-            Feature Flags Management
-          </h1>
-          <GlassCard>
-            <div
-              style={{ padding: "3rem", textAlign: "center", color: "white" }}
-            >
-              Loading...
-            </div>
-          </GlassCard>
+      <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center">
+        <div className="animate-pulse">
+          <div className="w-16 h-16 bg-purple-200 rounded-full mx-auto mb-4"></div>
+          <div className="h-4 bg-purple-200 rounded w-32 mx-auto"></div>
         </div>
       </div>
     );
@@ -126,43 +91,31 @@ export default function FeatureFlagsPage() {
   }
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "linear-gradient(to bottom right, #1e3a8a, #7c3aed)",
-        padding: "2rem",
-      }}
-    >
-      <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-        <div style={{ marginBottom: "2rem" }}>
-          <h1
-            style={{
-              fontSize: "2rem",
-              fontWeight: "bold",
-              color: "white",
-              marginBottom: "0.5rem",
-            }}
-          >
-            Feature Flags Management
-          </h1>
-          <p style={{ color: "rgba(255, 255, 255, 0.7)" }}>
-            Control feature availability across the platform
-          </p>
+    <div className="min-h-screen bg-[#F8F9FF] pb-24">
+      {/* Header */}
+      <div className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] rounded-b-[32px] p-6 text-white shadow-lg">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-4">
+              <Avatar fallback={user?.displayName || "Admin"} size="lg" />
+              <div>
+                <h1 className="text-2xl font-bold">Feature Flags</h1>
+                <p className="text-purple-100 text-sm">
+                  Control platform features
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
 
-        <div style={{ display: "grid", gap: "1.5rem" }}>
-          {/* Marketplace Section */}
-          <GlassCard>
-            <h2
-              style={{
-                fontSize: "1.25rem",
-                fontWeight: "bold",
-                color: "white",
-                marginBottom: "1rem",
-              }}
-            >
-              Marketplace
-            </h2>
+      <div className="max-w-4xl mx-auto px-6 -mt-8 space-y-4">
+        {/* Marketplace Section */}
+        <Card variant="elevated" className="animate-fade-in">
+          <CardHeader>
+            <CardTitle>🛒 Marketplace</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
             <FeatureFlagToggle
               label="Marketplace Enabled"
               description="Enable the marketplace feature for buying/selling items"
@@ -188,20 +141,15 @@ export default function FeatureFlagsPage() {
               }
               disabled={isSaving}
             />
-          </GlassCard>
+          </CardContent>
+        </Card>
 
-          {/* Delivery Section */}
-          <GlassCard>
-            <h2
-              style={{
-                fontSize: "1.25rem",
-                fontWeight: "bold",
-                color: "white",
-                marginBottom: "1rem",
-              }}
-            >
-              Delivery
-            </h2>
+        {/* Delivery Section */}
+        <Card variant="elevated" className="animate-fade-in">
+          <CardHeader>
+            <CardTitle>🚚 Delivery</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
             <FeatureFlagToggle
               label="On-Demand Delivery"
               description="Enable immediate on-demand delivery service"
@@ -230,20 +178,15 @@ export default function FeatureFlagsPage() {
               onChange={(value) => handleToggle("delivery.longHaul", value)}
               disabled={isSaving}
             />
-          </GlassCard>
+          </CardContent>
+        </Card>
 
-          {/* Courier Section */}
-          <GlassCard>
-            <h2
-              style={{
-                fontSize: "1.25rem",
-                fontWeight: "bold",
-                color: "white",
-                marginBottom: "1rem",
-              }}
-            >
-              Courier
-            </h2>
+        {/* Courier Section */}
+        <Card variant="elevated" className="animate-fade-in">
+          <CardHeader>
+            <CardTitle>👤 Courier</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
             <FeatureFlagToggle
               label="Rate Cards"
               description="Enable custom rate cards for couriers"
@@ -267,20 +210,15 @@ export default function FeatureFlagsPage() {
               onChange={(value) => handleToggle("courier.workModes", value)}
               disabled={isSaving}
             />
-          </GlassCard>
+          </CardContent>
+        </Card>
 
-          {/* Seller Section */}
-          <GlassCard>
-            <h2
-              style={{
-                fontSize: "1.25rem",
-                fontWeight: "bold",
-                color: "white",
-                marginBottom: "1rem",
-              }}
-            >
-              Seller
-            </h2>
+        {/* Seller Section */}
+        <Card variant="elevated" className="animate-fade-in">
+          <CardHeader>
+            <CardTitle>🏪 Seller</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
             <FeatureFlagToggle
               label="Stripe Connect"
               description="Enable Stripe Connect for seller payouts"
@@ -302,20 +240,15 @@ export default function FeatureFlagsPage() {
               onChange={(value) => handleToggle("seller.foodListings", value)}
               disabled={isSaving}
             />
-          </GlassCard>
+          </CardContent>
+        </Card>
 
-          {/* Customer Section */}
-          <GlassCard>
-            <h2
-              style={{
-                fontSize: "1.25rem",
-                fontWeight: "bold",
-                color: "white",
-                marginBottom: "1rem",
-              }}
-            >
-              Customer
-            </h2>
+        {/* Customer Section */}
+        <Card variant="elevated" className="animate-fade-in">
+          <CardHeader>
+            <CardTitle>🛍️ Customer</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
             <FeatureFlagToggle
               label="Live Tracking"
               description="Enable real-time delivery tracking"
@@ -348,20 +281,15 @@ export default function FeatureFlagsPage() {
               }
               disabled={isSaving}
             />
-          </GlassCard>
+          </CardContent>
+        </Card>
 
-          {/* Package Runner Section */}
-          <GlassCard>
-            <h2
-              style={{
-                fontSize: "1.25rem",
-                fontWeight: "bold",
-                color: "white",
-                marginBottom: "1rem",
-              }}
-            >
-              Package Runner
-            </h2>
+        {/* Package Runner Section */}
+        <Card variant="elevated" className="animate-fade-in">
+          <CardHeader>
+            <CardTitle>📦 Package Runner</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
             <FeatureFlagToggle
               label="Package Runner Enabled"
               description="Enable the package runner service"
@@ -387,20 +315,15 @@ export default function FeatureFlagsPage() {
               }
               disabled={isSaving}
             />
-          </GlassCard>
+          </CardContent>
+        </Card>
 
-          {/* Admin Section */}
-          <GlassCard>
-            <h2
-              style={{
-                fontSize: "1.25rem",
-                fontWeight: "bold",
-                color: "white",
-                marginBottom: "1rem",
-              }}
-            >
-              Admin
-            </h2>
+        {/* Admin Section */}
+        <Card variant="elevated" className="animate-fade-in">
+          <CardHeader>
+            <CardTitle>⚙️ Admin</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
             <FeatureFlagToggle
               label="Courier Approval"
               description="Require admin approval for new couriers"
@@ -440,30 +363,18 @@ export default function FeatureFlagsPage() {
               }
               disabled={true}
             />
-            <p
-              style={{
-                fontSize: "0.75rem",
-                color: "rgba(255, 255, 255, 0.5)",
-                marginTop: "0.5rem",
-                fontStyle: "italic",
-              }}
-            >
+            <p className="text-xs text-gray-500 italic mt-2">
               Note: This setting is read-only to prevent self-locking
             </p>
-          </GlassCard>
+          </CardContent>
+        </Card>
 
-          {/* Advanced Section */}
-          <GlassCard>
-            <h2
-              style={{
-                fontSize: "1.25rem",
-                fontWeight: "bold",
-                color: "white",
-                marginBottom: "1rem",
-              }}
-            >
-              Advanced
-            </h2>
+        {/* Advanced Section */}
+        <Card variant="elevated" className="animate-fade-in">
+          <CardHeader>
+            <CardTitle>🔧 Advanced</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
             <FeatureFlagToggle
               label="Push Notifications"
               description="Enable push notifications across the platform"
@@ -496,20 +407,15 @@ export default function FeatureFlagsPage() {
               onChange={(value) => handleToggle("advanced.refunds", value)}
               disabled={isSaving}
             />
-          </GlassCard>
+          </CardContent>
+        </Card>
 
-          {/* UI Section */}
-          <GlassCard>
-            <h2
-              style={{
-                fontSize: "1.25rem",
-                fontWeight: "bold",
-                color: "white",
-                marginBottom: "1rem",
-              }}
-            >
-              UI
-            </h2>
+        {/* UI Section */}
+        <Card variant="elevated" className="animate-fade-in">
+          <CardHeader>
+            <CardTitle>🎨 UI</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
             <FeatureFlagToggle
               label="Modern Styling"
               description="Use modern glassmorphic UI design"
@@ -531,9 +437,11 @@ export default function FeatureFlagsPage() {
               onChange={(value) => handleToggle("ui.animations", value)}
               disabled={isSaving}
             />
-          </GlassCard>
-        </div>
+          </CardContent>
+        </Card>
       </div>
+
+      <BottomNav items={adminNavItems} />
     </div>
   );
 }

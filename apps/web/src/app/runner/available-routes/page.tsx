@@ -1,228 +1,137 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { collection, query, where, getDocs, doc, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase/client';
-import { useAuthUser } from '@/hooks/v2/useAuthUser';
-import { useRouter } from 'next/navigation';
-import { GlassCard, LoadingSkeleton } from '@/components/GlassCard';
-import { LongHaulRouteDoc, UserDoc } from '@gosenderr/shared';
+import { useState, useEffect } from "react";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  doc,
+  updateDoc,
+  serverTimestamp,
+  getDoc,
+} from "firebase/firestore";
+import { db } from "@/lib/firebase/client";
+import { useRouter } from "next/navigation";
+import { getAuthSafe } from "@/lib/firebase/auth";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import { StatusBadge } from "@/components/ui/Badge";
+import { BottomNav, runnerNavItems } from "@/components/ui/BottomNav";
 
-interface RouteCardProps {
-  route: LongHaulRouteDoc & { id: string };
-  onAccept: (routeId: string) => void;
-  accepting: boolean;
-}
-
-function RouteCard({ route, onAccept, accepting }: RouteCardProps) {
-  const departureDate = route.scheduledDeparture.toDate();
-  const arrivalDate = route.scheduledArrival.toDate();
-
-  return (
-    <GlassCard hover className="route-card">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-        <div>
-          <h3 style={{ margin: 0, marginBottom: '8px', fontSize: '20px' }}>
-            {route.originHub.name} → {route.destinationHub.name}
-          </h3>
-          <div style={{ display: 'flex', gap: '16px', fontSize: '14px', color: '#6b7280' }}>
-            <span>📍 {route.distance} miles</span>
-            <span>📦 {route.packageCount} packages</span>
-            <span>⚖️ {route.totalWeight} lbs</span>
-          </div>
-        </div>
-        <div style={{
-          backgroundColor: route.status === 'available' ? '#dcfce7' : '#f3f4f6',
-          color: route.status === 'available' ? '#166534' : '#6b7280',
-          padding: '4px 12px',
-          borderRadius: '16px',
-          fontSize: '12px',
-          fontWeight: 500,
-        }}>
-          {route.status}
-        </div>
-      </div>
-
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: '1fr 1fr', 
-        gap: '16px', 
-        marginBottom: '16px',
-        padding: '16px',
-        backgroundColor: '#f9fafb',
-        borderRadius: '8px',
-      }}>
-        <div>
-          <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Departure</div>
-          <div style={{ fontSize: '14px', fontWeight: 500 }}>
-            {departureDate.toLocaleDateString()} at {departureDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </div>
-        </div>
-        <div>
-          <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Estimated Arrival</div>
-          <div style={{ fontSize: '14px', fontWeight: 500 }}>
-            {arrivalDate.toLocaleDateString()} at {arrivalDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </div>
-        </div>
-      </div>
-
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        paddingTop: '16px',
-        borderTop: '1px solid #e5e7eb',
-      }}>
-        <div>
-          <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Your Earnings</div>
-          <div style={{ fontSize: '24px', fontWeight: 600, color: '#059669' }}>
-            ${route.pricing.runnerEarnings.toFixed(2)}
-          </div>
-        </div>
-        <button
-          onClick={() => onAccept(route.id)}
-          disabled={accepting || route.status !== 'available'}
-          style={{
-            padding: '12px 24px',
-            backgroundColor: route.status === 'available' ? '#3b82f6' : '#9ca3af',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            fontSize: '16px',
-            fontWeight: 500,
-            cursor: route.status === 'available' ? 'pointer' : 'not-allowed',
-          }}
-        >
-          {accepting ? 'Accepting...' : 'Accept Route'}
-        </button>
-      </div>
-    </GlassCard>
-  );
-}
-
-export default function AvailableRoutesPage() {
-  const { user, loading: authLoading } = useAuthUser();
+export default function AvailableRoutesNew() {
   const router = useRouter();
+  const [authLoading, setAuthLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [accepting, setAccepting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [userDoc, setUserDoc] = useState<UserDoc | null>(null);
-  const [routes, setRoutes] = useState<(LongHaulRouteDoc & { id: string })[]>([]);
+  const [userDoc, setUserDoc] = useState<any>(null);
+  const [routes, setRoutes] = useState<any[]>([]);
   const [filterByHomeHub, setFilterByHomeHub] = useState(true);
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/login');
+    const auth = getAuthSafe();
+    if (!auth) {
+      router.push("/login");
+      return;
     }
-  }, [user, authLoading, router]);
+
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (!user) {
+        router.push("/login");
+      } else {
+        setCurrentUser(user);
+      }
+      setAuthLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [router]);
 
   useEffect(() => {
-    if (user) {
+    if (currentUser) {
       loadUserAndRoutes();
     }
-  }, [user, filterByHomeHub]);
+  }, [currentUser, filterByHomeHub]);
 
   const loadUserAndRoutes = async () => {
-    if (!user) return;
+    if (!currentUser) return;
 
     try {
       setLoading(true);
-      
-      // Load user document
-      const userDocRef = doc(db, 'users', user.uid);
+
+      const userDocRef = doc(db, "users", currentUser.uid);
       const userSnapshot = await getDoc(userDocRef);
-      
+
       if (!userSnapshot.exists()) {
-        setError('User not found');
+        setError("User not found");
         return;
       }
 
-      const userData = userSnapshot.data() as UserDoc;
+      const userData = userSnapshot.data();
       setUserDoc(userData);
 
-      // Check if user has package runner profile
       if (!userData.packageRunnerProfile) {
-        router.push('/runner/onboarding');
+        router.push("/runner/onboarding");
         return;
       }
 
-      // Check if profile is approved
-      if (userData.packageRunnerProfile.status === 'pending_review') {
-        setError('Your profile is under review. You\'ll be able to view routes once approved.');
-        setLoading(false);
+      if (userData.packageRunnerProfile.status !== "approved") {
+        setError("Your profile is not yet approved");
         return;
       }
 
-      if (userData.packageRunnerProfile.status === 'suspended') {
-        setError('Your account is suspended. Please contact support.');
-        setLoading(false);
-        return;
-      }
+      let routesQuery = query(
+        collection(db, "longHaulRoutes"),
+        where("status", "==", "available"),
+      );
 
-      // Load available routes
-      let routesQuery;
-      if (filterByHomeHub && userData.packageRunnerProfile.homeHub?.hubId) {
+      if (filterByHomeHub && userData.packageRunnerProfile?.homeHub?.id) {
         routesQuery = query(
-          collection(db, 'longHaulRoutes'),
-          where('status', '==', 'available'),
-          where('originHub.hubId', '==', userData.packageRunnerProfile.homeHub.hubId)
+          collection(db, "longHaulRoutes"),
+          where("status", "==", "available"),
+          where("originHub.id", "==", userData.packageRunnerProfile.homeHub.id),
         );
-      } else {
-        routesQuery = query(
-          collection(db, 'longHaulRoutes'),
-          where('status', '==', 'available')
-        );
+      } else if (
+        filterByHomeHub &&
+        !userData.packageRunnerProfile?.homeHub?.id
+      ) {
+        // If no home hub is set, fall back to showing all available routes
+        setFilterByHomeHub(false);
       }
 
       const routesSnapshot = await getDocs(routesQuery);
-      const routesData = routesSnapshot.docs.map(doc => ({
-        ...doc.data(),
+      const routesData = routesSnapshot.docs.map((doc) => ({
         id: doc.id,
-      })) as (LongHaulRouteDoc & { id: string })[];
-
-      // Sort by scheduled departure
-      routesData.sort((a, b) => 
-        a.scheduledDeparture.toMillis() - b.scheduledDeparture.toMillis()
-      );
+        ...doc.data(),
+      }));
 
       setRoutes(routesData);
-    } catch (err) {
-      console.error('Failed to load routes:', err);
-      setError('Failed to load routes. Please try again.');
+    } catch (err: any) {
+      console.error("Error loading routes:", err);
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
   const handleAcceptRoute = async (routeId: string) => {
-    if (!user || !userDoc?.packageRunnerProfile) return;
+    if (!currentUser || accepting) return;
 
-    setAccepting(true);
     try {
-      const routeRef = doc(db, 'longHaulRoutes', routeId);
-      
+      setAccepting(true);
+      const routeRef = doc(db, "longHaulRoutes", routeId);
+
       await updateDoc(routeRef, {
-        status: 'claimed',
-        runnerId: user.uid,
-        runnerName: userDoc.displayName || 'Runner',
-        runnerVehicleType: userDoc.packageRunnerProfile.vehicleType,
-        claimedAt: serverTimestamp(),
+        status: "assigned",
+        runnerId: currentUser.uid,
+        assignedAt: serverTimestamp(),
       });
 
-      // Update user's current route
-      await updateDoc(doc(db, 'users', user.uid), {
-        'packageRunnerProfile.currentRouteId': routeId,
-        updatedAt: serverTimestamp(),
-      });
-
-      // Reload routes
-      await loadUserAndRoutes();
-      
-      alert('Route accepted successfully!');
-    } catch (err) {
-      console.error('Failed to accept route:', err);
-      alert('Failed to accept route. Please try again.');
+      router.push("/runner/dashboard");
+    } catch (err: any) {
+      console.error("Error accepting route:", err);
+      alert(`Failed to accept route: ${err.message}`);
     } finally {
       setAccepting(false);
     }
@@ -230,84 +139,182 @@ export default function AvailableRoutesPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="container" style={{ maxWidth: '1200px', margin: '0 auto', padding: '40px 20px' }}>
-        <h1>Available Routes</h1>
-        <GlassCard>
-          <LoadingSkeleton lines={5} />
-        </GlassCard>
+      <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center">
+        <div className="animate-pulse">
+          <div className="w-16 h-16 bg-purple-200 rounded-full mx-auto mb-4"></div>
+          <div className="h-4 bg-purple-200 rounded w-32 mx-auto"></div>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="container" style={{ maxWidth: '1200px', margin: '0 auto', padding: '40px 20px' }}>
-        <h1>Available Routes</h1>
-        <GlassCard>
-          <div style={{
-            backgroundColor: '#fee2e2',
-            color: '#dc2626',
-            padding: '16px',
-            borderRadius: '8px',
-            textAlign: 'center',
-          }}>
-            {error}
-          </div>
-        </GlassCard>
+      <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center p-6">
+        <Card variant="elevated" className="max-w-md">
+          <CardContent>
+            <div className="text-center py-8">
+              <div className="text-6xl mb-4">⚠️</div>
+              <p className="text-gray-900 text-lg font-bold mb-2">Error</p>
+              <p className="text-gray-600 mb-4">{error}</p>
+              <button
+                onClick={() => router.push("/runner/dashboard")}
+                className="bg-purple-600 text-white px-6 py-3 rounded-xl font-medium hover:bg-purple-700 transition-colors"
+              >
+                Go to Dashboard
+              </button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="container" style={{ maxWidth: '1200px', margin: '0 auto', padding: '40px 20px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-        <div>
-          <h1 style={{ margin: 0, marginBottom: '8px' }}>Available Routes</h1>
-          <p style={{ margin: 0, color: '#6b7280' }}>
-            {userDoc?.packageRunnerProfile?.homeHub?.name && (
-              <>Home Hub: {userDoc.packageRunnerProfile.homeHub.name}</>
-            )}
-          </p>
+    <div className="min-h-screen bg-[#F8F9FF] pb-24">
+      {/* Header */}
+      <div className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] p-6 text-white shadow-lg">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center gap-3 mb-4">
+            <button
+              onClick={() => router.back()}
+              className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30 transition-all"
+            >
+              ←
+            </button>
+            <div>
+              <h1 className="text-2xl font-bold">Available Routes</h1>
+              <p className="text-purple-100 text-sm">
+                {routes.length} routes available
+              </p>
+            </div>
+          </div>
         </div>
-        <button
-          onClick={() => setFilterByHomeHub(!filterByHomeHub)}
-          style={{
-            padding: '10px 20px',
-            backgroundColor: filterByHomeHub ? '#3b82f6' : '#f3f4f6',
-            color: filterByHomeHub ? 'white' : '#374151',
-            border: 'none',
-            borderRadius: '8px',
-            fontSize: '14px',
-            fontWeight: 500,
-            cursor: 'pointer',
-          }}
-        >
-          {filterByHomeHub ? '📍 Home Hub Only' : '🌍 All Routes'}
-        </button>
       </div>
 
-      {routes.length === 0 ? (
-        <GlassCard>
-          <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>📦</div>
-            <h3 style={{ margin: 0, marginBottom: '8px' }}>No Available Routes</h3>
-            <p style={{ margin: 0, color: '#6b7280' }}>
-              Check back later for new routes, or toggle to view all routes.
-            </p>
-          </div>
-        </GlassCard>
-      ) : (
-        <div style={{ display: 'grid', gap: '20px' }}>
-          {routes.map(route => (
-            <RouteCard
-              key={route.id}
-              route={route}
-              onAccept={handleAcceptRoute}
-              accepting={accepting}
+      {/* Filter Toggle */}
+      <div className="max-w-4xl mx-auto px-6 -mt-4 mb-6">
+        <div className="bg-white rounded-2xl shadow-lg p-4">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={filterByHomeHub}
+              onChange={(e) => setFilterByHomeHub(e.target.checked)}
+              className="w-5 h-5 text-purple-600 rounded"
             />
-          ))}
+            <div>
+              <p className="font-medium text-gray-900">Filter by Home Hub</p>
+              <p className="text-sm text-gray-500">
+                {userDoc?.packageRunnerProfile?.homeHub?.name ||
+                  "No home hub set"}
+              </p>
+            </div>
+          </label>
         </div>
-      )}
+      </div>
+
+      {/* Routes List */}
+      <div className="max-w-4xl mx-auto px-6 space-y-4">
+        {routes.length === 0 ? (
+          <Card variant="elevated">
+            <CardContent>
+              <div className="text-center py-12">
+                <div className="text-6xl mb-4">🗺️</div>
+                <p className="text-gray-600 text-lg mb-2">
+                  No routes available
+                </p>
+                <p className="text-gray-500 text-sm mb-4">
+                  {filterByHomeHub
+                    ? "Try disabling the home hub filter"
+                    : "Check back later for new routes"}
+                </p>
+                <button
+                  onClick={() => loadUserAndRoutes()}
+                  className="bg-purple-600 text-white px-6 py-3 rounded-xl font-medium hover:bg-purple-700 transition-colors"
+                >
+                  Refresh
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          routes.map((route: any) => {
+            const departureDate = route.scheduledDeparture?.toDate?.();
+            const arrivalDate = route.scheduledArrival?.toDate?.();
+
+            return (
+              <Card
+                key={route.id}
+                variant="elevated"
+                className="bg-gradient-to-br from-white to-purple-50 animate-fade-in"
+              >
+                <div className="p-5">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">
+                        {route.originHub?.name} → {route.destinationHub?.name}
+                      </h3>
+                      <div className="flex gap-3 text-sm text-gray-600">
+                        <span>📍 {route.distance} miles</span>
+                        <span>📦 {route.packageCount} packages</span>
+                        <span>⚖️ {route.totalWeight} lbs</span>
+                      </div>
+                    </div>
+                    <StatusBadge status="approved" />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 mb-4 p-4 bg-white rounded-xl">
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Departure</p>
+                      <p className="text-sm font-medium">
+                        {departureDate?.toLocaleDateString()}
+                      </p>
+                      <p className="text-xs text-gray-600">
+                        {departureDate?.toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Arrival</p>
+                      <p className="text-sm font-medium">
+                        {arrivalDate?.toLocaleDateString()}
+                      </p>
+                      <p className="text-xs text-gray-600">
+                        {arrivalDate?.toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">
+                        Your Earnings
+                      </p>
+                      <p className="text-3xl font-bold text-green-600">
+                        ${route.pricing?.runnerEarnings?.toFixed(2)}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleAcceptRoute(route.id)}
+                      disabled={accepting}
+                      className="bg-purple-600 text-white px-8 py-3 rounded-xl font-medium hover:bg-purple-700 transition-colors disabled:bg-gray-400"
+                    >
+                      {accepting ? "Accepting..." : "Accept Route"}
+                    </button>
+                  </div>
+                </div>
+              </Card>
+            );
+          })
+        )}
+      </div>
+
+      <BottomNav items={runnerNavItems} />
     </div>
   );
 }

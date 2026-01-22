@@ -1,12 +1,13 @@
-import type { Metadata } from 'next';
-import './globals.css';
-import 'mapbox-gl/dist/mapbox-gl.css';
-import '@/styles/design-tokens.css';
-import { Navbar } from '@/components/v2/Navbar';
+import type { Metadata } from "next";
+import "./globals.css";
+import "mapbox-gl/dist/mapbox-gl.css";
+import "@/styles/design-tokens.css";
+import "@/styles/animations.css";
+import { Navbar } from "@/components/v2/Navbar";
 
 export const metadata: Metadata = {
-  title: 'GoSenderr - On-Demand Delivery',
-  description: 'Send packages with GoSenderr',
+  title: "GoSenderr - On-Demand Delivery",
+  description: "Send packages with GoSenderr",
 };
 
 export default function RootLayout({

@@ -30,7 +30,7 @@ export function Navbar({ children }: NavbarProps) {
     }
   };
 
-  // Don't show navbar on login/select-role pages
+  // Don't show navbar on login/select-role pages (new design is now default)
   const hideNavbar = pathname === "/login" || pathname === "/select-role";
 
   if (hideNavbar) {
@@ -58,6 +58,7 @@ export function Navbar({ children }: NavbarProps) {
             alignItems: "center",
             maxWidth: "1400px",
             margin: "0 auto",
+            gap: "20px",
           }}
         >
           {/* Logo */}
@@ -73,6 +74,72 @@ export function Navbar({ children }: NavbarProps) {
           >
             GoSenderr
           </Link>
+
+          {/* Role Badge */}
+          {user && role && (
+            <Link
+              href={
+                role === "admin"
+                  ? "/admin/dashboard"
+                  : role === "customer"
+                    ? "/customer/dashboard"
+                    : role === "courier"
+                      ? "/courier/dashboard"
+                      : role === "runner"
+                        ? "/runner/dashboard"
+                        : role === "vendor"
+                          ? "/vendor/items"
+                          : "/customer/dashboard"
+              }
+              style={{
+                padding: "6px 16px",
+                borderRadius: "20px",
+                fontSize: "14px",
+                fontWeight: "600",
+                background:
+                  role === "admin"
+                    ? "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+                    : role === "customer"
+                      ? "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)"
+                      : role === "courier"
+                        ? "linear-gradient(135deg, #10b981 0%, #059669 100%)"
+                        : role === "runner"
+                          ? "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)"
+                          : role === "vendor"
+                            ? "linear-gradient(135deg, #ec4899 0%, #db2777 100%)"
+                            : "#6b7280",
+                color: "white",
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                textDecoration: "none",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                display: "inline-block",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-1px)";
+                e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.2)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
+              }}
+              title={`Go to ${role} dashboard`}
+            >
+              {role === "admin"
+                ? "👨‍💼 Admin"
+                : role === "customer"
+                  ? "👤 Customer"
+                  : role === "courier"
+                    ? "🚗 Courier"
+                    : role === "runner"
+                      ? "🚚 Runner"
+                      : role === "vendor"
+                        ? "🏪 Vendor"
+                        : role}
+            </Link>
+          )}
 
           {/* Navigation Links - Responsive */}
           <div

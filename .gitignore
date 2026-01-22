@@ -78,3 +78,8 @@ firestore-debug.log
 # Keys / credentials
 **/*.pem
 **/*serviceAccount*.json
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
+screenshots/

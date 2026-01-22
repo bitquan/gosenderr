@@ -1,11 +1,20 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useAuthUser } from '@/hooks/v2/useAuthUser';
-import { PaymentForm } from '@/components/v2/PaymentForm';
-import { db } from '@/lib/firebase/firestore';
-import { collection, addDoc, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useAuthUser } from "@/hooks/v2/useAuthUser";
+import { PaymentForm } from "@/components/v2/PaymentForm";
+import { db } from "@/lib/firebase/firestore";
+import {
+  collection,
+  addDoc,
+  doc,
+  updateDoc,
+  serverTimestamp,
+} from "firebase/firestore";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { BottomNav, customerNavItems } from "@/components/ui/BottomNav";
+import { Avatar } from "@/components/ui/Avatar";
 
 interface OrderDetails {
   itemId: string;
@@ -29,44 +38,50 @@ export default function PaymentPage() {
 
   useEffect(() => {
     // Try to get order details from sessionStorage first
-    const storedDetails = sessionStorage.getItem('orderDetails');
+    const storedDetails = sessionStorage.getItem("orderDetails");
     if (storedDetails) {
       try {
         setOrderDetails(JSON.parse(storedDetails));
         return;
       } catch (e) {
-        console.error('Failed to parse stored order details:', e);
+        console.error("Failed to parse stored order details:", e);
       }
     }
 
     // Fallback to query params
-    const itemId = searchParams.get('itemId');
-    const courierId = searchParams.get('courierId');
-    const courierRate = searchParams.get('courierRate');
-    const platformFee = searchParams.get('platformFee');
-    const dropoffAddress = searchParams.get('dropoffAddress');
+    const itemId = searchParams.get("itemId");
+    const courierId = searchParams.get("courierId");
+    const courierRate = searchParams.get("courierRate");
+    const platformFee = searchParams.get("platformFee");
+    const dropoffAddress = searchParams.get("dropoffAddress");
 
-    if (!itemId || !courierId || !courierRate || !platformFee || !dropoffAddress) {
-      setError('Missing required order information. Please start over.');
+    if (
+      !itemId ||
+      !courierId ||
+      !courierRate ||
+      !platformFee ||
+      !dropoffAddress
+    ) {
+      setError("Missing required order information. Please start over.");
       return;
     }
 
     setOrderDetails({
       itemId,
       courierId,
-      courierName: searchParams.get('courierName') || undefined,
+      courierName: searchParams.get("courierName") || undefined,
       courierRate: parseFloat(courierRate),
       platformFee: parseFloat(platformFee),
-      pickupAddress: searchParams.get('pickupAddress') || 'Pickup location',
+      pickupAddress: searchParams.get("pickupAddress") || "Pickup location",
       dropoffAddress,
-      itemTitle: searchParams.get('itemTitle') || undefined,
-      itemDescription: searchParams.get('itemDescription') || undefined,
+      itemTitle: searchParams.get("itemTitle") || undefined,
+      itemDescription: searchParams.get("itemDescription") || undefined,
     });
   }, [searchParams]);
 
   const handlePaymentSuccess = async () => {
     if (!orderDetails || !user) {
-      setError('Missing user or order information');
+      setError("Missing user or order information");
       return;
     }
 
@@ -82,8 +97,8 @@ export default function PaymentPage() {
         customerId: user.uid,
         courierId: orderDetails.courierId,
         itemId: orderDetails.itemId,
-        status: 'pending',
-        paymentStatus: 'authorized',
+        status: "pending",
+        paymentStatus: "authorized",
         pricing: {
           courierRate: orderDetails.courierRate,
           platformFee: orderDetails.platformFee,
@@ -100,67 +115,85 @@ export default function PaymentPage() {
         updatedAt: serverTimestamp(),
       };
 
-      const jobRef = await addDoc(collection(db, 'deliveryJobs'), deliveryJobData);
+      const jobRef = await addDoc(
+        collection(db, "deliveryJobs"),
+        deliveryJobData,
+      );
 
       // Update item status to 'pending'
       if (orderDetails.itemId) {
-        const itemRef = doc(db, 'items', orderDetails.itemId);
+        const itemRef = doc(db, "items", orderDetails.itemId);
         await updateDoc(itemRef, {
-          status: 'pending',
+          status: "pending",
           updatedAt: serverTimestamp(),
         });
       }
 
       // Clear session storage
-      sessionStorage.removeItem('orderDetails');
+      sessionStorage.removeItem("orderDetails");
 
       // Navigate to job tracking page
       router.push(`/customer/jobs/${jobRef.id}`);
     } catch (err: any) {
-      console.error('Error creating delivery job:', err);
-      setError(err.message || 'Failed to create delivery job');
+      console.error("Error creating delivery job:", err);
+      setError(err.message || "Failed to create delivery job");
       setIsCreatingJob(false);
     }
   };
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Authentication Required</h2>
-          <p className="text-gray-600 mb-4">Please log in to continue with payment.</p>
-          <button
-            onClick={() => router.push('/login')}
-            className="bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700"
-          >
-            Go to Login
-          </button>
-        </div>
+      <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center px-6">
+        <Card variant="elevated" className="max-w-md w-full">
+          <CardContent>
+            <div className="text-center py-6">
+              <h2 className="text-2xl font-bold mb-4">
+                Authentication Required
+              </h2>
+              <p className="text-gray-600 mb-4">
+                Please log in to continue with payment.
+              </p>
+              <button
+                onClick={() => router.push("/login")}
+                className="bg-purple-600 text-white py-2 px-6 rounded-xl hover:bg-purple-700 transition"
+              >
+                Go to Login
+              </button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   if (error && !orderDetails) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="max-w-md w-full bg-red-50 border border-red-200 text-red-800 px-6 py-4 rounded-lg">
-          <h2 className="text-xl font-bold mb-2">Error</h2>
-          <p>{error}</p>
-          <button
-            onClick={() => router.push('/marketplace')}
-            className="mt-4 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700"
-          >
-            Back to Marketplace
-          </button>
-        </div>
+      <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center px-6">
+        <Card variant="elevated" className="max-w-md w-full">
+          <CardContent>
+            <div className="text-center py-6">
+              <h2 className="text-xl font-bold mb-2">Error</h2>
+              <p className="text-gray-600 mb-4">{error}</p>
+              <button
+                onClick={() => router.push("/marketplace")}
+                className="bg-purple-600 text-white py-2 px-4 rounded-xl hover:bg-purple-700 transition"
+              >
+                Back to Marketplace
+              </button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   if (!orderDetails) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center">
+        <div className="animate-pulse">
+          <div className="w-16 h-16 bg-purple-200 rounded-full mx-auto mb-4"></div>
+          <div className="h-4 bg-purple-200 rounded w-32 mx-auto"></div>
+        </div>
       </div>
     );
   }
@@ -168,48 +201,71 @@ export default function PaymentPage() {
   const totalAmount = orderDetails.courierRate + orderDetails.platformFee;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Complete Your Order</h1>
-          <p className="mt-2 text-gray-600">Review your order and provide payment details</p>
+    <div className="min-h-screen bg-[#F8F9FF] pb-24">
+      <div className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] rounded-b-[32px] p-6 text-white shadow-lg">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-4">
+              <Avatar fallback={user?.displayName || "Customer"} size="lg" />
+              <div>
+                <h1 className="text-2xl font-bold">Complete Your Order</h1>
+                <p className="text-purple-100 text-sm">
+                  Review your order and pay securely
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Order Summary */}
-          <div className="space-y-6">
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-              <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
-
+      <div className="max-w-4xl mx-auto px-6 -mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="space-y-6">
+          <Card variant="elevated" className="animate-fade-in">
+            <CardHeader>
+              <CardTitle>Order Summary</CardTitle>
+            </CardHeader>
+            <CardContent>
               {orderDetails.itemTitle && (
                 <div className="mb-4">
-                  <h3 className="text-sm font-medium text-gray-500">Item</h3>
-                  <p className="text-gray-900">{orderDetails.itemTitle}</p>
+                  <h3 className="text-xs font-semibold text-gray-500">Item</h3>
+                  <p className="text-gray-900 font-semibold">
+                    {orderDetails.itemTitle}
+                  </p>
                   {orderDetails.itemDescription && (
-                    <p className="text-sm text-gray-600 mt-1">{orderDetails.itemDescription}</p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {orderDetails.itemDescription}
+                    </p>
                   )}
                 </div>
               )}
 
               {orderDetails.courierName && (
                 <div className="mb-4">
-                  <h3 className="text-sm font-medium text-gray-500">Courier</h3>
+                  <h3 className="text-xs font-semibold text-gray-500">
+                    Courier
+                  </h3>
                   <p className="text-gray-900">{orderDetails.courierName}</p>
                 </div>
               )}
 
               <div className="mb-4">
-                <h3 className="text-sm font-medium text-gray-500">Pickup Address</h3>
+                <h3 className="text-xs font-semibold text-gray-500">
+                  Pickup Address
+                </h3>
                 <p className="text-gray-900">{orderDetails.pickupAddress}</p>
               </div>
 
               <div className="mb-4">
-                <h3 className="text-sm font-medium text-gray-500">Dropoff Address</h3>
+                <h3 className="text-xs font-semibold text-gray-500">
+                  Dropoff Address
+                </h3>
                 <p className="text-gray-900">{orderDetails.dropoffAddress}</p>
               </div>
 
-              <div className="border-t border-gray-200 pt-4 mt-4">
-                <h3 className="text-lg font-semibold mb-3">Pricing Breakdown</h3>
+              <div className="border-t border-gray-100 pt-4 mt-4">
+                <h3 className="text-sm font-semibold mb-3">
+                  Pricing Breakdown
+                </h3>
                 <div className="space-y-2">
                   <div className="flex justify-between text-gray-600">
                     <span>Courier Rate</span>
@@ -219,50 +275,57 @@ export default function PaymentPage() {
                     <span>Platform Fee</span>
                     <span>${orderDetails.platformFee.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between text-lg font-bold text-gray-900 pt-2 border-t border-gray-200">
+                  <div className="flex justify-between text-lg font-bold text-gray-900 pt-2 border-t border-gray-100">
                     <span>Total</span>
                     <span>${totalAmount.toFixed(2)}</span>
                   </div>
                 </div>
               </div>
-            </div>
+            </CardContent>
+          </Card>
 
-            <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
-              <h3 className="font-semibold text-blue-900 mb-2">Payment Process</h3>
-              <ul className="text-sm text-blue-800 space-y-1">
+          <Card variant="elevated" className="animate-fade-in">
+            <CardHeader>
+              <CardTitle>Payment Process</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="text-sm text-gray-700 space-y-2">
                 <li>• Payment will be pre-authorized (not charged yet)</li>
                 <li>• Funds captured after successful delivery</li>
                 <li>• Automatic refund if cancelled before pickup</li>
               </ul>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
+        </div>
 
-          {/* Payment Form */}
-          <div>
-            {isCreatingJob ? (
-              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <div>
+          {isCreatingJob ? (
+            <Card variant="elevated" className="animate-fade-in">
+              <CardContent>
                 <div className="flex flex-col items-center justify-center py-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mb-4"></div>
                   <p className="text-gray-600">Creating your delivery job...</p>
                 </div>
-              </div>
-            ) : (
-              <PaymentForm
-                jobId={`pending_${Date.now()}`}
-                courierRate={orderDetails.courierRate}
-                platformFee={orderDetails.platformFee}
-                onSuccess={handlePaymentSuccess}
-              />
-            )}
+              </CardContent>
+            </Card>
+          ) : (
+            <PaymentForm
+              jobId={`pending_${Date.now()}`}
+              courierRate={orderDetails.courierRate}
+              platformFee={orderDetails.platformFee}
+              onSuccess={handlePaymentSuccess}
+            />
+          )}
 
-            {error && (
-              <div className="mt-4 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
-                {error}
-              </div>
-            )}
-          </div>
+          {error && (
+            <div className="mt-4 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
+              {error}
+            </div>
+          )}
         </div>
       </div>
+
+      <BottomNav items={customerNavItems} />
     </div>
   );
 }
