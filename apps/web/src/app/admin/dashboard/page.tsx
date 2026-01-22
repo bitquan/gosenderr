@@ -198,8 +198,16 @@ export default function AdminDashboardNew() {
                 <p className="text-purple-100 text-sm">{currentUser?.email}</p>
               </div>
             </div>
-            <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-2xl">
-              👨‍💼
+            <div className="flex items-center gap-3">
+              <Link
+                href="/admin/settings"
+                className="inline-flex items-center justify-center rounded-xl bg-white/20 px-4 py-2 text-sm font-semibold text-white hover:bg-white/30"
+              >
+                Settings
+              </Link>
+              <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-2xl">
+                👨‍💼
+              </div>
             </div>
           </div>
 

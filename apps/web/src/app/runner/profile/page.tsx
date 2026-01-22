@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { getAuthSafe } from "@/lib/firebase/auth";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { StatusBadge } from "@/components/ui/Badge";
 import { Avatar } from "@/components/ui/Avatar";
@@ -78,6 +79,19 @@ export default function RunnerProfilePage() {
       </div>
 
       <div className="max-w-4xl mx-auto px-6 -mt-8 space-y-6">
+        <Card variant="elevated" className="animate-fade-in">
+          <CardHeader>
+            <CardTitle>Settings</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Link
+              href="/runner/settings"
+              className="inline-flex items-center justify-center rounded-xl bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700"
+            >
+              Manage Settings
+            </Link>
+          </CardContent>
+        </Card>
         <Card variant="elevated" className="animate-fade-in">
           <CardHeader>
             <CardTitle>Status</CardTitle>

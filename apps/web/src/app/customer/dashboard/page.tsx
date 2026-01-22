@@ -112,19 +112,25 @@ export default function CustomerDashboardNew() {
 
       const jobsQuery = query(
         collection(db, "jobs"),
-        where("customerId", "==", currentUser.uid),
+        where("createdByUid", "==", currentUser.uid),
         orderBy("createdAt", "desc"),
         limit(5),
       );
 
-      const unsubscribeJobs = onSnapshot(jobsQuery, (snapshot) => {
-        const jobsData = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        setJobs(jobsData);
-        updateActivities(packages, jobsData);
-      });
+      const unsubscribeJobs = onSnapshot(
+        jobsQuery,
+        (snapshot) => {
+          const jobsData = snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
+          setJobs(jobsData);
+          updateActivities(packages, jobsData);
+        },
+        (error) => {
+          console.error("Error loading jobs:", error);
+        },
+      );
 
       setLoading(false);
 

@@ -26,6 +26,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Avatar } from "@/components/ui/Avatar";
 import { FloatingButton } from "@/components/ui/FloatingButton";
+import { NotFoundPage } from "@/components/ui/NotFoundPage";
 
 interface DropoffAddress {
   address: string;
@@ -284,27 +285,13 @@ export default function RequestDeliveryPage() {
 
   if (error || !item) {
     return (
-      <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center px-6">
-        <Card variant="elevated" className="max-w-lg w-full">
-          <CardContent>
-            <div className="text-center py-6">
-              <div className="text-5xl mb-4">❌</div>
-              <h2 className="text-xl font-bold mb-2">
-                {error || "Item not found"}
-              </h2>
-              <p className="text-sm text-gray-600 mb-6">
-                Please choose another item to deliver.
-              </p>
-              <button
-                onClick={() => router.push("/customer/marketplace")}
-                className="px-5 py-2 rounded-xl bg-purple-600 text-white font-medium hover:bg-purple-700 transition"
-              >
-                Back to Marketplace
-              </button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <NotFoundPage
+        title={error || "Item not found"}
+        description="Please choose another item to deliver."
+        actionHref="/marketplace"
+        actionLabel="Back to Marketplace"
+        emoji="📦"
+      />
     );
   }
 

@@ -101,6 +101,47 @@ service cloud.firestore {
       allow read, update, delete: if isAdmin();
     }
 
+    // ========== MARKETPLACE ORDERS ==========
+    match /marketplaceOrders/{orderId} {
+      function isSeller() {
+        return signedIn() && resource.data.sellerId == request.auth.uid;
+      }
+
+      function isBuyer() {
+        return signedIn() && resource.data.buyerId == request.auth.uid;
+      }
+
+      // Seller or buyer can read their orders
+      allow read: if isSeller() || isBuyer() || isAdmin();
+
+      // Buyer creates order
+      allow create: if signedIn()
+        && request.resource.data.buyerId == request.auth.uid
+        && request.resource.data.sellerId is string;
+
+      // Seller updates order status; buyer can attach checkout session metadata
+      allow update: if signedIn() && (
+        (
+          isSeller()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'status',
+            'updatedAt'
+          ])
+        )
+        ||
+        (
+          isBuyer()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'checkoutSessionId',
+            'updatedAt'
+          ])
+        )
+        || isAdmin()
+      );
+
+      allow delete: if isAdmin();
+    }
+
     // ========== DELIVERY JOBS ==========
     match /deliveryJobs/{jobId} {
       function isCustomer() {

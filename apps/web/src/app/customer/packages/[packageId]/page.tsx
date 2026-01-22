@@ -7,6 +7,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { GlassCard, LoadingSkeleton } from "@/components/GlassCard";
 import Link from "next/link";
+import { NotFoundPage } from "@/components/ui/NotFoundPage";
 
 export default function PackageDetailsPage({
   params,
@@ -19,6 +20,10 @@ export default function PackageDetailsPage({
   const [authLoading, setAuthLoading] = useState(true);
   const [packageData, setPackageData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [notFoundMessage, setNotFoundMessage] = useState<{
+    title: string;
+    description: string;
+  } | null>(null);
 
   useEffect(() => {
     const auth = getAuthSafe();
@@ -48,8 +53,11 @@ export default function PackageDetailsPage({
     try {
       const packageDoc = await getDoc(doc(db, "packages", packageId));
       if (!packageDoc.exists()) {
-        alert("Package not found");
-        router.push("/customer/packages");
+        setNotFoundMessage({
+          title: "Package not found",
+          description: "We couldn't locate that package.",
+        });
+        setLoading(false);
         return;
       }
 
@@ -57,15 +65,21 @@ export default function PackageDetailsPage({
 
       // Check if user owns this package
       if (data.senderId !== currentUser.uid) {
-        alert("You don't have permission to view this package");
-        router.push("/customer/packages");
+        setNotFoundMessage({
+          title: "Access denied",
+          description: "You don't have permission to view this package.",
+        });
+        setLoading(false);
         return;
       }
 
       setPackageData(data);
     } catch (error) {
       console.error("Error loading package:", error);
-      alert("Failed to load package");
+      setNotFoundMessage({
+        title: "Unable to load package",
+        description: "Please try again in a moment.",
+      });
     } finally {
       setLoading(false);
     }
@@ -79,13 +93,17 @@ export default function PackageDetailsPage({
     );
   }
 
-  if (!packageData) {
+  if (notFoundMessage || !packageData) {
     return (
-      <div className="max-w-4xl mx-auto p-6">
-        <GlassCard>
-          <p className="text-center py-12">Package not found</p>
-        </GlassCard>
-      </div>
+      <NotFoundPage
+        title={notFoundMessage?.title || "Package not found"}
+        description={
+          notFoundMessage?.description || "We couldn't locate that package."
+        }
+        actionHref="/customer/packages"
+        actionLabel="Back to Packages"
+        emoji="📦"
+      />
     );
   }
 

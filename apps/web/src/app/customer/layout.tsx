@@ -14,6 +14,7 @@ export default function CustomerLayout({ children }: { children: ReactNode }) {
           <RoleFab
             role="customer"
             hideOnPaths={["/customer/request-delivery", "/customer/checkout"]}
+            className="bottom-24 right-6"
           />
         </div>
       </RoleGate>

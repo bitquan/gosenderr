@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { StatusBadge } from "@/components/ui/Badge";
 import { MapboxMap } from "@/components/v2/MapboxMap";
 import type { Job, JobStatus } from "@/features/jobs/shared/types";
+import { NotFoundPage } from "@/components/ui/NotFoundPage";
 
 const statusOrder: JobStatus[] = [
   "open",
@@ -52,7 +53,7 @@ export default function JobTrackingPage() {
           setLoading(false);
           return;
         }
-        setJob({ id: snap.id, ...(snap.data() as Job) });
+        setJob({ ...(snap.data() as Job), id: snap.id });
         setLoading(false);
       },
       (error) => {
@@ -79,16 +80,13 @@ export default function JobTrackingPage() {
 
   if (notFound || !job) {
     return (
-      <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center">
-        <Card variant="elevated" className="max-w-md">
-          <CardContent>
-            <h2 className="text-lg font-semibold">Job not found</h2>
-            <p className="text-sm text-gray-600 mt-2">
-              We couldn't locate that delivery job.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <NotFoundPage
+        title="Job not found"
+        description="We couldn't locate that delivery job."
+        actionHref="/track/package"
+        actionLabel="Track a Package"
+        emoji="🧭"
+      />
     );
   }
 

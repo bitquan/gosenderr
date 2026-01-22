@@ -12,7 +12,7 @@ const roleConfig: Record<
 > = {
   customer: {
     icon: "➕",
-    href: "/customer/request-delivery",
+    href: "/customer/ship",
     label: "Ship",
   },
   runner: {

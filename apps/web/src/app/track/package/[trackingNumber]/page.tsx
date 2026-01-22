@@ -7,6 +7,7 @@ import { db } from "@/lib/firebase/client";
 import { GlassCard, LoadingSkeleton } from "@/components/GlassCard";
 import { MapboxMap } from "@/components/v2/MapboxMap";
 import { motion } from "framer-motion";
+import { NotFoundPage } from "@/components/ui/NotFoundPage";
 import type {
   PackageDoc,
   PackageStatus,
@@ -163,19 +164,13 @@ export default function PackageTrackingPage() {
 
   if (notFound || !packageData) {
     return (
-      <div className="min-h-screen p-8 bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center">
-        <GlassCard className="max-w-md text-center">
-          <div className="text-6xl mb-4">📦</div>
-          <h1 className="text-2xl font-bold mb-2">Package Not Found</h1>
-          <p className="text-gray-600">
-            We couldn't find a package with tracking number:{" "}
-            <span className="font-mono font-semibold">{trackingNumber}</span>
-          </p>
-          <p className="text-sm text-gray-500 mt-4">
-            Please check the tracking number and try again.
-          </p>
-        </GlassCard>
-      </div>
+      <NotFoundPage
+        title="Package not found"
+        description={`We couldn't find a package with tracking number ${trackingNumber}. Double-check it and try again.`}
+        actionHref="/track/package"
+        actionLabel="Try Another Tracking Number"
+        emoji="📦"
+      />
     );
   }
 

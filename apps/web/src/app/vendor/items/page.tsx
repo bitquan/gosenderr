@@ -98,6 +98,20 @@ export default function VendorItemsPage() {
         <h1 style={{ margin: 0 }}>My Items</h1>
         <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
           <Link
+            href="/vendor/settings"
+            style={{
+              padding: "10px 20px",
+              background: "#f9fafb",
+              color: "#374151",
+              textDecoration: "none",
+              borderRadius: "8px",
+              fontWeight: "600",
+              border: "1px solid #e5e7eb",
+            }}
+          >
+            Settings
+          </Link>
+          <Link
             href="/vendor/orders"
             style={{
               padding: "10px 20px",

@@ -13,6 +13,7 @@ import { getJobVisibility } from "@/features/jobs/shared/privacy";
 import { Job as FeatureJob } from "@/features/jobs/shared/types";
 import { JobDoc } from "@/lib/v2/types";
 import Link from "next/link";
+import { NotFoundPage } from "@/components/ui/NotFoundPage";
 
 // Convert JobDoc to features Job
 function convertJobDocToJob(jobDoc: JobDoc, id: string): FeatureJob {
@@ -40,12 +41,13 @@ export default function CustomerJobDetail({
 
   if (!jobDoc || !uid) {
     return (
-      <div style={{ padding: "30px" }}>
-        <p>Job not found</p>
-        <Link href="/customer/jobs" style={{ color: "#6E56CF" }}>
-          ← Back to My Jobs
-        </Link>
-      </div>
+      <NotFoundPage
+        title="Job not found"
+        description="We couldn't locate that delivery job."
+        actionHref="/customer/jobs"
+        actionLabel="Back to My Jobs"
+        emoji="🧾"
+      />
     );
   }
 
