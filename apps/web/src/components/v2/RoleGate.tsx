@@ -6,7 +6,7 @@ import { useUserRole } from '@/hooks/v2/useUserRole';
 
 interface RoleGateProps {
   children: ReactNode;
-  allowedRole: 'customer' | 'courier';
+  allowedRole: 'customer' | 'courier' | 'vendor';
 }
 
 /**
@@ -29,6 +29,8 @@ export function RoleGate({ children, allowedRole }: RoleGateProps) {
       // Wrong role, redirect to correct home
       if (role === 'customer') {
         router.push('/customer/jobs');
+      } else if (role === 'vendor') {
+        router.push('/vendor/dashboard');
       } else {
         router.push('/courier/dashboard');
       }

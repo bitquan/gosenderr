@@ -1,7 +1,7 @@
-import { Timestamp } from 'firebase/firestore';
-export type UserRole = 'buyer' | 'seller' | 'courier' | 'package_runner' | 'admin';
-export type TransportMode = 'walk' | 'bike' | 'scooter' | 'car';
-export type LegacyUserRole = 'customer' | 'courier' | 'admin';
+import { Timestamp } from "firebase/firestore";
+export type UserRole = "buyer" | "seller" | "courier" | "package_runner" | "admin";
+export type TransportMode = "walk" | "bike" | "scooter" | "car";
+export type LegacyUserRole = "customer" | "courier" | "admin";
 export interface PackageRateCard {
     baseFare: number;
     perMile: number;
@@ -61,8 +61,8 @@ export interface CourierCapabilities {
     canDeliverHeavy: boolean;
     canDeliverFurniture: boolean;
 }
-export type CourierStatus = 'pending_docs' | 'pending_review' | 'active' | 'suspended' | 'banned';
-export type VehicleType = 'foot' | 'bike' | 'scooter' | 'motorcycle' | 'car' | 'van' | 'truck';
+export type CourierStatus = "pending_docs" | "pending_review" | "active" | "suspended" | "banned";
+export type VehicleType = "foot" | "bike" | "scooter" | "motorcycle" | "car" | "van" | "truck";
 export interface VehicleDetails {
     make: string;
     model: string;
@@ -77,7 +77,7 @@ export interface CourierDocuments {
     idPhotoUrl?: string;
     insurancePhotoUrl?: string;
     registrationPhotoUrl?: string;
-    adminReviewStatus: 'pending' | 'approved' | 'rejected';
+    adminReviewStatus: "pending" | "approved" | "rejected";
     adminNotes?: string;
     reviewedAt?: Timestamp;
     reviewedBy?: string;
@@ -127,10 +127,10 @@ export interface UserDoc {
     courierProfile?: CourierProfile;
     packageRunnerProfile?: PackageRunnerProfile;
 }
-export type ItemCategory = 'electronics' | 'furniture' | 'clothing' | 'food' | 'other';
-export type ItemCondition = 'new' | 'like_new' | 'good' | 'fair' | 'poor';
-export type ItemStatus = 'available' | 'pending' | 'sold';
-export type FoodTemperature = 'hot' | 'cold' | 'frozen' | 'room_temp';
+export type ItemCategory = "electronics" | "furniture" | "clothing" | "food" | "other";
+export type ItemCondition = "new" | "like_new" | "good" | "fair" | "poor";
+export type ItemStatus = "available" | "pending" | "sold";
+export type FoodTemperature = "hot" | "cold" | "frozen" | "room_temp";
 export interface ItemLocation {
     lat: number;
     lng: number;
@@ -160,6 +160,7 @@ export interface ItemDoc {
     price: number;
     category: ItemCategory;
     condition: ItemCondition;
+    deliveryMethods?: Array<"delivery" | "pickup">;
     photos: string[];
     pickupLocation: ItemLocation;
     itemDetails: ItemDetails;
@@ -190,7 +191,7 @@ export declare enum JobStatus {
     CANCELLED = "cancelled",
     DISPUTED = "disputed"
 }
-export type JobType = 'package' | 'food';
+export type JobType = "package" | "food";
 export interface PhotoMetadata {
     gpsVerified: boolean;
     accuracy: number;
@@ -226,7 +227,7 @@ export interface JobPricing {
     platformFee: number;
     totalCustomerCharge: number;
 }
-export type PaymentStatus = 'pending' | 'authorized' | 'captured' | 'refunded';
+export type PaymentStatus = "pending" | "authorized" | "captured" | "refunded";
 export interface FoodDeliveryDetails {
     temperature: FoodTemperature;
     pickupInstructions: string;
@@ -344,7 +345,7 @@ export interface JobDoc {
     createdAt: Timestamp;
     updatedAt: Timestamp;
 }
-export type RatingRole = 'customer_to_courier' | 'courier_to_customer';
+export type RatingRole = "customer_to_courier" | "courier_to_customer";
 export interface RatingCategories {
     professionalism?: number;
     timeliness?: number;
@@ -361,7 +362,7 @@ export interface RatingDoc {
     categories?: RatingCategories;
     createdAt: Timestamp;
 }
-export type DisputeStatus = 'open' | 'investigating' | 'resolved';
+export type DisputeStatus = "open" | "investigating" | "resolved";
 export interface DisputeDoc {
     deliveryJobId: string;
     reportedBy: string;
@@ -431,8 +432,8 @@ export interface FeatureFlags {
         animations: boolean;
     };
 }
-export type RouteStatus = 'building' | 'available' | 'claimed' | 'in_progress' | 'completed' | 'cancelled';
-export type DeliveryType = 'on_demand' | 'route' | 'long_route';
+export type RouteStatus = "building" | "available" | "claimed" | "in_progress" | "completed" | "cancelled";
+export type DeliveryType = "on_demand" | "route" | "long_route";
 export interface RouteStop {
     jobId: string;
     sequence: number;
@@ -449,7 +450,7 @@ export interface RouteStop {
 }
 export interface RouteDoc {
     routeId: string;
-    type: 'local';
+    type: "local";
     status: RouteStatus;
     scheduledDate: Timestamp;
     createdAt: Timestamp;
@@ -478,11 +479,11 @@ export interface RouteDoc {
     startedAt?: Timestamp;
     completedAt?: Timestamp;
     requiredEquipment: string[];
-    vehicleType_required: 'any' | 'car' | 'van' | 'truck';
+    vehicleType_required: "any" | "car" | "van" | "truck";
 }
 export interface LongRouteDoc {
     routeId: string;
-    type: 'long';
+    type: "long";
     status: RouteStatus;
     scheduledDate: Timestamp;
     createdAt: Timestamp;
@@ -519,8 +520,8 @@ export interface LongRouteDoc {
     requiredEquipment: string[];
     vehicleType: string;
 }
-export type PackageRunnerStatus = 'pending_docs' | 'pending_review' | 'active' | 'suspended';
-export type RunnerVehicleType = 'cargo_van' | 'sprinter' | 'box_truck';
+export type PackageRunnerStatus = "pending_docs" | "pending_review" | "active" | "suspended";
+export type RunnerVehicleType = "cargo_van" | "sprinter" | "box_truck";
 export interface CommercialInsurance {
     photoUrl: string;
     policyNumber: string;
@@ -532,7 +533,7 @@ export interface CommercialInsurance {
 export interface PreferredRoute {
     fromHubId: string;
     toHubId: string;
-    frequency: 'daily' | 'weekly' | 'on_demand';
+    frequency: "daily" | "weekly" | "on_demand";
     daysAvailable: string[];
 }
 export interface PackageRunnerProfile {
@@ -569,7 +570,7 @@ export interface PackageRunnerProfile {
     availableForRuns: boolean;
     stripeConnectAccountId: string;
 }
-export type HubType = 'major' | 'regional';
+export type HubType = "major" | "regional";
 export interface HubDoc {
     hubId: string;
     name: string;
@@ -582,7 +583,7 @@ export interface HubDoc {
     state: string;
     timezone: string;
     type: HubType;
-    operatingHours: '24/7' | {
+    operatingHours: "24/7" | {
         open: string;
         close: string;
     };
@@ -600,11 +601,11 @@ export interface HubDoc {
     createdAt: Timestamp;
     isActive: boolean;
 }
-export type LongHaulStatus = 'building' | 'available' | 'claimed' | 'in_transit' | 'completed';
-export type RouteFrequency = 'daily' | 'weekly' | 'on_demand';
+export type LongHaulStatus = "building" | "available" | "claimed" | "in_transit" | "completed";
+export type RouteFrequency = "daily" | "weekly" | "on_demand";
 export interface LongHaulRouteDoc {
     routeId: string;
-    type: 'long_haul';
+    type: "long_haul";
     status: LongHaulStatus;
     originHub: {
         hubId: string;
@@ -655,11 +656,11 @@ export interface LongHaulRouteDoc {
     previousRouteId?: string;
     createdAt: Timestamp;
 }
-export type ServiceLevel = 'standard' | 'express' | 'priority';
-export type PackageStatus = 'pickup_pending' | 'at_origin_hub' | 'in_transit' | 'at_destination_hub' | 'out_for_delivery' | 'delivered';
-export type LegType = 'local_pickup' | 'long_haul' | 'hub_transfer' | 'local_delivery';
-export type LegStatus = 'pending' | 'in_progress' | 'completed';
-export type ScanType = 'picked_up' | 'hub_arrival' | 'hub_departure' | 'hub_transfer' | 'delivered';
+export type ServiceLevel = "standard" | "express" | "priority";
+export type PackageStatus = "pickup_pending" | "at_origin_hub" | "in_transit" | "at_destination_hub" | "out_for_delivery" | "delivered";
+export type LegType = "local_pickup" | "long_haul" | "hub_transfer" | "local_delivery";
+export type LegStatus = "pending" | "in_progress" | "completed";
+export type ScanType = "picked_up" | "hub_arrival" | "hub_departure" | "hub_transfer" | "delivered";
 export interface PackageJourneyLeg {
     legNumber: number;
     type: LegType;

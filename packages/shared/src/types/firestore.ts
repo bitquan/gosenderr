@@ -1,11 +1,16 @@
-import { Timestamp } from 'firebase/firestore';
+import { Timestamp } from "firebase/firestore";
 
 // ==================== USER ROLES ====================
-export type UserRole = 'buyer' | 'seller' | 'courier' | 'package_runner' | 'admin';
-export type TransportMode = 'walk' | 'bike' | 'scooter' | 'car';
+export type UserRole =
+  | "buyer"
+  | "seller"
+  | "courier"
+  | "package_runner"
+  | "admin";
+export type TransportMode = "walk" | "bike" | "scooter" | "car";
 
 // Legacy support
-export type LegacyUserRole = 'customer' | 'courier' | 'admin';
+export type LegacyUserRole = "customer" | "courier" | "admin";
 
 // ==================== RATE CARDS ====================
 
@@ -77,8 +82,20 @@ export interface CourierCapabilities {
 
 // ==================== COURIER PROFILE ====================
 
-export type CourierStatus = 'pending_docs' | 'pending_review' | 'active' | 'suspended' | 'banned';
-export type VehicleType = 'foot' | 'bike' | 'scooter' | 'motorcycle' | 'car' | 'van' | 'truck';
+export type CourierStatus =
+  | "pending_docs"
+  | "pending_review"
+  | "active"
+  | "suspended"
+  | "banned";
+export type VehicleType =
+  | "foot"
+  | "bike"
+  | "scooter"
+  | "motorcycle"
+  | "car"
+  | "van"
+  | "truck";
 
 export interface VehicleDetails {
   make: string;
@@ -96,7 +113,7 @@ export interface CourierDocuments {
   idPhotoUrl?: string;
   insurancePhotoUrl?: string;
   registrationPhotoUrl?: string;
-  adminReviewStatus: 'pending' | 'approved' | 'rejected';
+  adminReviewStatus: "pending" | "approved" | "rejected";
   adminNotes?: string;
   reviewedAt?: Timestamp;
   reviewedBy?: string; // admin uid
@@ -142,29 +159,34 @@ export interface UserDoc {
   profilePhotoUrl?: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
-  
+
   // Ratings (as customer or courier)
   averageRating: number; // 0-5
   totalRatings: number;
   totalDeliveries: number;
-  
+
   // Courier-specific (legacy)
   courier?: CourierData;
   location?: CourierLocation;
-  
+
   // New courier profile
   courierProfile?: CourierProfile;
-  
+
   // Package runner profile
   packageRunnerProfile?: PackageRunnerProfile;
 }
 
 // ==================== MARKETPLACE ITEMS ====================
 
-export type ItemCategory = 'electronics' | 'furniture' | 'clothing' | 'food' | 'other';
-export type ItemCondition = 'new' | 'like_new' | 'good' | 'fair' | 'poor';
-export type ItemStatus = 'available' | 'pending' | 'sold';
-export type FoodTemperature = 'hot' | 'cold' | 'frozen' | 'room_temp';
+export type ItemCategory =
+  | "electronics"
+  | "furniture"
+  | "clothing"
+  | "food"
+  | "other";
+export type ItemCondition = "new" | "like_new" | "good" | "fair" | "poor";
+export type ItemStatus = "available" | "pending" | "sold";
+export type FoodTemperature = "hot" | "cold" | "frozen" | "room_temp";
 
 export interface ItemLocation {
   lat: number;
@@ -198,6 +220,7 @@ export interface ItemDoc {
   price: number;
   category: ItemCategory;
   condition: ItemCondition;
+  deliveryMethods?: Array<"delivery" | "pickup">; // Delivery options (can select both)
   photos: string[]; // URLs
   pickupLocation: ItemLocation;
   itemDetails: ItemDetails;
@@ -224,21 +247,21 @@ export interface CourierSnapshot {
 // ==================== JOB STATUS ====================
 
 export enum JobStatus {
-  OPEN = 'open',
-  ASSIGNED = 'assigned',
-  ENROUTE_PICKUP = 'enroute_pickup',
-  ARRIVED_PICKUP = 'arrived_pickup',
-  PICKED_UP = 'picked_up',
-  ENROUTE_DROPOFF = 'enroute_dropoff',
-  ARRIVED_DROPOFF = 'arrived_dropoff',
-  COMPLETED = 'completed',
-  CANCELLED = 'cancelled',
-  DISPUTED = 'disputed',
+  OPEN = "open",
+  ASSIGNED = "assigned",
+  ENROUTE_PICKUP = "enroute_pickup",
+  ARRIVED_PICKUP = "arrived_pickup",
+  PICKED_UP = "picked_up",
+  ENROUTE_DROPOFF = "enroute_dropoff",
+  ARRIVED_DROPOFF = "arrived_dropoff",
+  COMPLETED = "completed",
+  CANCELLED = "cancelled",
+  DISPUTED = "disputed",
 }
 
 // ==================== DELIVERY JOBS ====================
 
-export type JobType = 'package' | 'food';
+export type JobType = "package" | "food";
 
 export interface PhotoMetadata {
   gpsVerified: boolean;
@@ -273,7 +296,7 @@ export interface JobPricing {
   totalCustomerCharge: number;
 }
 
-export type PaymentStatus = 'pending' | 'authorized' | 'captured' | 'refunded';
+export type PaymentStatus = "pending" | "authorized" | "captured" | "refunded";
 
 export interface FoodDeliveryDetails {
   temperature: FoodTemperature;
@@ -341,24 +364,24 @@ export interface DeliveryJobDoc {
   jobType: JobType;
   priority: number; // Food = 100, Package = 50
   status: JobStatus;
-  
+
   pickup: {
     lat: number;
     lng: number;
     address: string;
     contactPhone: string;
   };
-  
+
   dropoff: {
     lat: number;
     lng: number;
     address: string;
     contactPhone: string;
   };
-  
+
   estimatedDistance: number;
   estimatedDuration: number;
-  
+
   // Route support
   deliveryType: DeliveryType;
   routeId?: string;
@@ -369,17 +392,17 @@ export interface DeliveryJobDoc {
     courierEarnsIfSolo: number;
     routeDiscount: number;
   };
-  
+
   courierLocation?: CourierLocationUpdate;
   pricing: JobPricing;
   paymentStatus: PaymentStatus;
   stripePaymentIntentId: string;
-  
+
   foodDeliveryDetails?: FoodDeliveryDetails;
   timeline: JobTimeline;
   customerConfirmation: CustomerConfirmation;
   stats?: JobStats;
-  
+
   createdAt: Timestamp;
   updatedAt: Timestamp;
   acceptedAt?: Timestamp;
@@ -403,7 +426,7 @@ export interface JobDoc {
 
 // ==================== RATINGS ====================
 
-export type RatingRole = 'customer_to_courier' | 'courier_to_customer';
+export type RatingRole = "customer_to_courier" | "courier_to_customer";
 
 export interface RatingCategories {
   professionalism?: number; // 1-5
@@ -425,7 +448,7 @@ export interface RatingDoc {
 
 // ==================== DISPUTES ====================
 
-export type DisputeStatus = 'open' | 'investigating' | 'resolved';
+export type DisputeStatus = "open" | "investigating" | "resolved";
 
 export interface DisputeDoc {
   deliveryJobId: string;
@@ -434,19 +457,19 @@ export interface DisputeDoc {
   reason: string;
   evidence: string[]; // photo URLs
   status: DisputeStatus;
-  
+
   // Admin review
   adminNotes?: string;
   resolution?: string;
   resolvedBy?: string; // admin uid
   resolvedAt?: Timestamp;
-  
+
   // Outcome
   refundIssued: boolean;
   refundAmount?: number;
   userWarned?: string; // uid
   userBanned?: string; // uid
-  
+
   createdAt: Timestamp;
 }
 
@@ -458,39 +481,39 @@ export interface FeatureFlags {
     itemListings: boolean;
     combinedPayments: boolean;
   };
-  
+
   delivery: {
     onDemand: boolean;
     routes: boolean;
     longRoutes: boolean;
     longHaul: boolean;
   };
-  
+
   courier: {
     rateCards: boolean;
     equipmentBadges: boolean;
     workModes: boolean;
   };
-  
+
   seller: {
     stripeConnect: boolean;
     multiplePhotos: boolean;
     foodListings: boolean;
   };
-  
+
   customer: {
     liveTracking: boolean;
     proofPhotos: boolean;
     routeDelivery: boolean;
     packageShipping: boolean;
   };
-  
+
   packageRunner: {
     enabled: boolean;
     hubNetwork: boolean;
     packageTracking: boolean;
   };
-  
+
   admin: {
     courierApproval: boolean;
     equipmentReview: boolean;
@@ -498,14 +521,14 @@ export interface FeatureFlags {
     analytics: boolean;
     featureFlagsControl: boolean;
   };
-  
+
   advanced: {
     pushNotifications: boolean;
     ratingEnforcement: boolean;
     autoCancel: boolean;
     refunds: boolean;
   };
-  
+
   ui: {
     modernStyling: boolean;
     darkMode: boolean;
@@ -515,8 +538,14 @@ export interface FeatureFlags {
 
 // ==================== ROUTES (LOCAL BATCHED DELIVERIES) ====================
 
-export type RouteStatus = 'building' | 'available' | 'claimed' | 'in_progress' | 'completed' | 'cancelled';
-export type DeliveryType = 'on_demand' | 'route' | 'long_route';
+export type RouteStatus =
+  | "building"
+  | "available"
+  | "claimed"
+  | "in_progress"
+  | "completed"
+  | "cancelled";
+export type DeliveryType = "on_demand" | "route" | "long_route";
 
 export interface RouteStop {
   jobId: string;
@@ -535,96 +564,100 @@ export interface RouteStop {
 
 export interface RouteDoc {
   routeId: string;
-  type: 'local';
+  type: "local";
   status: RouteStatus;
-  
+
   scheduledDate: Timestamp;
   createdAt: Timestamp;
-  
+
   area: {
     name: string;
     centerLat: number;
     centerLng: number;
     radiusMiles: number;
   };
-  
+
   jobIds: string[];
   totalJobs: number;
-  
+
   optimizedStops: RouteStop[];
-  
+
   totalDistance: number;
   estimatedDuration: number;
-  
+
   pricing: {
     courierEarnings: number;
     platformFees: number;
     totalCustomerPaid: number;
   };
-  
+
   courierId?: string;
   courierName?: string;
   vehicleType?: string;
   claimedAt?: Timestamp;
-  
+
   completedJobs: number;
   currentStopIndex: number;
   startedAt?: Timestamp;
   completedAt?: Timestamp;
-  
+
   requiredEquipment: string[];
-  vehicleType_required: 'any' | 'car' | 'van' | 'truck';
+  vehicleType_required: "any" | "car" | "van" | "truck";
 }
 
 // ==================== LONG ROUTES (REGIONAL 50-200 MILES) ====================
 
 export interface LongRouteDoc {
   routeId: string;
-  type: 'long';
+  type: "long";
   status: RouteStatus;
-  
+
   scheduledDate: Timestamp;
   createdAt: Timestamp;
-  
+
   originCity: {
     name: string;
     state: string;
     location: { lat: number; lng: number };
   };
-  
+
   destinationCity: {
     name: string;
     state: string;
     location: { lat: number; lng: number };
   };
-  
+
   distance: number;
   estimatedDuration: number;
-  
+
   jobIds: string[];
   totalJobs: number;
-  
+
   pricing: {
     courierEarnings: number;
     platformFees: number;
     totalCustomerPaid: number;
   };
-  
+
   courierId?: string;
   courierName?: string;
   claimedAt?: Timestamp;
-  
+
   startedAt?: Timestamp;
   completedAt?: Timestamp;
-  
+
   requiredEquipment: string[];
   vehicleType: string;
 }
 
 // ==================== PACKAGE RUNNER PROFILE ====================
 
-export type PackageRunnerStatus = 'pending_docs' | 'pending_review' | 'active' | 'suspended';
-export type RunnerVehicleType = 'cargo_van' | 'sprinter' | 'box_truck';
+export type PackageRunnerStatus =
+  | "pending_docs"
+  | "pending_review"
+  | "active"
+  | "suspended";
+export type RunnerVehicleType = "cargo_van" | "sprinter" | "box_truck";
 
 export interface CommercialInsurance {
   photoUrl: string;
@@ -638,13 +671,13 @@ export interface CommercialInsurance {
 export interface PreferredRoute {
   fromHubId: string;
   toHubId: string;
-  frequency: 'daily' | 'weekly' | 'on_demand';
+  frequency: "daily" | "weekly" | "on_demand";
   daysAvailable: string[];
 }
 
 export interface PackageRunnerProfile {
   status: PackageRunnerStatus;
-  
+
   vehicleType: RunnerVehicleType;
   vehicleCapacity: number;
   maxWeight: number;
@@ -655,36 +688,36 @@ export interface PackageRunnerProfile {
     licensePlate: string;
     vin: string;
   };
-  
+
   commercialInsurance: CommercialInsurance;
-  
+
   dotNumber?: string;
   mcNumber?: string;
-  
+
   preferredRoutes: PreferredRoute[];
-  
+
   homeHub: {
     hubId: string;
     name: string;
     location: { lat: number; lng: number };
   };
-  
+
   totalRuns: number;
   totalPackages: number;
   totalMiles: number;
   totalEarnings: number;
   averageRating: number;
   onTimePercentage: number;
-  
+
   currentRouteId?: string;
   availableForRuns: boolean;
-  
+
   stripeConnectAccountId: string;
 }
 
 // ==================== HUBS ====================
 
-export type HubType = 'major' | 'regional';
+export type HubType = "major" | "regional";
 
 export interface HubDoc {
   hubId: string;
@@ -697,110 +730,130 @@ export interface HubDoc {
   city: string;
   state: string;
   timezone: string;
-  
+
   type: HubType;
-  
-  operatingHours: '24/7' | { open: string; close: string };
+
+  operatingHours: "24/7" | { open: string; close: string };
   amenities: string[];
   parkingInstructions: string;
   transferAreaDescription: string;
-  
+
   hasLockers: boolean;
   lockerProvider?: string;
   lockerAccessInfo?: string;
-  
+
   outboundRoutes: string[];
   inboundRoutes: string[];
-  
+
   dailyPackageVolume: number;
   activeRunners: number;
-  
+
   emergencyContact?: string;
-  
+
   createdAt: Timestamp;
   isActive: boolean;
 }
 
 // ==================== LONG HAUL ROUTES (INTERSTATE) ====================
 
-export type LongHaulStatus = 'building' | 'available' | 'claimed' | 'in_transit' | 'completed';
-export type RouteFrequency = 'daily' | 'weekly' | 'on_demand';
+export type LongHaulStatus =
+  | "building"
+  | "available"
+  | "claimed"
+  | "in_transit"
+  | "completed";
+export type RouteFrequency = "daily" | "weekly" | "on_demand";
 
 export interface LongHaulRouteDoc {
   routeId: string;
-  type: 'long_haul';
+  type: "long_haul";
   status: LongHaulStatus;
-  
+
   originHub: {
     hubId: string;
     name: string;
     location: { lat: number; lng: number; address: string };
     timezone: string;
   };
-  
+
   destinationHub: {
     hubId: string;
     name: string;
     location: { lat: number; lng: number; address: string };
     timezone: string;
   };
-  
+
   distance: number;
   estimatedDuration: number;
-  
+
   frequency: RouteFrequency;
   scheduledDeparture: Timestamp;
   scheduledArrival: Timestamp;
-  
+
   runnerId?: string;
   runnerName?: string;
   runnerVehicleType?: RunnerVehicleType;
   claimedAt?: Timestamp;
-  
+
   packageIds: string[];
   packageCount: number;
   totalWeight: number;
   totalVolume: number;
-  
+
   pricing: {
     runnerEarnings: number;
     platformFees: number;
     totalCustomerPaid: number;
   };
-  
+
   currentLocation?: { lat: number; lng: number; updatedAt: Timestamp };
   departedAt?: Timestamp;
   arrivedAt?: Timestamp;
-  
+
   nextRouteId?: string;
   previousRouteId?: string;
-  
+
   createdAt: Timestamp;
 }
 
 // ==================== PACKAGES (INTERSTATE SHIPMENTS) ====================
 
-export type ServiceLevel = 'standard' | 'express' | 'priority';
-export type PackageStatus = 'pickup_pending' | 'at_origin_hub' | 'in_transit' | 'at_destination_hub' | 'out_for_delivery' | 'delivered';
-export type LegType = 'local_pickup' | 'long_haul' | 'hub_transfer' | 'local_delivery';
-export type LegStatus = 'pending' | 'in_progress' | 'completed';
-export type ScanType = 'picked_up' | 'hub_arrival' | 'hub_departure' | 'hub_transfer' | 'delivered';
+export type ServiceLevel = "standard" | "express" | "priority";
+export type PackageStatus =
+  | "pickup_pending"
+  | "at_origin_hub"
+  | "in_transit"
+  | "at_destination_hub"
+  | "out_for_delivery"
+  | "delivered";
+export type LegType =
+  | "local_pickup"
+  | "long_haul"
+  | "hub_transfer"
+  | "local_delivery";
+export type LegStatus = "pending" | "in_progress" | "completed";
+export type ScanType =
+  | "picked_up"
+  | "hub_arrival"
+  | "hub_departure"
+  | "hub_transfer"
+  | "delivered";
 
 export interface PackageJourneyLeg {
   legNumber: number;
   type: LegType;
-  
+
   jobId?: string;
   courierId?: string;
-  
+
   routeId?: string;
   runnerId?: string;
   fromHub?: string;
   toHub?: string;
-  
+
   hubId?: string;
   transferredAt?: Timestamp;
-  
+
   status: LegStatus;
   startedAt?: Timestamp;
   completedAt?: Timestamp;
@@ -818,24 +871,24 @@ export interface PackageScan {
 export interface PackageDoc {
   packageId: string;
   trackingNumber: string;
-  
+
   senderId: string;
   recipientId: string;
-  
+
   origin: {
     address: string;
     location: { lat: number; lng: number };
     hubId: string;
     hubDistance: number;
   };
-  
+
   destination: {
     address: string;
     location: { lat: number; lng: number };
     hubId: string;
     hubDistance: number;
   };
-  
+
   weight: number;
   dimensions: {
     length: number;
@@ -845,12 +898,12 @@ export interface PackageDoc {
   volume: number;
   declaredValue: number;
   fragile: boolean;
-  
+
   serviceLevel: ServiceLevel;
   estimatedDelivery: Timestamp;
-  
+
   journey: PackageJourneyLeg[];
-  
+
   pricing: {
     customerPaid: number;
     breakdown: {
@@ -860,16 +913,16 @@ export interface PackageDoc {
       platformFee: number;
     };
   };
-  
+
   paymentStatus: PaymentStatus;
   stripePaymentIntentId: string;
-  
+
   currentStatus: PackageStatus;
   currentLocation?: { lat: number; lng: number; updatedAt: Timestamp };
   currentLeg: number;
-  
+
   scans: PackageScan[];
-  
+
   createdAt: Timestamp;
   deliveredAt?: Timestamp;
 }

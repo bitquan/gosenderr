@@ -21,15 +21,18 @@ Your Stripe Platform Profile makes **YOU liable for all vendor disputes and char
 Navigate to: `https://dashboard.stripe.com/settings/connect/platform-profile`
 
 **1. Business Model** → Change to:
+
 - ✅ **"Buyers will purchase from your users"**
 - Makes vendors the merchant of record
 
 **2. Negative Balance Liability** → Change to:
-- ✅ **"Connected accounts are responsible"** 
+
+- ✅ **"Connected accounts are responsible"**
 - Vendors pay their own chargebacks
 - Platform protected from losses
 
 **3. Monetization Strategy** → Recommended:
+
 - ✅ **"Stripe fees are deducted from connected account payouts"**
 - Vendors pay their own processing fees
 - OR keep current if you want to subsidize fees
@@ -201,6 +204,7 @@ curl https://www.gosenderr.com/api/stripe/connect \\
 Before going live:
 
 ### 🚨 CRITICAL - Must Fix First
+
 - [ ] **Change platform profile settings:**
   - [ ] Business model → "Buyers will purchase from your users"
   - [ ] Negative balance liability → "Connected accounts are responsible"
@@ -209,6 +213,7 @@ Before going live:
 - [ ] **Test with chargeback test card** - Confirm vendor account debited, not platform
 
 ### Standard Checklist
+
 - [ ] Add webhook endpoints (live mode)
 - [ ] Test full payment flow end-to-end
 - [ ] Document vendor chargeback process (in terms of service)

@@ -119,7 +119,7 @@ service cloud.firestore {
         && request.resource.data.buyerId == request.auth.uid
         && request.resource.data.sellerId is string;
 
-      // Seller updates order status; buyer can attach checkout session metadata
+      // Seller updates order status; buyer can attach checkout session metadata and payment info
       allow update: if signedIn() && (
         (
           isSeller()
@@ -133,6 +133,9 @@ service cloud.firestore {
           isBuyer()
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
             'checkoutSessionId',
+            'status',
+            'paymentStatus',
+            'jobId',
             'updatedAt'
           ])
         )

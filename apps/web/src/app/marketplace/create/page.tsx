@@ -49,6 +49,9 @@ export default function CreateItemPage() {
   const [price, setPrice] = useState("");
   const [category, setCategory] = useState<ItemCategory>("other");
   const [condition, setCondition] = useState<ItemCondition>("good");
+  const [deliveryMethods, setDeliveryMethods] = useState<
+    Array<"delivery" | "pickup">
+  >(["delivery"]);
   const [photos, setPhotos] = useState<File[]>([]);
   const [photosPreviews, setPhotosPreviews] = useState<string[]>([]);
 
@@ -174,6 +177,11 @@ export default function CreateItemPage() {
       return;
     }
 
+    if (deliveryMethods.length === 0) {
+      setError("Please select at least one delivery option");
+      return;
+    }
+
     if (category === "food" && !pickupInstructions.trim()) {
       setError("Pickup instructions are required for food items");
       return;
@@ -189,16 +197,22 @@ export default function CreateItemPage() {
       const photoUrls: string[] = [];
       for (let i = 0; i < photos.length; i++) {
         const photo = photos[i];
-        const storageRef = ref(storage, `items/${itemId}/photo-${i}.jpg`);
+        const storageRef = ref(
+          storage,
+          `items/${user.uid}/photo-${itemId}-${i}.jpg`,
+        );
         await uploadBytes(storageRef, photo);
         const url = await getDownloadURL(storageRef);
         photoUrls.push(url);
       }
 
       // Upload pickup reference photo if food item
-      let pickupPhotoUrl: string | undefined;
+      let pickupPhotoUrl: string | null = null;
       if (category === "food" && pickupPhoto) {
-        const pickupRef = ref(storage, `items/${itemId}/pickup-reference.jpg`);
+        const pickupRef = ref(
+          storage,
+          `items/${user.uid}/pickup-${itemId}.jpg`,
+        );
         await uploadBytes(pickupRef, pickupPhoto);
         pickupPhotoUrl = await getDownloadURL(pickupRef);
       }
@@ -211,6 +225,7 @@ export default function CreateItemPage() {
         price: parseFloat(price),
         category,
         condition,
+        deliveryMethods,
         photos: photoUrls,
         pickupLocation: {
           address: selectedAddress.address,
@@ -225,7 +240,7 @@ export default function CreateItemPage() {
           foodDetails: {
             temperature,
             pickupInstructions: pickupInstructions.trim(),
-            pickupPhotoUrl,
+            ...(pickupPhotoUrl && { pickupPhotoUrl }),
             requiresCooler,
             requiresHotBag,
             requiresDrinkCarrier,
@@ -580,6 +595,108 @@ export default function CreateItemPage() {
               </option>
             ))}
           </select>
+        </div>
+
+        {/* Delivery Method */}
+        <div style={{ marginBottom: "16px" }}>
+          <label
+            style={{
+              display: "block",
+              fontWeight: "600",
+              marginBottom: "6px",
+              fontSize: "14px",
+            }}
+          >
+            Delivery Options * (select at least one)
+          </label>
+          <div style={{ display: "flex", gap: "12px" }}>
+            <label
+              style={{
+                flex: 1,
+                padding: "12px",
+                border: `2px solid ${deliveryMethods.includes("delivery") ? "#6E56CF" : "#ddd"}`,
+                borderRadius: "8px",
+                cursor: "pointer",
+                background: deliveryMethods.includes("delivery")
+                  ? "#f5f3ff"
+                  : "white",
+                transition: "all 0.2s",
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={deliveryMethods.includes("delivery")}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    setDeliveryMethods([...deliveryMethods, "delivery"]);
+                  } else {
+                    setDeliveryMethods(
+                      deliveryMethods.filter((m) => m !== "delivery"),
+                    );
+                  }
+                }}
+                style={{ marginRight: "8px" }}
+              />
+              <strong>🚚 Delivery</strong>
+              <div
+                style={{ fontSize: "12px", color: "#666", marginTop: "4px" }}
+              >
+                Driver picks up and delivers (fees apply)
+              </div>
+            </label>
+            <label
+              style={{
+                flex: 1,
+                padding: "12px",
+                border: `2px solid ${deliveryMethods.includes("pickup") ? "#6E56CF" : "#ddd"}`,
+                borderRadius: "8px",
+                cursor: "pointer",
+                background: deliveryMethods.includes("pickup")
+                  ? "#f5f3ff"
+                  : "white",
+                transition: "all 0.2s",
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={deliveryMethods.includes("pickup")}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    setDeliveryMethods([...deliveryMethods, "pickup"]);
+                  } else {
+                    setDeliveryMethods(
+                      deliveryMethods.filter((m) => m !== "pickup"),
+                    );
+                  }
+                }}
+                style={{ marginRight: "8px" }}
+              />
+              <strong>📦 Pickup</strong>
+              <div
+                style={{ fontSize: "12px", color: "#666", marginTop: "4px" }}
+              >
+                Buyer picks up in person (FREE - no fees)
+              </div>
+            </label>
+          </div>
+          {deliveryMethods.includes("pickup") && (
+            <div
+              style={{
+                marginTop: "8px",
+                padding: "8px 12px",
+                background: "#eff6ff",
+                border: "1px solid #bfdbfe",
+                borderRadius: "6px",
+                fontSize: "13px",
+                color: "#1e40af",
+              }}
+            >
+              💡{" "}
+              {deliveryMethods.length === 2
+                ? "Buyers can choose delivery or pickup."
+                : "Pickup orders are completely free - no Stripe fees, no platform fees."}
+            </div>
+          )}
         </div>
 
         {/* Photos */}
