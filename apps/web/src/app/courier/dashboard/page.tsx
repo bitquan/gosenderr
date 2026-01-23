@@ -512,7 +512,7 @@ export default function CourierDashboard() {
           </div>
 
           {/* Right Column: Job Preview */}
-          {selectedJob && (
+          {selectedJob && rateCard && userDoc?.courierProfile && (
             <div
               style={{ position: "sticky", top: "20px", height: "fit-content" }}
             >

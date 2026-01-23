@@ -103,16 +103,21 @@ export function CourierJobPreview({
             <strong>Job Distance:</strong> {jobMiles.toFixed(2)} mi
           </div>
           <div style={{ fontSize: "12px", color: "#666", marginTop: "4px" }}>
-            ${rateCard.baseFee.toFixed(2)} base + ${rateCard.perMile.toFixed(2)}
+            $
+            {("baseFee" in rateCard
+              ? rateCard.baseFee
+              : rateCard.baseFare
+            ).toFixed(2)}{" "}
+            base + ${rateCard.perMile.toFixed(2)}
             /mi
-            {rateCard.pickupPerMile && (
+            {"pickupPerMile" in rateCard && rateCard.pickupPerMile && (
               <span> + ${rateCard.pickupPerMile.toFixed(2)}/mi pickup</span>
             )}
-            {rateCard.perMinute && (
+            {"perMinute" in rateCard && rateCard.perMinute && (
               <span> + ${rateCard.perMinute.toFixed(2)}/min</span>
             )}
           </div>
-          {rateCard.minimumFee && (
+          {"minimumFee" in rateCard && rateCard.minimumFee && (
             <div style={{ fontSize: "11px", color: "#999", marginTop: "4px" }}>
               Minimum: ${rateCard.minimumFee.toFixed(2)}
             </div>
