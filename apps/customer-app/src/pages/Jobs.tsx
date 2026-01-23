@@ -233,6 +233,8 @@ export default function JobsPage() {
                           status={
                             job.status === 'completed' || job.status === 'delivered'
                               ? 'completed'
+                              : job.status === 'cancelled'
+                              ? 'cancelled'
                               : ['in_progress', 'accepted', 'assigned'].includes(job.status)
                               ? 'in_progress'
                               : 'pending'
@@ -257,7 +259,7 @@ export default function JobsPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-xs text-gray-500 mb-1">Pickup</p>
-                        <p className="font-medium text-gray-900 truncate">
+                        <p className="font-medium text-gray-900 text-sm break-words">
                           {job.pickupAddress || 'Address not provided'}
                         </p>
                       </div>
@@ -270,7 +272,7 @@ export default function JobsPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-xs text-gray-500 mb-1">Delivery</p>
-                        <p className="font-medium text-gray-900 truncate">
+                        <p className="font-medium text-gray-900 text-sm break-words">
                           {job.deliveryAddress || 'Address not provided'}
                         </p>
                       </div>
