@@ -15,7 +15,6 @@ import {
 import { db } from '../lib/firebase'
 import { useAuth } from '../hooks/useAuth'
 import { Card, CardHeader, CardTitle, CardContent } from '../components/Card'
-import { StatCard } from '../components/StatCard'
 import { StatusBadge } from '../components/Badge'
 import { Avatar } from '../components/Avatar'
 import { DonutChart } from '../components/DonutChart'
@@ -24,7 +23,7 @@ import { formatCurrency } from '../lib/utils'
 
 export default function DashboardPage() {
   const navigate = useNavigate()
-  const { user, loading: authLoading } = useAuth()
+  const { user, signOut, loading: authLoading } = useAuth()
   const [jobs, setJobs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [activities, setActivities] = useState<any[]>([])
@@ -176,9 +175,9 @@ export default function DashboardPage() {
   const stats = getStats()
 
   return (
-    <div className="min-h-screen bg-[#F8F9FF] pb-24">
-      {/* Header Section */}
-      <div className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] rounded-b-[32px] p-6 text-white shadow-lg">
+    <div className="min-h-screen bg-[#F8F9FF]">
+      {/* Purple Header Card - Starts from top */}
+      <div className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] rounded-b-[32px] px-6 pt-6 pb-8 text-white shadow-lg">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-4">
@@ -188,16 +187,20 @@ export default function DashboardPage() {
               />
               <div>
                 <h1 className="text-2xl font-bold">
-                  {user?.displayName || 'Welcome'}
+                  Welcome
                 </h1>
                 <p className="text-purple-100 text-sm">{user?.email}</p>
               </div>
             </div>
-            <Link to="/profile">
-              <button className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30 transition-all">
+            <div className="relative">
+              <button 
+                onClick={() => signOut()}
+                className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30 transition-all"
+                title="Sign Out"
+              >
                 ⚙️
               </button>
-            </Link>
+            </div>
           </div>
 
           {/* Total Spent - Large Display */}
@@ -226,26 +229,6 @@ export default function DashboardPage() {
 
       {/* Main Content */}
       <div className="max-w-6xl mx-auto px-6 -mt-8 space-y-4">
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="animate-fade-in animation-delay-100">
-            <StatCard
-              title="Completed"
-              value={stats.completedJobs}
-              icon="✅"
-              variant="success"
-            />
-          </div>
-          <div className="animate-fade-in animation-delay-200">
-            <StatCard
-              title="Total Spent"
-              value={formatCurrency(stats.totalSpent)}
-              icon="💰"
-              variant="purple"
-            />
-          </div>
-        </div>
-
         {/* Spending Breakdown */}
         <Card variant="elevated" className="animate-fade-in animation-delay-300">
           <CardHeader>
