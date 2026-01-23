@@ -24,7 +24,8 @@ import { StatusBadge } from "@/components/ui/Badge";
 import { Avatar } from "@/components/ui/Avatar";
 import { DonutChart } from "@/components/charts/DonutChart";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { getRoleDisplay } from "@gosenderr/shared";
+import type { User } from "firebase/auth";
+import type { QuerySnapshot, DocumentData } from "firebase/firestore";
 
 export default function CustomerDashboardNew() {
   const router = useRouter();
@@ -70,7 +71,7 @@ export default function CustomerDashboardNew() {
       router.push("/login");
       return;
     }
-    const unsubscribe = auth.onAuthStateChanged((user) => {
+    const unsubscribe = auth.onAuthStateChanged((user: User | null) => {
       if (!user) {
         router.push("/login");
         return;
@@ -103,14 +104,17 @@ export default function CustomerDashboardNew() {
         limit(5),
       );
 
-      const unsubscribePackages = onSnapshot(packagesQuery, (snapshot) => {
-        const packagesData = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        setPackages(packagesData);
-        updateActivities(packagesData, jobs, orders);
-      });
+      const unsubscribePackages = onSnapshot(
+        packagesQuery,
+        (snapshot: QuerySnapshot<DocumentData>) => {
+          const packagesData = snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
+          setPackages(packagesData);
+          updateActivities(packagesData, jobs, orders);
+        },
+      );
 
       const jobsQuery = query(
         collection(db, "jobs"),
@@ -121,7 +125,7 @@ export default function CustomerDashboardNew() {
 
       const unsubscribeJobs = onSnapshot(
         jobsQuery,
-        (snapshot) => {
+        (snapshot: QuerySnapshot<DocumentData>) => {
           const jobsData = snapshot.docs.map((doc) => ({
             id: doc.id,
             ...doc.data(),
@@ -129,7 +133,7 @@ export default function CustomerDashboardNew() {
           setJobs(jobsData);
           updateActivities(packages, jobsData, orders);
         },
-        (error) => {
+        (error: Error) => {
           console.error("Error loading jobs:", error);
         },
       );
@@ -143,7 +147,7 @@ export default function CustomerDashboardNew() {
 
       const unsubscribeOrders = onSnapshot(
         ordersQuery,
-        (snapshot) => {
+        (snapshot: QuerySnapshot<DocumentData>) => {
           const ordersData = snapshot.docs.map((doc) => ({
             id: doc.id,
             ...doc.data(),
@@ -151,7 +155,7 @@ export default function CustomerDashboardNew() {
           setOrders(ordersData);
           updateActivities(packages, jobs, ordersData);
         },
-        (error) => {
+        (error: Error) => {
           console.error("Error loading orders:", error);
         },
       );
