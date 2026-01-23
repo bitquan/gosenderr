@@ -38,7 +38,7 @@ export function useCourierLocationWriter() {
     const shouldTrack =
       role === 'courier' &&
       uid &&
-      userDoc?.courier?.isOnline === true;
+      userDoc?.courierProfile?.isOnline === true;
 
     if (!shouldTrack) {
       // Stop tracking
@@ -79,11 +79,11 @@ export function useCourierLocationWriter() {
               const geoHash = geohash.encode(lat, lng, 6);
               
               await updateDoc(doc(db, 'users', uid), {
-                'location.lat': lat,
-                'location.lng': lng,
-                'location.geohash': geoHash,
-                ...(heading !== null && { 'location.heading': heading }),
-                'location.updatedAt': serverTimestamp(),
+                'courierProfile.currentLocation.lat': lat,
+                'courierProfile.currentLocation.lng': lng,
+                'courierProfile.currentLocation.geohash': geoHash,
+                ...(heading !== null && { 'courierProfile.currentLocation.heading': heading }),
+                'courierProfile.currentLocation.timestamp': serverTimestamp(),
               });
 
               lastWriteTimeRef.current = now;

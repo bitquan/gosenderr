@@ -3,6 +3,8 @@
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { doc, updateDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase/client";
 import { useUserDoc } from "@/hooks/v2/useUserDoc";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { useOpenJobs } from "@/hooks/v2/useOpenJobs";
@@ -12,6 +14,7 @@ import { claimJob } from "@/lib/v2/jobs";
 import { Job } from "@/lib/v2/types";
 import { calcMiles } from "@/lib/v2/pricing";
 import { getEligibilityReason } from "@/lib/v2/eligibility";
+import { useCourierLocationWriter } from "@/hooks/v2/useCourierLocationWriter";
 
 export default function CourierDashboard() {
   const router = useRouter();
@@ -21,6 +24,25 @@ export default function CourierDashboard() {
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [claiming, setClaiming] = useState(false);
   const [hideIneligible, setHideIneligible] = useState(true);
+  const [togglingOnline, setTogglingOnline] = useState(false);
+  const { isTracking, permissionDenied } = useCourierLocationWriter();
+
+  const handleToggleOnline = async () => {
+    if (!uid || togglingOnline) return;
+
+    setTogglingOnline(true);
+    try {
+      const newOnlineStatus = !userDoc?.courierProfile?.isOnline;
+      await updateDoc(doc(db, "users", uid), {
+        "courierProfile.isOnline": newOnlineStatus,
+      });
+    } catch (error) {
+      console.error("Failed to toggle online status:", error);
+      alert("Failed to update status. Please try again.");
+    } finally {
+      setTogglingOnline(false);
+    }
+  };
 
   // Compute job eligibility for each job
   const jobsWithEligibility = useMemo(() => {
@@ -208,10 +230,70 @@ export default function CourierDashboard() {
       <div
         style={{
           display: "flex",
-          justifyContent: "flex-end",
+          justifyContent: "space-between",
+          alignItems: "center",
           marginBottom: "12px",
+          gap: "12px",
         }}
       >
+        {/* Online/Offline Toggle */}
+        <button
+          onClick={handleToggleOnline}
+          disabled={togglingOnline}
+          style={{
+            padding: "10px 20px",
+            background: userDoc?.courierProfile?.isOnline
+              ? "#10b981"
+              : "#6b7280",
+            color: "white",
+            border: "none",
+            borderRadius: "8px",
+            fontWeight: 600,
+            fontSize: "14px",
+            cursor: togglingOnline ? "not-allowed" : "pointer",
+            opacity: togglingOnline ? 0.6 : 1,
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+          }}
+        >
+          <span
+            style={{
+              width: "10px",
+              height: "10px",
+              borderRadius: "50%",
+              background: userDoc?.courierProfile?.isOnline
+                ? "#ffffff"
+                : "#d1d5db",
+            }}
+          />
+          {togglingOnline
+            ? "Updating..."
+            : userDoc?.courierProfile?.isOnline
+              ? "Online"
+              : "Offline"}
+        </button>
+
+        {/* Location Tracking Status */}
+        {userDoc?.courierProfile?.isOnline && (
+          <div
+            style={{
+              padding: "8px 12px",
+              background: isTracking ? "#ecfdf5" : "#fef3c7",
+              border: `1px solid ${isTracking ? "#10b981" : "#fbbf24"}`,
+              borderRadius: "6px",
+              fontSize: "12px",
+              color: isTracking ? "#065f46" : "#92400e",
+            }}
+          >
+            {isTracking
+              ? "📍 Location tracking active"
+              : permissionDenied
+                ? "⚠️ Location permission denied"
+                : "⚠️ Location tracking inactive"}
+          </div>
+        )}
+
         <Link
           href="/courier/settings"
           style={{
@@ -222,6 +304,7 @@ export default function CourierDashboard() {
             borderRadius: "8px",
             fontWeight: 600,
             border: "1px solid #e5e7eb",
+            marginLeft: "auto",
           }}
         >
           Settings
