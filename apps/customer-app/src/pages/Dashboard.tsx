@@ -218,22 +218,26 @@ export default function DashboardPage() {
       <div className="max-w-6xl mx-auto px-6 -mt-8 space-y-6">
         {/* Stats Grid */}
         <div className="grid grid-cols-2 gap-4">
-          <StatCard
-            title="Completed"
-            value={stats.completedJobs}
-            icon="✅"
-            variant="success"
-          />
-          <StatCard
-            title="Total Spent"
-            value={formatCurrency(stats.totalSpent)}
-            icon="💰"
-            variant="purple"
-          />
+          <div className="animate-fade-in animation-delay-100">
+            <StatCard
+              title="Completed"
+              value={stats.completedJobs}
+              icon="✅"
+              variant="success"
+            />
+          </div>
+          <div className="animate-fade-in animation-delay-200">
+            <StatCard
+              title="Total Spent"
+              value={formatCurrency(stats.totalSpent)}
+              icon="💰"
+              variant="purple"
+            />
+          </div>
         </div>
 
         {/* Spending Breakdown */}
-        <Card variant="elevated">
+        <Card variant="elevated" className="animate-fade-in animation-delay-300">
           <CardHeader>
             <CardTitle>Spending Breakdown</CardTitle>
           </CardHeader>
@@ -243,7 +247,7 @@ export default function DashboardPage() {
         </Card>
 
         {/* Quick Actions */}
-        <Card variant="elevated">
+        <Card variant="elevated" className="animate-slide-up animation-delay-400">
           <CardHeader>
             <CardTitle>Quick Actions</CardTitle>
           </CardHeader>
@@ -251,14 +255,14 @@ export default function DashboardPage() {
             <div className="grid grid-cols-2 gap-4">
               <Link
                 to="/request-delivery"
-                className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] text-white rounded-xl p-6 text-center font-semibold hover:shadow-xl transition-shadow"
+                className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] text-white rounded-xl p-6 text-center font-semibold hover:shadow-xl hover:scale-105 transition-all duration-300"
               >
                 <div className="text-3xl mb-2">🚚</div>
                 Request Delivery
               </Link>
               <Link
                 to="/jobs"
-                className="bg-white border-2 border-purple-200 text-purple-600 rounded-xl p-6 text-center font-semibold hover:border-purple-400 transition-colors"
+                className="bg-white border-2 border-purple-200 text-purple-600 rounded-xl p-6 text-center font-semibold hover:border-purple-400 hover:scale-105 transition-all duration-300"
               >
                 <div className="text-3xl mb-2">📋</div>
                 View All Jobs
@@ -268,7 +272,7 @@ export default function DashboardPage() {
         </Card>
 
         {/* Saved Addresses */}
-        <Card variant="elevated">
+        <Card variant="elevated" className="animate-slide-up animation-delay-500">
           <CardHeader
             action={
               <button
@@ -309,7 +313,7 @@ export default function DashboardPage() {
         </Card>
 
         {/* Recent Jobs */}
-        <Card variant="elevated">
+        <Card variant="elevated" className="animate-slide-up">
           <CardHeader
             action={
               <Link
@@ -379,7 +383,7 @@ export default function DashboardPage() {
         </Card>
 
         {/* Recent Activity Timeline */}
-        <Card variant="elevated">
+        <Card variant="elevated" className="animate-slide-up">
           <CardHeader>
             <CardTitle>Recent Activity</CardTitle>
           </CardHeader>
