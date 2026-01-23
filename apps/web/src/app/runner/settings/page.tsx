@@ -27,7 +27,7 @@ export default function RunnerSettingsPage() {
       <div className="max-w-4xl mx-auto space-y-6">
         <Card variant="elevated">
           <CardHeader>
-            <CardTitle>Runner Settings</CardTitle>
+            <CardTitle>Shifter Settings</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">

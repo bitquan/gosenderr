@@ -303,7 +303,7 @@ export default function CreateItemPage() {
               marginBottom: "16px",
             }}
           >
-            Become a Vendor
+            Become a Market Senderr
           </h1>
           <p
             style={{
@@ -313,8 +313,8 @@ export default function CreateItemPage() {
               marginBottom: "32px",
             }}
           >
-            Start selling your items on the GoSenderr marketplace! Vendors can
-            create listings, manage inventory, and earn money.
+            Start selling your items on the GoSenderr marketplace! Market
+            Senderrs can create listings, manage inventory, and earn money.
           </p>
 
           <div

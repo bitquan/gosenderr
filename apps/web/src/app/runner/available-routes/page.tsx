@@ -183,9 +183,9 @@ export default function AvailableRoutesNew() {
               ←
             </button>
             <div>
-              <h1 className="text-2xl font-bold">Available Routes</h1>
+              <h1 className="text-2xl font-bold">Available Shifts</h1>
               <p className="text-purple-100 text-sm">
-                {routes.length} routes available
+                {routes.length} shifts available
               </p>
             </div>
           </div>

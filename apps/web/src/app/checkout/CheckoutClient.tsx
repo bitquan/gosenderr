@@ -583,12 +583,12 @@ export default function CheckoutClient() {
                 {/* Courier Selection */}
                 <div className="mt-4">
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Select Courier
+                    Select Senderr
                   </label>
                   {searchingCouriers ? (
                     <div className="text-center py-8 text-gray-500">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-2"></div>
-                      Finding available couriers...
+                      Finding available Senderrs...
                     </div>
                   ) : availableCouriers.length === 0 ? (
                     <div className="text-center py-8 bg-yellow-50 border border-yellow-200 rounded-lg">

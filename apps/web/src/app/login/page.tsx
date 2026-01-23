@@ -82,28 +82,28 @@ export default function V2Login() {
   const getRoleConfig = (role: RoleTab) => {
     const configs = {
       customer: {
-        label: "Customer",
+        label: "Order Up",
         icon: "👤",
         color: "#3b82f6",
         gradient: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
         description: "Send packages and request deliveries",
       },
       driver: {
-        label: "Driver",
+        label: "Senderr",
         icon: "🚗",
         color: "#10b981",
         gradient: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
         description: "Deliver packages locally",
       },
       runner: {
-        label: "Runner",
+        label: "Shifter",
         icon: "🚚",
         color: "#f59e0b",
         gradient: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
         description: "Long-haul package delivery",
       },
       vendor: {
-        label: "Vendor",
+        label: "Market Senderr",
         icon: "🏪",
         color: "#ec4899",
         gradient: "linear-gradient(135deg, #ec4899 0%, #db2777 100%)",

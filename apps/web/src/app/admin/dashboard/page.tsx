@@ -257,7 +257,7 @@ export default function AdminDashboardNew() {
         {/* Stats Grid */}
         <div className="grid grid-cols-2 gap-4">
           <StatCard
-            title="Total Routes"
+            title="Total Shifts"
             value={stats.totalRoutes}
             icon="🗺️"
             variant="purple"

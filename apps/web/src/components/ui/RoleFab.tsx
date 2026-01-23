@@ -18,7 +18,7 @@ const roleConfig: Record<
   runner: {
     icon: "🗺️",
     href: "/runner/available-routes",
-    label: "Routes",
+    label: "Shifts",
   },
   admin: {
     icon: "➕",

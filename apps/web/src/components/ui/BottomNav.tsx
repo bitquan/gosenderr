@@ -83,7 +83,7 @@ export const customerNavItems: NavItem[] = [
 
 export const runnerNavItems: NavItem[] = [
   { icon: "🏠", label: "Home", href: "/runner/dashboard" },
-  { icon: "🗺️", label: "Routes", href: "/runner/available-routes" },
+  { icon: "🗺️", label: "Shifts", href: "/runner/available-routes" },
   { icon: "💵", label: "Earnings", href: "/runner/earnings" },
   { icon: "👤", label: "Profile", href: "/runner/profile" },
 ];

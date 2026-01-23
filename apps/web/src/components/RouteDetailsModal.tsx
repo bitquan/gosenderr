@@ -66,7 +66,7 @@ export function RouteDetailsModal({ route, onClose }: RouteDetailsModalProps) {
           >
             <div>
               <h2 style={{ margin: 0, fontSize: "24px", fontWeight: 600 }}>
-                Route Details
+                Shift Details
               </h2>
               <p
                 style={{

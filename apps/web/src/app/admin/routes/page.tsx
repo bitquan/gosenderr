@@ -127,9 +127,9 @@ export default function AdminRoutesPage() {
                 size="lg"
               />
               <div>
-                <h1 className="text-2xl font-bold">Route Management</h1>
+                <h1 className="text-2xl font-bold">Shift Management</h1>
                 <p className="text-purple-100 text-sm">
-                  {routes.length} total routes
+                  {routes.length} total shifts
                 </p>
               </div>
             </div>

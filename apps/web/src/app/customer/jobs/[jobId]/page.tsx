@@ -42,10 +42,10 @@ export default function CustomerJobDetail({
   if (!jobDoc || !uid) {
     return (
       <NotFoundPage
-        title="Job not found"
-        description="We couldn't locate that delivery job."
+        title="Send not found"
+        description="We couldn't locate that send request."
         actionHref="/customer/jobs"
-        actionLabel="Back to My Jobs"
+        actionLabel="Back to My Sends"
         emoji="🧾"
       />
     );
@@ -61,12 +61,12 @@ export default function CustomerJobDetail({
           href="/customer/jobs"
           style={{ color: "#6E56CF", textDecoration: "none" }}
         >
-          ← Back to My Jobs
+          ← Back to My Sends
         </Link>
       </div>
 
       <div style={{ marginBottom: "30px" }}>
-        <h1 style={{ margin: 0, marginBottom: "8px" }}>Job Details</h1>
+        <h1 style={{ margin: 0, marginBottom: "8px" }}>Send Details</h1>
         <div style={{ color: "#666", fontSize: "14px" }}>
           Created: {job.createdAt?.toDate?.()?.toLocaleString() || "Just now"}
         </div>
@@ -96,7 +96,7 @@ export default function CustomerJobDetail({
         />
         {job.courierUid && !courier?.location && (
           <p style={{ color: "#999", fontSize: "14px", marginTop: "8px" }}>
-            Waiting for courier location updates...
+            Waiting for Senderr location updates...
           </p>
         )}
       </div>
