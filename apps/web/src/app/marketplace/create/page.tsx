@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
+import { useUserRole } from "@/hooks/v2/useUserRole";
 import { db, storage } from "@/lib/firebase/client";
 import { collection, doc, setDoc, Timestamp } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -40,6 +41,7 @@ export default function CreateItemPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const { user, loading: authLoading } = useAuthUser();
+  const { role, loading: roleLoading } = useUserRole();
 
   // Form fields
   const [title, setTitle] = useState("");
@@ -88,6 +90,14 @@ export default function CreateItemPage() {
       router.push("/login?redirect=/marketplace/create");
     }
   }, [user, authLoading, router]);
+
+  // Role check - only vendors can create items
+  useEffect(() => {
+    if (!roleLoading && role && role !== "vendor") {
+      alert("Only vendors can create marketplace items. Please switch to a vendor account.");
+      router.push("/marketplace");
+    }
+  }, [role, roleLoading, router]);
 
   // Geocode address
   useEffect(() => {
