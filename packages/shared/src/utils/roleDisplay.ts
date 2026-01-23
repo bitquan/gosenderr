@@ -59,19 +59,32 @@ export const ROLE_DISPLAY = {
 
 export type RoleDisplayKey = keyof typeof ROLE_DISPLAY;
 
-export function getRoleDisplay(role: UserRole) {
-  return ROLE_DISPLAY[role] || ROLE_DISPLAY.customer;
+export function getRoleDisplay(role: UserRole | string) {
+  // Map legacy/alternate role names
+  const roleMap: Record<string, keyof typeof ROLE_DISPLAY> = {
+    buyer: "customer",
+    seller: "vendor",
+    customer: "customer",
+    vendor: "vendor",
+    courier: "courier",
+    package_runner: "package_runner",
+    runner: "runner",
+    admin: "admin",
+  };
+
+  const mappedRole = roleMap[role] || "customer";
+  return ROLE_DISPLAY[mappedRole] || ROLE_DISPLAY.customer;
 }
 
-export function getRoleName(role: UserRole): string {
+export function getRoleName(role: UserRole | string): string {
   return getRoleDisplay(role).name;
 }
 
-export function getRoleIcon(role: UserRole): string {
+export function getRoleIcon(role: UserRole | string): string {
   return getRoleDisplay(role).icon;
 }
 
-export function getRoleColor(role: UserRole): string {
+export function getRoleColor(role: UserRole | string): string {
   return getRoleDisplay(role).color;
 }
 

@@ -57,13 +57,13 @@ Platform administrators with full access.
 
 ## Common Terms
 
-| Old Term | New Term | Context |
-|----------|----------|---------|
-| Delivery | Send | General delivery action (noun/verb) |
-| Job | Send | Delivery request/task |
-| Driver | Senderr | Reference to courier role |
-| Runner | Shifter | Reference to package runner role |
-| Route | Shift | Long-haul delivery route (for Shifters) |
+| Old Term | New Term | Context                                 |
+| -------- | -------- | --------------------------------------- |
+| Delivery | Send     | General delivery action (noun/verb)     |
+| Job      | Send     | Delivery request/task                   |
+| Driver   | Senderr  | Reference to courier role               |
+| Runner   | Shifter  | Reference to package runner role        |
+| Route    | Shift    | Long-haul delivery route (for Shifters) |
 
 ## Implementation
 
@@ -114,24 +114,29 @@ Only **UI-facing text** uses the new terminology.
 ## Updated Pages
 
 ### Customer (Order Up) Pages
+
 - `/customer/dashboard` - "Order Up Dashboard"
 - `/customer/jobs` - "My Sends" instead of "My Jobs"
 - `/customer/request-delivery` - "Request Send", "Available Sendrs"
 
 ### Courier (Senderr) Pages
+
 - `/courier/dashboard` - "Available Sends" instead of "Available Jobs"
 - `/courier/onboarding` - References to "Senderr"
 - Status messages updated to use "send" terminology
 
 ### Runner (Shifter) Pages
+
 - `/runner/dashboard` - "Total Shifts", "Active Shifter", "Recent Shifts"
 - `/runner/available-routes` - Routes referred to as "shifts"
 
 ### Vendor (Market Senderr) Pages
+
 - `/vendor/orders` - "Market Senderr Orders"
 - `/vendor/settings` - "Market Senderr Settings"
 
 ### Admin Pages
+
 - `/admin/users` - Uses `getRoleName()` to display role badges dynamically
 
 ## Components
@@ -148,6 +153,7 @@ Displays role with icon, name, and gradient background:
 ### Select Role Page
 
 Role selection page uses `getRoleDisplay()` to show:
+
 - Role name
 - Role icon
 - Role tagline
