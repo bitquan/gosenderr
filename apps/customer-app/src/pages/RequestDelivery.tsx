@@ -21,15 +21,15 @@ interface DeliveryForm {
   specialInstructions: string
   vehicleType: 'car' | 'bike' | 'van'
 }
-: null,
-    delivery: null RequestDeliveryPage() {
+
+export default function RequestDeliveryPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [form, setForm] = useState<DeliveryForm>({
-    pickupAddress: '',
-    deliveryAddress: '',
+    pickup: null,
+    delivery: null,
     pickupPhone: '',
     deliveryPhone: '',
     itemDescription: '',
