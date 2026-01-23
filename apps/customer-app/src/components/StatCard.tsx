@@ -10,7 +10,7 @@ interface StatCardProps {
     trend: 'up' | 'down'
   }
   icon?: ReactNode
-  variant?: 'default' | 'success' | 'warning' | 'primary'
+  variant?: 'default' | 'success' | 'warning' | 'primary' | 'purple'
   suffix?: string
   className?: string
 }
@@ -29,6 +29,7 @@ export function StatCard({
     success: 'from-green-50 to-green-100',
     warning: 'from-orange-50 to-orange-100',
     primary: 'from-primary-50 to-primary-100',
+    purple: 'from-purple-50 to-purple-100',
   }
 
   const iconColors = {
@@ -36,6 +37,7 @@ export function StatCard({
     success: 'text-green-600',
     warning: 'text-orange-600',
     primary: 'text-primary-600',
+    purple: 'text-purple-600',
   }
 
   const textColors = {
@@ -43,6 +45,7 @@ export function StatCard({
     success: 'text-green-700',
     warning: 'text-orange-700',
     primary: 'text-primary-700',
+    purple: 'text-purple-700',
   }
 
   return (
