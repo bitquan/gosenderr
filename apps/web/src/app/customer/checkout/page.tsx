@@ -124,13 +124,11 @@ export default function CheckoutPage() {
             isFoodItem: isFood,
           };
           const rateCard = isFood
-            ? courierData.courierProfile?.foodRateCard ||
-              courierData.courier?.rateCard
-            : courierData.courierProfile?.packageRateCard ||
-              courierData.courier?.rateCard;
+            ? courierData.courierProfile?.foodRateCard
+            : courierData.courierProfile?.packageRateCard;
 
           if (!rateCard) {
-            setError("Courier has no rate card configured");
+            setError(`Senderr does not have a ${isFood ? 'food' : 'package'} rate card configured`);
             setLoading(false);
             return;
           }

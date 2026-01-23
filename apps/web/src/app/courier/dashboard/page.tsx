@@ -520,7 +520,7 @@ export default function CourierDashboard() {
                 job={selectedJob}
                 rateCard={rateCard}
                 courierLocation={userDoc?.location || null}
-                transportMode={userDoc.courier.transportMode}
+                transportMode={userDoc.courierProfile.vehicleType}
                 onAccept={handleAcceptJob}
                 loading={claiming}
               />

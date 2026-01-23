@@ -97,13 +97,22 @@ export async function claimJob(
       throw new Error('Job already claimed or not available');
     }
 
-    // Server-side eligibility check
-    if (!courierData.location || !courierData.courier?.rateCard) {
-      throw new Error('Courier location or rate card not configured');
+    // Server-side eligibility check - use courierProfile
+    if (!courierData.courierProfile?.currentLocation) {
+      throw new Error('Senderr location not available');
     }
 
-    const courierLocation = courierData.location;
-    const rateCard = courierData.courier.rateCard;
+    // Determine appropriate rate card based on job type
+    const isFoodJob = jobData.isFoodItem || false;
+    const rateCard = isFoodJob
+      ? courierData.courierProfile.foodRateCard
+      : courierData.courierProfile.packageRateCard;
+
+    if (!rateCard) {
+      throw new Error(`Senderr ${isFoodJob ? 'food' : 'package'} rate card not configured`);
+    }
+
+    const courierLocation = courierData.courierProfile.currentLocation;
     const pickup = jobData.pickup as GeoPoint;
     const dropoff = jobData.dropoff as GeoPoint;
 

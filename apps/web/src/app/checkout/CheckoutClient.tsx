@@ -179,19 +179,14 @@ export default function CheckoutClient() {
         const snapshot = await getDocs(q);
         console.log(`Found ${snapshot.size} total couriers/runners`);
 
-        // Filter by online status - courier.isOnline is a boolean field
+        // Filter by online status - courierProfile.isOnline is the correct field
         const onlineCouriers = snapshot.docs.filter((doc) => {
           const data = doc.data();
-          const isOnline =
-            data.courier?.isOnline === true ||
-            data.courierProfile?.isOnline === true ||
-            data.isOnline === true;
+          const isOnline = data.courierProfile?.isOnline === true;
 
           console.log(`Courier ${doc.id}:`, {
             role: data.role,
-            courierIsOnline: data.courier?.isOnline,
             profileIsOnline: data.courierProfile?.isOnline,
-            directIsOnline: data.isOnline,
             isOnline,
           });
 
@@ -205,26 +200,44 @@ export default function CheckoutClient() {
         for (const courierDoc of onlineCouriers) {
           const courierData = courierDoc.data() as UserDoc;
 
-          console.log(`Checking courier ${courierDoc.id}:`, {
-            hasRateCard: !!(
-              courierData.courierProfile?.foodRateCard ||
-              courierData.courierProfile?.packageRateCard ||
-              courierData.courier?.rateCard
-            ),
+          console.log(`Checking Senderr ${courierDoc.id}:`, {
+            hasPackageCard: !!courierData.courierProfile?.packageRateCard,
+            hasFoodCard: !!courierData.courierProfile?.foodRateCard,
             hasLocation: !!courierData.location,
             role: courierData.role,
-            status: courierData.courier?.status,
+            status: courierData.courierProfile?.status,
+            isOnline: courierData.courierProfile?.isOnline,
           });
 
-          // Skip if no rate card
+          // Skip if no courierProfile
+          if (!courierData.courierProfile) {
+            console.log(`Senderr ${courierDoc.id} skipped: no courierProfile`);
+            continue;
+          }
+
+          // Skip if not approved
+          if (courierData.courierProfile.status !== 'approved') {
+            console.log(`Senderr ${courierDoc.id} skipped: not approved (status: ${courierData.courierProfile.status})`);
+            continue;
+          }
+
+          // Get appropriate rate card based on item type
           const rateCard = isFoodItem
-            ? courierData.courierProfile?.foodRateCard ||
-              courierData.courier?.rateCard
-            : courierData.courierProfile?.packageRateCard ||
-              courierData.courier?.rateCard;
+            ? courierData.courierProfile.foodRateCard
+            : courierData.courierProfile.packageRateCard;
 
           if (!rateCard) {
-            console.log(`Courier ${courierDoc.id} skipped: no rate card`);
+            console.log(`Senderr ${courierDoc.id} skipped: no ${isFoodItem ? 'food' : 'package'} rate card`);
+            continue;
+          }
+
+          // Check work mode is enabled
+          const workModeEnabled = isFoodItem
+            ? courierData.courierProfile.workModes?.foodEnabled
+            : courierData.courierProfile.workModes?.packagesEnabled;
+
+          if (!workModeEnabled) {
+            console.log(`Senderr ${courierDoc.id} skipped: ${isFoodItem ? 'food' : 'package'} mode disabled`);
             continue;
           }
 

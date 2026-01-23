@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useEffect, useRef } from 'react';
-import { GeoPoint, CourierLocation } from '@/lib/v2/types';
+import { useEffect, useRef } from "react";
+import { GeoPoint, CourierLocation } from "@/lib/v2/types";
 
 interface MapboxMapProps {
   pickup: GeoPoint;
@@ -14,7 +14,7 @@ export function MapboxMap({
   pickup,
   dropoff,
   courierLocation,
-  height = '400px',
+  height = "400px",
 }: MapboxMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
@@ -24,17 +24,17 @@ export function MapboxMap({
     // Check if mapbox token is available
     const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
     if (!token) {
-      console.warn('Mapbox token not found');
+      console.warn("Mapbox token not found");
       return;
     }
 
     // Load mapbox-gl dynamically
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
 
     const loadMapbox = async () => {
       // @ts-ignore
       if (!window.mapboxgl) {
-        const mapboxgl = await import('mapbox-gl');
+        const mapboxgl = await import("mapbox-gl");
         // @ts-ignore
         window.mapboxgl = mapboxgl.default;
       }
@@ -48,31 +48,31 @@ export function MapboxMap({
         // Create map
         const map = new mapboxgl.Map({
           container: mapContainer.current,
-          style: 'mapbox://styles/mapbox/streets-v12',
+          style: "mapbox://styles/mapbox/streets-v12",
           center: [pickup.lng, pickup.lat],
           zoom: 12,
         });
 
         mapRef.current = map;
 
-        map.on('load', () => {
+        map.on("load", () => {
           // Add pickup marker (green)
-          markersRef.current.pickup = new mapboxgl.Marker({ color: '#16a34a' })
+          markersRef.current.pickup = new mapboxgl.Marker({ color: "#16a34a" })
             .setLngLat([pickup.lng, pickup.lat])
             .setPopup(
               new mapboxgl.Popup().setHTML(
-                `<strong>Pickup</strong>${pickup.label ? `<br/>${pickup.label}` : ''}`
-              )
+                `<strong>Pickup</strong>${pickup.label ? `<br/>${pickup.label}` : ""}`,
+              ),
             )
             .addTo(map);
 
           // Add dropoff marker (red)
-          markersRef.current.dropoff = new mapboxgl.Marker({ color: '#dc2626' })
+          markersRef.current.dropoff = new mapboxgl.Marker({ color: "#dc2626" })
             .setLngLat([dropoff.lng, dropoff.lat])
             .setPopup(
               new mapboxgl.Popup().setHTML(
-                `<strong>Dropoff</strong>${dropoff.label ? `<br/>${dropoff.label}` : ''}`
-              )
+                `<strong>Dropoff</strong>${dropoff.label ? `<br/>${dropoff.label}` : ""}`,
+              ),
             )
             .addTo(map);
 
@@ -93,7 +93,14 @@ export function MapboxMap({
         mapRef.current = null;
       }
     };
-  }, [pickup.lat, pickup.lng, dropoff.lat, dropoff.lng, pickup.label, dropoff.label]);
+  }, [
+    pickup.lat,
+    pickup.lng,
+    dropoff.lat,
+    dropoff.lng,
+    pickup.label,
+    dropoff.label,
+  ]);
 
   // Update courier marker
   useEffect(() => {
@@ -112,9 +119,9 @@ export function MapboxMap({
         ]);
       } else {
         // Create new courier marker (blue)
-        markersRef.current.courier = new mapboxgl.Marker({ color: '#2563eb' })
+        markersRef.current.courier = new mapboxgl.Marker({ color: "#2563eb" })
           .setLngLat([courierLocation.lng, courierLocation.lat])
-          .setPopup(new mapboxgl.Popup().setHTML('<strong>Senderr</strong>'))
+          .setPopup(new mapboxgl.Popup().setHTML("<strong>Senderr</strong>"))
           .addTo(mapRef.current);
       }
     } else {
@@ -133,25 +140,31 @@ export function MapboxMap({
       <div
         style={{
           height,
-          background: '#f5f5f5',
-          border: '1px solid #ddd',
-          borderRadius: '8px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: '#666',
+          background: "#f5f5f5",
+          border: "1px solid #ddd",
+          borderRadius: "8px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "#666",
         }}
       >
-        <div style={{ textAlign: 'center' }}>
-          <p style={{ marginBottom: '8px' }}>Map unavailable</p>
-          <p style={{ fontSize: '12px' }}>
+        <div style={{ textAlign: "center" }}>
+          <p style={{ marginBottom: "8px" }}>Map unavailable</p>
+          <p style={{ fontSize: "12px" }}>
             Set NEXT_PUBLIC_MAPBOX_TOKEN in .env.local
           </p>
-          <div style={{ marginTop: '16px', fontSize: '14px', textAlign: 'left' }}>
+          <div
+            style={{ marginTop: "16px", fontSize: "14px", textAlign: "left" }}
+          >
             <p>📍 Pickup: {pickup.label || `${pickup.lat}, ${pickup.lng}`}</p>
-            <p>📍 Dropoff: {dropoff.label || `${dropoff.lat}, ${dropoff.lng}`}</p>
+            <p>
+              📍 Dropoff: {dropoff.label || `${dropoff.lat}, ${dropoff.lng}`}
+            </p>
             {courierLocation && (
-              <p>🚗 Courier: {courierLocation.lat}, {courierLocation.lng}</p>
+              <p>
+                🚗 Courier: {courierLocation.lat}, {courierLocation.lng}
+              </p>
             )}
           </div>
         </div>
@@ -159,5 +172,5 @@ export function MapboxMap({
     );
   }
 
-  return <div ref={mapContainer} style={{ height, borderRadius: '8px' }} />;
+  return <div ref={mapContainer} style={{ height, borderRadius: "8px" }} />;
 }

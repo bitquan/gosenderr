@@ -36,12 +36,12 @@ export function useNearbyCouriers(pickup: GeoPoint | null, dropoff: GeoPoint | n
         // Get geohash prefix for pickup location (precision 5 for broader area)
         const pickupHash = geohash.encode(pickup.lat, pickup.lng, 5);
 
-        // Query online couriers within geohash range
+        // Query online Senderrs within geohash range - use courierProfile
         const usersRef = collection(db, 'users');
         const q = query(
           usersRef,
           where('role', '==', 'courier'),
-          where('courier.isOnline', '==', true),
+          where('courierProfile.isOnline', '==', true),
           where('location.geohash', '>=', pickupHash),
           where('location.geohash', '<=', pickupHash + '\uf8ff')
         );
@@ -54,8 +54,8 @@ export function useNearbyCouriers(pickup: GeoPoint | null, dropoff: GeoPoint | n
         snapshot.forEach((doc) => {
           const data = doc.data() as UserDoc & { email?: string };
           
-          // Skip if no location or rate card
-          if (!data.location || !data.courier?.rateCard) return;
+          // Skip if no location or courierProfile rate card
+          if (!data.location || !data.courierProfile?.packageRateCard) return;
 
           const courierLocation: GeoPoint = {
             lat: data.location.lat,
@@ -63,25 +63,25 @@ export function useNearbyCouriers(pickup: GeoPoint | null, dropoff: GeoPoint | n
           };
 
           const pickupMiles = calcMiles(courierLocation, pickup);
-          const rateCard = data.courier.rateCard;
+          const rateCard = data.courierProfile.packageRateCard;
           
           // Check eligibility using new helper
           const eligibilityResult = getEligibilityReason(rateCard, jobMiles, pickupMiles);
           const eligible = eligibilityResult.eligible;
           const reason = eligibilityResult.reason;
           
-          // Calculate estimated fee
+          // Calculate estimated fee using courierProfile vehicleType
           const estimatedFee = calcFee(
             rateCard,
             jobMiles,
             pickupMiles,
-            data.courier.transportMode
+            data.courierProfile.vehicleType || 'car'
           );
 
           results.push({
             uid: doc.id,
-            email: data.email || 'Courier',
-            transportMode: data.courier.transportMode,
+            email: data.email || 'Senderr',
+            transportMode: data.courierProfile.vehicleType || 'car',
             pickupMiles,
             jobMiles,
             estimatedFee,

@@ -119,7 +119,7 @@ export function useCourierLocationWriter() {
         setIsTracking(false);
       }
     };
-  }, [role, uid, userDoc?.courier?.isOnline]);
+  }, [role, uid, userDoc?.courierProfile?.isOnline]);
 
   return {
     isTracking,
