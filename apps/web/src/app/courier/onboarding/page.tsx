@@ -133,8 +133,8 @@ export default function CourierOnboarding() {
         { merge: true },
       );
 
-      // Redirect to dashboard with success message
-      router.push("/courier/dashboard?onboarding=complete");
+      // Redirect to Stripe onboarding page
+      router.push("/courier/onboarding/stripe");
     } catch (error) {
       console.error("Failed to submit onboarding:", error);
       alert("Failed to submit. Please try again.");

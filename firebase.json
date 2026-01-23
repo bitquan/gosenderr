@@ -10,12 +10,8 @@
   },
   "hosting": {
     "site": "gosenderr-6773f",
-    "source": "apps/web",
+    "public": "apps/web/out",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-    "frameworksBackend": {
-      "region": "us-central1",
-      "packageManagerCommand": "pnpm install --frozen-lockfile"
-    },
     "headers": [
       {
         "source": "**",

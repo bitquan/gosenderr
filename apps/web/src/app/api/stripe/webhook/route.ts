@@ -53,7 +53,12 @@ export async function POST(request: NextRequest) {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
-        await handleCheckoutComplete(session);
+        await handleCheckoutComplete(session, stripe);
+        break;
+      }
+      case "payment_intent.succeeded": {
+        const paymentIntent = event.data.object as Stripe.PaymentIntent;
+        await handlePaymentIntentSucceeded(paymentIntent, stripe);
         break;
       }
       default:
@@ -70,7 +75,10 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
+async function handleCheckoutComplete(
+  session: Stripe.Checkout.Session,
+  stripe: Stripe,
+) {
   console.log("Processing checkout.session.completed:", session.id);
 
   // Find the marketplace order by checkoutSessionId
@@ -160,4 +168,67 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
   });
 
   console.log(`Created job ${jobRef.id} for marketplace order ${orderDoc.id}`);
+}
+
+async function handlePaymentIntentSucceeded(
+  paymentIntent: Stripe.PaymentIntent,
+  stripe: Stripe,
+) {
+  console.log("Processing payment_intent.succeeded:", paymentIntent.id);
+
+  // Check if this payment has courier info for 3-way split
+  const hasCourierStripe = paymentIntent.metadata?.hasCourierStripe === "true";
+  const courierStripeAccountId = paymentIntent.metadata?.courierStripeAccountId;
+  const deliveryFee = paymentIntent.metadata?.deliveryFee;
+
+  if (!hasCourierStripe || !courierStripeAccountId || !deliveryFee) {
+    console.log("No courier transfer needed for this payment");
+    return;
+  }
+
+  try {
+    // Transfer delivery fee to courier
+    const deliveryFeeAmount = Math.round(Number(deliveryFee) * 100);
+
+    const transfer = await stripe.transfers.create({
+      amount: deliveryFeeAmount,
+      currency: "usd",
+      destination: courierStripeAccountId,
+      transfer_group: paymentIntent.id,
+      description: `Delivery fee for payment ${paymentIntent.id}`,
+      metadata: {
+        paymentIntentId: paymentIntent.id,
+        type: "courier_delivery_fee",
+      },
+    });
+
+    console.log(
+      `✅ Transferred $${deliveryFee} to courier ${courierStripeAccountId}`,
+      {
+        transferId: transfer.id,
+        paymentIntentId: paymentIntent.id,
+      },
+    );
+
+    // Update marketplace order with transfer info
+    const ordersSnapshot = await db
+      .collection("marketplaceOrders")
+      .where("paymentIntentId", "==", paymentIntent.id)
+      .limit(1)
+      .get();
+
+    if (!ordersSnapshot.empty) {
+      const orderDoc = ordersSnapshot.docs[0];
+      await orderDoc.ref.update({
+        courierTransferId: transfer.id,
+        courierPaymentStatus: "transferred",
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+      console.log(`Updated order ${orderDoc.id} with courier transfer info`);
+    }
+  } catch (error: any) {
+    console.error("❌ Failed to transfer to courier:", error);
+    // Log error but don't fail the webhook
+    // TODO: Set up retry logic or alert system
+  }
 }

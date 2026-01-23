@@ -167,6 +167,9 @@ export default function CheckoutClient() {
       setSearchingCouriers(true);
       setError(null);
       try {
+        if (!item) {
+          throw new Error("Item not found");
+        }
         const isFoodItem = item.isFoodItem || item.category === "food";
 
         // Query couriers/runners - try multiple status field paths
@@ -215,10 +218,10 @@ export default function CheckoutClient() {
             continue;
           }
 
-          // Skip if not approved
-          if (courierData.courierProfile.status !== "approved") {
+          // Skip if not active
+          if (courierData.courierProfile.status !== "active") {
             console.log(
-              `Senderr ${courierDoc.id} skipped: not approved (status: ${courierData.courierProfile.status})`,
+              `Senderr ${courierDoc.id} skipped: not active (status: ${courierData.courierProfile.status})`,
             );
             continue;
           }
@@ -295,13 +298,13 @@ export default function CheckoutClient() {
               console.log(`Courier ${courierDoc.id} skipped: no cooler`);
               continue;
             }
-            if (item.foodDetails.requiresHotBag && !equipment.hotBag) {
+            if (item.foodDetails.requiresHotBag && !equipment.hot_bag) {
               console.log(`Courier ${courierDoc.id} skipped: no hot bag`);
               continue;
             }
             if (
               item.foodDetails.requiresDrinkCarrier &&
-              !equipment.drinkCarrier
+              !equipment.drink_carrier
             ) {
               console.log(`Courier ${courierDoc.id} skipped: no drink carrier`);
               continue;
@@ -458,6 +461,8 @@ export default function CheckoutClient() {
           deliveryFee,
           platformFee,
           sellerStripeAccountId: seller.stripeConnectAccountId,
+          courierStripeAccountId:
+            selectedCourier.courierProfile?.stripeConnectAccountId || null,
           successUrl: `${origin}/marketplace?checkout=success&order=${orderRef.id}`,
           cancelUrl: `${origin}/checkout?itemId=${item.id}`,
         }),

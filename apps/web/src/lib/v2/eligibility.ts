@@ -1,4 +1,4 @@
-import { RateCard } from './types';
+import { RateCard, PackageRateCard, FoodRateCard } from "./types";
 
 export interface EligibilityResult {
   eligible: boolean;
@@ -13,12 +13,16 @@ export interface EligibilityResult {
  * @returns Object with eligibility status and optional reason string
  */
 export function getEligibilityReason(
-  rateCard: RateCard,
+  rateCard: RateCard | PackageRateCard | FoodRateCard,
   jobMiles: number,
-  pickupMiles: number
+  pickupMiles: number,
 ): EligibilityResult {
-  // Check discovery radius (maxRadiusMiles)
-  if (rateCard.maxRadiusMiles !== undefined && pickupMiles > rateCard.maxRadiusMiles) {
+  // Check discovery radius (maxRadiusMiles) - only on legacy RateCard
+  if (
+    "maxRadiusMiles" in rateCard &&
+    rateCard.maxRadiusMiles !== undefined &&
+    pickupMiles > rateCard.maxRadiusMiles
+  ) {
     return {
       eligible: false,
       reason: `Outside service area (${rateCard.maxRadiusMiles}mi max)`,
@@ -26,7 +30,20 @@ export function getEligibilityReason(
   }
 
   // Check pickup distance limit
-  if (rateCard.maxPickupMiles !== undefined && pickupMiles > rateCard.maxPickupMiles) {
+  if (
+    "maxPickupDistanceMiles" in rateCard &&
+    rateCard.maxPickupDistanceMiles !== undefined &&
+    pickupMiles > rateCard.maxPickupDistanceMiles
+  ) {
+    return {
+      eligible: false,
+      reason: `Too far to pickup (${rateCard.maxPickupDistanceMiles}mi max)`,
+    };
+  } else if (
+    "maxPickupMiles" in rateCard &&
+    rateCard.maxPickupMiles !== undefined &&
+    pickupMiles > rateCard.maxPickupMiles
+  ) {
     return {
       eligible: false,
       reason: `Too far to pickup (${rateCard.maxPickupMiles}mi max)`,
@@ -34,7 +51,20 @@ export function getEligibilityReason(
   }
 
   // Check job distance limit
-  if (rateCard.maxJobMiles !== undefined && jobMiles > rateCard.maxJobMiles) {
+  if (
+    "maxDeliveryDistanceMiles" in rateCard &&
+    rateCard.maxDeliveryDistanceMiles !== undefined &&
+    jobMiles > rateCard.maxDeliveryDistanceMiles
+  ) {
+    return {
+      eligible: false,
+      reason: `Trip too long (${rateCard.maxDeliveryDistanceMiles}mi max)`,
+    };
+  } else if (
+    "maxJobMiles" in rateCard &&
+    rateCard.maxJobMiles !== undefined &&
+    jobMiles > rateCard.maxJobMiles
+  ) {
     return {
       eligible: false,
       reason: `Trip too long (${rateCard.maxJobMiles}mi max)`,

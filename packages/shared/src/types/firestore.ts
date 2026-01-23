@@ -19,6 +19,8 @@ export interface PackageRateCard {
   baseFare: number; // Min: $3.00
   perMile: number; // Min: $0.50
   perMinute: number; // Min: $0.10
+  maxPickupDistanceMiles?: number;
+  maxDeliveryDistanceMiles?: number;
   optionalFees: Array<{ name: string; amount: number }>;
 }
 
@@ -27,6 +29,8 @@ export interface FoodRateCard {
   baseFare: number; // Min: $2.50
   perMile: number; // Min: $0.75
   restaurantWaitPay: number; // Min: $0.15/min
+  maxPickupDistanceMiles?: number;
+  maxDeliveryDistanceMiles?: number;
   peakHours?: Array<{
     days: string[]; // ["friday", "saturday"]
     startTime: string; // "18:00"
@@ -121,6 +125,7 @@ export interface CourierDocuments {
 
 export interface CourierProfile {
   status: CourierStatus;
+  isOnline?: boolean;
   vehicleType: VehicleType;
   vehicleDetails?: VehicleDetails;
   workModes: WorkModes;
@@ -131,6 +136,7 @@ export interface CourierProfile {
   documents: CourierDocuments;
   serviceRadius: number; // miles
   currentLocation?: { lat: number; lng: number };
+  stripeConnectAccountId?: string;
 }
 
 // Legacy courier data for backward compatibility

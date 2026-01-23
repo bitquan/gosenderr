@@ -6,6 +6,8 @@ export interface PackageRateCard {
     baseFare: number;
     perMile: number;
     perMinute: number;
+    maxPickupDistanceMiles?: number;
+    maxDeliveryDistanceMiles?: number;
     optionalFees: Array<{
         name: string;
         amount: number;
@@ -15,6 +17,8 @@ export interface FoodRateCard {
     baseFare: number;
     perMile: number;
     restaurantWaitPay: number;
+    maxPickupDistanceMiles?: number;
+    maxDeliveryDistanceMiles?: number;
     peakHours?: Array<{
         days: string[];
         startTime: string;
@@ -84,6 +88,7 @@ export interface CourierDocuments {
 }
 export interface CourierProfile {
     status: CourierStatus;
+    isOnline?: boolean;
     vehicleType: VehicleType;
     vehicleDetails?: VehicleDetails;
     workModes: WorkModes;
@@ -97,6 +102,7 @@ export interface CourierProfile {
         lat: number;
         lng: number;
     };
+    stripeConnectAccountId?: string;
 }
 export interface CourierData {
     isOnline: boolean;
