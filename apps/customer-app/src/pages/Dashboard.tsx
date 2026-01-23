@@ -179,20 +179,21 @@ export default function DashboardPage() {
       {/* Purple Header Card - Starts from top */}
       <div className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] rounded-b-[32px] px-6 pt-6 pb-8 text-white shadow-lg">
         <div className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-4">
+          <div className="flex items-center justify-between mb-6 gap-2">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
               <Avatar
                 fallback={user?.displayName || user?.email || 'User'}
                 size="lg"
+                className="flex-shrink-0"
               />
-              <div>
-                <h1 className="text-2xl font-bold">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-xl sm:text-2xl font-bold">
                   Welcome
                 </h1>
-                <p className="text-purple-100 text-sm">{user?.email}</p>
+                <p className="text-purple-100 text-xs sm:text-sm truncate">{user?.email}</p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 flex-shrink-0">
               <Link to="/profile">
                 <button 
                   className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30 transition-all"
@@ -203,7 +204,7 @@ export default function DashboardPage() {
               </Link>
               <button 
                 onClick={() => signOut()}
-                className="px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all text-sm font-medium"
+                className="px-3 sm:px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all text-xs sm:text-sm font-medium whitespace-nowrap"
                 title="Sign Out"
               >
                 Sign Out
@@ -213,30 +214,30 @@ export default function DashboardPage() {
 
           {/* Total Spent - Large Display */}
           <div className="mb-6">
-            <p className="text-purple-100 text-sm mb-1">Total Spent</p>
-            <p className="text-5xl font-bold">{formatCurrency(stats.totalSpent)}</p>
+            <p className="text-purple-100 text-xs sm:text-sm mb-1">Total Spent</p>
+            <p className="text-3xl sm:text-4xl md:text-5xl font-bold">{formatCurrency(stats.totalSpent)}</p>
           </div>
 
           {/* Quick Stats Grid in Header */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-3">
-              <p className="text-sm text-purple-100 mb-1">Total</p>
-              <p className="text-2xl font-bold">{stats.totalJobs}</p>
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-2 sm:p-3">
+              <p className="text-xs sm:text-sm text-purple-100 mb-1">Total</p>
+              <p className="text-xl sm:text-2xl font-bold">{stats.totalJobs}</p>
             </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-3">
-              <p className="text-sm text-purple-100 mb-1">Active</p>
-              <p className="text-2xl font-bold">{stats.activeJobs}</p>
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-2 sm:p-3">
+              <p className="text-xs sm:text-sm text-purple-100 mb-1">Active</p>
+              <p className="text-xl sm:text-2xl font-bold">{stats.activeJobs}</p>
             </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-3">
-              <p className="text-sm text-purple-100 mb-1">Done</p>
-              <p className="text-2xl font-bold">{stats.completedJobs}</p>
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-2 sm:p-3">
+              <p className="text-xs sm:text-sm text-purple-100 mb-1">Done</p>
+              <p className="text-xl sm:text-2xl font-bold">{stats.completedJobs}</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-6 -mt-8 space-y-4">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 -mt-8 space-y-4">
         {/* Spending Breakdown */}
         <Card variant="elevated" className="animate-fade-in animation-delay-300">
           <CardHeader>
@@ -348,22 +349,24 @@ export default function DashboardPage() {
                     className="block"
                   >
                     <div className="p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex-1">
-                          <p className="font-semibold text-gray-900">
+                      <div className="flex items-start justify-between mb-2 gap-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-gray-900 text-sm sm:text-base break-words">
                             📍 {job.pickupAddress?.split(',')[0] || 'Pickup'}
                           </p>
-                          <p className="text-sm text-gray-500 mt-1">
+                          <p className="text-xs sm:text-sm text-gray-500 mt-1 break-words">
                             🎯 {job.deliveryAddress?.split(',')[0] || 'Delivery'}
                           </p>
                         </div>
                         <StatusBadge
                           status={
-                            job.status === 'completed'
+                            job.status === 'completed' || job.status === 'delivered'
                               ? 'completed'
-                              : job.status === 'in_progress' || job.status === 'active'
-                                ? 'in_progress'
-                                : 'pending'
+                              : job.status === 'cancelled'
+                              ? 'cancelled'
+                              : ['in_progress', 'active', 'accepted', 'assigned'].includes(job.status)
+                              ? 'in_progress'
+                              : 'pending'
                           }
                         />
                       </div>
