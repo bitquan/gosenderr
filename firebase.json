@@ -11,15 +11,7 @@
   "hosting": {
     "site": "gosenderr-6773f",
     "source": "apps/web",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**"
-    ],
-    "frameworksBackend": {
-      "region": "us-central1",
-      "runtime": "nodejs20"
-    },
+    "ignore": ["firebase.json", "**/node_modules/**"],
     "headers": [
       {
         "source": "**",
@@ -30,6 +22,14 @@
           }
         ]
       }
-    ]
+    ],
+    "frameworksBackend": {
+      "region": "us-central1",
+      "runtime": "nodejs20",
+      "omit": [],
+      "maxInstances": 10,
+      "minInstances": 0,
+      "concurrency": 80
+    }
   }
 }
