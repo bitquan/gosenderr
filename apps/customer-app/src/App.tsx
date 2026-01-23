@@ -9,6 +9,7 @@ import CustomerLayout from './layouts/CustomerLayout'
 import DashboardPage from './pages/Dashboard'
 import RequestDeliveryPage from './pages/RequestDelivery'
 import JobsPage from './pages/Jobs'
+import JobDetailPage from './pages/JobDetail'
 import CheckoutPage from './pages/Checkout'
 
 // Auth pages
@@ -48,6 +49,7 @@ function App() {
                   <Route path="/dashboard" element={<DashboardPage />} />
                   <Route path="/request-delivery" element={<RequestDeliveryPage />} />
                   <Route path="/jobs" element={<JobsPage />} />
+                  <Route path="/jobs/:jobId" element={<JobDetailPage />} />
                   <Route path="/checkout" element={<CheckoutPage />} />
                 </Routes>
               </CustomerLayout>
