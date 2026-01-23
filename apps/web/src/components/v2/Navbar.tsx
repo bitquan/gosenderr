@@ -181,6 +181,23 @@ export function Navbar({ children }: NavbarProps) {
               </Link>
             )}
 
+            {user && role && role !== "vendor" && (
+              <Link
+                href="/marketplace/create"
+                style={{
+                  fontSize: "13px",
+                  fontWeight:
+                    pathname === "/marketplace/create" ? "600" : "400",
+                  color:
+                    pathname === "/marketplace/create" ? "#6E56CF" : "#666",
+                  textDecoration: "none",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                🏪 Become a Vendor
+              </Link>
+            )}
+
             {user && role === "customer" && (
               <Link
                 href="/customer/jobs"

@@ -91,14 +91,6 @@ export default function CreateItemPage() {
     }
   }, [user, authLoading, router]);
 
-  // Role check - only vendors can create items
-  useEffect(() => {
-    if (!roleLoading && role && role !== "vendor") {
-      alert("Only vendors can create marketplace items. Please switch to a vendor account.");
-      router.push("/marketplace");
-    }
-  }, [role, roleLoading, router]);
-
   // Geocode address
   useEffect(() => {
     if (addressQuery.length < 3) {
@@ -259,6 +251,141 @@ export default function CreateItemPage() {
     return (
       <div style={{ padding: "20px", textAlign: "center" }}>
         <p>Checking authentication...</p>
+      </div>
+    );
+  }
+
+  // Show upgrade prompt for non-vendors
+  if (!roleLoading && role && role !== "vendor") {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "20px",
+        }}
+      >
+        <div
+          style={{
+            background: "white",
+            borderRadius: "20px",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+            maxWidth: "500px",
+            width: "100%",
+            padding: "40px",
+            textAlign: "center",
+          }}
+        >
+          <div style={{ fontSize: "64px", marginBottom: "20px" }}>🏪</div>
+          <h1
+            style={{
+              fontSize: "28px",
+              fontWeight: "700",
+              color: "#1f2937",
+              marginBottom: "16px",
+            }}
+          >
+            Become a Vendor
+          </h1>
+          <p
+            style={{
+              fontSize: "16px",
+              color: "#6b7280",
+              lineHeight: "1.6",
+              marginBottom: "32px",
+            }}
+          >
+            Start selling your items on the GoSenderr marketplace! Vendors can
+            create listings, manage inventory, and earn money.
+          </p>
+
+          <div
+            style={{
+              background: "#f9fafb",
+              borderRadius: "12px",
+              padding: "20px",
+              marginBottom: "24px",
+              textAlign: "left",
+            }}
+          >
+            <h3
+              style={{
+                fontSize: "14px",
+                fontWeight: "600",
+                color: "#1f2937",
+                marginBottom: "12px",
+              }}
+            >
+              Vendor Benefits:
+            </h3>
+            <ul
+              style={{
+                listStyle: "none",
+                padding: 0,
+                margin: 0,
+                fontSize: "14px",
+                color: "#4b5563",
+              }}
+            >
+              <li style={{ marginBottom: "8px" }}>✅ List unlimited items</li>
+              <li style={{ marginBottom: "8px" }}>
+                💰 Integrated Stripe payments
+              </li>
+              <li style={{ marginBottom: "8px" }}>
+                📦 Automatic delivery coordination
+              </li>
+              <li style={{ marginBottom: "8px" }}>📊 Sales analytics</li>
+            </ul>
+          </div>
+
+          <button
+            onClick={async () => {
+              if (!user) return;
+              const { doc, updateDoc, serverTimestamp } = await import(
+                "firebase/firestore"
+              );
+              await updateDoc(doc(db, "users", user.uid), {
+                role: "vendor",
+                updatedAt: serverTimestamp(),
+              });
+              router.push("/vendor/onboarding");
+            }}
+            style={{
+              width: "100%",
+              padding: "14px",
+              background: "#6E56CF",
+              color: "white",
+              border: "none",
+              borderRadius: "10px",
+              fontSize: "16px",
+              fontWeight: "600",
+              cursor: "pointer",
+              marginBottom: "12px",
+            }}
+          >
+            Upgrade to Vendor
+          </button>
+
+          <button
+            onClick={() => router.push("/marketplace")}
+            style={{
+              width: "100%",
+              padding: "14px",
+              background: "white",
+              color: "#6b7280",
+              border: "2px solid #e5e7eb",
+              borderRadius: "10px",
+              fontSize: "16px",
+              fontWeight: "600",
+              cursor: "pointer",
+            }}
+          >
+            Back to Marketplace
+          </button>
+        </div>
       </div>
     );
   }
