@@ -10,12 +10,15 @@
   },
   "hosting": {
     "site": "gosenderr-6773f",
-    "source": ".",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**", "firebase/**", "docs/**", "scripts/**", "archive/**"],
+    "source": "apps/web",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
     "frameworksBackend": {
       "region": "us-central1",
-      "runtime": "nodejs20",
-      "cwd": "apps/web"
+      "runtime": "nodejs20"
     },
     "headers": [
       {

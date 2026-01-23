@@ -3,6 +3,7 @@ const path = require("path");
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   outputFileTracingRoot: path.join(__dirname, "../.."),
+  transpilePackages: ["@gosenderr/shared"],
   reactStrictMode: true,
   eslint: {
     // Warning: This allows production builds to successfully complete even if
