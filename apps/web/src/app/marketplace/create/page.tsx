@@ -344,9 +344,8 @@ export default function CreateItemPage() {
           <button
             onClick={async () => {
               if (!user) return;
-              const { doc, updateDoc, serverTimestamp } = await import(
-                "firebase/firestore"
-              );
+              const { doc, updateDoc, serverTimestamp } =
+                await import("firebase/firestore");
               await updateDoc(doc(db, "users", user.uid), {
                 role: "vendor",
                 updatedAt: serverTimestamp(),
