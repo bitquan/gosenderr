@@ -2,25 +2,173 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Customer App: Dev Server",
+      "type": "shell",
+      "command": "pnpm --filter @gosenderr/customer-app dev",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^([^\\s].*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "severity": 4,
+          "message": 5
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^.*VITE.*$",
+          "endsPattern": "^.*ready in.*$"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": false,
+        "clear": true
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "Customer App: Build",
+      "type": "shell",
+      "command": "pnpm --filter @gosenderr/customer-app build",
+      "problemMatcher": ["$tsc"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Customer App: Preview Build",
+      "type": "shell",
+      "command": "pnpm --filter @gosenderr/customer-app preview",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Web App (Next.js): Dev Server",
+      "type": "shell",
+      "command": "pnpm --filter @gosenderr/web dev",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^([^\\s].*):(\\d+):(\\d+)\\s+-\\s+(warning|error)\\s+(.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "severity": 4,
+          "message": 5
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^.*starting.*$",
+          "endsPattern": "^.*Local:.*$"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": false
+      }
+    },
+    {
+      "label": "Web App (Next.js): Build",
+      "type": "shell",
+      "command": "pnpm --filter @gosenderr/web build",
+      "problemMatcher": ["$tsc"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
       "label": "Flutter Driver (Simulator)",
       "type": "shell",
       "command": "flutter run -d C3CECD8E-BB84-4F07-A84B-E84F29704870 --dart-define=APP_ROLE=driver",
       "isBackground": true,
-      "problemMatcher": []
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
     },
     {
-      "label": "Web Dev Server",
+      "label": "Install All Dependencies",
       "type": "shell",
-      "command": "pnpm dev",
-      "isBackground": true,
-      "problemMatcher": []
+      "command": "pnpm install",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
     },
     {
-      "label": "Deploy to Firebase Hosting",
+      "label": "Firebase: Deploy Hosting",
       "type": "shell",
-      "command": "pnpm deploy:web:hosting",
-      "isBackground": false,
-      "problemMatcher": []
+      "command": "firebase deploy --only hosting:gosenderr-6773f --project gosenderr-6773f",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Firebase: Deploy Functions",
+      "type": "shell",
+      "command": "firebase deploy --only functions --project gosenderr-6773f",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Cloud Run: Deploy Web",
+      "type": "shell",
+      "command": "bash scripts/deploy-cloudrun-web.sh",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Lint All",
+      "type": "shell",
+      "command": "pnpm lint",
+      "problemMatcher": ["$eslint-stylish"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Type Check All",
+      "type": "shell",
+      "command": "pnpm type-check",
+      "problemMatcher": ["$tsc"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Clean Build Artifacts",
+      "type": "shell",
+      "command": "rm -rf apps/*/dist apps/*/.next apps/*/out .firebase",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
     }
   ]
 }
