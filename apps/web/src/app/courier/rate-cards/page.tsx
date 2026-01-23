@@ -175,11 +175,25 @@ export default function RateCardsPage() {
     );
   }
 
+  const hasAnyRateCard = packageRateCard || foodRateCard;
+
   return (
     <div style={{ maxWidth: "800px", margin: "0 auto", padding: "20px" }}>
-      <h1 style={{ marginBottom: "32px", fontSize: "28px", fontWeight: "600" }}>
-        Your Rate Cards
-      </h1>
+      {/* Welcome Header */}
+      <div style={{ marginBottom: "32px" }}>
+        <h1
+          style={{ marginBottom: "12px", fontSize: "28px", fontWeight: "600" }}
+        >
+          {hasAnyRateCard
+            ? "Manage Your Rate Cards"
+            : "Courier Setup - Set Your Rates"}
+        </h1>
+        <p style={{ color: "#666", fontSize: "16px", lineHeight: "1.6" }}>
+          {hasAnyRateCard
+            ? "Edit your pricing and delivery preferences anytime. Toggle work modes on/off to control which types of deliveries you accept."
+            : "Welcome to Courier Setup! Choose which types of deliveries you want to accept (packages, food, or both) and set your rates. You can always edit these later."}
+        </p>
+      </div>
 
       {/* Package Deliveries Card */}
       <div

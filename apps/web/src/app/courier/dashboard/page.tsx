@@ -24,7 +24,14 @@ export default function CourierDashboard() {
 
   // Compute job eligibility for each job
   const jobsWithEligibility = useMemo(() => {
-    if (!userDoc?.location || !userDoc?.courier?.rateCard) {
+    // Check if courier has any rate card configured
+    const hasPackageCard = userDoc?.courierProfile?.packageRateCard;
+    const hasFoodCard = userDoc?.courierProfile?.foodRateCard;
+
+    if (
+      !userDoc?.courierProfile?.currentLocation ||
+      (!hasPackageCard && !hasFoodCard)
+    ) {
       return jobs.map((job) => {
         const jobMiles = calcMiles(job.pickup, job.dropoff);
         return {
@@ -37,8 +44,11 @@ export default function CourierDashboard() {
       });
     }
 
-    const courierLocation = userDoc.location;
-    const rateCard = userDoc.courier.rateCard;
+    const courierLocation = userDoc.courierProfile.currentLocation;
+    // For now, use package rate card for eligibility (TODO: check job type)
+    const rateCard = hasPackageCard
+      ? userDoc.courierProfile.packageRateCard
+      : userDoc.courierProfile.foodRateCard;
 
     return jobs.map((job) => {
       const pickupMiles = calcMiles(courierLocation, job.pickup);
@@ -67,10 +77,15 @@ export default function CourierDashboard() {
     return jobsWithEligibility.filter((item) => item.eligible);
   }, [jobsWithEligibility, hideIneligible]);
 
-  // Redirect to setup if rate card not configured
+  // Redirect to rate-cards if no rate cards configured
   useEffect(() => {
-    if (!userLoading && userDoc && !userDoc.courier?.rateCard) {
-      router.push("/courier/setup");
+    if (!userLoading && userDoc) {
+      const hasRateCard =
+        userDoc.courierProfile?.packageRateCard ||
+        userDoc.courierProfile?.foodRateCard;
+      if (!hasRateCard) {
+        router.push("/courier/rate-cards");
+      }
     }
   }, [userLoading, userDoc, router]);
 
@@ -119,7 +134,11 @@ export default function CourierDashboard() {
     );
   }
 
-  if (!userDoc?.courier?.rateCard) {
+  const hasRateCard =
+    userDoc?.courierProfile?.packageRateCard ||
+    userDoc?.courierProfile?.foodRateCard;
+
+  if (!hasRateCard) {
     return (
       <div style={{ padding: "30px" }}>
         <h1>Dashboard</h1>
@@ -128,10 +147,64 @@ export default function CourierDashboard() {
     );
   }
 
-  const rateCard = userDoc.courier.rateCard;
+  // Use package rate card for display (or food if package not available)
+  const rateCard =
+    userDoc.courierProfile?.packageRateCard ||
+    userDoc.courierProfile?.foodRateCard;
+
+  // Check work modes
+  const hasPackageMode = userDoc.courierProfile?.workModes?.packagesEnabled;
+  const hasFoodMode = userDoc.courierProfile?.workModes?.foodEnabled;
+  const needsSetup = !hasPackageMode && !hasFoodMode;
 
   return (
     <div style={{ padding: "30px" }}>
+      {needsSetup && (
+        <div
+          style={{
+            marginBottom: "20px",
+            padding: "16px 20px",
+            background: "#fef3c7",
+            border: "2px solid #fbbf24",
+            borderRadius: "8px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <div>
+            <div
+              style={{
+                fontWeight: "600",
+                color: "#92400e",
+                marginBottom: "4px",
+              }}
+            >
+              ⚠️ Setup Required
+            </div>
+            <div style={{ fontSize: "14px", color: "#78350f" }}>
+              You need to enable at least one work mode (packages or food) to
+              start accepting jobs.
+            </div>
+          </div>
+          <Link
+            href="/courier/rate-cards"
+            style={{
+              padding: "10px 18px",
+              background: "#f59e0b",
+              color: "white",
+              textDecoration: "none",
+              borderRadius: "6px",
+              fontWeight: "600",
+              fontSize: "14px",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Complete Setup →
+          </Link>
+        </div>
+      )}
+
       <div
         style={{
           display: "flex",
