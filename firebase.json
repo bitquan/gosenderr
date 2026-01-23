@@ -10,9 +10,33 @@
   },
   "hosting": {
     "site": "gosenderr-6773f",
-    "source": "apps/web",
+    "public": "apps/customer-app/dist",
     "ignore": ["firebase.json", "**/node_modules/**"],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ],
     "headers": [
+      {
+        "source": "**/*.@(jpg|jpeg|gif|png|svg|webp)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=31536000, immutable"
+          }
+        ]
+      },
+      {
+        "source": "**/*.@(js|css)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=31536000, immutable"
+          }
+        ]
+      },
       {
         "source": "**",
         "headers": [
@@ -22,14 +46,6 @@
           }
         ]
       }
-    ],
-    "frameworksBackend": {
-      "region": "us-central1",
-      "runtime": "nodejs20",
-      "omit": [],
-      "maxInstances": 10,
-      "minInstances": 0,
-      "concurrency": 80
-    }
+    ]
   }
 }
