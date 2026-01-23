@@ -38,7 +38,9 @@ ENV NEXT_PUBLIC_FIREBASE_API_KEY=$NEXT_PUBLIC_FIREBASE_API_KEY \
 	NEXT_PUBLIC_MAPBOX_TOKEN=$NEXT_PUBLIC_MAPBOX_TOKEN \
 	NEXT_PUBLIC_AUTH_FALLBACK_EMAIL=$NEXT_PUBLIC_AUTH_FALLBACK_EMAIL
 
-COPY --from=deps /app/ /app/
+COPY --from=deps /app/node_modules /app/node_modules
+COPY --from=deps /app/apps/web/node_modules /app/apps/web/node_modules
+COPY --from=deps /app/packages/shared/node_modules /app/packages/shared/node_modules
 
 # Copy source
 COPY apps/web/ apps/web/
