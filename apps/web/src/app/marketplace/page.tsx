@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
   doc,
@@ -46,7 +46,7 @@ function calculateDistance(
   return R * c;
 }
 
-export default function MarketplacePage() {
+function MarketplaceContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [items, setItems] = useState<Item[]>([]);
@@ -492,5 +492,13 @@ export default function MarketplacePage() {
         </>
       )}
     </div>
+  );
+}
+
+export default function MarketplacePage() {
+  return (
+    <Suspense fallback={<div style={{ padding: "30px" }}>Loading...</div>}>
+      <MarketplaceContent />
+    </Suspense>
   );
 }
