@@ -1,628 +1,662 @@
-# Vite Migration Plan: Next.js → Vite + React + TypeScript
+# Vite Migration - Complete Role-Based Portal Plan
 
-## Executive Summary
+## 🎯 Overview
+Migrating from Next.js to Vite for all three role-based portals, replicating the exact design system and functionality from the existing Next.js app.
 
-Migrate GoSenderR web app from Next.js 15 to Vite + React 19 + TypeScript, following the ShiftX stack architecture. This migration will deliver:
-
-- ⚡ **10x faster builds** (30s vs 5min)
-- 📦 **Simpler deployments** (static export, no Cloud Functions for SSR)
-- 🎯 **Better DX** (faster HMR, clearer architecture)
-- 💰 **Lower costs** (no Cloud Functions compute for SSR)
+**Branch:** `feature/issue-33-vite-migration`
+**Strategy:** No freestyling - match Next.js design exactly
 
 ---
 
-## Current Stack
+## 🎨 Design System (Replicate from Next.js)
 
-### Technology
-- **Framework**: Next.js 15.5.9 (App Router)
-- **Build Tool**: Webpack (via Next.js)
-- **Hosting**: Firebase Hosting with Cloud Functions (SSR)
-- **Deployment Time**: 5-10 minutes (includes Cloud Build)
-- **Bundle**: ~102KB first load JS + dynamic routes
+### Color Palette
+- Primary: `#6B4EFF` (Purple)
+- Secondary: `#9D7FFF` (Light Purple)
+- Background: `#F8F9FF` (Light Purple Background)
+- Accent gradients: Purple to Light Purple
 
-### Pain Points
-1. **Slow deploys**: Cloud Functions build takes 3-5 minutes
-2. **Complex config**: frameworksBackend, package-lock.json issues
-3. **SSR overhead**: Not needed for most pages (auth-gated SPA)
-4. **Lock file conflicts**: pnpm vs npm package-lock.json
-5. **Build warnings**: SWC dependencies patching errors
+### Component Library (Port from Next.js `/components/ui/`)
+- ✅ **Card** - Multiple variants (default, elevated, gradient)
+- ✅ **StatCard** - Stats with icons, values, trends
+- ✅ **Badge** - Status badges for job/package states
+- ⏳ **Avatar** - User profile images
+- ⏳ **Skeleton** - Loading placeholders
+- ⏳ **DonutChart** - Spending breakdown charts
+- ⏳ **Button** - Primary, secondary, outline variants
+- ⏳ **Input** - Form inputs with consistent styling
+- ⏳ **MapboxMap** - Interactive delivery maps
+- ⏳ **JobPreview** - Job card preview components
+
+### Layout Structure
+- Sidebar navigation (left)
+- Top bar with user profile + notifications
+- Main content area with padding
+- Consistent card-based layouts
+- Rounded corners (20px)
+- Purple shadow effects
 
 ---
 
-## Target Stack (ShiftX-Style)
+## 👤 CUSTOMER PORTAL - Implementation Plan
 
-### Technology
-- **Framework**: React 19
-- **Build Tool**: Vite 6
-- **Language**: TypeScript 5.7
-- **Routing**: React Router v7 (or TanStack Router)
-- **Hosting**: Firebase Hosting (static files only)
-- **Deployment Time**: 30-60 seconds
-
-### Directory Structure
+### Pages Structure
 ```
-apps/
-  customer-app/        # Customer-facing SPA
-    ├── src/
-    │   ├── pages/     # Route components
-    │   ├── components/
-    │   ├── hooks/
-    │   ├── lib/
-    │   └── main.tsx
-    ├── public/
-    ├── index.html
-    ├── vite.config.ts
-    └── package.json
-  
-  senderr-app/         # Senderr/Courier SPA
-    ├── src/
-    │   ├── pages/
-    │   ├── components/
-    │   └── ...
-    └── ...
-  
-  admin-app/           # Admin portal SPA (optional)
-    └── ...
-  
-  vendor-app/          # Vendor portal SPA (optional)
-    └── ...
-
-packages/
-  shared/              # Shared types, utils (existing)
-  ui/                  # Shared UI components (NEW)
-    ├── src/
-    │   ├── Avatar.tsx
-    │   ├── Card.tsx
-    │   ├── GlassCard.tsx
-    │   └── ...
-    └── package.json
+/customer-app/src/pages/
+├── Login.tsx                    ✅ DONE
+├── Dashboard.tsx                ✅ DONE (needs design polish)
+├── Jobs.tsx                     ✅ DONE (needs design polish)
+├── RequestDelivery.tsx          ✅ DONE (address autocomplete added)
+├── JobDetail.tsx                ⏳ TODO
+├── Orders.tsx                   ⏳ TODO
+├── Packages.tsx                 ⏳ TODO
+├── PackageDetail.tsx            ⏳ TODO
+├── Checkout.tsx                 ⏳ TODO
+├── Profile.tsx                  ⏳ TODO
+├── Settings.tsx                 ⏳ TODO
+├── Notifications.tsx            ⏳ TODO
+└── Payment.tsx                  ⏳ TODO
 ```
 
+### Customer Dashboard Design Spec
+**Source:** `/apps/web/src/app/customer/dashboard/page.tsx`
+
+#### Top Stats Row
+- **Total Spent** - Dollar amount, purple gradient card
+- **Active Deliveries** - Count with truck icon
+- **Completed Jobs** - Count with checkmark icon
+- **Saved Addresses** - Count with location pin icon
+
+#### Spending Breakdown
+- Donut chart showing:
+  - Delivery fees
+  - Package costs
+  - Tips
+- Legend with color coding
+- Total amount in center
+
+#### Recent Activity Section
+- Tabs: All, Packages, Deliveries, Orders
+- Activity cards with:
+  - Icon (package/delivery/order)
+  - Title and description
+  - Status badge
+  - Timestamp (relative time)
+  - Link to detail page
+
+#### Quick Actions
+- "Request Delivery" button (primary purple)
+- "Ship Package" button (secondary)
+- "Browse Marketplace" button (outline)
+
+#### Saved Addresses
+- List of favorite addresses
+- Quick select for delivery
+- Add new address option
+
+### Customer Jobs Page Design Spec
+**Source:** `/apps/web/src/app/customer/jobs/page.tsx`
+
+#### Header
+- Page title: "My Deliveries"
+- "New Delivery Request" button (top right, purple)
+
+#### Filters & Tabs
+- Status tabs: All, Active, Completed, Cancelled
+- Search bar (filter by address/description)
+
+#### Job Cards (Grid Layout)
+Each card shows:
+- **Header:** Job ID + Status badge
+- **Pickup:** Address with 📍 icon
+- **Delivery:** Address with 🎯 icon
+- **Courier:** Avatar + name (if assigned)
+- **Fee:** Dollar amount
+- **Created:** Timestamp
+- **Actions:** View Details button
+
+Empty State:
+- Icon illustration
+- "No deliveries yet"
+- "Request your first delivery" CTA button
+
+### Customer Request Delivery Design Spec
+**Source:** `/apps/web/src/app/customer/request-delivery/page.tsx`
+
+#### Form Structure (Cards)
+
+**1. Pickup Details Card** 📍
+- Address autocomplete (Mapbox) ✅ DONE
+- Pickup phone (optional)
+- Special instructions textarea
+
+**2. Delivery Details Card** 🎯
+- Address autocomplete (Mapbox) ✅ DONE
+- Delivery phone (optional)
+- Special instructions textarea
+
+**3. Item Details Card** 📦
+- Item description (required)
+- Item weight/size dropdown
+- Fragile checkbox
+- Photo upload (optional)
+
+**4. Vehicle Type Card** 🚗
+- Visual selector buttons:
+  - 🚲 Bike ($10 base)
+  - 🚗 Car ($15 base)
+  - 🚐 Van ($25 base)
+- Selected state: purple border + background
+
+**5. Pricing Estimate Card** 💰
+- Distance calculation
+- Base fee breakdown
+- Estimated total (large, bold)
+
+**Submit Button:**
+- Full width, purple gradient
+- "Request Delivery - $XX.XX"
+- Loading state with spinner
+
+### Customer Job Detail Design Spec
+**Source:** `/apps/web/src/app/customer/jobs/[jobId]/page.tsx`
+
+#### Header Section
+- Back button
+- Job ID
+- Large status badge
+- Actions menu (cancel, contact support)
+
+#### Map Section
+- Mapbox map showing:
+  - Pickup marker (green pin)
+  - Delivery marker (red pin)
+  - Courier current location (blue dot) if active
+  - Route polyline
+
+#### Timeline Section
+- Vertical timeline showing:
+  - ✅ Created (timestamp)
+  - ⏳ Courier assigned (timestamp or pending)
+  - ⏳ Picked up (timestamp or pending)
+  - ⏳ In transit (timestamp or pending)
+  - ⏳ Delivered (timestamp or pending)
+
+#### Details Cards
+**Pickup Details:**
+- Full address
+- Contact phone
+- Special instructions
+
+**Delivery Details:**
+- Full address
+- Contact phone
+- Special instructions
+
+**Item Details:**
+- Description
+- Weight/size
+- Photos (if uploaded)
+
+**Courier Details** (if assigned):
+- Avatar + name
+- Rating stars
+- Vehicle type + license plate
+- Contact button (call/message)
+
+**Payment Details:**
+- Agreed fee
+- Payment method
+- Payment status
+
+#### Action Buttons
+- Contact Courier (if assigned)
+- Cancel Delivery (if not picked up)
+- Report Issue
+- Rate & Tip (if completed)
+
 ---
 
-## Migration Strategy
+## 🚚 COURIER PORTAL - Implementation Plan
 
-### Phase 1: Foundation Setup (Week 1)
+### Pages Structure
+```
+/courier-app/src/pages/
+├── Login.tsx                    ⏳ TODO
+├── Dashboard.tsx                ⏳ TODO
+├── Jobs.tsx                     ⏳ TODO
+├── JobDetail.tsx                ⏳ TODO
+├── ActiveRoute.tsx              ⏳ TODO
+├── RateCards.tsx                ⏳ TODO
+├── Routes.tsx                   ⏳ TODO
+├── Equipment.tsx                ⏳ TODO
+├── Onboarding.tsx               ⏳ TODO
+├── Settings.tsx                 ⏳ TODO
+└── Setup.tsx                    ⏳ TODO
+```
 
-#### Day 1-2: Project Structure
-- [ ] Create `apps/customer-app` directory
-- [ ] Initialize Vite project with React + TypeScript template
-- [ ] Set up Vite configuration (vite.config.ts)
-- [ ] Configure path aliases (@/, @components, @hooks, etc.)
-- [ ] Install core dependencies:
-  ```bash
-  pnpm create vite@latest apps/customer-app --template react-ts
-  cd apps/customer-app
-  pnpm add react-router-dom firebase framer-motion clsx
-  pnpm add -D @types/node
-  ```
+### Courier Dashboard Design Spec
+**Source:** `/apps/web/src/app/courier/dashboard/page.tsx`
 
-#### Day 3-4: Shared Packages
-- [ ] Create `packages/ui` for shared components
-- [ ] Move reusable components from `apps/web/src/components`:
-  - Avatar, Card, GlassCard, LoadingSkeleton, NotFoundPage
-  - FloatingButton
-- [ ] Set up package exports in `packages/ui/package.json`
-- [ ] Configure Vite to resolve workspace packages
+#### Online Status Toggle
+- Large toggle switch (top left)
+- "Online" / "Offline" status
+- Green/gray color states
+- Auto-starts GPS tracking when online
 
-#### Day 5: Firebase & Core Setup
-- [ ] Copy Firebase config from existing app
-- [ ] Set up Firebase client initialization
-- [ ] Migrate hooks from `apps/web/src/hooks/v2`:
-  - useAuthUser, useUserRole, useUserDoc
-  - useOpenJobs, useCourierLocationWriter
-  - useFeatureFlags, useRoutes
-- [ ] Set up environment variables (.env.local)
+#### Map Section (Main Feature)
+- Full-width Mapbox map
+- Shows:
+  - Courier's current location (blue pulsing dot)
+  - Available jobs (purple pins)
+  - Selected job (green pin with highlight)
+  - Pickup/delivery markers for selected job
+  - Radius circle (delivery range)
+
+#### Available Jobs Sidebar
+- List of nearby jobs
+- Each job shows:
+  - Distance from courier (miles)
+  - Pickup → Delivery addresses
+  - Estimated fee
+  - Vehicle type required
+  - Time estimate
+  - "Accept" button
+
+#### Eligibility Filtering
+- Toggle: "Show Ineligible Jobs"
+- Red badges for ineligible jobs with reason:
+  - "Too far from pickup"
+  - "Job distance exceeds limit"
+  - "Wrong vehicle type"
+
+#### Active Job Banner
+- Sticky top banner when job is active
+- Shows current delivery status
+- Quick nav to active route page
+
+#### Stats Cards (Bottom Row)
+- Today's Earnings
+- Jobs Completed Today
+- Average Rating
+- Hours Online
+
+### Courier Active Route Design Spec
+**Source:** `/apps/web/src/app/courier/active-route/page.tsx`
+
+#### Full-Screen Map
+- Courier location (live tracking)
+- Pickup location (if not picked up)
+- Delivery location
+- Route polyline with turn-by-turn
+- ETA to next stop
+
+#### Job Status Card (Overlay Bottom)
+- Current status (going to pickup / going to delivery)
+- Next action button:
+  - "Arrived at Pickup" → "Mark Picked Up"
+  - "Arrived at Delivery" → "Mark Delivered"
+- Customer contact buttons
+- Navigation app link (Google Maps / Waze)
+
+#### Customer Info Card
+- Pickup contact
+- Delivery contact
+- Item description
+- Special instructions
+
+### Courier Rate Cards Design Spec
+**Source:** `/apps/web/src/app/courier/rate-cards/page.tsx`
+
+#### Package Rate Card
+- Min/Max pickup distance (miles)
+- Min/Max job distance (miles)
+- Fee per mile
+- Minimum fee
+- Preview pricing table
+
+#### Food Rate Card (separate card)
+- Same structure as package
+- Different rates for food delivery
+
+**Form:**
+- Input fields for all parameters
+- Validation (max > min, etc.)
+- Save button
+- Preview updates in real-time
 
 ---
 
-### Phase 2: Authentication & Routing (Week 1-2)
+## 🛡️ ADMIN PORTAL - Implementation Plan
 
-#### Routing Setup
-- [ ] Install React Router v7:
-  ```bash
-  pnpm add react-router@latest react-router-dom@latest
-  ```
-- [ ] Create route structure matching Next.js App Router:
-  ```tsx
-  // src/App.tsx
-  import { BrowserRouter, Routes, Route } from 'react-router-dom';
-  
-  function App() {
-    return (
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/select-role" element={<SelectRolePage />} />
-          <Route path="/customer/*" element={<CustomerRoutes />} />
-          {/* ... */}
-        </Routes>
-      </BrowserRouter>
-    );
-  }
-  ```
+### Pages Structure
+```
+/admin-app/src/pages/
+├── Login.tsx                    ⏳ TODO
+├── Dashboard.tsx                ⏳ TODO
+├── Users.tsx                    ⏳ TODO
+├── Packages.tsx                 ⏳ TODO
+├── Routes.tsx                   ⏳ TODO
+├── Runners.tsx                  ⏳ TODO
+├── EquipmentReview.tsx          ⏳ TODO
+├── Analytics.tsx                ⏳ TODO
+├── FeatureFlags.tsx             ⏳ TODO
+├── SyncEmails.tsx               ⏳ TODO
+├── EnablePhase2.tsx             ⏳ TODO
+└── Settings.tsx                 ⏳ TODO
+```
 
-#### Auth Pages Migration
-- [ ] `/login` - Migrate to `src/pages/Login.tsx`
-- [ ] `/select-role` - Migrate to `src/pages/SelectRole.tsx`
-- [ ] Create `<AuthGuard>` component (replace Next.js middleware)
-- [ ] Set up role-based routing
+### Admin Dashboard Design Spec
+**Source:** `/apps/web/src/app/admin/dashboard/page.tsx`
 
-**Migration Pattern**:
-```tsx
-// Next.js (before)
-import { useRouter } from 'next/navigation';
+#### Overview Stats (Top Row, 4 Cards)
+- Total Users (with breakdown)
+- Total Packages
+- Active Routes
+- Revenue (if tracking)
 
-export default function LoginPage() {
-  const router = useRouter();
-  // ...
-  router.push('/customer/dashboard');
-}
+#### Management Grid
+Cards with icons for quick access:
 
-// Vite + React Router (after)
-import { useNavigate } from 'react-router-dom';
+1. **User Management** 👥
+   - View all users
+   - Count badge
+   - Purple background
 
-export default function LoginPage() {
-  const navigate = useNavigate();
-  // ...
-  navigate('/customer/dashboard');
-}
+2. **Runner Approvals** 🚚
+   - Pending applications
+   - Red notification badge
+   - Orange background
+
+3. **Equipment Review** 🔧
+   - Pending equipment submissions
+   - Count badge
+   - Yellow background
+
+4. **Package Management** 📦
+   - Active packages
+   - Count badge
+   - Blue background
+
+5. **Route Management** 🗺️
+   - Active routes
+   - Count badge
+   - Green background
+
+6. **Analytics** 📊
+   - View reports
+   - Purple background
+
+7. **Feature Flags** 🚩
+   - Toggle features
+   - Count badge
+   - Red background
+
+8. **Settings** ⚙️
+   - System config
+   - Gray background
+
+#### Recent Activity Feed
+- Real-time updates
+- User registrations
+- Job completions
+- Runner applications
+- System events
+
+#### System Health
+- Firebase status
+- API status
+- Stripe status
+- Mapbox status
+
+### Admin Users Page Design Spec
+**Source:** `/apps/web/src/app/admin/users/page.tsx`
+
+#### Filters & Search
+- Search by email/name
+- Role filter dropdown (all, customer, courier, admin)
+- Status filter (active, pending, suspended)
+
+#### Users Table
+Columns:
+- Avatar
+- Name
+- Email
+- Role (badge)
+- Status (badge)
+- Joined Date
+- Last Active
+- Actions (view, edit, delete)
+
+Pagination:
+- 20 per page
+- Page numbers
+- Total count
+
+#### User Detail Modal
+- Full profile info
+- Role management
+- Status management
+- Activity history
+- Delete user action
+
+### Admin Runners Page Design Spec
+**Source:** `/apps/web/src/app/admin/runners/page.tsx`
+
+#### Pending Approvals Section
+- Card for each pending runner
+- Shows:
+  - Name + email
+  - Vehicle type
+  - License plate
+  - Documents (view links)
+  - Approve/Reject buttons
+
+#### Approved Runners List
+- Table view
+- Filter by status
+- View profile button
+
+---
+
+## 🏗️ Shared Infrastructure
+
+### Components to Port
+1. **Layout Components**
+   - CustomerLayout ✅ DONE
+   - CourierLayout ⏳ TODO
+   - AdminLayout ⏳ TODO
+
+2. **UI Components**
+   - Card, CardHeader, CardTitle, CardContent ✅ DONE
+   - StatCard ✅ DONE
+   - StatusBadge ✅ DONE
+   - Avatar ⏳ TODO
+   - Button ⏳ TODO
+   - Input ⏳ TODO
+   - Skeleton ⏳ TODO
+   - DonutChart ⏳ TODO
+   - Tabs ⏳ TODO
+   - Modal ⏳ TODO
+   - Dropdown ⏳ TODO
+
+3. **Feature Components**
+   - AddressAutocomplete ✅ DONE
+   - MapboxMap ⏳ TODO
+   - JobPreview ⏳ TODO
+   - CourierJobPreview ⏳ TODO
+   - PackageCard ⏳ TODO
+
+### Utilities to Port
+- formatCurrency ✅ DONE
+- formatDate ✅ DONE
+- cn (classnames) ✅ DONE
+- calcMiles ⏳ TODO
+- getEligibilityReason ⏳ TODO
+- claimJob ⏳ TODO
+
+### Firebase Hooks to Port
+- useAuthUser ⏳ TODO
+- useUserDoc ⏳ TODO
+- useCustomerJobs ⏳ TODO
+- useOpenJobs ⏳ TODO
+- useCourierLocationWriter ⏳ TODO
+
+---
+
+## 📋 Implementation Checklist
+
+### Phase 1: Customer Portal Core (Current) 🔄
+- [x] Login page
+- [x] Basic Dashboard
+- [x] Jobs list
+- [x] Request Delivery form
+- [x] Address autocomplete
+- [ ] **Polish Dashboard to match Next.js design exactly**
+- [ ] **Polish Jobs page to match Next.js design exactly**
+- [ ] **Job Detail page**
+- [ ] **Test full customer flow end-to-end**
+
+### Phase 2: Complete Customer Portal
+- [ ] Orders page
+- [ ] Packages page
+- [ ] Package Detail page
+- [ ] Checkout page
+- [ ] Profile page
+- [ ] Settings page
+- [ ] Notifications page
+- [ ] Payment page
+
+### Phase 3: Courier Portal
+- [ ] Setup courier-app workspace
+- [ ] Port design system
+- [ ] Login page
+- [ ] Dashboard with map
+- [ ] Available jobs list
+- [ ] Active route page
+- [ ] Rate cards page
+- [ ] Equipment submission
+- [ ] Onboarding flow
+
+### Phase 4: Admin Portal
+- [ ] Setup admin-app workspace
+- [ ] Port design system
+- [ ] Login page
+- [ ] Dashboard
+- [ ] Users management
+- [ ] Runner approvals
+- [ ] Equipment review
+- [ ] Analytics page
+- [ ] Feature flags
+- [ ] Settings
+
+### Phase 5: Deployment & Testing
+- [ ] Build all three apps
+- [ ] Deploy to Firebase Hosting
+- [ ] End-to-end testing per role
+- [ ] Performance testing
+- [ ] Cross-browser testing
+- [ ] Mobile responsiveness
+- [ ] Create Pull Request
+
+---
+
+## 🎯 Current Status
+
+### Completed ✅
+- Vite customer-app setup
+- Firebase integration
+- Login functionality
+- Basic Dashboard (needs design polish)
+- Jobs list (needs design polish)
+- Request Delivery form
+- Address autocomplete with Mapbox
+- Core UI components (Card, StatCard, Badge)
+
+### In Progress 🔄
+- Request Delivery form polish
+
+### Next Steps (In Order)
+1. **Polish Customer Dashboard** - Match exact Next.js design
+2. **Polish Customer Jobs Page** - Match exact Next.js design
+3. **Build Job Detail Page** - Complete design from Next.js
+4. **Test Full Customer Flow** - Before moving to next role
+5. **Start Courier Portal** - After customer is 100% done
+
+---
+
+## 🎨 Design Consistency Rules
+
+1. **Always use the Next.js app as reference** - Don't freestyle designs
+2. **Match colors exactly** - Use the purple theme (#6B4EFF)
+3. **Keep rounded corners at 20px** - Consistent with Next.js
+4. **Use shadow styles from Card component** - Purple-tinted shadows
+5. **Match spacing** - Use Tailwind's spacing scale
+6. **Icon consistency** - Use emoji or lucide-react icons
+7. **Typography** - Match font sizes and weights
+8. **Status badges** - Same color coding for statuses
+9. **Button styles** - Match primary/secondary/outline variants
+10. **Form inputs** - Consistent border, focus states
+
+---
+
+## 📦 Package Dependencies
+
+### Already Installed (customer-app)
+- `firebase` - Auth, Firestore, Storage
+- `react-router-dom` - Client routing
+- `tailwindcss` - Styling
+
+### Need to Add (customer-app)
+- `mapbox-gl` - Maps
+- `@types/mapbox-gl` - TypeScript types
+- `recharts` - Charts for dashboard
+- `date-fns` - Better date formatting
+- `react-hot-toast` - Notifications
+- `lucide-react` - Icon library
+
+### Courier App (when started)
+- Same as customer-app
+
+### Admin App (when started)
+- Same as customer-app
+- Additional data table libraries if needed
+
+---
+
+## 🔑 Environment Variables
+
+### All Apps Share Same `.env.local`
+```env
+# Firebase
+VITE_FIREBASE_API_KEY=...
+VITE_FIREBASE_AUTH_DOMAIN=...
+VITE_FIREBASE_PROJECT_ID=...
+VITE_FIREBASE_STORAGE_BUCKET=...
+VITE_FIREBASE_MESSAGING_SENDER_ID=...
+VITE_FIREBASE_APP_ID=...
+
+# Mapbox
+VITE_MAPBOX_TOKEN=pk.eyJ1IjoiZ29zZW5kZXJyIiwiYSI6ImNtZjFlc2pkMTJheHIya29ub251YjZjMzQifQ.Oav2gJB_Z1sSPjOzjTPCzA
+
+# Stripe
+VITE_STRIPE_PUBLISHABLE_KEY=...
 ```
 
 ---
 
-### Phase 3: Customer Portal (Week 2)
+## 📝 Notes
 
-#### Pages to Migrate
-- [ ] `/customer/dashboard`
-- [ ] `/customer/jobs`
-- [ ] `/customer/jobs/:jobId`
-- [ ] `/customer/checkout`
-- [ ] `/customer/packages`
-- [ ] `/customer/packages/:packageId`
-- [ ] `/customer/orders`
-- [ ] `/customer/profile`
-- [ ] `/customer/settings`
-
-#### Components to Port
-- [ ] LiveTripStatus (already framework-agnostic)
-- [ ] MapboxMap
-- [ ] AddressAutocomplete
-- [ ] CourierSelector
-
-#### Data Fetching Pattern
-```tsx
-// Next.js (SSR - not needed)
-export async function generateMetadata() { /* ... */ }
-
-// Vite (client-side)
-import { useEffect, useState } from 'react';
-import { doc, getDoc } from 'firebase/firestore';
-
-export function JobDetailPage() {
-  const { jobId } = useParams();
-  const [job, setJob] = useState(null);
-  const [loading, setLoading] = useState(true);
-  
-  useEffect(() => {
-    async function fetchJob() {
-      const jobDoc = await getDoc(doc(db, 'jobs', jobId));
-      setJob(jobDoc.data());
-      setLoading(false);
-    }
-    fetchJob();
-  }, [jobId]);
-  
-  if (loading) return <LoadingSkeleton />;
-  return <JobDetails job={job} />;
-}
-```
+- **Testing First:** Per user request, test each workflow before moving on
+- **No Ghost Features:** Build complete features, not half-implemented ones
+- **Design Accuracy:** Match Next.js design exactly, no improvisation
+- **Code Quality:** TypeScript strict mode, proper error handling
+- **Performance:** Keep builds fast (~1-2s), bundles small (~200KB gzip)
+- **Systematic Approach:** Complete customer portal 100% before starting courier or admin
 
 ---
 
-### Phase 4: Marketplace (Week 2-3)
-
-#### Pages to Migrate
-- [ ] `/marketplace` - Browse items
-- [ ] `/marketplace/:itemId` - Item details
-- [ ] `/marketplace/create` - Create listing
-
-#### Components
-- [ ] Item card grid
-- [ ] Item filters
-- [ ] Image galleries
-
-**All components are already pure React - direct port!**
-
----
-
-### Phase 5: Senderr/Courier App (Week 3)
-
-#### Option A: Separate App
-Create `apps/senderr-app` with dedicated build:
-- Lighter bundle (only courier features)
-- Independent deployment
-- Better performance
-
-#### Option B: Unified App with Lazy Loading
-Keep in `customer-app` with React.lazy:
-```tsx
-const CourierDashboard = lazy(() => import('./pages/courier/Dashboard'));
-```
-
-#### Pages to Migrate
-- [ ] `/courier/dashboard`
-- [ ] `/courier/onboarding`
-- [ ] `/courier/rate-cards`
-- [ ] `/courier/equipment`
-- [ ] `/courier/jobs/:jobId`
-- [ ] `/courier/routes`
-- [ ] `/courier/active-route`
-
----
-
-### Phase 6: Admin & Vendor Portals (Week 3-4)
-
-#### Admin Pages
-- [ ] `/admin/dashboard`
-- [ ] `/admin/users`
-- [ ] `/admin/equipment-review`
-- [ ] `/admin/feature-flags`
-- [ ] `/admin/analytics` (with Recharts)
-
-#### Vendor Pages
-- [ ] `/vendor/items`
-- [ ] `/vendor/items/new`
-- [ ] `/vendor/orders`
-
----
-
-### Phase 7: API Routes → Cloud Functions (Week 4)
-
-#### Current API Routes (Next.js)
-- `/api/create-payment-intent`
-- `/api/stripe/connect`
-- `/api/stripe/marketplace-checkout`
-- `/api/stripe/webhook`
-
-#### Migration to Cloud Functions
-```typescript
-// firebase/functions/src/api/stripe.ts
-import * as functions from 'firebase-functions/v2';
-import Stripe from 'stripe';
-
-export const createPaymentIntent = functions.https.onCall(async (request) => {
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-  const { amount, currency } = request.data;
-  
-  const paymentIntent = await stripe.paymentIntents.create({
-    amount,
-    currency,
-  });
-  
-  return { clientSecret: paymentIntent.client_secret };
-});
-```
-
-#### Client-Side Call (Vite)
-```typescript
-import { httpsCallable } from 'firebase/functions';
-
-const createPaymentIntent = httpsCallable(functions, 'createPaymentIntent');
-const result = await createPaymentIntent({ amount: 1000, currency: 'usd' });
-```
-
----
-
-## Build Configuration
-
-### Vite Config (`vite.config.ts`)
-```typescript
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import path from 'path';
-
-export default defineConfig({
-  plugins: [react()],
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-      '@components': path.resolve(__dirname, './src/components'),
-      '@hooks': path.resolve(__dirname, './src/hooks'),
-      '@lib': path.resolve(__dirname, './src/lib'),
-      '@gosenderr/shared': path.resolve(__dirname, '../../packages/shared/src'),
-      '@gosenderr/ui': path.resolve(__dirname, '../../packages/ui/src'),
-    },
-  },
-  build: {
-    outDir: 'dist',
-    sourcemap: true,
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore'],
-          'ui': ['framer-motion', 'clsx'],
-        },
-      },
-    },
-  },
-  server: {
-    port: 3000,
-    open: true,
-  },
-});
-```
-
-### TypeScript Config (`tsconfig.json`)
-```json
-{
-  "compilerOptions": {
-    "target": "ES2020",
-    "useDefineForClassFields": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "module": "ESNext",
-    "skipLibCheck": true,
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
-    "jsx": "react-jsx",
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"],
-      "@components/*": ["./src/components/*"],
-      "@hooks/*": ["./src/hooks/*"],
-      "@lib/*": ["./src/lib/*"],
-      "@gosenderr/shared": ["../../packages/shared/src"],
-      "@gosenderr/ui": ["../../packages/ui/src"]
-    }
-  },
-  "include": ["src"],
-  "references": [{ "path": "./tsconfig.node.json" }]
-}
-```
-
----
-
-## Firebase Hosting Configuration
-
-### Updated `firebase.json` for Multiple Sites
-```json
-{
-  "hosting": [
-    {
-      "target": "customer",
-      "site": "gosenderr-customer",
-      "public": "apps/customer-app/dist",
-      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-      "rewrites": [
-        {
-          "source": "**",
-          "destination": "/index.html"
-        }
-      ],
-      "headers": [
-        {
-          "source": "**/*.@(js|css)",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "public, max-age=31536000, immutable"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "target": "senderr",
-      "site": "gosenderr-senderr",
-      "public": "apps/senderr-app/dist",
-      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-      "rewrites": [
-        {
-          "source": "**",
-          "destination": "/index.html"
-        }
-      ]
-    }
-  ],
-  "functions": {
-    "source": "firebase/functions"
-  }
-}
-```
-
-### Firebase Targets Setup
-```bash
-# Initialize hosting targets
-firebase target:apply hosting customer gosenderr-customer
-firebase target:apply hosting senderr gosenderr-senderr
-
-# Deploy specific target
-firebase deploy --only hosting:customer
-firebase deploy --only hosting:senderr
-
-# Deploy all
-firebase deploy --only hosting
-```
-
----
-
-## Deployment Workflow
-
-### Build Commands
-```json
-// package.json (root)
-{
-  "scripts": {
-    "build": "turbo run build",
-    "build:customer": "pnpm --filter customer-app build",
-    "build:senderr": "pnpm --filter senderr-app build",
-    "deploy:customer": "pnpm build:customer && firebase deploy --only hosting:customer",
-    "deploy:senderr": "pnpm build:senderr && firebase deploy --only hosting:senderr",
-    "deploy:all": "pnpm build && firebase deploy --only hosting"
-  }
-}
-```
-
-### Individual App Build
-```json
-// apps/customer-app/package.json
-{
-  "name": "customer-app",
-  "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview"
-  }
-}
-```
-
----
-
-## Testing Strategy
-
-### Unit Tests
-```bash
-pnpm add -D vitest @testing-library/react @testing-library/jest-dom
-```
-
-```typescript
-// vite.config.ts
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-
-export default defineConfig({
-  plugins: [react()],
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    setupFiles: './src/test/setup.ts',
-  },
-});
-```
-
-### E2E Tests
-Keep existing Playwright tests, update selectors if needed.
-
----
-
-## Migration Checklist
-
-### Pre-Migration
-- [x] Document current features (WEB_APP_FEATURES.md)
-- [x] Document deployment process (FIREBASE_HOSTING_DEPLOY.md)
-- [ ] Create git branch: `feature/vite-migration`
-- [ ] Set up Vite project structure
-
-### During Migration
-- [ ] Port components one portal at a time
-- [ ] Test each portal thoroughly before moving to next
-- [ ] Keep Next.js app running until full migration complete
-
-### Post-Migration
-- [ ] Performance comparison (bundle size, load time)
-- [ ] Update all documentation
-- [ ] Train team on new stack
-- [ ] Archive Next.js app code
-
----
-
-## Risk Mitigation
-
-### Potential Issues
-
-1. **Image Optimization**
-   - **Next.js**: Built-in `next/image` with automatic optimization
-   - **Solution**: Use `vite-imagetools` or serve optimized images from Firebase Storage
-
-2. **SEO (if needed)**
-   - **Next.js**: SSR for SEO
-   - **Solution**: Most pages are auth-gated (no SEO needed). For public pages, use prerendering or Firebase Dynamic Links.
-
-3. **API Routes**
-   - **Next.js**: Co-located API routes
-   - **Solution**: Migrate to Firebase Cloud Functions (already partially done)
-
-4. **Environment Variables**
-   - **Next.js**: `process.env.NEXT_PUBLIC_*`
-   - **Vite**: `import.meta.env.VITE_*`
-   - **Solution**: Find/replace all env vars
-
----
-
-## Success Metrics
-
-### Performance Targets
-- **Build time**: < 60s (vs 5-10min)
-- **Deployment time**: < 90s total (vs 5-10min)
-- **First contentful paint**: < 1.5s
-- **Time to interactive**: < 3s
-- **Bundle size**: < 200KB gzipped
-
-### Developer Experience
-- **Hot reload**: < 200ms
-- **Type checking**: < 5s
-- **Test execution**: < 10s
-
----
-
-## Timeline
-
-### Conservative Estimate
-- **Week 1**: Setup + Auth + Customer portal (30% complete)
-- **Week 2**: Marketplace + Senderr portal (60% complete)
-- **Week 3**: Admin + Vendor + API migration (90% complete)
-- **Week 4**: Testing + documentation + deployment (100% complete)
-
-### Aggressive Estimate (with dedicated focus)
-- **Week 1-2**: All major portals migrated
-- **Week 3**: Polish + testing + deployment
-
----
-
-## Rollback Plan
-
-### If Migration Fails
-1. Next.js app remains deployed and functional
-2. Git branch can be abandoned
-3. No data loss (Firestore unchanged)
-4. Firebase Hosting can host both versions simultaneously
-
-### Staged Rollout
-1. Deploy Vite version to `beta.gosenderr.com`
-2. Test with internal team
-3. Gradual rollout to users
-4. Keep Next.js as fallback for 30 days
-
----
-
-## Conclusion
-
-The migration from Next.js to Vite is **highly feasible** with **significant benefits**:
-
-✅ **95% of code is directly reusable** (React components, hooks, Firebase logic)  
-✅ **10x faster builds** = better developer productivity  
-✅ **Simpler deployments** = fewer bugs, faster iterations  
-✅ **Lower hosting costs** = no Cloud Functions for SSR  
-
-**Recommendation**: Proceed with migration. Start with customer portal as proof of concept, then expand to other portals.
-
----
-
-**Next Steps**:
-1. Get stakeholder approval
-2. Create `feature/vite-migration` branch
-3. Set up `apps/customer-app` scaffold
-4. Begin Phase 1 (Foundation Setup)
-
-**Questions?** See `WEB_APP_FEATURES.md` for full feature inventory.
-
-**Last Updated**: January 23, 2026
+**Last Updated:** January 23, 2026  
+**Branch:** `feature/issue-33-vite-migration`  
+**Current Phase:** Phase 1 - Customer Portal Core  
+**Status:** Address autocomplete added, polish dashboard & jobs page next
