@@ -164,7 +164,7 @@ export function Navbar({ children }: NavbarProps) {
               Marketplace
             </Link>
 
-            {user && (
+            {user && role === "vendor" && (
               <Link
                 href="/marketplace/create"
                 style={{
@@ -211,7 +211,7 @@ export function Navbar({ children }: NavbarProps) {
               </Link>
             )}
 
-            {user && (
+            {user && role === "vendor" && (
               <Link
                 href="/vendor/items"
                 style={{

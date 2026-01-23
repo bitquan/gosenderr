@@ -177,7 +177,7 @@ export default function PackageTrackingPage() {
   const statusConfig = statusMap[packageData.currentStatus];
   const statusLabel = getStatusLabel(packageData);
   const estimatedDelivery =
-    packageData.estimatedDeliveryAt?.toDate?.() ||
+    packageData.estimatedDelivery?.toDate?.() ||
     (packageData.createdAt?.toDate
       ? new Date(
           packageData.createdAt.toDate().getTime() + 2 * 24 * 60 * 60 * 1000,

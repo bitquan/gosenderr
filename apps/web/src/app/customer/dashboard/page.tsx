@@ -31,6 +31,7 @@ export default function CustomerDashboardNew() {
   const [authLoading, setAuthLoading] = useState(true);
   const [packages, setPackages] = useState<any[]>([]);
   const [jobs, setJobs] = useState<any[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activities, setActivities] = useState<any[]>([]);
   const [savedAddresses, setSavedAddresses] = useState<
@@ -107,7 +108,7 @@ export default function CustomerDashboardNew() {
           ...doc.data(),
         }));
         setPackages(packagesData);
-        updateActivities(packagesData, jobs);
+        updateActivities(packagesData, jobs, orders);
       });
 
       const jobsQuery = query(
@@ -125,10 +126,32 @@ export default function CustomerDashboardNew() {
             ...doc.data(),
           }));
           setJobs(jobsData);
-          updateActivities(packages, jobsData);
+          updateActivities(packages, jobsData, orders);
         },
         (error) => {
           console.error("Error loading jobs:", error);
+        },
+      );
+
+      const ordersQuery = query(
+        collection(db, "marketplaceOrders"),
+        where("buyerId", "==", currentUser.uid),
+        orderBy("createdAt", "desc"),
+        limit(5),
+      );
+
+      const unsubscribeOrders = onSnapshot(
+        ordersQuery,
+        (snapshot) => {
+          const ordersData = snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
+          setOrders(ordersData);
+          updateActivities(packages, jobs, ordersData);
+        },
+        (error) => {
+          console.error("Error loading orders:", error);
         },
       );
 
@@ -137,6 +160,7 @@ export default function CustomerDashboardNew() {
       return () => {
         unsubscribePackages();
         unsubscribeJobs();
+        unsubscribeOrders();
       };
     } catch (error) {
       console.error("Error loading dashboard:", error);
@@ -167,7 +191,7 @@ export default function CustomerDashboardNew() {
     setSavedAddresses(updated);
   };
 
-  const updateActivities = (pkgs: any[], jbs: any[]) => {
+  const updateActivities = (pkgs: any[], jbs: any[], ords: any[]) => {
     const allActivities: any[] = [];
 
     pkgs.forEach((pkg) => {
@@ -194,6 +218,18 @@ export default function CustomerDashboardNew() {
       });
     });
 
+    ords.forEach((order) => {
+      allActivities.push({
+        id: order.id,
+        type: "order",
+        title: order.itemTitle || "Marketplace Order",
+        description: order.status,
+        status: order.status,
+        timestamp: order.createdAt,
+        icon: "🛒",
+      });
+    });
+
     allActivities.sort((a, b) => {
       const aTime = a.timestamp?.toMillis?.() || 0;
       const bTime = b.timestamp?.toMillis?.() || 0;
@@ -212,12 +248,16 @@ export default function CustomerDashboardNew() {
       (p) => p.status === "delivered",
     ).length;
     const totalJobs = jobs.length;
+    const totalOrders = orders.length;
+    const pendingOrders = orders.filter((o) => o.status === "pending").length;
 
     return {
       totalPackages,
       activePackages,
       deliveredPackages,
       totalJobs,
+      totalOrders,
+      pendingOrders,
     };
   };
 
@@ -288,10 +328,10 @@ export default function CustomerDashboardNew() {
             variant="success"
           />
           <StatCard
-            title="Food Orders"
-            value={stats.totalJobs}
-            icon="🍔"
-            variant="warning"
+            title="Marketplace Orders"
+            value={stats.totalOrders}
+            icon="🛒"
+            variant="purple"
           />
         </div>
 

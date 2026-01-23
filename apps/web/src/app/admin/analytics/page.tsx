@@ -166,7 +166,7 @@ export default function AdminAnalyticsPage() {
                 title="Jobs"
                 value={metrics.jobs}
                 icon="🧾"
-                variant="info"
+                variant="purple"
               />
               <StatCard
                 title="Packages"
