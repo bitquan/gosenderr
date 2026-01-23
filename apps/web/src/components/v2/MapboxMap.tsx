@@ -114,7 +114,7 @@ export function MapboxMap({
         // Create new courier marker (blue)
         markersRef.current.courier = new mapboxgl.Marker({ color: '#2563eb' })
           .setLngLat([courierLocation.lng, courierLocation.lat])
-          .setPopup(new mapboxgl.Popup().setHTML('<strong>Courier</strong>'))
+          .setPopup(new mapboxgl.Popup().setHTML('<strong>Senderr</strong>'))
           .addTo(mapRef.current);
       }
     } else {

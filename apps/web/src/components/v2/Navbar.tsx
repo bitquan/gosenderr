@@ -130,13 +130,13 @@ export function Navbar({ children }: NavbarProps) {
               {role === "admin"
                 ? "👨‍💼 Admin"
                 : role === "customer"
-                  ? "👤 Customer"
+                  ? "👤 Order Up"
                   : role === "courier"
-                    ? "🚗 Courier"
+                    ? "🚗 Senderr"
                     : role === "runner"
-                      ? "🚚 Runner"
+                      ? "🚚 Shifter"
                       : role === "vendor"
-                        ? "🏪 Vendor"
+                        ? "🏪 Market Senderr"
                         : role}
             </Link>
           )}

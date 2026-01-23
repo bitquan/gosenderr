@@ -121,10 +121,10 @@ export default function NotificationPreferencesPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium text-gray-900">
-                    Nearby courier alerts
+                    Nearby Senderr alerts
                   </p>
                   <p className="text-sm text-gray-500">
-                    Notify when courier is nearby
+                    Notify when Senderr is nearby
                   </p>
                 </div>
                 <input

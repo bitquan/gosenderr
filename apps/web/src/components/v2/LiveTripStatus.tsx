@@ -243,7 +243,7 @@ export function LiveTripStatus({
                   marginBottom: "4px",
                 }}
               >
-                {courierInfo.displayName || "Courier"}
+                {courierInfo.displayName || "Senderr"}
               </div>
               {courierInfo.averageRating && (
                 <div style={{ color: "#f59e0b", fontSize: "14px" }}>

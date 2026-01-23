@@ -106,7 +106,7 @@ export default function CheckoutPage() {
         const courierRef = doc(db, "users", courierId!);
         const courierSnap = await getDoc(courierRef);
         if (!courierSnap.exists()) {
-          setError("Courier not found");
+          setError("Senderr not found");
           setLoading(false);
           return;
         }

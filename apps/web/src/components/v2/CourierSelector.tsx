@@ -189,7 +189,7 @@ export function CourierSelector({
                   <h3
                     style={{ fontSize: "18px", fontWeight: "600", margin: 0 }}
                   >
-                    {courier.displayName || "Anonymous Courier"}
+                    {courier.displayName || "Anonymous Senderr"}
                   </h3>
                   <span style={{ fontSize: "24px" }}>{vehicleIcon}</span>
                 </div>

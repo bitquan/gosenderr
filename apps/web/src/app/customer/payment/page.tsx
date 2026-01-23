@@ -267,7 +267,7 @@ export default function PaymentPage() {
                 </h3>
                 <div className="space-y-2">
                   <div className="flex justify-between text-gray-600">
-                    <span>Courier Rate</span>
+                    <span>Senderr Rate</span>
                     <span>${orderDetails.courierRate.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-gray-600">

@@ -140,7 +140,7 @@ export default function RunnerDashboardNew() {
               Profile Not Found
             </h2>
             <p className="text-red-700">
-              Unable to load your runner profile. Please try refreshing the
+              Unable to load your shifter profile. Please try refreshing the
               page.
             </p>
           </CardContent>

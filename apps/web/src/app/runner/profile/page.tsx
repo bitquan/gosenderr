@@ -71,7 +71,7 @@ export default function RunnerProfilePage() {
               size="lg"
             />
             <div>
-              <h1 className="text-2xl font-bold">Runner Profile</h1>
+              <h1 className="text-2xl font-bold">Shifter Profile</h1>
               <p className="text-purple-100 text-sm">{currentUser?.email}</p>
             </div>
           </div>
@@ -109,7 +109,7 @@ export default function RunnerProfilePage() {
               </div>
             ) : (
               <p className="text-gray-600">
-                No runner profile found. Complete onboarding to continue.
+                No shifter profile found. Complete onboarding to continue.
               </p>
             )}
           </CardContent>
