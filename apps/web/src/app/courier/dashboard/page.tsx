@@ -15,6 +15,7 @@ import { Job } from "@/lib/v2/types";
 import { calcMiles } from "@/lib/v2/pricing";
 import { getEligibilityReason } from "@/lib/v2/eligibility";
 import { useCourierLocationWriter } from "@/hooks/v2/useCourierLocationWriter";
+import { getRoleDisplay } from "@gosenderr/shared";
 
 export default function CourierDashboard() {
   const router = useRouter();
@@ -206,7 +207,7 @@ export default function CourierDashboard() {
             </div>
             <div style={{ fontSize: "14px", color: "#78350f" }}>
               You need to enable at least one work mode (packages or food) to
-              start accepting jobs.
+              start accepting sends.
             </div>
           </div>
           <Link
@@ -318,7 +319,7 @@ export default function CourierDashboard() {
           marginBottom: "30px",
         }}
       >
-        <h1 style={{ margin: 0 }}>Available Jobs</h1>
+        <h1 style={{ margin: 0 }}>Available Sends</h1>
 
         {/* Filter Toggle */}
         <label
@@ -336,7 +337,7 @@ export default function CourierDashboard() {
             onChange={(e) => setHideIneligible(e.target.checked)}
             style={{ cursor: "pointer" }}
           />
-          <span>Hide ineligible jobs</span>
+          <span>Hide ineligible sends</span>
         </label>
       </div>
 
@@ -344,14 +345,14 @@ export default function CourierDashboard() {
         <div style={{ textAlign: "center", padding: "40px", color: "#666" }}>
           {jobsWithEligibility.length === 0 ? (
             <>
-              <p>No open jobs available right now.</p>
+              <p>No open sends available right now.</p>
               <p style={{ fontSize: "14px", marginTop: "8px" }}>
                 Check back soon or make sure you're online in your setup.
               </p>
             </>
           ) : (
             <>
-              <p>All available jobs are outside your service area.</p>
+              <p>All available sends are outside your service area.</p>
               <p style={{ fontSize: "14px", marginTop: "8px" }}>
                 <button
                   onClick={() => setHideIneligible(false)}
@@ -365,7 +366,7 @@ export default function CourierDashboard() {
                     fontSize: "14px",
                   }}
                 >
-                  Show all jobs
+                  Show all sends
                 </button>
               </p>
             </>

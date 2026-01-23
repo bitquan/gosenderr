@@ -19,6 +19,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { StatCard } from "@/components/ui/StatCard";
 import { StatusBadge } from "@/components/ui/Badge";
 import { Avatar } from "@/components/ui/Avatar";
+import { getRoleDisplay } from "@gosenderr/shared";
 
 export default function RunnerDashboardNew() {
   const router = useRouter();
@@ -163,7 +164,7 @@ export default function RunnerDashboardNew() {
               />
               <div>
                 <h1 className="text-2xl font-bold">
-                  {currentUser?.displayName || "Runner"}
+                  {currentUser?.displayName || getRoleDisplay("runner").name}
                 </h1>
                 <p className="text-purple-100 text-sm">{currentUser?.email}</p>
               </div>
@@ -179,7 +180,7 @@ export default function RunnerDashboardNew() {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             <div className="text-center">
               <p className="text-3xl font-bold">{stats.totalRoutes}</p>
-              <p className="text-sm text-purple-100">Total Routes</p>
+              <p className="text-sm text-purple-100">Total Shifts</p>
             </div>
             <div className="text-center">
               <p className="text-3xl font-bold">{stats.completedRoutes}</p>
@@ -226,9 +227,9 @@ export default function RunnerDashboardNew() {
             <div className="flex items-center gap-4">
               <div className="text-3xl">✅</div>
               <div>
-                <h3 className="font-bold text-green-800">Active Runner</h3>
+                <h3 className="font-bold text-green-800">Active Shifter</h3>
                 <p className="text-sm text-green-700">
-                  You're approved and ready to accept routes!
+                  You're approved and ready to accept shifts!
                 </p>
               </div>
             </div>
@@ -267,18 +268,18 @@ export default function RunnerDashboardNew() {
               </Link>
             }
           >
-            <CardTitle>Recent Routes</CardTitle>
+            <CardTitle>Recent Shifts</CardTitle>
           </CardHeader>
           <CardContent>
             {routes.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <div className="text-5xl mb-3">📦</div>
-                <p>No routes yet</p>
+                <p>No shifts yet</p>
                 <Link
                   href="/runner/available-routes"
                   className="text-purple-600 text-sm mt-2 inline-block"
                 >
-                  Browse available routes
+                  Browse available shifts
                 </Link>
               </div>
             ) : (

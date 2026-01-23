@@ -1,12 +1,13 @@
 import { NotFoundPage } from "@/components/ui/NotFoundPage";
+import { getRoleDisplay } from "@gosenderr/shared";
 
 export default function VendorNotFound() {
   return (
     <NotFoundPage
-      title="Vendor page not found"
-      description="That vendor page doesn’t exist."
+      title={`${getRoleDisplay("vendor").name} page not found`}
+      description="That page doesn't exist."
       actionHref="/vendor/items"
-      actionLabel="Back to Vendor"
+      actionLabel={`Back to ${getRoleDisplay("vendor").name}`}
       emoji="🏷️"
     />
   );

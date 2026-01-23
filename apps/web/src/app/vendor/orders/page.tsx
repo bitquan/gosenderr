@@ -16,6 +16,7 @@ import { db } from "@/lib/firebase/client";
 import { getAuthSafe } from "@/lib/firebase/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { StatusBadge } from "@/components/ui/Badge";
+import { getRoleDisplay } from "@gosenderr/shared";
 
 export default function VendorOrdersPage() {
   const router = useRouter();
@@ -78,7 +79,7 @@ export default function VendorOrdersPage() {
       <div className="max-w-5xl mx-auto space-y-6">
         <Card variant="elevated">
           <CardHeader>
-            <CardTitle>Vendor Orders</CardTitle>
+            <CardTitle>{getRoleDisplay("vendor").name} Orders</CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (

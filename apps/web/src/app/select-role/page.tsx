@@ -8,6 +8,7 @@ import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { useUserRole } from "@/hooks/v2/useUserRole";
 import { UserRole } from "@/lib/v2/types";
 import { AuthGate } from "@/components/v2/AuthGate";
+import { getRoleDisplay } from "@gosenderr/shared";
 
 function SelectRoleContent() {
   const { uid } = useAuthUser();
@@ -89,6 +90,13 @@ function SelectRoleContent() {
     return null; // Will redirect via useEffect
   }
 
+  const roles = [
+    { value: "customer" as UserRole, ...getRoleDisplay("customer") },
+    { value: "courier" as UserRole, ...getRoleDisplay("courier") },
+    { value: "runner" as UserRole, ...getRoleDisplay("runner") },
+    { value: "vendor" as UserRole, ...getRoleDisplay("vendor") },
+  ];
+
   return (
     <div
       style={{
@@ -100,7 +108,7 @@ function SelectRoleContent() {
     >
       <h1>Select Your Role</h1>
       <p style={{ color: "#666", marginTop: "10px", marginBottom: "40px" }}>
-        Choose how you want to use GoSenderr
+        Choose how you want to use GoSenderR
       </p>
 
       <div
@@ -113,133 +121,60 @@ function SelectRoleContent() {
           margin: "0 auto",
         }}
       >
-        <button
-          onClick={() => handleSelectRole("customer")}
-          disabled={selecting}
-          style={{
-            padding: "40px 30px",
-            border: "2px solid #ddd",
-            borderRadius: "12px",
-            background: "white",
-            cursor: selecting ? "not-allowed" : "pointer",
-            opacity: selecting ? 0.6 : 1,
-            transition: "all 0.2s",
-          }}
-          onMouseEnter={(e) => {
-            if (!selecting) {
-              e.currentTarget.style.borderColor = "#3b82f6";
-              e.currentTarget.style.background = "#eff6ff";
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!selecting) {
-              e.currentTarget.style.borderColor = "#ddd";
-              e.currentTarget.style.background = "white";
-            }
-          }}
-        >
-          <div style={{ fontSize: "48px", marginBottom: "12px" }}>👤</div>
-          <h2 style={{ margin: "0 0 8px 0", fontSize: "24px" }}>Customer</h2>
-          <p style={{ fontSize: "14px", color: "#666", margin: 0 }}>
-            Send packages and request deliveries
-          </p>
-        </button>
-
-        <button
-          onClick={() => handleSelectRole("courier")}
-          disabled={selecting}
-          style={{
-            padding: "40px 30px",
-            border: "2px solid #ddd",
-            borderRadius: "12px",
-            background: "white",
-            cursor: selecting ? "not-allowed" : "pointer",
-            opacity: selecting ? 0.6 : 1,
-            transition: "all 0.2s",
-          }}
-          onMouseEnter={(e) => {
-            if (!selecting) {
-              e.currentTarget.style.borderColor = "#10b981";
-              e.currentTarget.style.background = "#ecfdf5";
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!selecting) {
-              e.currentTarget.style.borderColor = "#ddd";
-              e.currentTarget.style.background = "white";
-            }
-          }}
-        >
-          <div style={{ fontSize: "48px", marginBottom: "12px" }}>🚗</div>
-          <h2 style={{ margin: "0 0 8px 0", fontSize: "24px" }}>Driver</h2>
-          <p style={{ fontSize: "14px", color: "#666", margin: 0 }}>
-            Deliver packages locally
-          </p>
-        </button>
-
-        <button
-          onClick={() => handleSelectRole("runner")}
-          disabled={selecting}
-          style={{
-            padding: "40px 30px",
-            border: "2px solid #ddd",
-            borderRadius: "12px",
-            background: "white",
-            cursor: selecting ? "not-allowed" : "pointer",
-            opacity: selecting ? 0.6 : 1,
-            transition: "all 0.2s",
-          }}
-          onMouseEnter={(e) => {
-            if (!selecting) {
-              e.currentTarget.style.borderColor = "#f59e0b";
-              e.currentTarget.style.background = "#fffbeb";
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!selecting) {
-              e.currentTarget.style.borderColor = "#ddd";
-              e.currentTarget.style.background = "white";
-            }
-          }}
-        >
-          <div style={{ fontSize: "48px", marginBottom: "12px" }}>🚚</div>
-          <h2 style={{ margin: "0 0 8px 0", fontSize: "24px" }}>Runner</h2>
-          <p style={{ fontSize: "14px", color: "#666", margin: 0 }}>
-            Long-haul package delivery
-          </p>
-        </button>
-
-        <button
-          onClick={() => handleSelectRole("vendor")}
-          disabled={selecting}
-          style={{
-            padding: "40px 30px",
-            border: "2px solid #ddd",
-            borderRadius: "12px",
-            background: "white",
-            cursor: selecting ? "not-allowed" : "pointer",
-            opacity: selecting ? 0.6 : 1,
-            transition: "all 0.2s",
-          }}
-          onMouseEnter={(e) => {
-            if (!selecting) {
-              e.currentTarget.style.borderColor = "#ec4899";
-              e.currentTarget.style.background = "#fdf2f8";
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!selecting) {
-              e.currentTarget.style.borderColor = "#ddd";
-              e.currentTarget.style.background = "white";
-            }
-          }}
-        >
-          <div style={{ fontSize: "48px", marginBottom: "12px" }}>🏪</div>
-          <h2 style={{ margin: "0 0 8px 0", fontSize: "24px" }}>Vendor</h2>
-          <p style={{ fontSize: "14px", color: "#666", margin: 0 }}>
-            Sell products on marketplace
-          </p>
-        </button>
+        {roles.map((roleOption) => (
+          <button
+            key={roleOption.value}
+            onClick={() => handleSelectRole(roleOption.value)}
+            disabled={selecting}
+            style={{
+              padding: "40px 30px",
+              border: `2px solid ${roleOption.color}33`,
+              borderRadius: "12px",
+              background: "white",
+              cursor: selecting ? "not-allowed" : "pointer",
+              opacity: selecting ? 0.6 : 1,
+              transition: "all 0.2s",
+            }}
+            onMouseEnter={(e) => {
+              if (!selecting) {
+                e.currentTarget.style.borderColor = roleOption.color;
+                e.currentTarget.style.background = `${roleOption.color}11`;
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!selecting) {
+                e.currentTarget.style.borderColor = `${roleOption.color}33`;
+                e.currentTarget.style.background = "white";
+              }
+            }}
+          >
+            <div style={{ fontSize: "48px", marginBottom: "12px" }}>
+              {roleOption.icon}
+            </div>
+            <h2
+              style={{
+                margin: "0 0 8px 0",
+                fontSize: "24px",
+                color: roleOption.color,
+              }}
+            >
+              {roleOption.name}
+            </h2>
+            <p
+              style={{
+                fontSize: "13px",
+                color: "#666",
+                margin: "0 0 8px 0",
+                fontWeight: 600,
+              }}
+            >
+              {roleOption.tagline}
+            </p>
+            <p style={{ fontSize: "12px", color: "#999", margin: 0 }}>
+              {roleOption.description}
+            </p>
+          </button>
+        ))}
       </div>
 
       {selecting && (

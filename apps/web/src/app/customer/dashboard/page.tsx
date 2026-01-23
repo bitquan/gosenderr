@@ -24,6 +24,7 @@ import { StatusBadge } from "@/components/ui/Badge";
 import { Avatar } from "@/components/ui/Avatar";
 import { DonutChart } from "@/components/charts/DonutChart";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { getRoleDisplay } from "@gosenderr/shared";
 
 export default function CustomerDashboardNew() {
   const router = useRouter();

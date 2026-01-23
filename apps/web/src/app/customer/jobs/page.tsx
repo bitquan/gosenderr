@@ -2,6 +2,7 @@
 
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { useCustomerJobs } from "@/hooks/v2/useCustomerJobs";
+import { getRoleDisplay } from "@gosenderr/shared";
 import { JobSummaryCard } from "@/features/jobs/shared/JobSummaryCard";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -30,9 +31,12 @@ export default function CustomerJobs() {
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
-              <Avatar fallback={uid ? "Customer" : "Guest"} size="lg" />
+              <Avatar
+                fallback={uid ? getRoleDisplay("customer").name : "Guest"}
+                size="lg"
+              />
               <div>
-                <h1 className="text-2xl font-bold">My Jobs</h1>
+                <h1 className="text-2xl font-bold">My Sends</h1>
                 <p className="text-purple-100 text-sm">
                   {jobs.length} active requests
                 </p>
@@ -42,7 +46,7 @@ export default function CustomerJobs() {
               href="/customer/jobs/new"
               className="hidden sm:inline-flex px-4 py-2 rounded-xl bg-white/20 text-white font-semibold hover:bg-white/30 transition"
             >
-              + New Job
+              + New Send
             </Link>
           </div>
         </div>
@@ -54,12 +58,12 @@ export default function CustomerJobs() {
             <CardContent>
               <div className="text-center py-12">
                 <div className="text-6xl mb-4">📦</div>
-                <p className="text-gray-600 text-lg mb-4">No jobs yet</p>
+                <p className="text-gray-600 text-lg mb-4">No sends yet</p>
                 <Link
                   href="/customer/jobs/new"
                   className="inline-flex px-4 py-2 rounded-xl bg-purple-600 text-white font-semibold hover:bg-purple-700 transition"
                 >
-                  Create your first delivery
+                  Create your first send
                 </Link>
               </div>
             </CardContent>
@@ -73,7 +77,7 @@ export default function CustomerJobs() {
                 className="hover-lift animate-fade-in"
               >
                 <CardHeader>
-                  <CardTitle>Job #{job.id?.slice(0, 6)}</CardTitle>
+                  <CardTitle>Send #{job.id?.slice(0, 6)}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <JobSummaryCard

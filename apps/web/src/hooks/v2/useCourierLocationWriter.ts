@@ -1,15 +1,20 @@
-'use client';
+"use client";
 
-import { useEffect, useRef, useState } from 'react';
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase/client';
-import { useUserRole } from './useUserRole';
-import geohash from 'ngeohash';
+import { useEffect, useRef, useState } from "react";
+import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { db } from "@/lib/firebase/client";
+import { useUserRole } from "./useUserRole";
+import geohash from "ngeohash";
 
 const WRITE_INTERVAL_MS = 5000; // Write at most every 5 seconds
 const MOVE_THRESHOLD_METERS = 25; // Or if moved > 25 meters
 
-function getDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+function getDistance(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number,
+): number {
   const R = 6371e3; // Earth radius in meters
   const φ1 = (lat1 * Math.PI) / 180;
   const φ2 = (lat2 * Math.PI) / 180;
@@ -28,7 +33,7 @@ export function useCourierLocationWriter() {
   const { role, uid, userDoc } = useUserRole();
   const [permissionDenied, setPermissionDenied] = useState(false);
   const [isTracking, setIsTracking] = useState(false);
-  
+
   const watchIdRef = useRef<number | null>(null);
   const lastWriteTimeRef = useRef<number>(0);
   const lastPositionRef = useRef<{ lat: number; lng: number } | null>(null);
@@ -36,9 +41,7 @@ export function useCourierLocationWriter() {
   useEffect(() => {
     // Only track if courier and online
     const shouldTrack =
-      role === 'courier' &&
-      uid &&
-      userDoc?.courierProfile?.isOnline === true;
+      role === "courier" && uid && userDoc?.courierProfile?.isOnline === true;
 
     if (!shouldTrack) {
       // Stop tracking
@@ -69,7 +72,7 @@ export function useCourierLocationWriter() {
               lastPositionRef.current.lat,
               lastPositionRef.current.lng,
               lat,
-              lng
+              lng,
             );
             shouldWrite = distance >= MOVE_THRESHOLD_METERS;
           }
@@ -77,24 +80,26 @@ export function useCourierLocationWriter() {
           if (shouldWrite && uid) {
             try {
               const geoHash = geohash.encode(lat, lng, 6);
-              
-              await updateDoc(doc(db, 'users', uid), {
-                'courierProfile.currentLocation.lat': lat,
-                'courierProfile.currentLocation.lng': lng,
-                'courierProfile.currentLocation.geohash': geoHash,
-                ...(heading !== null && { 'courierProfile.currentLocation.heading': heading }),
-                'courierProfile.currentLocation.timestamp': serverTimestamp(),
+
+              await updateDoc(doc(db, "users", uid), {
+                "courierProfile.currentLocation.lat": lat,
+                "courierProfile.currentLocation.lng": lng,
+                "courierProfile.currentLocation.geohash": geoHash,
+                ...(heading !== null && {
+                  "courierProfile.currentLocation.heading": heading,
+                }),
+                "courierProfile.currentLocation.timestamp": serverTimestamp(),
               });
 
               lastWriteTimeRef.current = now;
               lastPositionRef.current = { lat, lng };
             } catch (error) {
-              console.error('Failed to update courier location:', error);
+              console.error("Failed to update courier location:", error);
             }
           }
         },
         (error) => {
-          console.error('Geolocation error:', error);
+          console.error("Geolocation error:", error);
           if (error.code === error.PERMISSION_DENIED) {
             setPermissionDenied(true);
           }
@@ -103,7 +108,7 @@ export function useCourierLocationWriter() {
           enableHighAccuracy: true,
           maximumAge: 0,
           timeout: 10000,
-        }
+        },
       );
     }
 

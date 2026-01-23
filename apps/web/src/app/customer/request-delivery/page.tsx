@@ -19,6 +19,7 @@ import {
   JobInfo,
 } from "@/lib/pricing/calculateCourierRate";
 import { AddressAutocomplete } from "@/components/v2/AddressAutocomplete";
+import { getRoleDisplay } from "@gosenderr/shared";
 import {
   CourierSelector,
   CourierWithRate,
@@ -302,9 +303,12 @@ export default function RequestDeliveryPage() {
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
-              <Avatar fallback={user?.displayName || "Customer"} size="lg" />
+              <Avatar
+                fallback={user?.displayName || getRoleDisplay("customer").name}
+                size="lg"
+              />
               <div>
-                <h1 className="text-2xl font-bold">Request Delivery</h1>
+                <h1 className="text-2xl font-bold">Request Send</h1>
                 <p className="text-purple-100 text-sm">{item.title}</p>
               </div>
             </div>
@@ -372,12 +376,12 @@ export default function RequestDeliveryPage() {
         {/* Step 2: Dropoff Address */}
         <Card variant="elevated" className="animate-fade-in">
           <CardHeader>
-            <CardTitle>Delivery Address</CardTitle>
+            <CardTitle>Send To Address</CardTitle>
           </CardHeader>
           <CardContent>
             <AddressAutocomplete
-              label="Where should this be delivered?"
-              placeholder="Enter delivery address..."
+              label="Where should this be sent?"
+              placeholder="Enter send address..."
               onSelect={(result) => setDropoffAddress(result)}
               required
             />
@@ -400,12 +404,12 @@ export default function RequestDeliveryPage() {
         {dropoffAddress && (
           <Card variant="elevated" className="animate-fade-in">
             <CardHeader>
-              <CardTitle>Available Couriers</CardTitle>
+              <CardTitle>Available Sendrs</CardTitle>
             </CardHeader>
             <CardContent>
               {searchingCouriers ? (
                 <div className="py-10 text-center text-sm text-gray-600">
-                  Finding available couriers...
+                  Finding available Sendrs...
                 </div>
               ) : (
                 <CourierSelector
@@ -431,7 +435,7 @@ export default function RequestDeliveryPage() {
             <CardContent>
               <div className="space-y-2 text-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Courier earnings</span>
+                  <span className="text-gray-600">Senderr earnings</span>
                   <span className="font-semibold">
                     ${selectedCourier.rateBreakdown.courierEarnings.toFixed(2)}
                   </span>
@@ -443,7 +447,7 @@ export default function RequestDeliveryPage() {
                   </span>
                 </div>
                 <div className="border-t border-gray-200 pt-3 flex items-center justify-between text-base font-bold">
-                  <span>Total delivery cost</span>
+                  <span>Total send cost</span>
                   <span className="text-purple-600">
                     $
                     {selectedCourier.rateBreakdown.totalCustomerCharge.toFixed(
@@ -453,7 +457,7 @@ export default function RequestDeliveryPage() {
                 </div>
               </div>
               <p className="mt-3 text-xs text-gray-500">
-                You'll be charged after the delivery is completed.
+                You'll be charged after the send is completed.
               </p>
             </CardContent>
           </Card>

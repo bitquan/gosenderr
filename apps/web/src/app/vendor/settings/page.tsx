@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import Link from "next/link";
+import { getRoleDisplay } from "@gosenderr/shared";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 
 export default function VendorSettingsPage() {
@@ -27,7 +28,7 @@ export default function VendorSettingsPage() {
       <div className="max-w-4xl mx-auto space-y-6">
         <Card variant="elevated">
           <CardHeader>
-            <CardTitle>Vendor Settings</CardTitle>
+            <CardTitle>{getRoleDisplay("vendor").name} Settings</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">

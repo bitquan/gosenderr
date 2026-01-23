@@ -15,6 +15,7 @@ import { db } from "@/lib/firebase/client";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Avatar } from "@/components/ui/Avatar";
+import { getRoleDisplay, getRoleName } from "@gosenderr/shared";
 
 export default function AdminUsersNew() {
   const router = useRouter();
@@ -211,8 +212,8 @@ export default function AdminUsersNew() {
         <div className="bg-white rounded-2xl shadow-lg p-2 flex gap-2 overflow-x-auto">
           {[
             { label: "All", value: "all" },
-            { label: "Customers", value: "customer" },
-            { label: "Runners", value: "package_runner" },
+            { label: getRoleDisplay("customer").name, value: "customer" },
+            { label: getRoleDisplay("runner").name, value: "package_runner" },
             { label: "Admins", value: "admin" },
           ].map((tab) => (
             <button
@@ -256,7 +257,7 @@ export default function AdminUsersNew() {
                         <p className="text-sm text-gray-500">{user.email}</p>
                       </div>
                       <Badge variant={getRoleBadge(user.role) as any}>
-                        {user.role}
+                        {getRoleName(user.role as any)}
                       </Badge>
                     </div>
                   </div>
@@ -284,7 +285,7 @@ export default function AdminUsersNew() {
                 {user.packageRunnerProfile && (
                   <div className="mb-4 p-3 bg-purple-50 rounded-xl">
                     <p className="text-xs text-purple-600 font-medium mb-1">
-                      Runner Profile
+                      {getRoleDisplay("runner").name} Profile
                     </p>
                     <p className="text-sm text-gray-700">
                       Status: {user.packageRunnerProfile.status}
@@ -299,8 +300,12 @@ export default function AdminUsersNew() {
                     disabled={updating === user.id}
                     className="flex-1 px-3 py-2 rounded-xl border border-gray-300 bg-white text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
                   >
-                    <option value="customer">Customer</option>
-                    <option value="package_runner">Runner</option>
+                    <option value="customer">
+                      {getRoleDisplay("customer").name}
+                    </option>
+                    <option value="package_runner">
+                      {getRoleDisplay("runner").name}
+                    </option>
                     <option value="admin">Admin</option>
                   </select>
                   <button
