@@ -10,8 +10,12 @@
   },
   "hosting": {
     "site": "gosenderr-6773f",
-    "public": "apps/web/out",
+    "source": "apps/web",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "frameworksBackend": {
+      "region": "us-central1",
+      "runtime": "nodejs20"
+    },
     "headers": [
       {
         "source": "**",
