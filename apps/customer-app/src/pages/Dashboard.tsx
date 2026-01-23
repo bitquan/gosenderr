@@ -17,18 +17,9 @@ interface Job {
   createdAt: any
 }
 
-interface Package {
-  id: string
-  status: string
-  destination?: string
-  price?: number
-  createdAt: any
-}
-
 export default function DashboardPage() {
   const { user } = useAuth()
   const [jobs, setJobs] = useState<Job[]>([])
-  const [packages, setPackages] = useState<Package[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -52,20 +43,6 @@ export default function DashboardPage() {
         ...doc.data()
       })) as Job[]
       setJobs(jobsData)
-
-      // Load packages
-      const packagesQuery = query(
-        collection(db, 'packages'),
-        where('senderId', '==', user!.uid),
-        orderBy('createdAt', 'desc'),
-        limit(5)
-      )
-      const packagesSnapshot = await getDocs(packagesQuery)
-      const packagesData = packagesSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Package[]
-      setPackages(packagesData)
     } catch (error) {
       console.error('Error loading dashboard data:', error)
     } finally {
