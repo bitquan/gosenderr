@@ -1,0 +1,90 @@
+# Courier App - Local Development
+
+## 🚚 Access Courier Portal
+
+**Local Development Server:** http://localhost:3001
+
+Already running in your terminal!
+
+---
+
+## 🔐 Login Options
+
+### Option 1: Create New Courier Account
+1. Open http://localhost:3001
+2. You'll see the login page
+3. Use the same email/password you used for customer app
+4. The system will use your existing account
+
+### Option 2: Use Existing Account
+- Use the same credentials from customer app
+- The auth is shared across both portals
+
+---
+
+## 🎯 Features Available
+
+### Dashboard (Current Page)
+- **Online/Offline Toggle** - Green button in header
+- **Available Jobs** - List of open delivery jobs
+- **My Active Deliveries** - Jobs you've accepted
+- **Stats**: Available, Active, Vehicle Type
+
+### How to Use
+1. Click "Go Online" button (turns green)
+2. Browse available jobs below
+3. Click "Accept Job" to claim a delivery
+4. View your active deliveries at the top
+
+---
+
+## 🚀 Development
+
+### Start Dev Server
+\`\`\`bash
+cd apps/courier-app
+pnpm dev
+\`\`\`
+
+### Build for Production
+\`\`\`bash
+pnpm build
+\`\`\`
+
+### Port
+- Default: 3001 (auto-selected if 3000 is in use)
+- Hot reload enabled ⚡
+
+---
+
+## 📂 Project Structure
+
+\`\`\`
+apps/courier-app/
+├── src/
+│   ├── pages/
+│   │   ├── Login.tsx        # Auth page
+│   │   └── Dashboard.tsx    # Main courier dashboard
+│   ├── components/         # Shared UI components
+│   ├── lib/                # Firebase, utils
+│   ├── contexts/           # Auth context
+│   └── hooks/              # Custom hooks
+└── dist/                   # Build output
+\`\`\`
+
+---
+
+## 🔧 Next Steps
+
+- [ ] Job Detail page (accept/update status)
+- [ ] Active Route page (navigation)
+- [ ] Jobs history
+- [ ] Profile/Settings
+- [ ] Deploy to Firebase Hosting
+
+---
+
+## 📱 Related Apps
+
+- **Customer App (Deployed)**: https://gosenderr-6773f.web.app
+- **Customer App (Local)**: Run \`pnpm dev\` in \`apps/customer-app\`
