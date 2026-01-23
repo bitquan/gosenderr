@@ -242,11 +242,11 @@ service cloud.firestore {
 
       // update job
       allow update: if signedIn() && (
-        // 1) Creator can cancel their own job if status is 'open' or 'assigned'
+        // 1) Creator can cancel their own job if status is 'open', 'pending', or 'assigned'
         (
           isCreator() 
           && request.resource.data.status == 'cancelled'
-          && (resource.data.status == 'open' || resource.data.status == 'assigned')
+          && (resource.data.status == 'open' || resource.data.status == 'pending' || resource.data.status == 'assigned')
         )
         ||
         // 2) Any courier can claim an open job (atomic claim)
