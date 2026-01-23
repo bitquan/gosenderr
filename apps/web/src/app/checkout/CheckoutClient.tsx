@@ -216,8 +216,10 @@ export default function CheckoutClient() {
           }
 
           // Skip if not approved
-          if (courierData.courierProfile.status !== 'approved') {
-            console.log(`Senderr ${courierDoc.id} skipped: not approved (status: ${courierData.courierProfile.status})`);
+          if (courierData.courierProfile.status !== "approved") {
+            console.log(
+              `Senderr ${courierDoc.id} skipped: not approved (status: ${courierData.courierProfile.status})`,
+            );
             continue;
           }
 
@@ -227,7 +229,9 @@ export default function CheckoutClient() {
             : courierData.courierProfile.packageRateCard;
 
           if (!rateCard) {
-            console.log(`Senderr ${courierDoc.id} skipped: no ${isFoodItem ? 'food' : 'package'} rate card`);
+            console.log(
+              `Senderr ${courierDoc.id} skipped: no ${isFoodItem ? "food" : "package"} rate card`,
+            );
             continue;
           }
 
@@ -237,7 +241,9 @@ export default function CheckoutClient() {
             : courierData.courierProfile.workModes?.packagesEnabled;
 
           if (!workModeEnabled) {
-            console.log(`Senderr ${courierDoc.id} skipped: ${isFoodItem ? 'food' : 'package'} mode disabled`);
+            console.log(
+              `Senderr ${courierDoc.id} skipped: ${isFoodItem ? "food" : "package"} mode disabled`,
+            );
             continue;
           }
 

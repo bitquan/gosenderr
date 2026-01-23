@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '@/lib/firebase/client';
-import { UserDoc, GeoPoint } from '@/lib/v2/types';
-import { calcMiles, calcFee } from '@/lib/v2/pricing';
-import { getEligibilityReason } from '@/lib/v2/eligibility';
-import geohash from 'ngeohash';
+import { useState, useEffect } from "react";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { db } from "@/lib/firebase/client";
+import { UserDoc, GeoPoint } from "@/lib/v2/types";
+import { calcMiles, calcFee } from "@/lib/v2/pricing";
+import { getEligibilityReason } from "@/lib/v2/eligibility";
+import geohash from "ngeohash";
 
 export interface NearbyCourier {
   uid: string;
@@ -20,7 +20,10 @@ export interface NearbyCourier {
   rateCard: any;
 }
 
-export function useNearbyCouriers(pickup: GeoPoint | null, dropoff: GeoPoint | null) {
+export function useNearbyCouriers(
+  pickup: GeoPoint | null,
+  dropoff: GeoPoint | null,
+) {
   const [couriers, setCouriers] = useState<NearbyCourier[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -37,13 +40,13 @@ export function useNearbyCouriers(pickup: GeoPoint | null, dropoff: GeoPoint | n
         const pickupHash = geohash.encode(pickup.lat, pickup.lng, 5);
 
         // Query online Senderrs within geohash range - use courierProfile
-        const usersRef = collection(db, 'users');
+        const usersRef = collection(db, "users");
         const q = query(
           usersRef,
-          where('role', '==', 'courier'),
-          where('courierProfile.isOnline', '==', true),
-          where('location.geohash', '>=', pickupHash),
-          where('location.geohash', '<=', pickupHash + '\uf8ff')
+          where("role", "==", "courier"),
+          where("courierProfile.isOnline", "==", true),
+          where("location.geohash", ">=", pickupHash),
+          where("location.geohash", "<=", pickupHash + "\uf8ff"),
         );
 
         const snapshot = await getDocs(q);
@@ -53,7 +56,7 @@ export function useNearbyCouriers(pickup: GeoPoint | null, dropoff: GeoPoint | n
 
         snapshot.forEach((doc) => {
           const data = doc.data() as UserDoc & { email?: string };
-          
+
           // Skip if no location or courierProfile rate card
           if (!data.location || !data.courierProfile?.packageRateCard) return;
 
@@ -64,24 +67,28 @@ export function useNearbyCouriers(pickup: GeoPoint | null, dropoff: GeoPoint | n
 
           const pickupMiles = calcMiles(courierLocation, pickup);
           const rateCard = data.courierProfile.packageRateCard;
-          
+
           // Check eligibility using new helper
-          const eligibilityResult = getEligibilityReason(rateCard, jobMiles, pickupMiles);
+          const eligibilityResult = getEligibilityReason(
+            rateCard,
+            jobMiles,
+            pickupMiles,
+          );
           const eligible = eligibilityResult.eligible;
           const reason = eligibilityResult.reason;
-          
+
           // Calculate estimated fee using courierProfile vehicleType
           const estimatedFee = calcFee(
             rateCard,
             jobMiles,
             pickupMiles,
-            data.courierProfile.vehicleType || 'car'
+            data.courierProfile.vehicleType || "car",
           );
 
           results.push({
             uid: doc.id,
-            email: data.email || 'Senderr',
-            transportMode: data.courierProfile.vehicleType || 'car',
+            email: data.email || "Senderr",
+            transportMode: data.courierProfile.vehicleType || "car",
             pickupMiles,
             jobMiles,
             estimatedFee,
@@ -100,7 +107,7 @@ export function useNearbyCouriers(pickup: GeoPoint | null, dropoff: GeoPoint | n
 
         setCouriers(results);
       } catch (error) {
-        console.error('Failed to fetch nearby couriers:', error);
+        console.error("Failed to fetch nearby couriers:", error);
         setCouriers([]);
       } finally {
         setLoading(false);

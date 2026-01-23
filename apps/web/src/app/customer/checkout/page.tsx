@@ -128,7 +128,9 @@ export default function CheckoutPage() {
             : courierData.courierProfile?.packageRateCard;
 
           if (!rateCard) {
-            setError(`Senderr does not have a ${isFood ? 'food' : 'package'} rate card configured`);
+            setError(
+              `Senderr does not have a ${isFood ? "food" : "package"} rate card configured`,
+            );
             setLoading(false);
             return;
           }

@@ -131,8 +131,8 @@ export default function RequestDeliveryPage() {
         const usersRef = collection(db, "users");
         const courierQuery = query(
           usersRef,
-          where("courierProfile.status", "==", "active"),
-          where("averageRating", ">=", 3.5),
+          where("courierProfile.status", "==", "approved"),
+          where("courierProfile.isOnline", "==", true),
         );
 
         const snapshot = await getDocs(courierQuery);
