@@ -32,10 +32,10 @@ export default function CourierSettingsPage() {
           <CardContent>
             <div className="space-y-3">
               <Link
-                href="/courier/setup"
+                href="/courier/rate-cards"
                 className="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-100"
               >
-                Delivery Preferences
+                Rate Cards & Pricing
                 <span>→</span>
               </Link>
               <Link

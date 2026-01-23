@@ -21,6 +21,7 @@ function SelectRoleContent() {
       if (role === "customer") {
         router.push("/customer/dashboard");
       } else if (role === "courier") {
+        // Redirect to onboarding if no courierProfile, else dashboard
         router.push("/courier/dashboard");
       } else if (role === "admin") {
         router.push("/admin/dashboard");
@@ -53,17 +54,8 @@ function SelectRoleContent() {
         updates.createdAt = serverTimestamp();
       }
 
-      // Initialize courier object if selecting courier role
-      if (selectedRole === "courier") {
-        updates.courier = {
-          isOnline: false,
-          transportMode: "car",
-          rateCard: {
-            baseFee: 5,
-            perMile: 1.5,
-          },
-        };
-      }
+      // Don't initialize courier object here - let onboarding wizard handle it
+      // Courier will be redirected to /courier/onboarding
 
       await setDoc(userRef, updates, { merge: true });
 
@@ -71,7 +63,7 @@ function SelectRoleContent() {
       if (selectedRole === "customer") {
         router.push("/customer/dashboard");
       } else if (selectedRole === "courier") {
-        router.push("/courier/dashboard");
+        router.push("/courier/onboarding");
       } else if (selectedRole === "runner") {
         router.push("/runner/dashboard");
       } else if (selectedRole === "vendor") {
