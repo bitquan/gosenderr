@@ -180,7 +180,7 @@ export default function DashboardPage() {
       {/* Header Section */}
       <div className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] rounded-b-[32px] p-6 text-white shadow-lg">
         <div className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-4">
               <Avatar
                 fallback={user?.displayName || user?.email || 'User'}
@@ -200,22 +200,32 @@ export default function DashboardPage() {
             </Link>
           </div>
 
-          {/* Quick Stats in Header */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4">
-              <p className="text-3xl font-bold">{stats.totalJobs}</p>
-              <p className="text-sm text-purple-100">Total Deliveries</p>
+          {/* Total Spent - Large Display */}
+          <div className="mb-6">
+            <p className="text-purple-100 text-sm mb-1">Total Spent</p>
+            <p className="text-5xl font-bold">{formatCurrency(stats.totalSpent)}</p>
+          </div>
+
+          {/* Quick Stats Grid in Header */}
+          <div className="grid grid-cols-3 gap-3">
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-3">
+              <p className="text-sm text-purple-100 mb-1">Total</p>
+              <p className="text-2xl font-bold">{stats.totalJobs}</p>
             </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4">
-              <p className="text-3xl font-bold">{stats.activeJobs}</p>
-              <p className="text-sm text-purple-100">Active</p>
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-3">
+              <p className="text-sm text-purple-100 mb-1">Active</p>
+              <p className="text-2xl font-bold">{stats.activeJobs}</p>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-3">
+              <p className="text-sm text-purple-100 mb-1">Done</p>
+              <p className="text-2xl font-bold">{stats.completedJobs}</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-6 -mt-8 space-y-6">
+      <div className="max-w-6xl mx-auto px-6 -mt-8 space-y-4">
         {/* Stats Grid */}
         <div className="grid grid-cols-2 gap-4">
           <div className="animate-fade-in animation-delay-100">
@@ -272,7 +282,7 @@ export default function DashboardPage() {
         </Card>
 
         {/* Saved Addresses */}
-        <Card variant="elevated" className="animate-slide-up animation-delay-500">
+        <Card variant="elevated" className="animate-slide-up animation-delay-300">
           <CardHeader
             action={
               <button
@@ -313,7 +323,7 @@ export default function DashboardPage() {
         </Card>
 
         {/* Recent Jobs */}
-        <Card variant="elevated" className="animate-slide-up">
+        <Card variant="elevated" className="animate-slide-up animation-delay-400">
           <CardHeader
             action={
               <Link
@@ -383,7 +393,7 @@ export default function DashboardPage() {
         </Card>
 
         {/* Recent Activity Timeline */}
-        <Card variant="elevated" className="animate-slide-up">
+        <Card variant="elevated" className="animate-slide-up animation-delay-500">
           <CardHeader>
             <CardTitle>Recent Activity</CardTitle>
           </CardHeader>
