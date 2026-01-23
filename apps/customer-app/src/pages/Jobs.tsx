@@ -4,16 +4,19 @@ import { db } from '../lib/firebase'
 import { useAuth } from '../hooks/useAuth'
 import { Card, CardContent } from '../components/Card'
 import { StatusBadge } from '../components/Badge'
+import { Avatar } from '../components/Avatar'
 import { formatCurrency, formatDate } from '../lib/utils'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 interface Job {
   id: string
   status: string
   pickupAddress?: string
   deliveryAddress?: string
-  pickupLocation?: { lat: number; lng: number }
-  deliveryLocation?: { lat: number; lng: number }
+  pickupLat?: number
+  pickupLng?: number
+  deliveryLat?: number
+  deliveryLng?: number
   agreedFee?: number
   createdAt: any
   acceptedAt?: any
@@ -24,9 +27,11 @@ interface Job {
 
 export default function JobsPage() {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [jobs, setJobs] = useState<Job[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'all' | 'active' | 'completed'>('all')
+  const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
     if (!user) return
@@ -57,164 +62,245 @@ export default function JobsPage() {
   }, [user])
 
   const filteredJobs = jobs.filter(job => {
+    // Filter by tab
+    let tabMatch = true
     if (activeTab === 'active') {
-      return ['pending', 'accepted', 'in_progress', 'ready_for_pickup'].includes(job.status)
+      tabMatch = ['pending', 'accepted', 'in_progress', 'ready_for_pickup', 'assigned'].includes(job.status)
+    } else if (activeTab === 'completed') {
+      tabMatch = ['completed', 'delivered'].includes(job.status)
     }
-    if (activeTab === 'completed') {
-      return ['completed', 'cancelled'].includes(job.status)
+
+    // Filter by search
+    let searchMatch = true
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase()
+      searchMatch = 
+        job.pickupAddress?.toLowerCase().includes(query) ||
+        job.deliveryAddress?.toLowerCase().includes(query) ||
+        job.description?.toLowerCase().includes(query) ||
+        job.id.toLowerCase().includes(query) ||
+        false
     }
-    return true
+
+    return tabMatch && searchMatch
   })
 
   if (loading) {
     return (
-      <div className="animate-pulse space-y-4">
-        <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-        <div className="h-32 bg-gray-200 rounded"></div>
-        <div className="h-32 bg-gray-200 rounded"></div>
+      <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center">
+        <div className="animate-pulse">
+          <div className="w-16 h-16 bg-purple-200 rounded-full mx-auto mb-4"></div>
+          <div className="h-4 bg-purple-200 rounded w-32 mx-auto"></div>
+        </div>
       </div>
     )
   }
 
+  const activeCount = jobs.filter(j => ['pending', 'accepted', 'in_progress', 'ready_for_pickup', 'assigned'].includes(j.status)).length
+  const completedCount = jobs.filter(j => ['completed', 'delivered'].includes(j.status)).length
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">My Deliveries</h1>
-          <p className="text-gray-600 mt-1">{jobs.length} total deliveries</p>
+    <div className="min-h-screen bg-[#F8F9FF] pb-24">
+      {/* Purple Header */}
+      <div className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] rounded-b-[32px] p-6 text-white shadow-lg">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-4">
+              <Avatar
+                fallback={user?.displayName || user?.email || 'User'}
+                size="lg"
+              />
+              <div>
+                <h1 className="text-2xl font-bold">My Deliveries</h1>
+                <p className="text-purple-100 text-sm">
+                  {jobs.length} total • {activeCount} active • {completedCount} completed
+                </p>
+              </div>
+            </div>
+            <Link
+              to="/request-delivery"
+              className="px-4 py-2 rounded-xl bg-white/20 backdrop-blur-sm text-white font-semibold hover:bg-white/30 transition-all hover:scale-105"
+            >
+              + New Delivery
+            </Link>
+          </div>
         </div>
-        <Link
-          to="/request-delivery"
-          className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
-        >
-          + New Delivery
-        </Link>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-2 border-b border-gray-200">
-        <button
-          onClick={() => setActiveTab('all')}
-          className={`px-4 py-2 font-medium transition-colors border-b-2 ${
-            activeTab === 'all'
-              ? 'border-primary-600 text-primary-600'
-              : 'border-transparent text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          All ({jobs.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('active')}
-          className={`px-4 py-2 font-medium transition-colors border-b-2 ${
-            activeTab === 'active'
-              ? 'border-primary-600 text-primary-600'
-              : 'border-transparent text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          Active ({jobs.filter(j => ['pending', 'accepted', 'in_progress', 'ready_for_pickup'].includes(j.status)).length})
-        </button>
-        <button
-          onClick={() => setActiveTab('completed')}
-          className={`px-4 py-2 font-medium transition-colors border-b-2 ${
-            activeTab === 'completed'
-              ? 'border-primary-600 text-primary-600'
-              : 'border-transparent text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          History ({jobs.filter(j => ['completed', 'cancelled'].includes(j.status)).length})
-        </button>
-      </div>
-
-      {/* Jobs List */}
-      {filteredJobs.length === 0 ? (
-        <Card>
-          <CardContent className="text-center py-12">
-            <div className="text-6xl mb-4">📦</div>
-            <p className="text-gray-600 text-lg mb-4">
-              {activeTab === 'all' && 'No deliveries yet'}
-              {activeTab === 'active' && 'No active deliveries'}
-              {activeTab === 'completed' && 'No completed deliveries'}
-            </p>
-            {activeTab === 'all' && (
-              <Link
-                to="/request-delivery"
-                className="inline-flex items-center justify-center px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
-              >
-                Request Your First Delivery
-              </Link>
-            )}
+      {/* Main Content */}
+      <div className="max-w-4xl mx-auto px-6 -mt-8 space-y-4">
+        {/* Search and Filters */}
+        <Card variant="elevated" className="animate-fade-in">
+          <CardContent className="p-4">
+            <div className="flex flex-col sm:flex-row gap-4">
+              {/* Search Bar */}
+              <div className="flex-1">
+                <input
+                  type="text"
+                  placeholder="Search by address, description, or job ID..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all"
+                />
+              </div>
+              
+              {/* Tab Filters */}
+              <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
+                <button
+                  onClick={() => setActiveTab('all')}
+                  className={`px-4 py-2 rounded-md font-medium text-sm transition-all ${
+                    activeTab === 'all'
+                      ? 'bg-white text-purple-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  All ({jobs.length})
+                </button>
+                <button
+                  onClick={() => setActiveTab('active')}
+                  className={`px-4 py-2 rounded-md font-medium text-sm transition-all ${
+                    activeTab === 'active'
+                      ? 'bg-white text-purple-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Active ({activeCount})
+                </button>
+                <button
+                  onClick={() => setActiveTab('completed')}
+                  className={`px-4 py-2 rounded-md font-medium text-sm transition-all ${
+                    activeTab === 'completed'
+                      ? 'bg-white text-purple-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Done ({completedCount})
+                </button>
+              </div>
+            </div>
           </CardContent>
         </Card>
-      ) : (
-        <div className="space-y-4">
-          {filteredJobs.map(job => (
-            <Card key={job.id} hover>
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-semibold text-gray-900">
-                        Delivery #{job.id.slice(0, 8)}
-                      </h3>
-                      <StatusBadge status={job.status as any} />
+
+        {/* Jobs Grid */}
+        {filteredJobs.length === 0 ? (
+          <Card variant="elevated" className="animate-slide-up">
+            <CardContent>
+              <div className="text-center py-12">
+                <div className="text-6xl mb-4">
+                  {searchQuery ? '🔍' : activeTab === 'active' ? '📦' : activeTab === 'completed' ? '✅' : '🚚'}
+                </div>
+                <p className="text-gray-600 text-lg mb-2">
+                  {searchQuery 
+                    ? 'No jobs found matching your search'
+                    : activeTab === 'active' 
+                    ? 'No active deliveries'
+                    : activeTab === 'completed'
+                    ? 'No completed deliveries yet'
+                    : 'No deliveries yet'}
+                </p>
+                <p className="text-gray-500 text-sm mb-6">
+                  {searchQuery
+                    ? 'Try a different search term'
+                    : 'Create your first delivery request to get started'}
+                </p>
+                {!searchQuery && (
+                  <Link
+                    to="/request-delivery"
+                    className="inline-flex px-6 py-3 rounded-xl bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] text-white font-semibold hover:shadow-xl hover:scale-105 transition-all duration-300"
+                  >
+                    Request your first delivery →
+                  </Link>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-4">
+            {filteredJobs.map((job, index) => (
+              <Card
+                key={job.id}
+                variant="elevated"
+                className="hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer animate-slide-up"
+                style={{ animationDelay: `${index * 50}ms` }}
+                onClick={() => navigate(`/jobs/${job.id}`)}
+              >
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-sm font-mono text-gray-500">#{job.id.slice(0, 8)}</span>
+                        <StatusBadge
+                          status={
+                            job.status === 'completed' || job.status === 'delivered'
+                              ? 'completed'
+                              : ['in_progress', 'accepted', 'assigned'].includes(job.status)
+                              ? 'in_progress'
+                              : 'pending'
+                          }
+                        />
+                      </div>
                     </div>
-                    {job.description && (
-                      <p className="text-sm text-gray-600 mb-3">{job.description}</p>
+                    {job.agreedFee && (
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-purple-600">
+                          {formatCurrency(job.agreedFee)}
+                        </p>
+                      </div>
                     )}
                   </div>
-                  <div className="text-right ml-4">
-                    <p className="text-2xl font-bold text-gray-900">
-                      {formatCurrency(job.agreedFee || 0)}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {job.createdAt && formatDate(job.createdAt.toDate())}
-                    </p>
-                  </div>
-                </div>
 
-                <div className="space-y-2 mb-4">
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-green-600 text-xs">📍</span>
+                  <div className="space-y-3">
+                    {/* Pickup */}
+                    <div className="flex gap-3">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-green-50 flex items-center justify-center text-xl">
+                        📍
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-gray-500 mb-1">Pickup</p>
+                        <p className="font-medium text-gray-900 truncate">
+                          {job.pickupAddress || 'Address not provided'}
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-700">Pickup</p>
-                      <p className="text-sm text-gray-600">
-                        {job.pickupAddress || 'Address not set'}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-blue-600 text-xs">📍</span>
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-700">Delivery</p>
-                      <p className="text-sm text-gray-600">
-                        {job.deliveryAddress || 'Address not set'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
 
-                <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                  <div className="text-sm text-gray-600">
-                    {job.status === 'pending' && 'Waiting for courier'}
-                    {job.status === 'accepted' && 'Courier assigned'}
-                    {job.status === 'in_progress' && 'In transit'}
-                    {job.status === 'completed' && 'Delivered'}
-                    {job.status === 'cancelled' && 'Cancelled'}
+                    {/* Delivery */}
+                    <div className="flex gap-3">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-50 flex items-center justify-center text-xl">
+                        🎯
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-gray-500 mb-1">Delivery</p>
+                        <p className="font-medium text-gray-900 truncate">
+                          {job.deliveryAddress || 'Address not provided'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Description */}
+                    {job.description && (
+                      <div className="pt-3 border-t border-gray-100">
+                        <p className="text-sm text-gray-600 line-clamp-2">
+                          📦 {job.description}
+                        </p>
+                      </div>
+                    )}
                   </div>
-                  <button className="text-sm font-medium text-primary-600 hover:text-primary-700">
-                    View Details →
-                  </button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+
+                  {/* Footer */}
+                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+                    <div className="text-sm text-gray-500">
+                      {job.createdAt?.toDate ? formatDate(job.createdAt.toDate()) : 'Recently'}
+                    </div>
+                    <button className="text-sm font-semibold text-purple-600 hover:text-purple-700">
+                      View Details →
+                    </button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
-

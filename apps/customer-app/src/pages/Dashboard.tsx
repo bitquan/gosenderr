@@ -192,13 +192,21 @@ export default function DashboardPage() {
                 <p className="text-purple-100 text-sm">{user?.email}</p>
               </div>
             </div>
-            <div className="relative">
+            <div className="flex items-center gap-3">
+              <Link to="/profile">
+                <button 
+                  className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30 transition-all"
+                  title="Settings"
+                >
+                  ⚙️
+                </button>
+              </Link>
               <button 
                 onClick={() => signOut()}
-                className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30 transition-all"
+                className="px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all text-sm font-medium"
                 title="Sign Out"
               >
-                ⚙️
+                Sign Out
               </button>
             </div>
           </div>
