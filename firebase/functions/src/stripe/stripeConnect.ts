@@ -20,14 +20,7 @@ interface StripeConnectData {
 
 export const stripeConnect = functions.https.onCall<StripeConnectData>(
   {
-    cors: [
-      'http://localhost:5173',
-      'http://localhost:5174',
-      'http://localhost:5175',
-      'http://localhost:5176',
-      'https://gosenderr-6773f.web.app',
-      'https://gosenderr-6773f.firebaseapp.com'
-    ],
+    cors: true,
   },
   async (request) => {
     // Authentication check
