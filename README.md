@@ -1,18 +1,20 @@
 # GoSenderr Monorepo
 
-A modern on-demand delivery platform with multiple role-based apps built on Vite + React.
+A modern on-demand delivery platform with web apps (Vite + React) and mobile apps (Flutter) for customers, couriers, runners, and admins.
 
 ## 🏗️ Project Structure
 
 ```
 /
 ├── apps/
-│   ├── customer-app/     # Vite Customer App (Port 5173)
-│   ├── courier-app/      # Vite Courier App (Port 5174)
-│   ├── shifter-app/      # Vite Runner/Shifter App (Port 5175)
+│   ├── customer-app/     # Vite Customer Web App (Port 5173)
+│   ├── courier-app/      # Vite Courier Web App (Port 5174)
+│   ├── shifter-app/      # Vite Runner/Shifter Web App (Port 5175)
 │   ├── admin-app/        # Vite Admin Dashboard (Port 5176)
 │   ├── landing/          # Role Selection Landing Page
 │   └── web/              # Legacy Next.js App (deprecated)
+├── mobile/
+│   └── driver-app/       # Flutter Driver Mobile App (iOS/Android)
 ├── packages/
 │   └── shared/           # Shared TypeScript types and utilities
 ├── firebase/             # Firebase security rules and Cloud Functions
@@ -307,6 +309,41 @@ See [docs/NAVIGATION_GUIDE.md](docs/NAVIGATION_GUIDE.md) for implementation deta
 
 ---
 
-## Flutter Mobile App Documentation
+## 📱 Flutter Mobile Apps
 
-For Flutter development, view the [online documentation](https://docs.flutter.dev/), which offers tutorials, samples, guidance on mobile development, and a full API reference.
+GoSenderr includes native mobile apps built with Flutter for enhanced mobile experience:
+
+### Driver App (Flutter)
+
+**Purpose**: Native mobile app for delivery drivers/couriers
+
+**Key Features**:
+- Real-time GPS location tracking
+- Background location updates
+- Push notifications for new jobs
+- Camera integration for proof of delivery
+- Offline mode support
+- Native performance
+
+**Tech Stack**:
+- **Framework**: Flutter/Dart
+- **State Management**: Provider/Riverpod
+- **Backend**: Firebase (Auth, Firestore, Storage, Cloud Messaging)
+- **Maps**: Google Maps or Mapbox
+- **Platform**: iOS and Android
+
+**Development**:
+```bash
+cd mobile/driver-app
+flutter pub get
+flutter run
+```
+
+**Documentation**: See Flutter [online documentation](https://docs.flutter.dev/) for development guides.
+
+### Future Mobile Apps
+
+- Customer mobile app (planned)
+- Runner mobile app (planned)
+
+**Note**: Web apps (Vite + React) are fully responsive and work on mobile browsers as Progressive Web Apps (PWAs) until native mobile versions are released.
