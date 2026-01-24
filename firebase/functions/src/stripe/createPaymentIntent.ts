@@ -1,9 +1,16 @@
 import * as functions from 'firebase-functions/v2';
 import Stripe from 'stripe';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2025-02-24.acacia',
-});
+function getStripe() {
+  const legacyConfig = (functions as any).config?.();
+  const apiKey = legacyConfig?.stripe?.secret_key || process.env.STRIPE_SECRET_KEY;
+  if (!apiKey) {
+    throw new Error('STRIPE_SECRET_KEY not configured');
+  }
+  return new Stripe(apiKey, {
+    apiVersion: '2025-02-24.acacia',
+  });
+}
 
 interface CreatePaymentIntentData {
   jobId: string;
@@ -50,6 +57,7 @@ export const createPaymentIntent = functions.https.onCall<CreatePaymentIntentDat
       const totalAmount = Math.round((courierRate + platformFee) * 100);
 
       // Create PaymentIntent with manual capture
+      const stripe = getStripe();
       const paymentIntent = await stripe.paymentIntents.create({
         amount: totalAmount,
         currency: 'usd',

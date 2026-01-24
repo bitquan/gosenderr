@@ -2,9 +2,16 @@ import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
-  apiVersion: "2025-02-24.acacia",
-});
+function getStripe() {
+  const config = functions.config();
+  const apiKey = config.stripe?.secret_key || process.env.STRIPE_SECRET_KEY;
+  if (!apiKey) {
+    throw new Error('STRIPE_SECRET_KEY not configured');
+  }
+  return new Stripe(apiKey, {
+    apiVersion: "2025-02-24.acacia",
+  });
+}
 
 export const refundPayment = functions.firestore
   .document("deliveryJobs/{jobId}")
@@ -37,6 +44,7 @@ export const refundPayment = functions.firestore
       );
 
       // Cancel the payment intent (this releases the hold on the customer's card)
+      const stripe = getStripe();
       const paymentIntent = await stripe.paymentIntents.cancel(
         paymentIntentId
       );

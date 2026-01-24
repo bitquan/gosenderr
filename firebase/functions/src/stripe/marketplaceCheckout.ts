@@ -1,9 +1,16 @@
 import * as functions from 'firebase-functions/v2';
 import Stripe from 'stripe';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2025-02-24.acacia',
-});
+function getStripe() {
+  const legacyConfig = (functions as any).config?.();
+  const apiKey = legacyConfig?.stripe?.secret_key || process.env.STRIPE_SECRET_KEY;
+  if (!apiKey) {
+    throw new Error('STRIPE_SECRET_KEY not configured');
+  }
+  return new Stripe(apiKey, {
+    apiVersion: '2025-02-24.acacia',
+  });
+}
 
 interface MarketplaceCheckoutData {
   itemTitle: string;
@@ -58,6 +65,7 @@ export const marketplaceCheckout = functions.https.onCall<MarketplaceCheckoutDat
       courierStripeAccountId && courierStripeAccountId.startsWith('acct_');
 
     try {
+      const stripe = getStripe();
       if (hasCourierStripe) {
         // 3-WAY SPLIT: Vendor + Courier + Platform
         const session = await stripe.checkout.sessions.create({

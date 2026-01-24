@@ -4,14 +4,10 @@
 .git
 .gitignore
 
-# IMPORTANT: Always include these
-!package.json
-!package-lock.json
-
 # Node.js dependencies
 node_modules/
 
-# TypeScript
+# TypeScript source (not needed, we upload compiled lib/)
 *.ts
 !src/**/*.ts
 tsconfig.json

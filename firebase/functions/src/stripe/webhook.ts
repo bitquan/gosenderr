@@ -2,9 +2,16 @@ import * as functions from 'firebase-functions/v2';
 import Stripe from 'stripe';
 import * as admin from 'firebase-admin';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2025-02-24.acacia',
-});
+function getStripe() {
+  const legacyConfig = (functions as any).config?.();
+  const apiKey = legacyConfig?.stripe?.secret_key || process.env.STRIPE_SECRET_KEY;
+  if (!apiKey) {
+    throw new Error('STRIPE_SECRET_KEY not configured');
+  }
+  return new Stripe(apiKey, {
+    apiVersion: '2025-02-24.acacia',
+  });
+}
 
 const db = admin.firestore();
 
@@ -28,6 +35,7 @@ export const stripeWebhook = functions.https.onRequest(
     let event: Stripe.Event;
 
     try {
+      const stripe = getStripe();
       event = stripe.webhooks.constructEvent(
         req.rawBody,
         sig,
@@ -173,6 +181,7 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
     // Transfer delivery fee to courier
     const deliveryFeeAmount = Math.round(Number(deliveryFee) * 100);
 
+    const stripe = getStripe();
     const transfer = await stripe.transfers.create({
       amount: deliveryFeeAmount,
       currency: 'usd',
