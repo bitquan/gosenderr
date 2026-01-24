@@ -4,7 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { getAuthSafe } from "@/lib/firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
-import { GlassCard, LoadingSkeleton } from "@/components/GlassCard";
+import { GlassCard, LoadingSkeleton } from "@gosenderr/ui";
 import { Link } from "react-router-dom";
 import { NotFoundPage } from "@/components/ui/NotFoundPage";
 

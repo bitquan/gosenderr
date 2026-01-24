@@ -8,7 +8,7 @@ import { useRoutes } from "@/hooks/useRoutes";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { RouteCard } from "@/components/RouteCard";
 import { RouteDetailsModal } from "@/components/RouteDetailsModal";
-import { LoadingSkeleton } from "@/components/GlassCard";
+import { LoadingSkeleton } from "@gosenderr/ui";
 import type { RouteDoc } from "@gosenderr/shared";
 
 export default function CourierRoutesPage() {

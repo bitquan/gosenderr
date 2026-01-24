@@ -13,7 +13,7 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase/client";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { useNavigate } from "react-router-dom";
-import { GlassCard, LoadingSkeleton } from "@/components/GlassCard";
+import { GlassCard, LoadingSkeleton } from "@gosenderr/ui";
 import { RunnerVehicleType, HubDoc } from "@gosenderr/shared";
 
 type OnboardingStep = 1 | 2 | 3 | 4 | 5;

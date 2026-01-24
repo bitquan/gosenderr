@@ -5,7 +5,7 @@ import { getAuthSafe } from "@/lib/firebase/auth";
 import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useRoutes } from "@/hooks/useRoutes";
-import { GlassCard, LoadingSkeleton } from "@/components/GlassCard";
+import { GlassCard, LoadingSkeleton } from "@gosenderr/ui";
 import { captureGPSPhoto } from "@/lib/gpsPhoto";
 import { motion } from "framer-motion";
 import type { RouteDoc, RouteStop } from "@gosenderr/shared";
