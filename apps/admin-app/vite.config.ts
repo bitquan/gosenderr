@@ -7,7 +7,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      '@gosenderr/shared': path.resolve(__dirname, '../../packages/shared/src')
+      '@gosenderr/shared': path.resolve(__dirname, '../../packages/shared/src'),
+      '@gosenderr/ui': path.resolve(__dirname, '../../packages/ui/src')
     }
   },
   build: {

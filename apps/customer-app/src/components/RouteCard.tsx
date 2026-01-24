@@ -1,7 +1,7 @@
 
 import { motion } from 'framer-motion';
 import type { RouteDoc } from '@gosenderr/shared';
-import { GlassCard } from './GlassCard';
+import { GlassCard } from '@gosenderr/ui';
 
 interface RouteCardProps {
   route: RouteDoc;
