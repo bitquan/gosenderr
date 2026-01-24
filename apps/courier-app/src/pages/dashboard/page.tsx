@@ -15,6 +15,7 @@ import { useCourierLocationWriter } from "@/hooks/v2/useCourierLocationWriter";
 import { debugLogger } from "@/utils/debugLogger";
 import { useMapboxDirections } from "@/hooks/useMapboxDirections";
 import { useMapFocus } from "@/hooks/useMapFocus";
+import { JobThumbnail } from "@/components/navigation/JobThumbnail";
 
 export default function CourierDashboardMobile() {
   const navigate = useNavigate();
@@ -118,14 +119,12 @@ export default function CourierDashboardMobile() {
       setSelectedJob(filteredJobs[0].job);
     } else if (filteredJobs.length === 0) {
       setSelectedJob(null);
-      clearRoute();
     }
-  }, [filteredJobs, selectedJob, clearRoute]);
+  }, [filteredJobs, selectedJob]);
 
   // Fetch route when job is selected
   useEffect(() => {
     if (!selectedJob || !userDoc?.courierProfile?.currentLocation) {
-      clearRoute();
       return;
     }
 
@@ -135,8 +134,8 @@ export default function CourierDashboardMobile() {
       [selectedJob.pickup.lng, selectedJob.pickup.lat],
       [selectedJob.dropoff.lng, selectedJob.dropoff.lat]
     );
-  }, [selectedJob, userDoc?.courierProfile?.currentLocation, fetchRoute, clearRoute]);
-
+  }, [selectedJob, userDoc?.courierProfile?.currentLocation, fetchRoute]);
+  
   // Auto-fit map to route when route loads
   useEffect(() => {
     if (routeSegments.length > 0 && map) {
@@ -189,14 +188,27 @@ export default function CourierDashboardMobile() {
       {/* Full-Screen Map */}
       <div className="absolute inset-0">
         {(selectedJob || userDoc?.courierProfile?.currentLocation) ? (
-          <MapboxMap
-            ref={mapRef}
-            pickup={selectedJob?.pickup || userDoc?.courierProfile?.currentLocation || { lat: 37.7749, lng: -122.4194, label: "San Francisco" }}
-            dropoff={selectedJob?.dropoff || userDoc?.courierProfile?.currentLocation || { lat: 37.7749, lng: -122.4194, label: "San Francisco" }}
-            courierLocation={userDoc?.courierProfile?.currentLocation || null}
-            routeSegments={routeSegments}
-            height="100%"
-          />
+          <>
+            <MapboxMap
+              ref={mapRef}
+              pickup={selectedJob?.pickup || userDoc?.courierProfile?.currentLocation || { lat: 37.7749, lng: -122.4194, label: "San Francisco" }}
+              dropoff={selectedJob?.dropoff || userDoc?.courierProfile?.currentLocation || { lat: 37.7749, lng: -122.4194, label: "San Francisco" }}
+              courierLocation={userDoc?.courierProfile?.currentLocation || null}
+              routeSegments={routeSegments}
+              height="100%"
+            />
+            
+            {/* Job Thumbnails Overlay */}
+            {map && filteredJobs.map(({ job }) => (
+              <JobThumbnail
+                key={job.id}
+                job={job}
+                isSelected={selectedJob?.id === job.id}
+                onClick={() => setSelectedJob(job)}
+                map={map}
+              />
+            ))}
+          </>
         ) : (
           <div className="w-full h-full bg-gray-200 flex items-center justify-center">
             <div className="text-center">
