@@ -6,11 +6,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { useEffect, useState } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
+import { getAuthSafe } from "@/lib/firebase/auth";
 
 export default function CustomerSettingsPage() {
   const navigate = useNavigate();
   const { user, loading, uid } = useAuthUser();
   const [vendorStatus, setVendorStatus] = useState<"none" | "pending" | "approved">("none");
+
+  const handleSignOut = async () => {
+    try {
+      const auth = getAuthSafe();
+      if (auth) {
+        await auth.signOut();
+        navigate("/login");
+      }
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
 
   useEffect(() => {
     if (!uid) return;
@@ -111,6 +124,17 @@ export default function CustomerSettingsPage() {
                 </div>
                 <span className="text-gray-400">→</span>
               </Link>
+              
+              <button
+                onClick={handleSignOut}
+                className="w-full flex items-center justify-between rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 hover:bg-red-100 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-lg">🚪</span>
+                  <span>Sign Out</span>
+                </div>
+                <span className="text-red-400">→</span>
+              </button>
             </div>
           </CardContent>
         </Card>
