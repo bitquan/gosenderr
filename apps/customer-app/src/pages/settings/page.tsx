@@ -3,10 +3,31 @@ import { useNavigate } from "react-router-dom";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { useEffect, useState } from "react";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase/client";
 
 export default function CustomerSettingsPage() {
   const navigate = useNavigate();
-  const { user, loading } = useAuthUser();
+  const { user, loading, uid } = useAuthUser();
+  const [vendorStatus, setVendorStatus] = useState<"none" | "pending" | "approved">("none");
+
+  useEffect(() => {
+    if (!uid) return;
+    
+    const checkVendorStatus = async () => {
+      const userDoc = await getDoc(doc(db, `users/${uid}`));
+      const userData = userDoc.data();
+      
+      if (userData?.isVendor === true || userData?.vendorApplication?.status === "approved") {
+        setVendorStatus("approved");
+      } else if (userData?.vendorApplication?.status === "pending") {
+        setVendorStatus("pending");
+      }
+    };
+    
+    checkVendorStatus();
+  }, [uid]);
 
   if (loading) {
     return (
@@ -93,6 +114,50 @@ export default function CustomerSettingsPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Vendor Section */}
+        {vendorStatus === "none" && (
+          <Card variant="elevated" className="border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-blue-50">
+            <CardContent className="p-6">
+              <div className="flex items-start gap-4">
+                <div className="text-5xl">🏪</div>
+                <div className="flex-1">
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">
+                    Become a Vendor
+                  </h3>
+                  <p className="text-gray-600 mb-4">
+                    Sell your products on our marketplace and reach thousands of customers. 
+                    Easy setup, secure payments, and 24/7 support.
+                  </p>
+                  <Link
+                    to="/vendor/apply"
+                    className="inline-block px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all"
+                  >
+                    Apply Now
+                  </Link>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {vendorStatus === "pending" && (
+          <Card variant="elevated" className="border-2 border-yellow-200 bg-yellow-50">
+            <CardContent className="p-6">
+              <div className="flex items-start gap-4">
+                <div className="text-5xl">⏳</div>
+                <div className="flex-1">
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">
+                    Vendor Application Pending
+                  </h3>
+                  <p className="text-gray-600">
+                    We're reviewing your application. You'll receive an email within 24 hours.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

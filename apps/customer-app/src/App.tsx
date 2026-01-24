@@ -32,6 +32,11 @@ import SupportPage from './pages/support/page'
 import MarketplacePage from './pages/marketplace/page'
 import MarketplaceItemPage from './pages/marketplace/[itemId]/page'
 
+// Vendor pages
+import VendorApplicationPage from './pages/vendor/apply/page'
+import VendorDashboard from './pages/vendor/dashboard/page'
+import NewVendorItem from './pages/vendor/items/new/page'
+
 // Auth pages
 import LoginPage from './pages/Login'
 import SignupPage from './pages/Signup'
@@ -100,6 +105,11 @@ function App() {
                   <Route path="/support" element={<SupportPage />} />
                   <Route path="/settings" element={<SettingsPage />} />
                   <Route path="/profile" element={<ProfilePage />} />
+                  
+                  {/* Vendor Routes */}
+                  <Route path="/vendor/apply" element={<VendorApplicationPage />} />
+                  <Route path="/vendor/dashboard" element={<VendorDashboard />} />
+                  <Route path="/vendor/items/new" element={<NewVendorItem />} />
                 </Routes>
               </CustomerLayout>
             </ProtectedRoute>

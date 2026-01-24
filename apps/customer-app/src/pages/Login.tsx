@@ -8,6 +8,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [role, setRole] = useState<'customer' | 'vendor'>('customer')
   const navigate = useNavigate()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -18,7 +19,8 @@ export default function LoginPage() {
     try {
       if (!auth) throw new Error('Firebase not initialized')
       await signInWithEmailAndPassword(auth, email, password)
-      navigate('/dashboard')
+      // Navigate based on selected role
+      navigate(role === 'vendor' ? '/vendor/dashboard' : '/dashboard')
     } catch (err: any) {
       setError(err.message || 'Failed to sign in')
     } finally {
@@ -47,9 +49,9 @@ export default function LoginPage() {
               background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
             }}
           >
-            <div className="text-6xl mb-3">🛍️</div>
-            <h1 className="text-3xl font-bold mb-2">Customer Portal</h1>
-            <p className="text-purple-100 text-sm">Track orders & manage deliveries</p>
+            <div className="text-6xl mb-3">{role === 'vendor' ? '🏪' : '🛍️'}</div>
+            <h1 className="text-3xl font-bold mb-2">{role === 'vendor' ? 'Vendor Portal' : 'Customer Portal'}</h1>
+            <p className="text-purple-100 text-sm">{role === 'vendor' ? 'Manage your marketplace items' : 'Track orders & manage deliveries'}</p>
           </div>
 
           {/* Form */}
@@ -66,6 +68,39 @@ export default function LoginPage() {
                   </p>
                 </div>
               )}
+
+              {/* Role Selector */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  Sign in as
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setRole('customer')}
+                    className={`px-4 py-3 rounded-xl font-semibold transition-all ${
+                      role === 'customer'
+                        ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    <div className="text-2xl mb-1">👤</div>
+                    <div className="text-sm">Customer</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRole('vendor')}
+                    className={`px-4 py-3 rounded-xl font-semibold transition-all ${
+                      role === 'vendor'
+                        ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    <div className="text-2xl mb-1">🏪</div>
+                    <div className="text-sm">Vendor</div>
+                  </button>
+                </div>
+              </div>
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -103,7 +138,7 @@ export default function LoginPage() {
                   background: loading ? '#9ca3af' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                 }}
               >
-                {loading ? '🔄 Signing in...' : '🛍️ Sign In as Customer'}
+                {loading ? '🔄 Signing in...' : `${role === 'vendor' ? '🏪' : '🛍️'} Sign In as ${role === 'vendor' ? 'Vendor' : 'Customer'}`}
               </button>
             </form>
 
