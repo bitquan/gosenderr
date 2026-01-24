@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
-import { db } from "@/lib/firebase/client";
+import { db } from "@/lib/firebase";
 import { Job } from "@/lib/v2/types";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
 

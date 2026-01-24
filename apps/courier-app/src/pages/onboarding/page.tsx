@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase/client";
+import { db } from "@/lib/firebase";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { PackageRateCardBuilder } from "@/components/v2/PackageRateCardBuilder";
 import { FoodRateCardBuilder } from "@/components/v2/FoodRateCardBuilder";

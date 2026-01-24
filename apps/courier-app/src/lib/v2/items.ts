@@ -11,7 +11,7 @@ import {
   Timestamp,
   serverTimestamp,
 } from "firebase/firestore";
-import { db } from "@/lib/firebase/client";
+import { db } from "@/lib/firebase";
 import type { ItemDoc, ItemStatus, ItemCategory, ItemCondition } from "./types";
 
 // Client-side item with ID

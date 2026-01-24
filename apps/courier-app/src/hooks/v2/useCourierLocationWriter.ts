@@ -1,7 +1,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase/client";
+import { db } from "@/lib/firebase";
 import { useUserRole } from "./useUserRole";
 import geohash from "ngeohash";
 

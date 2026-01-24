@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { doc, updateDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase/client";
+import { db } from "@/lib/firebase";
 import { useUserDoc } from "@/hooks/v2/useUserDoc";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { useOpenJobs } from "@/hooks/v2/useOpenJobs";

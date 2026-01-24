@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAuthSafe } from "@/lib/firebase/auth";
 import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase/client";
+import { db } from "@/lib/firebase";
 import { useRoutes } from "@/hooks/useRoutes";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { RouteCard } from "@/components/RouteCard";

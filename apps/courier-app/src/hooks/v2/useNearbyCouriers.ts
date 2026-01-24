@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { collection, query, where, getDocs } from "firebase/firestore";
-import { db } from "@/lib/firebase/client";
+import { db } from "@/lib/firebase";
 import { UserDoc, GeoPoint } from "@/lib/v2/types";
 import { calcMiles, calcFee } from "@/lib/v2/pricing";
 import { getEligibilityReason } from "@/lib/v2/eligibility";

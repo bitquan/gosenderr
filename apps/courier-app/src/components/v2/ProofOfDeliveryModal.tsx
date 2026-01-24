@@ -1,9 +1,9 @@
 
 import { useState, useRef } from "react";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { storage } from "@/lib/firebase/client";
+import { storage } from "@/lib/firebase";
 import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase/client";
+import { db } from "@/lib/firebase";
 
 interface ProofOfDeliveryModalProps {
   jobId: string;

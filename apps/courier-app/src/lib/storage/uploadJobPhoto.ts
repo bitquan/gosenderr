@@ -1,5 +1,5 @@
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { storage } from '@/lib/firebase/client';
+import { storage } from '@/lib/firebase';
 import { serverTimestamp } from 'firebase/firestore';
 
 export interface UploadProgress {

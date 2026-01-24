@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
-import { db } from '@/lib/firebase/client';
+import { db } from '@/lib/firebase';
 import { UserDoc } from '@/lib/v2/types';
 
 export function useCourierById(courierUid: string | null) {

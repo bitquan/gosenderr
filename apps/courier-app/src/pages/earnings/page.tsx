@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
-import { db } from "@/lib/firebase/client";
+import { db } from "@/lib/firebase";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { StatCard } from "@/components/ui/StatCard";

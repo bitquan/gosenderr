@@ -1,6 +1,6 @@
 import imageCompression from "browser-image-compression";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { storage } from "@/lib/firebase/client";
+import { storage } from "@/lib/firebase";
 
 interface CaptureOptions {
   quality?: number;

@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase/client";
+import { db } from "@/lib/firebase";
 import { getAuthSafe } from "@/lib/firebase/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 

@@ -1,5 +1,5 @@
 import { addDoc, collection, Timestamp, query, where, getDocs } from 'firebase/firestore';
-import { db } from '../firebase/client';
+import { db } from '../firebase';
 import type { RatingRole, RatingCategories } from '@gosenderr/shared';
 
 export interface SubmitRatingParams {

@@ -7,7 +7,7 @@ import {
   serverTimestamp,
   addDoc,
 } from "firebase/firestore";
-import { db } from "@/lib/firebase/client";
+import { db } from "@/lib/firebase";
 
 interface RunnerRejectModalProps {
   jobId: string;

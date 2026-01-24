@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { db, storage } from "@/lib/firebase/client";
+import { db, storage } from "@/lib/firebase";
 import { getAuthSafe } from "@/lib/firebase/auth";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";

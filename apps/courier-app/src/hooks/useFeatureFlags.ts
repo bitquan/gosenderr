@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { doc, onSnapshot } from "firebase/firestore";
-import { db } from "@/lib/firebase/client";
+import { db } from "@/lib/firebase";
 import type { FeatureFlags } from "@gosenderr/shared";
 
 export function useFeatureFlags() {

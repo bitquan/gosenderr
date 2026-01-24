@@ -7,7 +7,7 @@ import {
   onSnapshot,
   QueryConstraint,
 } from "firebase/firestore";
-import { db } from "@/lib/firebase/client";
+import { db } from "@/lib/firebase";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import type { RouteDoc, RouteStatus } from "@gosenderr/shared";
 
