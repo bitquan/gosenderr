@@ -1,4 +1,5 @@
 
+import { LoadingState } from "@gosenderr/ui";
 import { useNavigate } from "react-router-dom";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { Link } from "react-router-dom";
@@ -22,11 +23,7 @@ export default function CourierSettingsPage() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center">
-        <div className="animate-pulse text-gray-500">Loading...</div>
-      </div>
-    );
+    return <LoadingState fullPage message="Loading settings..." />;
   }
 
   if (!user) {

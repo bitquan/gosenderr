@@ -1,5 +1,6 @@
 
 import { useEffect, useState } from "react";
+import { LoadingState } from "@gosenderr/ui";
 import { db, storage } from "@/lib/firebase";
 import { getAuthSafe } from "@/lib/firebase/auth";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
@@ -203,11 +204,7 @@ export default function EquipmentPage() {
   };
 
   if (loading) {
-    return (
-      <div style={{ padding: "20px", textAlign: "center" }}>
-        <p>Loading...</p>
-      </div>
-    );
+    return <LoadingState fullPage message="Loading equipment..." />;
   }
 
   if (!equipment) {

@@ -31,11 +31,7 @@ export default function CourierOnboarding() {
   const [foodRateCard, setFoodRateCard] = useState<FoodRateCard | null>(null);
 
   if (authLoading) {
-    return (
-      <div style={{ padding: "50px", textAlign: "center" }}>
-        <p>Loading...</p>
-      </div>
-    );
+    return <LoadingState fullPage message="Loading your profile..." />;
   }
 
   if (!uid) {

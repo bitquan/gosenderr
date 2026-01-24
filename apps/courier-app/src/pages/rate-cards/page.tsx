@@ -1,5 +1,6 @@
 
 import { useEffect, useState } from "react";
+import { LoadingState } from "@gosenderr/ui";
 import { PackageRateCardBuilder } from "@/components/v2/PackageRateCardBuilder";
 import { FoodRateCardBuilder } from "@/components/v2/FoodRateCardBuilder";
 import { PackageRateCard, FoodRateCard } from "@gosenderr/shared";
@@ -107,11 +108,7 @@ export default function RateCardsPage() {
   };
 
   if (loading) {
-    return (
-      <div style={{ padding: "20px", textAlign: "center" }}>
-        <p>Loading...</p>
-      </div>
-    );
+    return <LoadingState fullPage message="Loading rate cards..." />;
   }
 
   if (mode === "edit-package") {

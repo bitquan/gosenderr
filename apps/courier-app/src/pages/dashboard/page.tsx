@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import { LoadingState } from "@gosenderr/ui";
 import { useNavigate, Link } from "react-router-dom";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -115,11 +116,7 @@ export default function CourierDashboardMobile() {
   };
 
   if (userLoading || jobsLoading) {
-    return (
-      <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center">
-        <div className="animate-pulse text-gray-500">Loading...</div>
-      </div>
-    );
+    return <LoadingState fullPage message="Loading dashboard..." />;
   }
 
   const hasRateCard =
