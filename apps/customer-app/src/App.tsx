@@ -74,51 +74,42 @@ function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
-        
-        <Route
-          path="/*"
-          element={
-            <ProtectedRoute>
-              <CustomerLayout>
-                <Routes>
-                  <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                  <Route path="/dashboard" element={<DashboardPage />} />
-                  <Route path="/request-delivery" element={<RequestDeliveryPage />} />
-                  <Route path="/ship" element={<ShipPage />} />
-                  <Route path="/marketplace" element={<MarketplacePage />} />
-                  <Route path="/marketplace/:itemId" element={<MarketplaceItemPage />} />
-                  <Route path="/jobs" element={<JobsPage />} />
-                  <Route path="/jobs/new" element={<NewJobPage />} />
-                  <Route path="/jobs/:jobId" element={<JobDetailPage />} />
-                  <Route path="/orders" element={<OrdersPage />} />
-                  <Route path="/packages" element={<PackagesPage />} />
-                  <Route path="/packages/new" element={<NewPackagePage />} />
-                  <Route path="/packages/:packageId" element={<PackageDetailPage />} />
-                  <Route path="/addresses" element={<AddressesPage />} />
-                  <Route path="/payment-methods" element={<PaymentMethodsPage />} />
-                  <Route path="/payment" element={<PaymentPage />} />
-                  <Route path="/checkout" element={<CheckoutPage />} />
-                  <Route path="/disputes" element={<DisputesPage />} />
-                  <Route path="/favorite-couriers" element={<FavoriteCouriersPage />} />
-                  <Route path="/notifications" element={<NotificationsPage />} />
-                  <Route path="/promo-codes" element={<PromoCodesPage />} />
-                  <Route path="/reviews" element={<ReviewsPage />} />
-                  <Route path="/scheduled-deliveries" element={<ScheduledDeliveriesPage />} />
-                  <Route path="/support" element={<SupportPage />} />
-                  <Route path="/settings" element={<SettingsPage />} />
-                  <Route path="/profile" element={<ProfilePage />} />
-                  
-                  {/* Vendor Routes */}
-                  <Route path="/vendor/apply" element={<VendorApplicationPage />} />
-                  <Route path="/vendor/dashboard" element={<VendorDashboard />} />
-                  <Route path="/vendor/items/new" element={<NewVendorItem />} />
-                </Routes>
-              </CustomerLayout>
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
-    </AuthProvider>
+          
+          <Route element={<ProtectedRoute><CustomerLayout /></ProtectedRoute>}>
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/request-delivery" element={<RequestDeliveryPage />} />
+            <Route path="/ship" element={<ShipPage />} />
+            <Route path="/marketplace" element={<MarketplacePage />} />
+            <Route path="/marketplace/:itemId" element={<MarketplaceItemPage />} />
+            <Route path="/jobs" element={<JobsPage />} />
+            <Route path="/jobs/new" element={<NewJobPage />} />
+            <Route path="/jobs/:jobId" element={<JobDetailPage />} />
+            <Route path="/orders" element={<OrdersPage />} />
+            <Route path="/packages" element={<PackagesPage />} />
+            <Route path="/packages/new" element={<NewPackagePage />} />
+            <Route path="/packages/:packageId" element={<PackageDetailPage />} />
+            <Route path="/addresses" element={<AddressesPage />} />
+            <Route path="/payment-methods" element={<PaymentMethodsPage />} />
+            <Route path="/payment" element={<PaymentPage />} />
+            <Route path="/checkout" element={<CheckoutPage />} />
+            <Route path="/disputes" element={<DisputesPage />} />
+            <Route path="/favorite-couriers" element={<FavoriteCouriersPage />} />
+            <Route path="/notifications" element={<NotificationsPage />} />
+            <Route path="/promo-codes" element={<PromoCodesPage />} />
+            <Route path="/reviews" element={<ReviewsPage />} />
+            <Route path="/scheduled-deliveries" element={<ScheduledDeliveriesPage />} />
+            <Route path="/support" element={<SupportPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            
+            {/* Vendor Routes */}
+            <Route path="/vendor/apply" element={<VendorApplicationPage />} />
+            <Route path="/vendor/dashboard" element={<VendorDashboard />} />
+            <Route path="/vendor/items/new" element={<NewVendorItem />} />
+          </Route>
+        </Routes>
+      </AuthProvider>
     </ErrorBoundary>
   )
 }
