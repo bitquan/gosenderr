@@ -7,6 +7,7 @@ import {
   useStripe,
   useElements,
 } from '@stripe/react-stripe-js';
+import { createPaymentIntent } from '@/lib/cloudFunctions';
 
 const stripePromise = loadStripe(
   import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY!
@@ -20,7 +21,7 @@ interface PaymentFormProps {
 }
 
 function CheckoutForm({
-
+  jobId,
   courierRate,
   platformFee,
   onSuccess,
@@ -92,7 +93,7 @@ function CheckoutForm({
 }
 
 export function PaymentForm({
-
+  jobId,
   courierRate,
   platformFee,
   onSuccess,
@@ -104,26 +105,14 @@ export function PaymentForm({
   useEffect(() => {
     const fetchClientSecret = async () => {
       try {
-        const response = await fetch('/api/create-payment-intent', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-          
-            courierRate,
-            platformFee,
-          }),
+        const result = await createPaymentIntent({
+          jobId,
+          courierRate,
+          platformFee,
         });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to initialize payment');
-        }
-
-        const data = await response.json();
-        setClientSecret(data.clientSecret);
+        setClientSecret(result.clientSecret);
       } catch (err: any) {
+        console.error('Payment intent creation failed:', err);
         setError(err.message || 'Failed to initialize payment');
       } finally {
         setIsLoading(false);
@@ -131,7 +120,7 @@ export function PaymentForm({
     };
 
     fetchClientSecret();
-  }, [courierRate, platformFee]);
+  }, [jobId, courierRate, platformFee]);
 
   if (isLoading) {
     return (
@@ -167,7 +156,7 @@ export function PaymentForm({
   return (
     <Elements stripe={stripePromise} options={options}>
       <CheckoutForm
-        jobId=""  // Not used but required by interface
+        jobId={jobId}
         courierRate={courierRate}
         platformFee={platformFee}
         onSuccess={onSuccess}
