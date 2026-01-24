@@ -2,6 +2,7 @@ import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app'
 import { getFirestore, Firestore } from 'firebase/firestore'
 import { getAuth, Auth } from 'firebase/auth'
 import { getStorage, FirebaseStorage } from 'firebase/storage'
+import { getFunctions, Functions } from 'firebase/functions'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
@@ -18,6 +19,7 @@ let app: FirebaseApp | undefined
 let dbInstance: Firestore | undefined
 let authInstance: Auth | undefined
 let storageInstance: FirebaseStorage | undefined
+let functionsInstance: Functions | undefined
 
 if (isValidConfig) {
   try {
@@ -25,6 +27,7 @@ if (isValidConfig) {
     dbInstance = getFirestore(app)
     authInstance = getAuth(app)
     storageInstance = getStorage(app)
+    functionsInstance = getFunctions(app)
     console.log('Firebase initialized successfully')
   } catch (error) {
     console.error('Failed to initialize Firebase:', error)
@@ -37,4 +40,5 @@ export { app }
 export const db = dbInstance as Firestore
 export const auth = authInstance as Auth
 export const storage = storageInstance as FirebaseStorage
+export const functions = functionsInstance as Functions
 export const isFirebaseReady = () => !!dbInstance

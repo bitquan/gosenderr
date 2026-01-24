@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
+import { createPaymentIntent } from '@/lib/cloudFunctions';
 import {
   Elements,
   PaymentElement,
@@ -104,24 +105,11 @@ export function PaymentForm({
   useEffect(() => {
     const fetchClientSecret = async () => {
       try {
-        const response = await fetch('/api/create-payment-intent', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            jobId,
-            courierRate,
-            platformFee,
-          }),
+        const data = await createPaymentIntent({
+          jobId,
+          courierRate,
+          platformFee,
         });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to initialize payment');
-        }
-
-        const data = await response.json();
         setClientSecret(data.clientSecret);
       } catch (err: any) {
         setError(err.message || 'Failed to initialize payment');

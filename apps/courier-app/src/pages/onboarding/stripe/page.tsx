@@ -1,6 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { createStripeConnectLink } from "@/lib/cloudFunctions";
 import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { getAuthSafe } from "@/lib/firebase/auth";
@@ -59,20 +60,11 @@ export default function CourierStripeOnboardingPage() {
 
     try {
       const origin = window.location.origin;
-      const response = await fetch("/api/stripe/connect", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          accountId: courierProfile?.stripeConnectAccountId || null,
-          refreshUrl: `${origin}/courier/onboarding/stripe`,
-          returnUrl: `${origin}/courier/onboarding/stripe?success=1`,
-        }),
+      const data = await createStripeConnectLink({
+        accountId: courierProfile?.stripeConnectAccountId || null,
+        refreshUrl: `${origin}/courier/onboarding/stripe`,
+        returnUrl: `${origin}/courier/onboarding/stripe?success=1`,
       });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to start Stripe onboarding");
-      }
 
       // Save Stripe account ID to courierProfile
       if (!courierProfile?.stripeConnectAccountId) {
