@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { useAuth } from './hooks/useAuth'
+import { ErrorBoundary } from './components/ErrorBoundary'
 
 // Layouts
 import CustomerLayout from './layouts/CustomerLayout'
@@ -68,10 +69,11 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 function App() {
   console.log('App component rendering')
   return (
-    <AuthProvider>
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
+    <ErrorBoundary>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
         
         <Route
           path="/*"
@@ -117,6 +119,7 @@ function App() {
         />
       </Routes>
     </AuthProvider>
+    </ErrorBoundary>
   )
 }
 
