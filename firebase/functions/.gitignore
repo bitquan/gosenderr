@@ -1,6 +1,5 @@
 lib/
 node_modules/
 *.log
-package-lock.json
 .env
 .env.local
