@@ -1,15 +1,11 @@
-import { ReactNode } from 'react'
+import { Outlet } from 'react-router-dom'
 import { BottomNav, courierNavItems } from '../components/BottomNav'
 
-interface CourierLayoutProps {
-  children: ReactNode
-}
-
-export default function CourierLayout({ children }: CourierLayoutProps) {
+export default function CourierLayout() {
   return (
     <div className="min-h-screen bg-[#F8F9FF]">
       <div className="pb-24">
-        {children}
+        <Outlet />
       </div>
       <BottomNav items={courierNavItems} />
     </div>

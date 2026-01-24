@@ -42,33 +42,24 @@ function App() {
     <ErrorBoundary>
       <AuthProvider>
         <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        
-        <Route
-          path="/*"
-          element={
-            <ProtectedRoute>
-              <CourierLayout>
-                <Routes>
-                  <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                  <Route path="/dashboard" element={<DashboardPage />} />
-                  <Route path="/routes" element={<RoutesPage />} />
-                  <Route path="/active-route" element={<ActiveRoutePage />} />
-                  <Route path="/jobs/:jobId" element={<JobDetailPage />} />
-                  <Route path="/jobs" element={<RoutesPage />} />
-                  <Route path="/earnings" element={<EarningsPage />} />
-                  <Route path="/rate-cards" element={<RateCardsPage />} />
-                  <Route path="/equipment" element={<EquipmentPage />} />
-                  <Route path="/setup" element={<SetupPage />} />
-                  <Route path="/settings" element={<SettingsPage />} />
-                  <Route path="/support" element={<SupportPage />} />
-                  <Route path="/onboarding" element={<OnboardingPage />} />
-                  <Route path="/onboarding/stripe" element={<StripeOnboardingPage />} />
-                </Routes>
-              </CourierLayout>
-            </ProtectedRoute>
-          }
-        />
+          <Route path="/login" element={<LoginPage />} />
+          
+          <Route element={<ProtectedRoute><CourierLayout /></ProtectedRoute>}>
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/routes" element={<RoutesPage />} />
+            <Route path="/active-route" element={<ActiveRoutePage />} />
+            <Route path="/jobs/:jobId" element={<JobDetailPage />} />
+            <Route path="/jobs" element={<RoutesPage />} />
+            <Route path="/earnings" element={<EarningsPage />} />
+            <Route path="/rate-cards" element={<RateCardsPage />} />
+            <Route path="/equipment" element={<EquipmentPage />} />
+            <Route path="/setup" element={<SetupPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/support" element={<SupportPage />} />
+            <Route path="/onboarding" element={<OnboardingPage />} />
+            <Route path="/onboarding/stripe" element={<StripeOnboardingPage />} />
+          </Route>
         </Routes>
       </AuthProvider>
     </ErrorBoundary>
