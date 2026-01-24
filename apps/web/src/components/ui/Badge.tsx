@@ -95,9 +95,28 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
       variant: "success" as const,
       label: "Ready",
     },
+    pending_docs: {
+      variant: "warning" as const,
+      label: "Pending Documents",
+    },
+    pending_review: {
+      variant: "warning" as const,
+      label: "Pending Review",
+    },
+    suspended: {
+      variant: "error" as const,
+      label: "Suspended",
+    },
+    banned: {
+      variant: "error" as const,
+      label: "Banned",
+    },
   };
 
-  const config = statusConfig[status];
+  const config = statusConfig[status] || {
+    variant: "default" as const,
+    label: status.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
+  };
 
   return (
     <Badge variant={config.variant} className={className}>

@@ -13,7 +13,29 @@ service cloud.firestore {
     }
     
     function isAdmin() {
-      return signedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      return signedIn() && (
+        request.auth.token.get('role', '') == 'admin' ||
+        request.auth.token.get('admin', false) == true ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      );
+    }
+    
+    function isCourier() {
+      return signedIn() && (
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'courier' ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('courierProfile', null) != null
+      );
+    }
+    
+    function isPackageRunner() {
+      return signedIn() && request.auth.token.get('packageRunner', false) == true;
+    }
+    
+    function isVendor() {
+      return signedIn() && (
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'vendor' ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('vendorProfile', null) != null
+      );
     }
     
     function validRole(role) {
@@ -25,7 +47,7 @@ service cloud.firestore {
     }
 
     function validJobStatus(s) {
-      return s in ['open', 'assigned', 'enroute_pickup', 'arrived_pickup', 'picked_up', 
+      return s in ['open', 'pending', 'assigned', 'in_progress', 'enroute_pickup', 'arrived_pickup', 'picked_up', 
                    'enroute_dropoff', 'arrived_dropoff', 'completed', 'cancelled', 'disputed'];
     }
 
@@ -110,6 +132,21 @@ service cloud.firestore {
       function isBuyer() {
         return signedIn() && resource.data.buyerId == request.auth.uid;
       }
+      
+      function validOrderStatus(status) {
+        return status in ['payment_pending', 'paid', 'preparing', 'ready_for_pickup', 'in_transit', 'delivered', 'cancelled'];
+      }
+      
+      function validStatusTransition() {
+        return (
+          (resource.data.status == 'payment_pending' && request.resource.data.status in ['paid', 'cancelled']) ||
+          (resource.data.status == 'paid' && request.resource.data.status in ['preparing', 'cancelled']) ||
+          (resource.data.status == 'preparing' && request.resource.data.status in ['ready_for_pickup', 'cancelled']) ||
+          (resource.data.status == 'ready_for_pickup' && request.resource.data.status in ['in_transit', 'cancelled']) ||
+          (resource.data.status == 'in_transit' && request.resource.data.status == 'delivered') ||
+          (resource.data.status == 'delivered' && request.resource.data.status == 'delivered')
+        );
+      }
 
       // Seller or buyer can read their orders
       allow read: if isSeller() || isBuyer() || isAdmin();
@@ -117,7 +154,8 @@ service cloud.firestore {
       // Buyer creates order
       allow create: if signedIn()
         && request.resource.data.buyerId == request.auth.uid
-        && request.resource.data.sellerId is string;
+        && request.resource.data.sellerId is string
+        && validOrderStatus(request.resource.data.status);
 
       // Seller updates order status; buyer can attach checkout session metadata and payment info
       allow update: if signedIn() && (
@@ -127,6 +165,7 @@ service cloud.firestore {
             'status',
             'updatedAt'
           ])
+          && validStatusTransition()
         )
         ||
         (
@@ -138,6 +177,7 @@ service cloud.firestore {
             'jobId',
             'updatedAt'
           ])
+          && validStatusTransition()
         )
         || isAdmin()
       );
@@ -155,12 +195,28 @@ service cloud.firestore {
         return signedIn() && resource.data.sellerId == request.auth.uid;
       }
 
-      function isCourier() {
+      function isJobCourier() {
         return signedIn() && resource.data.get('courierId', null) == request.auth.uid;
       }
       
+      function courierHasRequiredEquipment() {
+        return request.resource.data.get('jobType', '') != 'food' || (
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data
+            .get('courierProfile', {})
+            .get('equipment', {})
+            .get('cooler', {})
+            .get('approved', false) == true
+          ||
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data
+            .get('courierProfile', {})
+            .get('equipment', {})
+            .get('hot_bag', {})
+            .get('approved', false) == true
+        );
+      }
+      
       function isParticipant() {
-        return isCustomer() || isSeller() || isCourier();
+        return isCustomer() || isSeller() || isJobCourier();
       }
       
       // Read: customer, seller, courier, or admin
@@ -183,17 +239,19 @@ service cloud.firestore {
           && resource.data.status in ['open', 'assigned']
         )
         ||
-        // 2) Any courier can claim an open job
+        // 2) Any courier with proper equipment can claim an open job
         (
           resource.data.status == 'open'
           && resource.data.get('courierId', null) == null
           && request.resource.data.courierId == request.auth.uid
           && request.resource.data.status == 'assigned'
+          && isCourier()
+          && courierHasRequiredEquipment()
         )
         ||
         // 3) Assigned courier can update job progress
         (
-          isCourier()
+          isJobCourier()
           && validJobStatus(request.resource.data.status)
         )
         ||
@@ -233,11 +291,12 @@ service cloud.firestore {
         && (request.resource.data.status == 'open' || request.resource.data.status == 'pending')
         && (!('courierUid' in request.resource.data) || request.resource.data.courierUid == null);
 
-      // read job: creator, assigned courier, or any signed-in user for open jobs
+      // read job: creator, assigned courier, or any signed-in user for open/pending jobs
       allow read: if signedIn() && (
         isCreator()
         || isAssignedCourier()
         || resource.data.status == 'open'
+        || resource.data.status == 'pending'
       );
 
       // update job
@@ -249,23 +308,18 @@ service cloud.firestore {
           && (resource.data.status == 'open' || resource.data.status == 'pending' || resource.data.status == 'assigned')
         )
         ||
-        // 2) Any courier can claim an open job (atomic claim)
+        // 2) Any courier can claim an open or pending job (atomic claim)
         (
-          resource.data.status == 'open'
-          && resource.data.courierUid == null
+          (resource.data.status == 'open' || resource.data.status == 'pending')
+          && (!('courierUid' in resource.data) || resource.data.courierUid == null)
           && request.resource.data.courierUid == request.auth.uid
           && request.resource.data.status == 'assigned'
-          && request.resource.data.agreedFee is number
         )
         ||
         // 3) Assigned courier can update job progress
         (
           isAssignedCourier()
-          && request.resource.data.courierUid == resource.data.courierUid
-          && request.resource.data.createdByUid == resource.data.createdByUid
-          && request.resource.data.agreedFee == resource.data.agreedFee
-          && request.resource.data.pickup == resource.data.pickup
-          && request.resource.data.dropoff == resource.data.dropoff
+          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['courierUid', 'createdByUid', 'agreedFee']))
           && validJobStatus(request.resource.data.status)
         )
       );
@@ -364,22 +418,33 @@ service cloud.firestore {
 
     // ========== LONG HAUL ROUTES (Interstate Routes 200+mi) ==========
     match /longHaulRoutes/{routeId} {
-      function isRunner() {
-        return signedIn() && (
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'runner' ||
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'package_runner'
-        );
-      }
-      
       function isAssignedRunner() {
         return signedIn() && resource.data.get('runnerId', null) == request.auth.uid;
       }
       
-      // Runners can view all long haul routes
-      allow read: if isRunner();
+      function runnerMeetsRouteRequirements() {
+        return isPackageRunner()
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data
+              .get('packageRunnerProfile', {})
+              .get('status', '') == 'approved'
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data
+              .get('packageRunnerProfile', {})
+              .get('commercialInsurance', {})
+              .get('verified', false) == true
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data
+              .get('packageRunnerProfile', {})
+              .get('commercialInsurance', {})
+              .get('coverageAmount', 0) >= 100000;
+      }
       
-      // Runners can accept routes and update their assigned routes
-      allow update: if isRunner() && (request.resource.data.status == 'accepted' || isAssignedRunner());
+      // Approved package runners can view all long haul routes
+      allow read: if isPackageRunner();
+      
+      // Runners can claim routes if they meet requirements, or update their assigned routes
+      allow update: if isPackageRunner() && (
+        (request.resource.data.status == 'claimed' && resource.data.status == 'available' && runnerMeetsRouteRequirements()) ||
+        (isAssignedRunner() && request.resource.data.status in ['accepted', 'in_progress', 'completed'])
+      );
       
       // Admins have full access
       allow read, write: if isAdmin();
@@ -469,6 +534,24 @@ service cloud.firestore {
       
       // Admins can read all submissions
       allow read: if isAdmin();
+    }
+    
+    // ========== ADMIN ACTION LOGS (Audit Trail) ==========
+    match /adminActionLogs/{logId} {
+      // Only admins and system can create logs (typically via cloud function)
+      allow create: if isAdmin();
+      
+      // Admins can read all audit logs
+      allow read: if isAdmin();
+      
+      // No updates or deletes - immutable audit trail
+      allow update, delete: if false;
+    }
+
+    // ========== PLATFORM SETTINGS ==========
+    match /platformSettings/{settingId} {
+      // Only admins can read and write platform settings
+      allow read, write: if isAdmin();
     }
   }
 }

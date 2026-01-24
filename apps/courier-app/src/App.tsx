@@ -2,9 +2,22 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { useAuth } from './hooks/useAuth'
 
+// Layouts
+import CourierLayout from './layouts/CourierLayout'
+
 // Pages
-import DashboardPage from './pages/Dashboard'
+import DashboardPage from './pages/dashboard/page'
 import LoginPage from './pages/Login'
+import JobDetailPage from './pages/jobs/[jobId]/page'
+import RoutesPage from './pages/routes/page'
+import ActiveRoutePage from './pages/active-route/page'
+import SettingsPage from './pages/settings/page'
+import SupportPage from './pages/support/page'
+import OnboardingPage from './pages/onboarding/page'
+import StripeOnboardingPage from './pages/onboarding/stripe/page'
+import RateCardsPage from './pages/rate-cards/page'
+import EquipmentPage from './pages/equipment/page'
+import SetupPage from './pages/setup/page'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
@@ -32,10 +45,22 @@ function App() {
           path="/*"
           element={
             <ProtectedRoute>
-              <Routes>
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                <Route path="/dashboard" element={<DashboardPage />} />
-              </Routes>
+              <CourierLayout>
+                <Routes>
+                  <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                  <Route path="/dashboard" element={<DashboardPage />} />
+                  <Route path="/routes" element={<RoutesPage />} />
+                  <Route path="/active-route" element={<ActiveRoutePage />} />
+                  <Route path="/jobs/:jobId" element={<JobDetailPage />} />
+                  <Route path="/rate-cards" element={<RateCardsPage />} />
+                  <Route path="/equipment" element={<EquipmentPage />} />
+                  <Route path="/setup" element={<SetupPage />} />
+                  <Route path="/settings" element={<SettingsPage />} />
+                  <Route path="/support" element={<SupportPage />} />
+                  <Route path="/onboarding" element={<OnboardingPage />} />
+                  <Route path="/onboarding/stripe" element={<StripeOnboardingPage />} />
+                </Routes>
+              </CourierLayout>
             </ProtectedRoute>
           }
         />

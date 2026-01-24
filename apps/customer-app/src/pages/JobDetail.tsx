@@ -6,6 +6,8 @@ import { useAuth } from '../hooks/useAuth'
 import { Card, CardHeader, CardTitle, CardContent } from '../components/Card'
 import { StatusBadge } from '../components/Badge'
 import { formatCurrency, formatDate } from '../lib/utils'
+import RateDeliveryModal from '../components/RateDeliveryModal'
+import DisputeModal from '../components/DisputeModal'
 
 interface Job {
   id: string
@@ -42,6 +44,8 @@ export default function JobDetailPage() {
   const [job, setJob] = useState<Job | null>(null)
   const [loading, setLoading] = useState(true)
   const [cancelling, setCancelling] = useState(false)
+  const [showRatingModal, setShowRatingModal] = useState(false)
+  const [showDisputeModal, setShowDisputeModal] = useState(false)
 
   useEffect(() => {
     if (!jobId) return
@@ -432,6 +436,28 @@ export default function JobDetailPage() {
           </Card>
         )}
 
+        {/* Rate Delivery Card - Show after completion */}
+        {(job.status === 'completed' || job.status === 'delivered') && job.courierUid && (
+          <Card variant="elevated" className="animate-slide-up animation-delay-300">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-1">Rate Your Delivery</h3>
+                  <p className="text-sm text-gray-600">
+                    Share your experience to help us improve our service
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowRatingModal(true)}
+                  className="px-6 py-3 rounded-xl font-semibold bg-yellow-500 text-white hover:bg-yellow-600 hover:shadow-lg hover:scale-105 transition-all"
+                >
+                  ⭐ Rate Delivery
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Contact Support Card */}
         <Card variant="elevated" className="animate-slide-up animation-delay-400">
           <CardContent className="p-6">
@@ -439,18 +465,49 @@ export default function JobDetailPage() {
               <div className="text-4xl mb-3">💬</div>
               <h3 className="font-semibold text-gray-900 mb-2">Need Help?</h3>
               <p className="text-sm text-gray-600 mb-4">
-                Contact our support team if you have any questions about your delivery
+                Have an issue with your delivery? File a dispute or contact support.
               </p>
-              <a
-                href="mailto:support@gosenderr.com"
-                className="inline-flex px-6 py-3 rounded-xl bg-gray-100 text-gray-900 font-semibold hover:bg-gray-200 transition-all hover:scale-105"
-              >
-                Contact Support
-              </a>
+              <div className="flex gap-3 justify-center">
+                <button
+                  onClick={() => setShowDisputeModal(true)}
+                  className="px-6 py-3 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 transition-all hover:scale-105"
+                >
+                  🚨 File Dispute
+                </button>
+                <a
+                  href="mailto:support@gosenderr.com"
+                  className="inline-flex px-6 py-3 rounded-xl bg-gray-100 text-gray-900 font-semibold hover:bg-gray-200 transition-all hover:scale-105"
+                >
+                  Contact Support
+                </a>
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Rating Modal */}
+      {job && job.courierUid && user && (
+        <RateDeliveryModal
+          isOpen={showRatingModal}
+          onClose={() => setShowRatingModal(false)}
+          jobId={jobId || ''}
+          courierUid={job.courierUid}
+          courierName="Courier" // You can fetch courier name from Firestore if needed
+          customerUid={user.uid}
+        />
+      )}
+
+      {/* Dispute Modal */}
+      {job && user && (
+        <DisputeModal
+          isOpen={showDisputeModal}
+          onClose={() => setShowDisputeModal(false)}
+          jobId={jobId || ''}
+          customerUid={user.uid}
+          customerName={user.displayName || user.email || 'Customer'}
+        />
+      )}
     </div>
   )
 }

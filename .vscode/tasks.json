@@ -1,10 +1,11 @@
 {
   "version": "2.0.0",
   "tasks": [
+    // ==================== DEV SERVERS (Run These) ====================
     {
-      "label": "Customer App: Dev Server",
+      "label": "🔧 Admin App (Port 3000)",
       "type": "shell",
-      "command": "pnpm --filter @gosenderr/customer-app dev",
+      "command": "pnpm --filter @gosenderr/admin-app dev",
       "isBackground": true,
       "problemMatcher": {
         "pattern": {
@@ -32,29 +33,117 @@
         "isDefault": true
       }
     },
+
     {
-      "label": "Customer App: Build",
+      "label": "📦 Customer App (Port 5173)",
       "type": "shell",
-      "command": "pnpm --filter @gosenderr/customer-app build",
-      "problemMatcher": ["$tsc"],
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared"
-      }
-    },
-    {
-      "label": "Customer App: Preview Build",
-      "type": "shell",
-      "command": "pnpm --filter @gosenderr/customer-app preview",
+      "command": "pnpm --filter @gosenderr/customer-app dev",
       "isBackground": true,
-      "problemMatcher": [],
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^([^\\s].*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "severity": 4,
+          "message": 5
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^.*VITE.*$",
+          "endsPattern": "^.*ready in.*$"
+        }
+      },
       "presentation": {
         "reveal": "always",
-        "panel": "dedicated"
+        "panel": "dedicated",
+        "focus": false,
+        "clear": true
       }
     },
     {
-      "label": "Web App (Next.js): Dev Server",
+      "label": "📦 Customer App (Port 5180)",
+      "type": "shell",
+      "command": "PORT=5180 VITE_PORT=5180 pnpm --filter @gosenderr/customer-app dev -- --host 127.0.0.1",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^([^\\s].*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "severity": 4,
+          "message": 5
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^.*VITE.*$",
+          "endsPattern": "^.*ready in.*$"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": false,
+        "clear": true
+      }
+    },
+    {
+      "label": "⚡ Courier App (Port 5174)",
+      "type": "shell",
+      "command": "pnpm --filter @gosenderr/courier-app dev",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^([^\\s].*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "severity": 4,
+          "message": 5
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^.*VITE.*$",
+          "endsPattern": "^.*ready in.*$"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": false,
+        "clear": true
+      }
+    },
+    {
+      "label": "🚚 Shifter App (Port 5175)",
+      "type": "shell",
+      "command": "pnpm --filter @gosenderr/shifter-app dev",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^([^\\s].*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "severity": 4,
+          "message": 5
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^.*VITE.*$",
+          "endsPattern": "^.*ready in.*$"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": false,
+        "clear": true
+      }
+    },
+    {
+      "label": "🌐 Web/Marketing App (Port 3003)",
       "type": "shell",
       "command": "pnpm --filter @gosenderr/web dev",
       "isBackground": true,
@@ -80,7 +169,85 @@
       }
     },
     {
-      "label": "Web App (Next.js): Build",
+      "label": "🚀 All Vite Apps",
+      "dependsOn": [
+        "🔧 Admin App (Port 3000)",
+        "📦 Customer App (Port 5173)",
+        "⚡ Courier App (Port 5174)",
+        "🚚 Shifter App (Port 5175)"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "🌐 All Apps (All Ports)",
+      "type": "shell",
+      "command": "pnpm dev",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": false
+      }
+    },
+
+    // ==================== STOP TASKS ====================
+    {
+      "label": "🛑 Stop All Apps",
+      "type": "shell",
+      "command": "lsof -ti:3000,5173,5174,5175,5180 | xargs kill -9 2>/dev/null || echo 'All ports cleared'",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "focus": true,
+        "clear": false
+      }
+    },
+
+    // ==================== BUILD TASKS ====================
+    {
+      "label": "Build: Admin App",
+      "type": "shell",
+      "command": "pnpm --filter @gosenderr/admin-app build",
+      "problemMatcher": ["$tsc"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Build: Courier App",
+      "type": "shell",
+      "command": "pnpm --filter @gosenderr/courier-app build",
+      "problemMatcher": ["$tsc"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Build: Customer App",
+      "type": "shell",
+      "command": "pnpm --filter @gosenderr/customer-app build",
+      "problemMatcher": ["$tsc"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Build: Customer App",
+      "type": "shell",
+      "command": "pnpm --filter @gosenderr/customer-app build",
+      "problemMatcher": ["$tsc"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Build: Web App",
       "type": "shell",
       "command": "pnpm --filter @gosenderr/web build",
       "problemMatcher": ["$tsc"],
@@ -89,17 +256,50 @@
         "panel": "shared"
       }
     },
+
+    // ==================== DEPLOYMENT ====================
     {
-      "label": "Flutter Driver (Simulator)",
+      "label": "Deploy: Firebase Hosting",
       "type": "shell",
-      "command": "flutter run -d C3CECD8E-BB84-4F07-A84B-E84F29704870 --dart-define=APP_ROLE=driver",
-      "isBackground": true,
+      "command": "firebase deploy --only hosting:gosenderr-6773f --project gosenderr-6773f",
       "problemMatcher": [],
       "presentation": {
         "reveal": "always",
         "panel": "dedicated"
       }
     },
+    {
+      "label": "Deploy: Firebase Functions",
+      "type": "shell",
+      "command": "firebase deploy --only functions --project gosenderr-6773f",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Deploy: Firestore Rules",
+      "type": "shell",
+      "command": "firebase deploy --only firestore:rules --project gosenderr-6773f",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Deploy: Cloud Run Web",
+      "type": "shell",
+      "command": "bash scripts/deploy-cloudrun-web.sh",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+
+    // ==================== UTILITIES ====================
     {
       "label": "Install All Dependencies",
       "type": "shell",
@@ -111,37 +311,7 @@
       }
     },
     {
-      "label": "Firebase: Deploy Hosting",
-      "type": "shell",
-      "command": "firebase deploy --only hosting:gosenderr-6773f --project gosenderr-6773f",
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated"
-      }
-    },
-    {
-      "label": "Firebase: Deploy Functions",
-      "type": "shell",
-      "command": "firebase deploy --only functions --project gosenderr-6773f",
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated"
-      }
-    },
-    {
-      "label": "Cloud Run: Deploy Web",
-      "type": "shell",
-      "command": "bash scripts/deploy-cloudrun-web.sh",
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated"
-      }
-    },
-    {
-      "label": "Lint All",
+      "label": "Lint All Projects",
       "type": "shell",
       "command": "pnpm lint",
       "problemMatcher": ["$eslint-stylish"],
@@ -151,7 +321,7 @@
       }
     },
     {
-      "label": "Type Check All",
+      "label": "Type Check All Projects",
       "type": "shell",
       "command": "pnpm type-check",
       "problemMatcher": ["$tsc"],

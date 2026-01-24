@@ -1,0 +1,58 @@
+# This file specifies files that are *not* uploaded to Google Cloud
+# using gcloud. It follows the same syntax as .gitignore
+
+.git
+.gitignore
+
+# IMPORTANT: Always include these
+!package.json
+!package-lock.json
+
+# Node.js dependencies
+node_modules/
+
+# TypeScript
+*.ts
+!src/**/*.ts
+tsconfig.json
+
+# Source maps
+*.js.map
+
+# Logs
+*.log
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Build files (keep lib/ since it's compiled output)
+# lib/ - DO NOT IGNORE, this is needed!
+
+# Test files
+*.test.js
+*.spec.js
+test/
+tests/
+__tests__/
+
+# Documentation
+*.md
+!README.md
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Misc
+.eslintrc.*
+.prettierrc
+.editorconfig

@@ -2,6 +2,8 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react-swc'
 import path from 'path'
 
+const devPort = Number(process.env.VITE_PORT ?? process.env.PORT ?? 5173);
+
 export default defineConfig({
   plugins: [react()],
   resolve: {
@@ -25,7 +27,7 @@ export default defineConfig({
     }
   },
   server: {
-    port: 3000,
-    strictPort: false
+    port: devPort,
+    strictPort: true
   }
 })

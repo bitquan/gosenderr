@@ -17,6 +17,7 @@ import { getAuthSafe } from "@/lib/firebase/auth";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { StatusBadge } from "@/components/ui/Badge";
 import { SwipeableCard } from "@/components/ui/SwipeableCard";
+import RunnerRejectModal from "@/components/v2/RunnerRejectModal";
 
 export default function AvailableRoutesNew() {
   const router = useRouter();
@@ -28,6 +29,7 @@ export default function AvailableRoutesNew() {
   const [userDoc, setUserDoc] = useState<any>(null);
   const [routes, setRoutes] = useState<any[]>([]);
   const [filterByHomeHub, setFilterByHomeHub] = useState(true);
+  const [selectedRouteForReject, setSelectedRouteForReject] = useState<string | null>(null);
 
   useEffect(() => {
     const auth = getAuthSafe();
@@ -49,13 +51,13 @@ export default function AvailableRoutesNew() {
   }, [router]);
 
   useEffect(() => {
-    if (currentUser) {
+    if (currentUser && !authLoading) {
       loadUserAndRoutes();
     }
-  }, [currentUser, filterByHomeHub]);
+  }, [currentUser, filterByHomeHub, authLoading]);
 
   const loadUserAndRoutes = async () => {
-    if (!currentUser) return;
+    if (!currentUser || authLoading) return;
 
     try {
       setLoading(true);
@@ -109,7 +111,12 @@ export default function AvailableRoutesNew() {
       setRoutes(routesData);
     } catch (err: any) {
       console.error("Error loading routes:", err);
-      setError(err.message);
+      if (err.code === 'permission-denied') {
+        setError("Please sign in to view available routes");
+        router.push("/login");
+      } else {
+        setError(err.message || "Failed to load routes");
+      }
     } finally {
       setLoading(false);
     }
@@ -135,6 +142,11 @@ export default function AvailableRoutesNew() {
     } finally {
       setAccepting(false);
     }
+  };
+
+  const handleRejectSubmitted = () => {
+    setSelectedRouteForReject(null);
+    loadUserAndRoutes(); // Refresh the list
   };
 
   if (authLoading || loading) {
@@ -290,21 +302,29 @@ export default function AvailableRoutesNew() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                      <div>
-                        <p className="text-xs text-gray-500 mb-1">
-                          Your Earnings
-                        </p>
-                        <p className="text-3xl font-bold text-green-600">
-                          ${route.pricing?.runnerEarnings?.toFixed(2)}
-                        </p>
+                    <div className="pt-4 border-t border-gray-200 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">
+                            Your Earnings
+                          </p>
+                          <p className="text-3xl font-bold text-green-600">
+                            ${route.pricing?.runnerEarnings?.toFixed(2)}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => handleAcceptRoute(route.id)}
+                          disabled={accepting}
+                          className="bg-purple-600 text-white px-8 py-3 rounded-xl font-medium hover:bg-purple-700 transition-colors disabled:bg-gray-400"
+                        >
+                          {accepting ? "Accepting..." : "Accept Route"}
+                        </button>
                       </div>
                       <button
-                        onClick={() => handleAcceptRoute(route.id)}
-                        disabled={accepting}
-                        className="bg-purple-600 text-white px-8 py-3 rounded-xl font-medium hover:bg-purple-700 transition-colors disabled:bg-gray-400"
+                        onClick={() => setSelectedRouteForReject(route.id)}
+                        className="w-full px-6 py-2 rounded-xl border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50 transition-colors"
                       >
-                        {accepting ? "Accepting..." : "Accept Route"}
+                        Not interested
                       </button>
                     </div>
                   </div>
@@ -314,6 +334,16 @@ export default function AvailableRoutesNew() {
           })
         )}
       </div>
+
+      {/* Reject Modal */}
+      {selectedRouteForReject && currentUser && (
+        <RunnerRejectModal
+          jobId={selectedRouteForReject}
+          runnerId={currentUser.uid}
+          onClose={() => setSelectedRouteForReject(null)}
+          onSubmit={handleRejectSubmitted}
+        />
+      )}
     </div>
   );
 }

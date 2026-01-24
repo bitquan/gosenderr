@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GoSenderr - Choose Your Role</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 60px;
+            animation: fadeInDown 0.8s ease;
+        }
+
+        .logo {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+
+        .title {
+            font-size: 48px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 20px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            animation: fadeInUp 0.8s ease 0.2s backwards;
+        }
+
+        .card {
+            background: white;
+            border-radius: 24px;
+            padding: 40px 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+        }
+
+        .card-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .card-description {
+            font-size: 16px;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .card-customer {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .card-customer .card-title,
+        .card-customer .card-description {
+            color: white;
+        }
+
+        .card-courier {
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+        }
+
+        .card-courier .card-title,
+        .card-courier .card-description {
+            color: white;
+        }
+
+        .card-shifter {
+            background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+        }
+
+        .card-shifter .card-title,
+        .card-shifter .card-description {
+            color: white;
+        }
+
+        .card-admin {
+            background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+        }
+
+        .card-admin .card-title,
+        .card-admin .card-description {
+            color: white;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .title {
+                font-size: 36px;
+            }
+
+            .subtitle {
+                font-size: 18px;
+            }
+
+            .cards {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">📦</div>
+            <h1 class="title">GoSenderr</h1>
+            <p class="subtitle">Choose your role to get started</p>
+        </div>
+
+        <div class="cards">
+            <a href="https://gosenderr-customer.web.app" class="card card-customer">
+                <div class="card-icon">👤</div>
+                <h2 class="card-title">Customer</h2>
+                <p class="card-description">Send packages and track deliveries</p>
+            </a>
+
+            <a href="https://gosenderr-courier.web.app" class="card card-courier">
+                <div class="card-icon">🚗</div>
+                <h2 class="card-title">Courier</h2>
+                <p class="card-description">Deliver packages and earn money</p>
+            </a>
+
+            <a href="https://gosenderr-shifter.web.app" class="card card-shifter">
+                <div class="card-icon">📍</div>
+                <h2 class="card-title">Shifter</h2>
+                <p class="card-description">Manage routes and deliveries</p>
+            </a>
+
+            <a href="https://gosenderr-admin.web.app" class="card card-admin">
+                <div class="card-icon">⚙️</div>
+                <h2 class="card-title">Admin</h2>
+                <p class="card-description">Manage platform operations</p>
+            </a>
+        </div>
+    </div>
+</body>
+</html>
