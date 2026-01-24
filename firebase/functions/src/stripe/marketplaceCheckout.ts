@@ -1,9 +1,13 @@
 import * as functions from 'firebase-functions/v2';
+import { defineString } from 'firebase-functions/params';
 import Stripe from 'stripe';
 
+const stripeSecretKey = defineString('STRIPE_SECRET_KEY', {
+  default: 'sk_test_51S2bUFBaCU2Z8YfchEvNaqg6Vr6xxsOWvFkt4mWGbAustjJ6ix4x2kpXqL1FZMLjSFu7x1CAYoMHzhwSUQke41xZ00Ly9u42FG'
+});
+
 function getStripe() {
-  const legacyConfig = (functions as any).config?.();
-  const apiKey = legacyConfig?.stripe?.secret_key || process.env.STRIPE_SECRET_KEY;
+  const apiKey = stripeSecretKey.value();
   if (!apiKey) {
     throw new Error('STRIPE_SECRET_KEY not configured');
   }
