@@ -27,6 +27,7 @@ import {
 import { getItem } from "@/lib/v2/items";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Avatar } from "@/components/ui/Avatar";
+import { createPaymentIntent } from "@/lib/cloudFunctions";
 
 interface ItemDocWithId extends ItemDoc {
   id: string;
@@ -167,33 +168,23 @@ export default function CheckoutPage() {
   useEffect(() => {
     if (!item || !courier || totalAmount === 0) return;
 
-    async function createPaymentIntent() {
+    async function fetchPaymentIntent() {
       try {
-        const response = await fetch("/api/create-payment-intent", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            amount: Math.round(totalAmount * 100), // Convert to cents
-            currency: "usd",
-            customerId: user?.uid,
-            jobId: `temp_${Date.now()}`, // Temporary ID
-          }),
+        const tempJobId = `temp_${Date.now()}`;
+        const result = await createPaymentIntent({
+          jobId: tempJobId,
+          courierRate: courierRate,
+          platformFee: platformFee,
         });
-
-        if (!response.ok) {
-          throw new Error("Failed to create payment intent");
-        }
-
-        const data = await response.json();
-        setClientSecret(data.clientSecret);
+        setClientSecret(result.clientSecret);
       } catch (err) {
         console.error("Error creating payment intent:", err);
         setError("Failed to initialize payment");
       }
     }
 
-    createPaymentIntent();
-  }, [item, courier, totalAmount, user]);
+    fetchPaymentIntent();
+  }, [item, courier, totalAmount, courierRate, platformFee]);
 
   const handlePayment = async () => {
     if (!item || !courier || !user) return;
