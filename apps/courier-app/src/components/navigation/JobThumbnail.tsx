@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import type { Job } from '@/lib/v2/types';
 
 interface JobThumbnailProps {
@@ -10,23 +10,41 @@ interface JobThumbnailProps {
 
 export function JobThumbnail({ job, isSelected, onClick, map }: JobThumbnailProps) {
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
+  const rafRef = useRef<number>();
 
   useEffect(() => {
     if (!map) return;
 
     const updatePosition = () => {
-      const point = map.project([job.pickup.lng, job.pickup.lat]);
-      setPosition({ x: point.x, y: point.y });
+      // Cancel any pending animation frame
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
+
+      // Use requestAnimationFrame for smooth 60fps updates
+      rafRef.current = requestAnimationFrame(() => {
+        const point = map.project([job.pickup.lng, job.pickup.lat]);
+        setPosition({ x: point.x, y: point.y });
+      });
     };
 
+    // Initial position
     updatePosition();
 
+    // Update on map events - these fire frequently so RAF throttles them
     map.on('move', updatePosition);
     map.on('zoom', updatePosition);
+    map.on('rotate', updatePosition);
+    map.on('pitch', updatePosition);
 
     return () => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
       map.off('move', updatePosition);
       map.off('zoom', updatePosition);
+      map.off('rotate', updatePosition);
+      map.off('pitch', updatePosition);
     };
   }, [map, job.pickup.lat, job.pickup.lng]);
 
@@ -41,6 +59,7 @@ export function JobThumbnail({ job, isSelected, onClick, map }: JobThumbnailProp
         top: `${position.y}px`,
         transform: 'translate(-50%, -100%)',
         zIndex: isSelected ? 30 : 20,
+        willChange: 'transform', // Optimize for animations
       }}
       className={`cursor-pointer transition-all duration-200 ${
         isSelected ? 'scale-110' : 'hover:scale-105'

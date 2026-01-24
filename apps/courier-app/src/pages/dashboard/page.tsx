@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo, useRef, type PointerEvent } from "react";
 import { LoadingState } from "@gosenderr/ui";
 import { useNavigate, Link } from "react-router-dom";
 import { doc, updateDoc } from "firebase/firestore";
@@ -27,6 +27,11 @@ export default function CourierDashboardMobile() {
   const [hideIneligible, setHideIneligible] = useState(true);
   const [togglingOnline, setTogglingOnline] = useState(false);
   const { isTracking, permissionDenied } = useCourierLocationWriter();
+  const [sheetOpen, setSheetOpen] = useState(true);
+  const [isDraggingSheet, setIsDraggingSheet] = useState(false);
+  const [sheetDragOffset, setSheetDragOffset] = useState(0);
+  const [collapsedOffset, setCollapsedOffset] = useState(0);
+  const sheetDragStartY = useRef<number | null>(null);
 
   // Map and route management
   const mapRef = useRef<MapboxMapHandle>(null);
@@ -47,6 +52,12 @@ export default function CourierDashboardMobile() {
       jobsLoading,
       jobsCount: jobs.length
     })
+  }, [])
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setCollapsedOffset(Math.round(window.innerHeight * 0.45));
+    }
   }, [])
 
   const handleToggleOnline = async () => {
@@ -183,6 +194,27 @@ export default function CourierDashboardMobile() {
   const hasFoodMode = userDoc.courierProfile?.workModes?.foodEnabled;
   const needsSetup = !hasPackageMode && !hasFoodMode;
 
+  const handleSheetPointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    setIsDraggingSheet(true);
+    sheetDragStartY.current = event.clientY;
+  };
+
+  const handleSheetPointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    if (!isDraggingSheet || sheetDragStartY.current === null) return;
+    const delta = event.clientY - sheetDragStartY.current;
+    if (delta < 0) return; // Only allow dragging down
+    setSheetDragOffset(delta);
+  };
+
+  const handleSheetPointerUp = () => {
+    if (!isDraggingSheet) return;
+    const shouldClose = sheetDragOffset > 80;
+    setSheetOpen(!shouldClose);
+    setIsDraggingSheet(false);
+    setSheetDragOffset(0);
+    sheetDragStartY.current = null;
+  };
+
   return (
     <div className="relative h-screen w-full overflow-hidden bg-gray-100">
       {/* Full-Screen Map */}
@@ -301,9 +333,23 @@ export default function CourierDashboardMobile() {
       )}
 
       {/* Bottom Sheet - Jobs List */}
-      <div className="absolute bottom-0 left-0 right-0 z-30 bg-white rounded-t-3xl shadow-2xl max-h-[60vh] overflow-hidden">
+      <div
+        className="absolute bottom-0 left-0 right-0 z-30 bg-white rounded-t-3xl shadow-2xl max-h-[60vh] overflow-hidden"
+        style={{
+          transform: `translateY(${(sheetOpen ? 0 : collapsedOffset) + sheetDragOffset}px)`,
+          transition: isDraggingSheet ? 'none' : 'transform 200ms ease',
+        }}
+      >
         {/* Drag Handle */}
-        <div className="flex justify-center pt-3 pb-2">
+        <div
+          className="flex justify-center pt-3 pb-2 cursor-pointer"
+          onPointerDown={handleSheetPointerDown}
+          onPointerMove={handleSheetPointerMove}
+          onPointerUp={handleSheetPointerUp}
+          onPointerCancel={handleSheetPointerUp}
+          onClick={() => setSheetOpen(!sheetOpen)}
+          style={{ touchAction: 'none' }}
+        >
           <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
         </div>
 
@@ -313,12 +359,20 @@ export default function CourierDashboardMobile() {
             <h2 className="text-lg font-bold text-gray-900">
               Available Sends ({filteredJobs.length})
             </h2>
-            <Link
-              to="/settings"
-              className="text-xs text-gray-500 hover:text-gray-700"
-            >
-              Settings
-            </Link>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setSheetOpen(!sheetOpen)}
+                className="text-xs text-gray-500 hover:text-gray-700"
+              >
+                {sheetOpen ? 'Close' : 'Open'}
+              </button>
+              <Link
+                to="/settings"
+                className="text-xs text-gray-500 hover:text-gray-700"
+              >
+                Settings
+              </Link>
+            </div>
           </div>
         </div>
 

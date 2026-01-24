@@ -70,8 +70,8 @@ export function useMapFocus(map: mapboxgl.Map | null): UseMapFocusResult {
   const fitRoute = useCallback(
     (routeCoordinates: [number, number][]) => {
       fitBounds(routeCoordinates, {
-        padding: { top: 120, right: 60, bottom: 300, left: 60 }, // Extra bottom padding for job list
-        maxZoom: 14,
+        padding: { top: 100, right: 60, bottom: 320, left: 60 }, // Extra bottom padding for job list
+        maxZoom: 13, // Don't zoom in too close - was 14
       })
     },
     [fitBounds]
