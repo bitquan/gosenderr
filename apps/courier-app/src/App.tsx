@@ -38,6 +38,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
+  // Force bundle refresh - cache buster
   return (
     <ErrorBoundary>
       <AuthProvider>
