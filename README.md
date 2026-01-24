@@ -1,18 +1,33 @@
 # GoSenderr Monorepo
 
-A modern on-demand delivery platform with a React/Next.js web app and shared TypeScript types.
+A modern on-demand delivery platform with multiple role-based apps built on Vite + React.
 
 ## 🏗️ Project Structure
 
 ```
 /
 ├── apps/
-│   └── web/              # Next.js Customer Web App
+│   ├── customer-app/     # Vite Customer App (Port 5173)
+│   ├── courier-app/      # Vite Courier App (Port 5174)
+│   ├── shifter-app/      # Vite Runner/Shifter App (Port 5175)
+│   ├── admin-app/        # Vite Admin Dashboard (Port 5176)
+│   ├── landing/          # Role Selection Landing Page
+│   └── web/              # Legacy Next.js App (deprecated)
 ├── packages/
 │   └── shared/           # Shared TypeScript types and utilities
-├── firebase/             # Firebase security rules
-└── ...
+├── firebase/             # Firebase security rules and Cloud Functions
+└── docs/                 # Project documentation
 ```
+
+## 📱 Active Applications
+
+| App | Port | Hosting URL | Purpose |
+|-----|------|-------------|---------|
+| Customer | 5173 | gosenderr-customer.web.app | Create and track deliveries |
+| Courier | 5174 | gosenderr-courier.web.app | Accept and complete individual jobs |
+| Shifter/Runner | 5175 | gosenderr-runner.web.app | Manage routes and bulk deliveries |
+| Admin | 5176 | gosenderr-admin.web.app | Platform management |
+| Landing | - | gosenderr-6773f.web.app | Role selection entry point |
 
 ## 🚀 Quick Start
 
@@ -20,11 +35,11 @@ A modern on-demand delivery platform with a React/Next.js web app and shared Typ
 
 - Node.js >= 18.0.0
 - pnpm >= 8.0.0
-- gcloud CLI (only required for Cloud Run deploy)
 - Firebase project with Auth, Firestore, and Storage enabled
 - Mapbox account with access token
+- Stripe account for payments (optional for dev)
 
-### Web App Installation
+### Installation
 
 1. **Clone and install dependencies:**
 
@@ -34,22 +49,32 @@ pnpm install
 
 2. **Configure environment variables:**
 
-Copy `.env.example` to `apps/web/.env.local` and fill in your credentials.
-`apps/web/.env.local` is gitignored and should never be committed.
+Each app needs its own `.env.local` file:
 
 ```bash
-cp .env.example apps/web/.env.local
+# Customer App
+cp apps/customer-app/.env.example apps/customer-app/.env.local
+
+# Courier App
+cp apps/courier-app/.env.example apps/courier-app/.env.local
+
+# Runner App
+cp apps/shifter-app/.env.example apps/shifter-app/.env.local
+
+# Admin App
+cp apps/admin-app/.env.example apps/admin-app/.env.local
 ```
 
-Required variables:
+Required variables for all apps:
 
-- `NEXT_PUBLIC_FIREBASE_API_KEY` - From Firebase Console > Project Settings
-- `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
-- `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
-- `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
-- `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
-- `NEXT_PUBLIC_FIREBASE_APP_ID`
-- `NEXT_PUBLIC_MAPBOX_TOKEN` - From https://mapbox.com
+- `VITE_FIREBASE_API_KEY` - From Firebase Console > Project Settings
+- `VITE_FIREBASE_AUTH_DOMAIN`
+- `VITE_FIREBASE_PROJECT_ID`
+- `VITE_FIREBASE_STORAGE_BUCKET`
+- `VITE_FIREBASE_MESSAGING_SENDER_ID`
+- `VITE_FIREBASE_APP_ID`
+- `VITE_MAPBOX_TOKEN` - From https://mapbox.com
+- `VITE_APP_ROLE` - Set automatically per app (customer/courier/runner/admin)
 
 3. **Build shared package:**
 
@@ -59,43 +84,82 @@ pnpm build
 cd ../..
 ```
 
-4. **Run the development server:**
+4. **Run development servers:**
 
 ```bash
+# Run all apps
 pnpm dev
+
+# Or run individual apps
+cd apps/customer-app && pnpm dev   # Port 5173
+cd apps/courier-app && pnpm dev    # Port 5174
+cd apps/shifter-app && pnpm dev    # Port 5175
+cd apps/admin-app && pnpm dev      # Port 5176
 ```
 
-The web app will be available at http://localhost:3000
+Apps will be available at:
+- Customer: http://localhost:5173
+- Courier: http://localhost:5174
+- Runner: http://localhost:5175
+- Admin: http://localhost:5176
 
 ## 🚢 Deployment
 
-Production deploy is split into two steps:
+Each app is deployed separately to Firebase Hosting:
 
-- Cloud Run (Next.js SSR): `pnpm deploy:web:run`
-- Firebase Hosting proxy (custom domain): `pnpm deploy:web:hosting`
+```bash
+# Deploy individual apps
+pnpm deploy:customer
+pnpm deploy:courier
+pnpm deploy:runner
+pnpm deploy:admin
 
-Combined: `pnpm deploy:web`
+# Deploy all apps
+pnpm deploy:all
+```
 
-Docs: `docs/deploy/cloud-run.md`
+Firebase Hosting sites:
+- Customer: `gosenderr-customer`
+- Courier: `gosenderr-courier`
+- Runner: `gosenderr-runner`
+- Admin: `gosenderr-admin`
+- Landing: `gosenderr-6773f` (default site)
 
 ## 📱 Features
 
-### Customer Web App (`apps/web`)
+### Customer App (`apps/customer-app`)
 
-- **Authentication**
+- **Authentication**: Phone Auth with Firebase + Email fallback
+- **Job Creation**: Create delivery jobs with pickup/dropoff locations via map or address search
+- **Job Tracking**: Real-time status updates with live map showing courier location
+- **Payment**: Stripe integration for job payments
+- **Rating System**: Rate couriers after delivery completion
+- **Bottom Navigation**: Home, Jobs, Settings tabs
 
-  - Phone Auth with Firebase reCAPTCHA
-  - Email/Password fallback (configurable via env)
-  - Role selection (Customer/Driver)
+### Courier App (`apps/courier-app`)
 
-- **Job Management**
-  - Create delivery jobs with pickup/dropoff coordinates
-  - View list of all jobs
-  - Live job detail page with:
-    - Real-time status updates
-    - Mapbox map showing pickup/dropoff markers
-    - Driver location marker (when available)
-    - Pickup/dropoff photos (when uploaded by driver)
+- **Map Shell Dashboard**: Full-screen map with floating controls and swipeable bottom sheet
+- **Job Discovery**: See available jobs on map with distance and payout info
+- **Accept/Complete Flow**: Accept individual jobs, mark pickup/dropoff with photos
+- **Earnings Tracking**: View completed jobs, pending payouts, and payout history
+- **Stripe Connect**: Onboard to receive payouts
+- **Bottom Navigation**: Dashboard, Active, Earnings, Settings tabs
+
+### Runner/Shifter App (`apps/shifter-app`)
+
+- **Route Management**: Accept bulk delivery routes with multiple stops
+- **Multi-Stop Optimization**: Handle sequential deliveries efficiently
+- **Job Organization**: View all jobs within a route
+- **Earnings Dashboard**: Track route earnings and performance metrics
+- **Bottom Navigation**: Home, Routes, Jobs, Earnings, Settings tabs
+
+### Admin App (`apps/admin-app`)
+
+- **User Management**: View and manage customers, couriers, and runners
+- **Job Monitoring**: Track all jobs system-wide with status filters
+- **Hub Management**: Create and manage delivery hubs/zones
+- **Rate Cards**: Configure delivery pricing tiers
+- **Analytics**: Platform-wide statistics and performance metrics
 
 ### Shared Package (`packages/shared`)
 
@@ -157,19 +221,26 @@ firebase deploy --only storage:rules
 ### Root Level
 
 ```bash
-pnpm dev        # Run all apps in development mode
-pnpm build      # Build all packages and apps
-pnpm lint       # Lint all packages
-pnpm clean      # Clean all build artifacts
+pnpm dev                  # Run all apps in development mode
+pnpm build                # Build all packages and apps
+pnpm lint                 # Lint all packages
+pnpm clean                # Clean all build artifacts
+
+# Deployment
+pnpm deploy:customer      # Deploy customer app
+pnpm deploy:courier       # Deploy courier app
+pnpm deploy:runner        # Deploy runner app
+pnpm deploy:admin         # Deploy admin app
+pnpm deploy:all           # Deploy all apps
 ```
 
-### Web App (`apps/web`)
+### Individual Apps
 
 ```bash
-cd apps/web
-pnpm dev        # Start Next.js dev server
+cd apps/[app-name]
+pnpm dev        # Start Vite dev server
 pnpm build      # Build for production
-pnpm start      # Start production server
+pnpm preview    # Preview production build locally
 pnpm lint       # Run ESLint
 ```
 
@@ -183,19 +254,38 @@ pnpm dev        # Watch mode for development
 
 ## 🔐 Authentication Flow
 
-1. User visits `/login`
-2. Authenticates via Phone Auth (or Email fallback)
-3. On first login, redirected to `/select-role` to choose Customer or Driver
-4. Customer users access `/customer/jobs`
-5. Driver users should use mobile app
+1. User visits landing page at https://gosenderr-6773f.web.app
+2. Selects role (Customer, Courier, Runner, or Admin)
+3. Redirected to role-specific app login page
+4. Authenticates via Phone Auth (or Email fallback)
+5. On first login, user profile is created with selected role
+6. Access role-specific dashboard and features
+
+### Role-Specific Entry Points
+
+- Customer: `gosenderr-customer.web.app/login`
+- Courier: `gosenderr-courier.web.app/login`
+- Runner: `gosenderr-runner.web.app/login`
+- Admin: `gosenderr-admin.web.app/login`
 
 ## 🛠️ Development
+
+### Tech Stack
+
+- **Frontend**: Vite 6.4.1 + React 18 + TypeScript
+- **Styling**: Tailwind CSS (mobile-first)
+- **Backend**: Firebase (Auth, Firestore, Storage, Cloud Functions)
+- **Maps**: Mapbox GL JS
+- **Payments**: Stripe + Stripe Connect
+- **Deployment**: Firebase Hosting
 
 ### Adding New Features
 
 1. Add types to `packages/shared/src/types/` if needed
-2. Implement in `apps/web/src/`
+2. Implement in respective app: `apps/[app-name]/src/`
 3. Rebuild shared package if types changed: `cd packages/shared && pnpm build`
+4. Test locally with `pnpm dev`
+5. Deploy with `pnpm deploy:[app-name]`
 
 ### Type Safety
 
@@ -204,6 +294,16 @@ All Firestore operations are typed using `@gosenderr/shared` package. Import typ
 ```typescript
 import { JobDoc, JobStatus, UserDoc } from "@gosenderr/shared";
 ```
+
+### Navigation Pattern
+
+All apps use bottom navigation with role-specific tabs:
+- **Customer**: Home, Jobs, Settings (3 tabs)
+- **Courier**: Dashboard, Active, Earnings, Settings (4 tabs)
+- **Runner**: Home, Routes, Jobs, Earnings, Settings (5 tabs)
+- **Admin**: Dashboard, Users, Jobs, Hubs, Settings (5 tabs)
+
+See [docs/NAVIGATION_GUIDE.md](docs/NAVIGATION_GUIDE.md) for implementation details.
 
 ---
 
