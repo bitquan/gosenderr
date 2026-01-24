@@ -1,7 +1,9 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation, Outlet } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { useAuth } from './hooks/useAuth'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { useEffect } from 'react'
+import { debugLogger } from './utils/debugLogger'
 
 // Layouts
 import CourierLayout from './layouts/CourierLayout'
@@ -21,45 +23,76 @@ import EquipmentPage from './pages/equipment/page'
 import SetupPage from './pages/setup/page'
 import EarningsPage from './pages/earnings/page'
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
+function ProtectedRoute() {
   const { user, loading } = useAuth()
+  const location = useLocation()
+  
+  useEffect(() => {
+    debugLogger.log('route', `ProtectedRoute - Path: ${location.pathname}`, {
+      hasUser: !!user,
+      loading,
+      pathname: location.pathname,
+      search: location.search
+    })
+  }, [location.pathname, user, loading])
   
   if (loading) {
+    debugLogger.log('render', 'ProtectedRoute showing loading spinner')
     return <div className="flex items-center justify-center min-h-screen">
       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
     </div>
   }
   
   if (!user) {
+    debugLogger.log('route', 'ProtectedRoute redirecting to login - no user')
     return <Navigate to="/login" replace />
   }
   
-  return children
+  debugLogger.log('render', 'ProtectedRoute rendering Outlet')
+  return <Outlet />
 }
 
 function App() {
-  // Force bundle refresh - cache buster
+  useEffect(() => {
+    debugLogger.log('info', 'Courier App mounted', {
+      url: window.location.href,
+      timestamp: new Date().toISOString(),
+      userAgent: navigator.userAgent
+    })
+    
+    // Print report after 5 seconds
+    const timer = setTimeout(() => {
+      console.log('\n\n📋 Debug report ready! Run in console:')
+      console.log('  printDebugReport()    - Print to console')
+      console.log('  downloadDebugReport() - Download as .md file')
+    }, 5000)
+    
+    return () => clearTimeout(timer)
+  }, [])
+  
   return (
     <ErrorBoundary>
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           
-          <Route element={<ProtectedRoute><CourierLayout /></ProtectedRoute>}>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/routes" element={<RoutesPage />} />
-            <Route path="/active-route" element={<ActiveRoutePage />} />
-            <Route path="/jobs/:jobId" element={<JobDetailPage />} />
-            <Route path="/jobs" element={<RoutesPage />} />
-            <Route path="/earnings" element={<EarningsPage />} />
-            <Route path="/rate-cards" element={<RateCardsPage />} />
-            <Route path="/equipment" element={<EquipmentPage />} />
-            <Route path="/setup" element={<SetupPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/support" element={<SupportPage />} />
-            <Route path="/onboarding" element={<OnboardingPage />} />
-            <Route path="/onboarding/stripe" element={<StripeOnboardingPage />} />
+          <Route element={<ProtectedRoute />}>
+            <Route element={<CourierLayout />}>
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/routes" element={<RoutesPage />} />
+              <Route path="/active-route" element={<ActiveRoutePage />} />
+              <Route path="/jobs/:jobId" element={<JobDetailPage />} />
+              <Route path="/jobs" element={<RoutesPage />} />
+              <Route path="/earnings" element={<EarningsPage />} />
+              <Route path="/rate-cards" element={<RateCardsPage />} />
+              <Route path="/equipment" element={<EquipmentPage />} />
+              <Route path="/setup" element={<SetupPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/support" element={<SupportPage />} />
+              <Route path="/onboarding" element={<OnboardingPage />} />
+              <Route path="/onboarding/stripe" element={<StripeOnboardingPage />} />
+            </Route>
           </Route>
         </Routes>
       </AuthProvider>

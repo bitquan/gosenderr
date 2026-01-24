@@ -12,6 +12,7 @@ import { Job } from "@/lib/v2/types";
 import { calcMiles } from "@/lib/v2/pricing";
 import { getEligibilityReason } from "@/lib/v2/eligibility";
 import { useCourierLocationWriter } from "@/hooks/v2/useCourierLocationWriter";
+import { debugLogger } from "@/utils/debugLogger";
 
 export default function CourierDashboardMobile() {
   const navigate = useNavigate();
@@ -23,6 +24,21 @@ export default function CourierDashboardMobile() {
   const [hideIneligible, setHideIneligible] = useState(true);
   const [togglingOnline, setTogglingOnline] = useState(false);
   const { isTracking, permissionDenied } = useCourierLocationWriter();
+
+  debugLogger.log('render', 'Dashboard render start', {
+    userLoading,
+    jobsLoading,
+    jobsCount: jobs.length,
+    hasUserDoc: !!userDoc
+  })
+
+  useEffect(() => {
+    debugLogger.log('render', 'DashboardPage mounted', {
+      userLoading,
+      jobsLoading,
+      jobsCount: jobs.length
+    })
+  }, [])
 
   const handleToggleOnline = async () => {
     if (!uid || togglingOnline) return;

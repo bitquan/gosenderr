@@ -1,4 +1,5 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
+import { debugLogger } from '../utils/debugLogger';
 
 interface Props {
   children: ReactNode;
@@ -22,6 +23,18 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
+    
+    debugLogger.log('error', 'React Error Boundary triggered', {
+      errorMessage: error.message,
+      errorStack: error.stack,
+      componentStack: errorInfo.componentStack,
+      errorName: error.name
+    });
+    
+    // Auto-print report on error
+    setTimeout(() => {
+      debugLogger.printMarkdownReport();
+    }, 1000);
   }
 
   render() {
