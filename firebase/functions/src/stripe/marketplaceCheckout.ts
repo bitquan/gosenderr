@@ -25,7 +25,14 @@ interface MarketplaceCheckoutData {
 
 export const marketplaceCheckout = functions.https.onCall<MarketplaceCheckoutData>(
   {
-    cors: true,
+    cors: [
+      'http://localhost:5173',
+      'http://localhost:5174',
+      'http://localhost:5175',
+      'http://localhost:5176',
+      'https://gosenderr-6773f.web.app',
+      'https://gosenderr-6773f.firebaseapp.com'
+    ],
   },
   async (request) => {
     // Authentication check
