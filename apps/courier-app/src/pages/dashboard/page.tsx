@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { LoadingState } from "@gosenderr/ui";
 import { useNavigate, Link } from "react-router-dom";
 import { doc, updateDoc } from "firebase/firestore";
@@ -6,13 +6,15 @@ import { db } from "@/lib/firebase";
 import { useUserDoc } from "@/hooks/v2/useUserDoc";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { useOpenJobs } from "@/hooks/v2/useOpenJobs";
-import { MapboxMap } from "@/components/v2/MapboxMap";
+import { MapboxMap, MapboxMapHandle } from "@/components/v2/MapboxMap";
 import { claimJob } from "@/lib/v2/jobs";
 import { Job } from "@/lib/v2/types";
 import { calcMiles } from "@/lib/v2/pricing";
 import { getEligibilityReason } from "@/lib/v2/eligibility";
 import { useCourierLocationWriter } from "@/hooks/v2/useCourierLocationWriter";
 import { debugLogger } from "@/utils/debugLogger";
+import { useMapboxDirections } from "@/hooks/useMapboxDirections";
+import { useMapFocus } from "@/hooks/useMapFocus";
 
 export default function CourierDashboardMobile() {
   const navigate = useNavigate();
@@ -24,6 +26,12 @@ export default function CourierDashboardMobile() {
   const [hideIneligible, setHideIneligible] = useState(true);
   const [togglingOnline, setTogglingOnline] = useState(false);
   const { isTracking, permissionDenied } = useCourierLocationWriter();
+
+  // Map and route management
+  const mapRef = useRef<MapboxMapHandle>(null);
+  const { route, routeSegments, loading: routeLoading, fetchRoute, clearRoute } = useMapboxDirections();
+  const map = mapRef.current?.getMap();
+  const { fitRoute } = useMapFocus(map);
 
   debugLogger.log('render', 'Dashboard render start', {
     userLoading,
@@ -110,8 +118,32 @@ export default function CourierDashboardMobile() {
       setSelectedJob(filteredJobs[0].job);
     } else if (filteredJobs.length === 0) {
       setSelectedJob(null);
+      clearRoute();
     }
-  }, [filteredJobs, selectedJob]);
+  }, [filteredJobs, selectedJob, clearRoute]);
+
+  // Fetch route when job is selected
+  useEffect(() => {
+    if (!selectedJob || !userDoc?.courierProfile?.currentLocation) {
+      clearRoute();
+      return;
+    }
+
+    const courierLoc = userDoc.courierProfile.currentLocation;
+    fetchRoute(
+      [courierLoc.lng, courierLoc.lat],
+      [selectedJob.pickup.lng, selectedJob.pickup.lat],
+      [selectedJob.dropoff.lng, selectedJob.dropoff.lat]
+    );
+  }, [selectedJob, userDoc?.courierProfile?.currentLocation, fetchRoute, clearRoute]);
+
+  // Auto-fit map to route when route loads
+  useEffect(() => {
+    if (routeSegments.length > 0 && map) {
+      const allCoordinates = routeSegments.flatMap(segment => segment.coordinates);
+      fitRoute(allCoordinates);
+    }
+  }, [routeSegments, map, fitRoute]);
 
   const handleAcceptJob = async (jobId: string, fee: number) => {
     if (!uid) return;
@@ -158,9 +190,11 @@ export default function CourierDashboardMobile() {
       <div className="absolute inset-0">
         {(selectedJob || userDoc?.courierProfile?.currentLocation) ? (
           <MapboxMap
+            ref={mapRef}
             pickup={selectedJob?.pickup || userDoc?.courierProfile?.currentLocation || { lat: 37.7749, lng: -122.4194, label: "San Francisco" }}
             dropoff={selectedJob?.dropoff || userDoc?.courierProfile?.currentLocation || { lat: 37.7749, lng: -122.4194, label: "San Francisco" }}
             courierLocation={userDoc?.courierProfile?.currentLocation || null}
+            routeSegments={routeSegments}
             height="100%"
           />
         ) : (
@@ -172,6 +206,16 @@ export default function CourierDashboardMobile() {
           </div>
         )}
       </div>
+
+      {/* Route Loading Indicator */}
+      {routeLoading && (
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-20 px-4 py-2 bg-white rounded-lg shadow-lg">
+          <div className="flex items-center gap-2">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-emerald-600"></div>
+            <span className="text-sm font-medium text-gray-700">Loading route...</span>
+          </div>
+        </div>
+      )}
 
       {/* Floating Online/Offline Button (Top-Right) */}
       <button
