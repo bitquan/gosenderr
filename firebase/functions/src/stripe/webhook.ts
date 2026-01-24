@@ -16,7 +16,10 @@ function getStripe() {
 const db = admin.firestore();
 
 export const stripeWebhook = functions.https.onRequest(
-  { cors: true },
+  { 
+    cors: true,
+    secrets: ['STRIPE_WEBHOOK_SECRET']
+  },
   async (req, res) => {
     const sig = req.headers['stripe-signature'];
 
@@ -26,7 +29,9 @@ export const stripeWebhook = functions.https.onRequest(
       return;
     }
 
-    if (!process.env.STRIPE_WEBHOOK_SECRET) {
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+    if (!webhookSecret) {
       console.error('STRIPE_WEBHOOK_SECRET not configured');
       res.status(500).send('Webhook secret not configured');
       return;
@@ -39,7 +44,7 @@ export const stripeWebhook = functions.https.onRequest(
       event = stripe.webhooks.constructEvent(
         req.rawBody,
         sig,
-        process.env.STRIPE_WEBHOOK_SECRET
+        webhookSecret
       );
     } catch (err: any) {
       console.error('Webhook signature verification failed:', err.message);
