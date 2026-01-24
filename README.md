@@ -1,6 +1,6 @@
 # GoSenderr Monorepo
 
-A modern on-demand delivery platform with web apps (Vite + React) and mobile apps (Flutter) for customers, couriers, runners, and admins.
+A modern on-demand delivery platform with web apps (Vite + React + TypeScript) that can be packaged as native iOS and Android apps using Capacitor.
 
 ## 🏗️ Project Structure
 
@@ -13,13 +13,13 @@ A modern on-demand delivery platform with web apps (Vite + React) and mobile app
 │   ├── admin-app/        # Vite Admin Dashboard (Port 5176)
 │   ├── landing/          # Role Selection Landing Page
 │   └── web/              # Legacy Next.js App (deprecated)
-├── mobile/
-│   └── driver-app/       # Flutter Driver Mobile App (iOS/Android)
 ├── packages/
 │   └── shared/           # Shared TypeScript types and utilities
 ├── firebase/             # Firebase security rules and Cloud Functions
 └── docs/                 # Project documentation
 ```
+
+**Note**: All web apps can be packaged as native iOS and Android apps using Capacitor.
 
 ## 📱 Active Applications
 
@@ -276,6 +276,7 @@ pnpm dev        # Watch mode for development
 
 - **Frontend**: Vite 6.4.1 + React 18 + TypeScript
 - **Styling**: Tailwind CSS (mobile-first)
+- **Mobile**: Capacitor (native iOS and Android apps)
 - **Backend**: Firebase (Auth, Firestore, Storage, Cloud Functions)
 - **Maps**: Mapbox GL JS
 - **Payments**: Stripe + Stripe Connect
@@ -309,41 +310,69 @@ See [docs/NAVIGATION_GUIDE.md](docs/NAVIGATION_GUIDE.md) for implementation deta
 
 ---
 
-## 📱 Flutter Mobile Apps
+## 📱 Mobile Apps (Capacitor)
 
-GoSenderr includes native mobile apps built with Flutter for enhanced mobile experience:
+All web apps can be packaged as native iOS and Android apps using **Capacitor**.
 
-### Driver App (Flutter)
+### What is Capacitor?
 
-**Purpose**: Native mobile app for delivery drivers/couriers
+Capacitor is a cross-platform app runtime that wraps your web app and provides access to native device features:
+- **Native APIs**: Camera, GPS, push notifications, biometrics, file system
+- **Same Codebase**: Use the same React/TypeScript code for web and mobile
+- **Native Performance**: Direct access to native APIs with plugins
+- **App Store Ready**: Build production-ready iOS and Android apps
 
-**Key Features**:
-- Real-time GPS location tracking
-- Background location updates
-- Push notifications for new jobs
-- Camera integration for proof of delivery
-- Offline mode support
-- Native performance
+### Setup Capacitor
 
-**Tech Stack**:
-- **Framework**: Flutter/Dart
-- **State Management**: Provider/Riverpod
-- **Backend**: Firebase (Auth, Firestore, Storage, Cloud Messaging)
-- **Maps**: Google Maps or Mapbox
-- **Platform**: iOS and Android
+Each app can be configured for mobile deployment:
 
-**Development**:
 ```bash
-cd mobile/driver-app
-flutter pub get
-flutter run
+# Install Capacitor
+cd apps/courier-app
+npm install @capacitor/core @capacitor/cli
+npm install @capacitor/ios @capacitor/android
+
+# Initialize Capacitor
+npx cap init
+
+# Build web app
+pnpm build
+
+# Add platforms
+npx cap add ios
+npx cap add android
+
+# Sync web assets to native projects
+npx cap sync
+
+# Open in native IDE
+npx cap open ios      # Opens Xcode
+npx cap open android  # Opens Android Studio
 ```
 
-**Documentation**: See Flutter [online documentation](https://docs.flutter.dev/) for development guides.
+### Native Features Available
 
-### Future Mobile Apps
+With Capacitor plugins, apps can access:
+- 📸 **Camera**: Capture pickup/dropoff photos
+- 📍 **Geolocation**: Real-time location tracking
+- 🔔 **Push Notifications**: Job alerts and updates
+- 📱 **Haptics**: Touch feedback
+- 🔐 **Biometrics**: Face ID / Touch ID authentication
+- 📂 **Filesystem**: Local data caching
+- 🌐 **Network**: Connection status monitoring
 
-- Customer mobile app (planned)
-- Runner mobile app (planned)
+### Deployment
 
-**Note**: Web apps (Vite + React) are fully responsive and work on mobile browsers as Progressive Web Apps (PWAs) until native mobile versions are released.
+**iOS (TestFlight/App Store)**:
+1. Open project in Xcode: `npx cap open ios`
+2. Configure signing & capabilities
+3. Archive and upload to TestFlight
+4. Submit for App Store review
+
+**Android (Play Store)**:
+1. Open project in Android Studio: `npx cap open android`
+2. Build release APK/AAB
+3. Sign with release keystore
+4. Upload to Play Console
+
+**Documentation**: See [docs/CAPACITOR_SETUP.md](docs/CAPACITOR_SETUP.md) for detailed mobile deployment guide.
