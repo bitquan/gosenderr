@@ -173,7 +173,7 @@ export default function CheckoutPage() {
         const tempJobId = `temp_${Date.now()}`;
         const result = await createPaymentIntent({
           jobId: tempJobId,
-          courierRate: courierRate,
+          courierRate: deliveryFee,
           platformFee: platformFee,
         });
         setClientSecret(result.clientSecret);
@@ -184,7 +184,7 @@ export default function CheckoutPage() {
     }
 
     fetchPaymentIntent();
-  }, [item, courier, totalAmount, courierRate, platformFee]);
+  }, [item, courier, totalAmount, deliveryFee, platformFee]);
 
   const handlePayment = async () => {
     if (!item || !courier || !user) return;

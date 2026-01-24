@@ -18,6 +18,7 @@ import StripeOnboardingPage from './pages/onboarding/stripe/page'
 import RateCardsPage from './pages/rate-cards/page'
 import EquipmentPage from './pages/equipment/page'
 import SetupPage from './pages/setup/page'
+import EarningsPage from './pages/earnings/page'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
@@ -52,6 +53,8 @@ function App() {
                   <Route path="/routes" element={<RoutesPage />} />
                   <Route path="/active-route" element={<ActiveRoutePage />} />
                   <Route path="/jobs/:jobId" element={<JobDetailPage />} />
+                  <Route path="/jobs" element={<RoutesPage />} />
+                  <Route path="/earnings" element={<EarningsPage />} />
                   <Route path="/rate-cards" element={<RateCardsPage />} />
                   <Route path="/equipment" element={<EquipmentPage />} />
                   <Route path="/setup" element={<SetupPage />} />

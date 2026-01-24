@@ -44,24 +44,31 @@ export default function CourierSettingsPage() {
           <CardContent>
             <div className="space-y-3">
               <Link
-                to="/courier/rate-cards"
+                to="/rate-cards"
                 className="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-100"
               >
                 Rate Cards & Pricing
                 <span>→</span>
               </Link>
               <Link
-                to="/courier/equipment"
+                to="/equipment"
                 className="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-100"
               >
                 Equipment
                 <span>→</span>
               </Link>
               <Link
-                to="/courier/rate-cards"
+                to="/onboarding/stripe"
                 className="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-100"
               >
-                Rate Cards
+                Stripe Connect Setup
+                <span>→</span>
+              </Link>
+              <Link
+                to="/support"
+                className="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-100"
+              >
+                Support
                 <span>→</span>
               </Link>
               

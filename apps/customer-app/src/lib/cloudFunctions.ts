@@ -1,4 +1,4 @@
-import { getFunctions, httpsCallable, HttpsCallableResult } from 'firebase/functions';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 
 // Initialize Firebase Functions
 const functions = getFunctions();

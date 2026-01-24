@@ -1,4 +1,5 @@
 import { ReactNode } from 'react'
+import { BottomNav, runnerNavItems } from '../components/BottomNav'
 
 interface RunnerLayoutProps {
   children: ReactNode
@@ -6,8 +7,11 @@ interface RunnerLayoutProps {
 
 export default function RunnerLayout({ children }: RunnerLayoutProps) {
   return (
-    <div className="min-h-screen bg-gray-50">
-      {children}
+    <div className="min-h-screen bg-[#F8F9FF]">
+      <div className="pb-24">
+        {children}
+      </div>
+      <BottomNav items={runnerNavItems} />
     </div>
   )
 }

@@ -21,7 +21,6 @@ interface PaymentFormProps {
 }
 
 function CheckoutForm({
-  jobId,
   courierRate,
   platformFee,
   onSuccess,

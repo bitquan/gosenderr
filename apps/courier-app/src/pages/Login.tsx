@@ -54,6 +54,15 @@ export default function LoginPage() {
 
           {/* Form */}
           <div className="px-8 py-8">
+            {/* Back Button */}
+            <a 
+              href="https://gosenderr-6773f.web.app"
+              className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 transition-colors"
+            >
+              <span className="text-xl">←</span>
+              <span className="text-sm font-medium">Back to role selection</span>
+            </a>
+            
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Local Deliveries</h2>
             <p className="text-gray-600 mb-6 text-sm">Sign in to your courier account</p>
 

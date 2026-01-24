@@ -1,22 +1,18 @@
-
 import { useEffect, useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
-import { Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { useUserDoc } from "@/hooks/v2/useUserDoc";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { useOpenJobs } from "@/hooks/v2/useOpenJobs";
-import { CourierJobPreview } from "@/components/v2/CourierJobPreview";
 import { MapboxMap } from "@/components/v2/MapboxMap";
 import { claimJob } from "@/lib/v2/jobs";
 import { Job } from "@/lib/v2/types";
 import { calcMiles } from "@/lib/v2/pricing";
 import { getEligibilityReason } from "@/lib/v2/eligibility";
 import { useCourierLocationWriter } from "@/hooks/v2/useCourierLocationWriter";
-import { getRoleDisplay } from "@gosenderr/shared";
 
-export default function CourierDashboard() {
+export default function CourierDashboardMobile() {
   const navigate = useNavigate();
   const { uid } = useAuthUser();
   const { userDoc, loading: userLoading } = useUserDoc();
@@ -29,7 +25,6 @@ export default function CourierDashboard() {
 
   const handleToggleOnline = async () => {
     if (!uid || togglingOnline) return;
-
     setTogglingOnline(true);
     try {
       const newOnlineStatus = !userDoc?.courierProfile?.isOnline;
@@ -44,30 +39,21 @@ export default function CourierDashboard() {
     }
   };
 
-  // Compute job eligibility for each job
   const jobsWithEligibility = useMemo(() => {
-    // Check if courier has any rate card configured
     const hasPackageCard = userDoc?.courierProfile?.packageRateCard;
     const hasFoodCard = userDoc?.courierProfile?.foodRateCard;
 
-    if (
-      !userDoc?.courierProfile?.currentLocation ||
-      (!hasPackageCard && !hasFoodCard)
-    ) {
-      return jobs.map((job) => {
-        const jobMiles = calcMiles(job.pickup, job.dropoff);
-        return {
-          job,
-          eligible: true,
-          reason: undefined,
-          pickupMiles: undefined,
-          jobMiles,
-        };
-      });
+    if (!userDoc?.courierProfile?.currentLocation || (!hasPackageCard && !hasFoodCard)) {
+      return jobs.map((job) => ({
+        job,
+        eligible: true,
+        reason: undefined,
+        pickupMiles: undefined,
+        jobMiles: calcMiles(job.pickup, job.dropoff),
+      }));
     }
 
     const courierLocation = userDoc.courierProfile.currentLocation;
-    // For now, use package rate card for eligibility (TODO: check job type)
     const rateCard = hasPackageCard
       ? userDoc.courierProfile.packageRateCard
       : userDoc.courierProfile.foodRateCard;
@@ -75,11 +61,7 @@ export default function CourierDashboard() {
     return jobs.map((job) => {
       const pickupMiles = calcMiles(courierLocation, job.pickup);
       const jobMiles = calcMiles(job.pickup, job.dropoff);
-      const eligibilityResult = getEligibilityReason(
-        rateCard,
-        jobMiles,
-        pickupMiles,
-      );
+      const eligibilityResult = getEligibilityReason(rateCard, jobMiles, pickupMiles);
 
       return {
         job,
@@ -91,27 +73,21 @@ export default function CourierDashboard() {
     });
   }, [jobs, userDoc]);
 
-  // Filter jobs based on toggle
   const filteredJobs = useMemo(() => {
-    if (!hideIneligible) {
-      return jobsWithEligibility;
-    }
+    if (!hideIneligible) return jobsWithEligibility;
     return jobsWithEligibility.filter((item) => item.eligible);
   }, [jobsWithEligibility, hideIneligible]);
 
-  // Redirect to rate-cards if no rate cards configured
   useEffect(() => {
     if (!userLoading && userDoc) {
       const hasRateCard =
-        userDoc.courierProfile?.packageRateCard ||
-        userDoc.courierProfile?.foodRateCard;
+        userDoc.courierProfile?.packageRateCard || userDoc.courierProfile?.foodRateCard;
       if (!hasRateCard) {
-        navigate("/courier/rate-cards");
+        navigate("/rate-cards");
       }
     }
   }, [userLoading, userDoc, navigate]);
 
-  // Auto-select first job when jobs load
   useEffect(() => {
     if (filteredJobs.length > 0 && !selectedJob) {
       setSelectedJob(filteredJobs[0].job);
@@ -122,26 +98,17 @@ export default function CourierDashboard() {
 
   const handleAcceptJob = async (jobId: string, fee: number) => {
     if (!uid) return;
-
     setClaiming(true);
     try {
       await claimJob(jobId, uid, fee);
-      navigate(`/courier/jobs/${jobId}`);
+      navigate(`/jobs/${jobId}`);
     } catch (error: any) {
       console.error("Failed to claim job:", error);
-
-      // Show specific error message for eligibility failures
       if (error.message?.includes("not-eligible")) {
-        alert(
-          "You are not eligible for this job. It may exceed your distance limits.",
-        );
+        alert("You are not eligible for this job. It may exceed your distance limits.");
       } else {
-        alert(
-          error.message ||
-            "Failed to claim job. It may have been claimed by another courier.",
-        );
+        alert(error.message || "Failed to claim job. It may have been claimed by another courier.");
       }
-
       setClaiming(false);
       setSelectedJob(null);
     }
@@ -149,384 +116,250 @@ export default function CourierDashboard() {
 
   if (userLoading || jobsLoading) {
     return (
-      <div style={{ padding: "30px" }}>
-        <h1>Dashboard</h1>
-        <p>Loading...</p>
+      <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center">
+        <div className="animate-pulse text-gray-500">Loading...</div>
       </div>
     );
   }
 
   const hasRateCard =
-    userDoc?.courierProfile?.packageRateCard ||
-    userDoc?.courierProfile?.foodRateCard;
+    userDoc?.courierProfile?.packageRateCard || userDoc?.courierProfile?.foodRateCard;
 
   if (!hasRateCard) {
     return (
-      <div style={{ padding: "30px" }}>
-        <h1>Dashboard</h1>
+      <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center">
         <p>Setting up...</p>
       </div>
     );
   }
 
-  // Use package rate card for display (or food if package not available)
   const rateCard =
-    userDoc.courierProfile?.packageRateCard ||
-    userDoc.courierProfile?.foodRateCard;
-
-  // Check work modes
+    userDoc.courierProfile?.packageRateCard || userDoc.courierProfile?.foodRateCard;
   const hasPackageMode = userDoc.courierProfile?.workModes?.packagesEnabled;
   const hasFoodMode = userDoc.courierProfile?.workModes?.foodEnabled;
   const needsSetup = !hasPackageMode && !hasFoodMode;
 
   return (
-    <div style={{ padding: "30px" }}>
-      {needsSetup && (
-        <div
-          style={{
-            marginBottom: "20px",
-            padding: "16px 20px",
-            background: "#fef3c7",
-            border: "2px solid #fbbf24",
-            borderRadius: "8px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <div>
-            <div
-              style={{
-                fontWeight: "600",
-                color: "#92400e",
-                marginBottom: "4px",
-              }}
-            >
-              ⚠️ Setup Required
-            </div>
-            <div style={{ fontSize: "14px", color: "#78350f" }}>
-              You need to enable at least one work mode (packages or food) to
-              start accepting sends.
+    <div className="relative h-screen w-full overflow-hidden bg-gray-100">
+      {/* Full-Screen Map */}
+      <div className="absolute inset-0">
+        {(selectedJob || userDoc?.courierProfile?.currentLocation) ? (
+          <MapboxMap
+            pickup={selectedJob?.pickup || userDoc?.courierProfile?.currentLocation || { lat: 37.7749, lng: -122.4194, label: "San Francisco" }}
+            dropoff={selectedJob?.dropoff || userDoc?.courierProfile?.currentLocation || { lat: 37.7749, lng: -122.4194, label: "San Francisco" }}
+            courierLocation={userDoc?.courierProfile?.currentLocation || null}
+            height="100%"
+          />
+        ) : (
+          <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+            <div className="text-center">
+              <p className="text-6xl mb-4">🗺️</p>
+              <p className="text-gray-600 font-medium">Loading map...</p>
             </div>
           </div>
-          <Link
-            to="/courier/rate-cards"
-            style={{
-              padding: "10px 18px",
-              background: "#f59e0b",
-              color: "white",
-              textDecoration: "none",
-              borderRadius: "6px",
-              fontWeight: "600",
-              fontSize: "14px",
-              whiteSpace: "nowrap",
-            }}
-          >
-            Complete Setup →
-          </Link>
-        </div>
-      )}
+        )}
+      </div>
 
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "12px",
-          gap: "12px",
-        }}
+      {/* Floating Online/Offline Button (Top-Right) */}
+      <button
+        onClick={handleToggleOnline}
+        disabled={togglingOnline}
+        className={`absolute top-4 right-4 z-20 px-4 py-2.5 rounded-xl font-semibold text-sm shadow-lg transition-all ${
+          userDoc?.courierProfile?.isOnline
+            ? "bg-emerald-500 text-white"
+            : "bg-gray-700 text-white"
+        } ${togglingOnline ? "opacity-60" : "hover:scale-105"}`}
       >
-        {/* Online/Offline Toggle */}
-        <button
-          onClick={handleToggleOnline}
-          disabled={togglingOnline}
-          style={{
-            padding: "10px 20px",
-            background: userDoc?.courierProfile?.isOnline
-              ? "#10b981"
-              : "#6b7280",
-            color: "white",
-            border: "none",
-            borderRadius: "8px",
-            fontWeight: 600,
-            fontSize: "14px",
-            cursor: togglingOnline ? "not-allowed" : "pointer",
-            opacity: togglingOnline ? 0.6 : 1,
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-          }}
-        >
+        <div className="flex items-center gap-2">
           <span
-            style={{
-              width: "10px",
-              height: "10px",
-              borderRadius: "50%",
-              background: userDoc?.courierProfile?.isOnline
-                ? "#ffffff"
-                : "#d1d5db",
-            }}
+            className={`w-2.5 h-2.5 rounded-full ${
+              userDoc?.courierProfile?.isOnline ? "bg-white" : "bg-gray-400"
+            }`}
           />
           {togglingOnline
             ? "Updating..."
             : userDoc?.courierProfile?.isOnline
               ? "Online"
               : "Offline"}
-        </button>
-
-        {/* Location Tracking Status */}
-        {userDoc?.courierProfile?.isOnline && (
-          <div
-            style={{
-              padding: "8px 12px",
-              background: isTracking ? "#ecfdf5" : "#fef3c7",
-              border: `1px solid ${isTracking ? "#10b981" : "#fbbf24"}`,
-              borderRadius: "6px",
-              fontSize: "12px",
-              color: isTracking ? "#065f46" : "#92400e",
-            }}
-          >
-            {isTracking
-              ? "📍 Location tracking active"
-              : permissionDenied
-                ? "⚠️ Location permission denied"
-                : "⚠️ Location tracking inactive"}
-          </div>
-        )}
-
-        <Link
-          to="/courier/settings"
-          style={{
-            padding: "8px 14px",
-            background: "#f3f4f6",
-            color: "#374151",
-            textDecoration: "none",
-            borderRadius: "8px",
-            fontWeight: 600,
-            border: "1px solid #e5e7eb",
-            marginLeft: "auto",
-          }}
-        >
-          Settings
-        </Link>
-      </div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "30px",
-        }}
-      >
-        <h1 style={{ margin: 0 }}>Available Sends</h1>
-
-        {/* Filter Toggle */}
-        <label
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            cursor: "pointer",
-            fontSize: "14px",
-          }}
-        >
-          <input
-            type="checkbox"
-            checked={hideIneligible}
-            onChange={(e) => setHideIneligible(e.target.checked)}
-            style={{ cursor: "pointer" }}
-          />
-          <span>Hide ineligible sends</span>
-        </label>
-      </div>
-
-      {filteredJobs.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "40px", color: "#666" }}>
-          {jobsWithEligibility.length === 0 ? (
-            <>
-              <p>No open sends available right now.</p>
-              <p style={{ fontSize: "14px", marginTop: "8px" }}>
-                Check back soon or make sure you're online in your setup.
-              </p>
-            </>
-          ) : (
-            <>
-              <p>All available sends are outside your service area.</p>
-              <p style={{ fontSize: "14px", marginTop: "8px" }}>
-                <button
-                  onClick={() => setHideIneligible(false)}
-                  style={{
-                    padding: "8px 16px",
-                    background: "#6E56CF",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                    fontSize: "14px",
-                  }}
-                >
-                  Show all sends
-                </button>
-              </p>
-            </>
-          )}
         </div>
-      ) : (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "2fr 1fr",
-            gap: "30px",
-          }}
-        >
-          {/* Left Column: Map + Jobs List */}
-          <div>
-            {/* Map */}
-            {selectedJob && (
-              <div style={{ marginBottom: "24px" }}>
-                <MapboxMap
-                  pickup={selectedJob.pickup}
-                  dropoff={selectedJob.dropoff}
-                  courierLocation={userDoc?.location || null}
-                  height="400px"
-                />
-              </div>
-            )}
+      </button>
 
-            {/* Jobs List */}
-            <div style={{ display: "grid", gap: "16px" }}>
-              {filteredJobs.map(
-                ({ job, eligible, reason, pickupMiles, jobMiles }) => (
-                  <div
-                    key={job.id}
-                    onClick={() => setSelectedJob(job)}
-                    style={{
-                      padding: "20px",
-                      background:
-                        selectedJob?.id === job.id ? "#f0f0ff" : "white",
-                      border:
-                        selectedJob?.id === job.id
-                          ? "2px solid #6E56CF"
-                          : eligible
-                            ? "1px solid #ddd"
-                            : "2px solid #dc2626",
-                      borderRadius: "8px",
-                      cursor: "pointer",
-                      transition: "all 0.2s",
-                    }}
-                    onMouseEnter={(e) => {
-                      if (selectedJob?.id !== job.id) {
-                        e.currentTarget.style.background = "#f9f9f9";
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (selectedJob?.id !== job.id) {
-                        e.currentTarget.style.background = "white";
-                      }
-                    }}
-                  >
-                    {/* Eligibility Badge */}
-                    {!eligible && (
-                      <div
-                        style={{
-                          marginBottom: "12px",
-                          padding: "6px 10px",
-                          background: "#fee2e2",
-                          border: "1px solid #fecaca",
-                          borderRadius: "4px",
-                          display: "inline-block",
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontSize: "11px",
-                            fontWeight: "600",
-                            color: "#dc2626",
-                            marginBottom: "2px",
-                          }}
-                        >
-                          ⚠️ Not eligible
-                        </div>
-                        {reason && (
-                          <div style={{ fontSize: "10px", color: "#991b1b" }}>
-                            {reason}
-                          </div>
-                        )}
-                      </div>
-                    )}
+      {/* Filter Toggle Button (Top-Left) */}
+      <button
+        onClick={() => setHideIneligible(!hideIneligible)}
+        className="absolute top-4 left-4 z-20 px-4 py-2.5 bg-white rounded-xl font-semibold text-sm shadow-lg hover:scale-105 transition-transform"
+      >
+        {hideIneligible ? "Show All" : "Hide Ineligible"}
+      </button>
 
-                    <div
-                      style={{
-                        fontSize: "14px",
-                        color: "#666",
-                        marginBottom: "12px",
-                      }}
-                    >
-                      Posted:{" "}
-                      {job.createdAt?.toDate?.()?.toLocaleString() ||
-                        "Just now"}
-                    </div>
-                    <div style={{ display: "grid", gap: "8px" }}>
-                      <div>
-                        <strong>📍 Pickup:</strong>{" "}
-                        <span style={{ color: "#666" }}>
-                          {job.pickup.label ||
-                            `${job.pickup.lat.toFixed(4)}, ${job.pickup.lng.toFixed(4)}`}
-                        </span>
-                        {pickupMiles && (
-                          <span
-                            style={{
-                              fontSize: "12px",
-                              color: "#999",
-                              marginLeft: "8px",
-                            }}
-                          >
-                            ({pickupMiles.toFixed(1)} mi away)
-                          </span>
-                        )}
-                      </div>
-                      <div>
-                        <strong>📍 Dropoff:</strong>{" "}
-                        <span style={{ color: "#666" }}>
-                          {job.dropoff.label ||
-                            `${job.dropoff.lat.toFixed(4)}, ${job.dropoff.lng.toFixed(4)}`}
-                        </span>
-                        {jobMiles && (
-                          <span
-                            style={{
-                              fontSize: "12px",
-                              color: "#999",
-                              marginLeft: "8px",
-                            }}
-                          >
-                            ({jobMiles.toFixed(1)} mi trip)
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ),
-              )}
+      {/* Setup Warning Banner */}
+      {needsSetup && (
+        <div className="absolute top-20 left-4 right-4 z-20 p-4 bg-yellow-50 border-2 border-yellow-400 rounded-xl shadow-lg">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex-1">
+              <p className="font-semibold text-yellow-900 text-sm mb-1">
+                ⚠️ Setup Required
+              </p>
+              <p className="text-xs text-yellow-800">
+                Enable at least one work mode to start accepting sends.
+              </p>
             </div>
-          </div>
-
-          {/* Right Column: Job Preview */}
-          {selectedJob && rateCard && userDoc?.courierProfile && (
-            <div
-              style={{ position: "sticky", top: "20px", height: "fit-content" }}
+            <Link
+              to="/rate-cards"
+              className="px-3 py-2 bg-yellow-500 text-white rounded-lg text-xs font-bold whitespace-nowrap hover:bg-yellow-600"
             >
-              <CourierJobPreview
-                job={selectedJob}
-                rateCard={rateCard}
-                courierLocation={userDoc?.location || null}
-                transportMode={userDoc.courierProfile.vehicleType}
-                onAccept={handleAcceptJob}
-                loading={claiming}
-              />
-            </div>
-          )}
+              Setup →
+            </Link>
+          </div>
         </div>
       )}
+
+      {/* Location Tracking Status */}
+      {userDoc?.courierProfile?.isOnline && (
+        <div
+          className={`absolute top-4 left-1/2 -translate-x-1/2 z-20 px-3 py-2 rounded-lg text-xs font-medium shadow-lg ${
+            isTracking
+              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+              : "bg-yellow-50 text-yellow-700 border border-yellow-200"
+          }`}
+        >
+          {isTracking
+            ? "📍 Tracking Active"
+            : permissionDenied
+              ? "⚠️ Location Denied"
+              : "⚠️ Tracking Inactive"}
+        </div>
+      )}
+
+      {/* Bottom Sheet - Jobs List */}
+      <div className="absolute bottom-0 left-0 right-0 z-30 bg-white rounded-t-3xl shadow-2xl max-h-[60vh] overflow-hidden">
+        {/* Drag Handle */}
+        <div className="flex justify-center pt-3 pb-2">
+          <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
+        </div>
+
+        {/* Sheet Header */}
+        <div className="px-6 pb-3 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-bold text-gray-900">
+              Available Sends ({filteredJobs.length})
+            </h2>
+            <Link
+              to="/settings"
+              className="text-xs text-gray-500 hover:text-gray-700"
+            >
+              Settings
+            </Link>
+          </div>
+        </div>
+
+        {/* Jobs List Content */}
+        <div className="overflow-y-auto max-h-[calc(60vh-80px)] pb-6">
+          {filteredJobs.length === 0 ? (
+            <div className="text-center py-12 px-6">
+              {jobsWithEligibility.length === 0 ? (
+                <>
+                  <p className="text-4xl mb-3">📦</p>
+                  <p className="text-gray-700 font-medium">No open sends right now</p>
+                  <p className="text-sm text-gray-500 mt-2">
+                    Check back soon or make sure you're online
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-4xl mb-3">🗺️</p>
+                  <p className="text-gray-700 font-medium">All sends outside your area</p>
+                  <button
+                    onClick={() => setHideIneligible(false)}
+                    className="mt-4 px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-medium hover:bg-emerald-600"
+                  >
+                    Show All Sends
+                  </button>
+                </>
+              )}
+            </div>
+          ) : (
+            <div className="px-4 pt-4 space-y-3">
+              {filteredJobs.map(({ job, eligible, reason, pickupMiles, jobMiles }) => (
+                <div
+                  key={job.id}
+                  onClick={() => setSelectedJob(job)}
+                  className={`p-4 rounded-2xl cursor-pointer transition-all ${
+                    selectedJob?.id === job.id
+                      ? "bg-emerald-50 border-2 border-emerald-500 shadow-md"
+                      : eligible
+                        ? "bg-white border-2 border-gray-200 hover:border-gray-300"
+                        : "bg-red-50 border-2 border-red-300"
+                  }`}
+                >
+                  {!eligible && (
+                    <div className="mb-3 inline-block px-3 py-1 bg-red-100 border border-red-200 rounded-lg">
+                      <p className="text-xs font-semibold text-red-700">⚠️ Not Eligible</p>
+                      {reason && <p className="text-xs text-red-600 mt-0.5">{reason}</p>}
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <p className="text-xs text-gray-500">
+                      {job.createdAt?.toDate?.()?.toLocaleString() || "Just now"}
+                    </p>
+
+                    <div className="space-y-1.5">
+                      <div className="flex items-start gap-2">
+                        <span className="text-base">📍</span>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-900">
+                            {job.pickup.label ||
+                              `${job.pickup.lat.toFixed(4)}, ${job.pickup.lng.toFixed(4)}`}
+                          </p>
+                          {pickupMiles && (
+                            <p className="text-xs text-gray-500">
+                              {pickupMiles.toFixed(1)} mi away
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-2">
+                        <span className="text-base">🎯</span>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-900">
+                            {job.dropoff.label ||
+                              `${job.dropoff.lat.toFixed(4)}, ${job.dropoff.lng.toFixed(4)}`}
+                          </p>
+                          {jobMiles && (
+                            <p className="text-xs text-gray-500">
+                              {jobMiles.toFixed(1)} mi trip
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {selectedJob?.id === job.id && eligible && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const fee = rateCard
+                            ? calcMiles(job.pickup, job.dropoff) * rateCard.feePerMile
+                            : 0;
+                          handleAcceptJob(job.id, fee);
+                        }}
+                        disabled={claiming}
+                        className={`w-full mt-3 py-3 bg-emerald-500 text-white rounded-xl font-semibold shadow-lg ${
+                          claiming ? "opacity-60" : "hover:bg-emerald-600"
+                        }`}
+                      >
+                        {claiming ? "Accepting..." : "Accept Job"}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
