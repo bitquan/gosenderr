@@ -24,6 +24,9 @@ interface MarketplaceCheckoutData {
 }
 
 export const marketplaceCheckout = functions.https.onCall<MarketplaceCheckoutData>(
+  {
+    cors: true,
+  },
   async (request) => {
     // Authentication check
     if (!request.auth) {

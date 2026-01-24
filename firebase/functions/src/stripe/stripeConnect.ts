@@ -19,6 +19,9 @@ interface StripeConnectData {
 }
 
 export const stripeConnect = functions.https.onCall<StripeConnectData>(
+  {
+    cors: true,
+  },
   async (request) => {
     // Authentication check
     if (!request.auth) {

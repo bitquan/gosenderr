@@ -19,6 +19,9 @@ interface CreatePaymentIntentData {
 }
 
 export const createPaymentIntent = functions.https.onCall<CreatePaymentIntentData>(
+  {
+    cors: true,
+  },
   async (request) => {
     // Authentication check
     if (!request.auth) {
