@@ -1,13 +1,8 @@
 import * as functions from 'firebase-functions/v2';
-import { defineString } from 'firebase-functions/params';
 import Stripe from 'stripe';
 
-const stripeSecretKey = defineString('STRIPE_SECRET_KEY', {
-  default: 'sk_test_51S2bUFBaCU2Z8YfchEvNaqg6Vr6xxsOWvFkt4mWGbAustjJ6ix4x2kpXqL1FZMLjSFu7x1CAYoMHzhwSUQke41xZ00Ly9u42FG'
-});
-
 function getStripe() {
-  const apiKey = stripeSecretKey.value();
+  const apiKey = process.env.STRIPE_SECRET_KEY;
   if (!apiKey) {
     throw new Error('STRIPE_SECRET_KEY not configured');
   }
@@ -25,6 +20,7 @@ interface CreatePaymentIntentData {
 export const createPaymentIntent = functions.https.onCall<CreatePaymentIntentData>(
   {
     cors: true,
+    secrets: ['STRIPE_SECRET_KEY'],
   },
   async (request) => {
     // Authentication check
