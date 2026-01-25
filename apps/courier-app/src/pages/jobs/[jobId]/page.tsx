@@ -39,7 +39,7 @@ export default function CourierJobDetail() {
       <NotFoundPage
         title="Job not found"
         description="We couldn't locate that delivery job."
-        actionHref="/courier/dashboard"
+        actionHref="/dashboard"
         actionLabel="Back to Dashboard"
         emoji="🧾"
       />
@@ -53,7 +53,7 @@ export default function CourierJobDetail() {
       <NotFoundPage
         title="Access denied"
         description="This job isn't assigned to your account."
-        actionHref="/courier/dashboard"
+        actionHref="/dashboard"
         actionLabel="Back to Dashboard"
         emoji="🔒"
       />
@@ -68,7 +68,7 @@ export default function CourierJobDetail() {
     <div style={{ padding: "30px", maxWidth: "1200px", margin: "0 auto" }}>
       <div style={{ marginBottom: "20px" }}>
         <Link
-          to="/courier/dashboard"
+          to="/dashboard"
           style={{ color: "#6E56CF", textDecoration: "none" }}
         >
           ← Back to Dashboard
@@ -102,8 +102,9 @@ export default function CourierJobDetail() {
             job={job}
             courierUid={uid}
             onJobUpdated={() => {
+              // Navigate back to dashboard after completing the job
               if (job.status === "arrived_dropoff") {
-                setTimeout(() => navigate("/courier/dashboard"), 1000);
+                setTimeout(() => navigate("/dashboard"), 1000);
               }
             }}
           />

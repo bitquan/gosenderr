@@ -43,7 +43,7 @@ export default function CourierDashboardMobile() {
 
   // Map and route management
   const mapRef = useRef<MapboxMapHandle>(null);
-  const { routeSegments, loading: routeLoading, fetchRoute } = useMapboxDirections();
+  const { routeSegments, loading: routeLoading, fetchRoute, clearRoute } = useMapboxDirections();
   const map = mapRef.current?.getMap();
   const { fitRoute, recenterOnDriver } = useMapFocus(map);
 
@@ -121,7 +121,7 @@ export default function CourierDashboardMobile() {
         eligible: true,
         reason: undefined,
         pickupMiles: undefined,
-        jobMiles: calcMiles(job.pickup, job.dropoff),
+        jobMiles: (job.pickup && job.dropoff) ? calcMiles(job.pickup, job.dropoff) : 0,
       }));
     }
 
@@ -131,6 +131,17 @@ export default function CourierDashboardMobile() {
       : userDoc.courierProfile.foodRateCard;
 
     return jobs.map((job) => {
+      // Guard against missing pickup/dropoff data
+      if (!job.pickup || !job.dropoff) {
+        return {
+          job,
+          eligible: false,
+          reason: "Missing location data",
+          pickupMiles: undefined,
+          jobMiles: 0,
+        };
+      }
+
       const pickupMiles = calcMiles(courierLocation, job.pickup);
       const jobMiles = calcMiles(job.pickup, job.dropoff);
       const eligibilityResult = getEligibilityReason(rateCard, jobMiles, pickupMiles);
@@ -145,10 +156,20 @@ export default function CourierDashboardMobile() {
     });
   }, [jobs, userDoc]);
 
+  // Separate active job (accepted by this courier) from available jobs
+  const activeJob = useMemo(() => {
+    if (!uid) return null;
+    return jobs.find(job => job.courierUid === uid && job.status !== 'completed' && job.status !== 'cancelled') || null;
+  }, [jobs, uid]);
+
+  const availableJobs = useMemo(() => {
+    return jobsWithEligibility.filter(item => item.job.status === 'open');
+  }, [jobsWithEligibility]);
+
   const filteredJobs = useMemo(() => {
-    if (!hideIneligible) return jobsWithEligibility;
-    return jobsWithEligibility.filter((item) => item.eligible);
-  }, [jobsWithEligibility, hideIneligible]);
+    if (!hideIneligible) return availableJobs;
+    return availableJobs.filter((item) => item.eligible);
+  }, [availableJobs, hideIneligible]);
 
   useEffect(() => {
     if (!userLoading && userDoc) {
@@ -160,17 +181,28 @@ export default function CourierDashboardMobile() {
     }
   }, [userLoading, userDoc, navigate]);
 
+  // Auto-select active job if exists, otherwise first available job
   useEffect(() => {
-    if (filteredJobs.length > 0 && !selectedJob) {
+    if (activeJob) {
+      setSelectedJob(activeJob);
+    } else if (filteredJobs.length > 0 && !selectedJob) {
       setSelectedJob(filteredJobs[0].job);
-    } else if (filteredJobs.length === 0) {
+    } else if (filteredJobs.length === 0 && !activeJob) {
       setSelectedJob(null);
     }
-  }, [filteredJobs, selectedJob]);
+  }, [activeJob, filteredJobs, selectedJob]);
 
   // Fetch route when job is selected
   useEffect(() => {
     if (!selectedJob || !userDoc?.courierProfile?.currentLocation) {
+      // Clear routes when no job is selected
+      clearRoute();
+      return;
+    }
+
+    // Skip if job doesn't have valid pickup/dropoff
+    if (!selectedJob.pickup || !selectedJob.dropoff) {
+      clearRoute();
       return;
     }
 
@@ -180,7 +212,7 @@ export default function CourierDashboardMobile() {
       [selectedJob.pickup.lng, selectedJob.pickup.lat],
       [selectedJob.dropoff.lng, selectedJob.dropoff.lat]
     );
-  }, [selectedJob, userDoc?.courierProfile?.currentLocation, fetchRoute]);
+  }, [selectedJob, userDoc?.courierProfile?.currentLocation, fetchRoute, clearRoute]);
   
   // Auto-fit map to route when route loads
   useEffect(() => {
@@ -460,7 +492,7 @@ export default function CourierDashboardMobile() {
         <div className="px-6 pb-3 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold text-gray-900">
-              Available Sends ({filteredJobs.length})
+              {activeJob ? 'Active Send' : `Available Sends (${filteredJobs.length})`}
             </h2>
             <div className="flex items-center gap-3">
               <button
@@ -486,7 +518,37 @@ export default function CourierDashboardMobile() {
 
         {/* Jobs List Content */}
         <div className="overflow-y-auto max-h-[calc(60vh-80px)] pb-6">
-          {filteredJobs.length === 0 ? (
+          {activeJob ? (
+            // Show active job
+            <div className="px-4 pt-4">
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border-2 border-blue-300 shadow-md">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+                    ACTIVE
+                  </div>
+                  <span className="text-sm text-gray-600">
+                    {activeJob.status.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                  </span>
+                </div>
+                <div className="mb-2">
+                  <div className="text-sm text-gray-600 flex items-center gap-1 mb-1">
+                    <span className="text-green-600">📍</span>
+                    <span className="font-medium">Pickup:</span> {activeJob.pickup.label}
+                  </div>
+                  <div className="text-sm text-gray-600 flex items-center gap-1">
+                    <span className="text-red-600">🎯</span>
+                    <span className="font-medium">Dropoff:</span> {activeJob.dropoff.label}
+                  </div>
+                </div>
+                <button
+                  onClick={() => navigate(`/jobs/${activeJob.id}`)}
+                  className="w-full mt-3 bg-blue-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-blue-700"
+                >
+                  View Job Details
+                </button>
+              </div>
+            </div>
+          ) : filteredJobs.length === 0 ? (
             <div className="text-center py-12 px-6">
               {jobsWithEligibility.length === 0 ? (
                 <>

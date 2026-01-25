@@ -112,7 +112,7 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(({
         mapRef.current = null;
       }
     };
-  }, [pickup?.lat, pickup?.lng, dropoff?.lat, dropoff?.lng, pickup?.label, dropoff?.label, onMapLoad]);
+  }, [onMapLoad]);
 
   useEffect(() => {
     console.log('🔵 Courier marker effect - courierLocation:', courierLocation, 'mapReady:', mapReady);
@@ -225,6 +225,46 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(({
     }
   }, [courierLocation, mapReady]);
 
+  // Update pickup/dropoff markers when they change
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return;
+
+    const mapboxgl = window.mapboxgl;
+    if (!mapboxgl) return;
+
+    // Remove existing pickup/dropoff markers
+    if (markersRef.current.pickup) {
+      markersRef.current.pickup.remove();
+      markersRef.current.pickup = null;
+    }
+    if (markersRef.current.dropoff) {
+      markersRef.current.dropoff.remove();
+      markersRef.current.dropoff = null;
+    }
+
+    // Only create markers if both pickup and dropoff exist
+    if (pickup && dropoff) {
+      markersRef.current.pickup = new mapboxgl.Marker({ color: "#16a34a" })
+        .setLngLat([pickup.lng, pickup.lat])
+        .setPopup(
+          new mapboxgl.Popup().setHTML(
+            `<strong>Pickup</strong>${pickup.label ? `<br/>${pickup.label}` : ""}`,
+          ),
+        )
+        .addTo(mapRef.current);
+
+      markersRef.current.dropoff = new mapboxgl.Marker({ color: "#dc2626" })
+        .setLngLat([dropoff.lng, dropoff.lat])
+        .setPopup(
+          new mapboxgl.Popup().setHTML(
+            `<strong>Dropoff</strong>${dropoff.label ? `<br/>${dropoff.label}` : ""}`,
+          ),
+        )
+        .addTo(mapRef.current);
+    }
+  }, [pickup, dropoff, mapReady]);
+
+  // Update route segments
   useEffect(() => {
     if (!mapRef.current || !mapRef.current.isStyleLoaded()) return;
 
@@ -232,10 +272,14 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(({
     const mapboxgl = window.mapboxgl;
     if (!mapboxgl) return;
 
+    // Always remove existing route layers first
     if (map.getLayer('route-to-pickup')) map.removeLayer('route-to-pickup');
     if (map.getSource('route-to-pickup')) map.removeSource('route-to-pickup');
     if (map.getLayer('route-pickup-to-dropoff')) map.removeLayer('route-pickup-to-dropoff');
     if (map.getSource('route-pickup-to-dropoff')) map.removeSource('route-pickup-to-dropoff');
+
+    // Only add routes if we have segments
+    if (routeSegments.length === 0) return;
 
     routeSegments.forEach((segment) => {
         const sourceId = `route-${segment.type}`;
@@ -278,8 +322,8 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(({
           <p style={{ marginBottom: "8px" }}>Map unavailable</p>
           <p style={{ fontSize: "12px" }}>Set VITE_MAPBOX_TOKEN in .env.local</p>
           <div style={{ marginTop: "16px", fontSize: "14px", textAlign: "left" }}>
-              <p>📍 Pickup: {pickup?.label || `${pickup?.lat}, ${pickup?.lng}`}</p>
-              <p>🎯 Dropoff: {dropoff?.label || `${dropoff?.lat}, ${dropoff?.lng}`}</p>
+              {pickup && <p>📍 Pickup: {pickup.label || `${pickup.lat}, ${pickup.lng}`}</p>}
+              {dropoff && <p>🎯 Dropoff: {dropoff.label || `${dropoff.lat}, ${dropoff.lng}`}</p>}
             {courierLocation && (
               <p>🚗 Courier: {courierLocation.lat}, {courierLocation.lng}</p>
             )}
