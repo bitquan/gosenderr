@@ -3,7 +3,6 @@
  */
 
 import { useCallback } from 'react'
-import type mapboxgl from 'mapbox-gl'
 
 interface FitBoundsOptions {
   padding?: number | { top: number; right: number; bottom: number; left: number }

@@ -17,7 +17,10 @@ export function BottomNav({ items }: BottomNavProps) {
   const pathname = location.pathname;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/90 backdrop-blur border-t border-emerald-100 pb-safe">
+    <nav
+      data-bottom-nav="true"
+      className="fixed bottom-0 left-0 right-0 z-40 bg-white/90 backdrop-blur border-t border-emerald-100 pb-safe"
+    >
       <div className="max-w-lg mx-auto">
         <div className="flex items-center justify-around px-2 py-3">
           {items.map((item, index) => {

@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useRef, type PointerEvent } from "react";
+import { useEffect, useState, useMemo, useRef, type PointerEvent, type TouchEvent } from "react";
 import { LoadingState } from "@gosenderr/ui";
 import { useNavigate, Link } from "react-router-dom";
 import { doc, updateDoc } from "firebase/firestore";
@@ -32,10 +32,18 @@ export default function CourierDashboardMobile() {
   const [sheetDragOffset, setSheetDragOffset] = useState(0);
   const [collapsedOffset, setCollapsedOffset] = useState(0);
   const sheetDragStartY = useRef<number | null>(null);
+  const [bottomNavOffset, setBottomNavOffset] = useState(72);
+  const sheetPeekHeight = 56;
+  const minCollapsedOffset = 120;
+  const sheetRef = useRef<HTMLDivElement | null>(null);
+  const sheetDragStartOffset = useRef(0);
+  const sheetContentRef = useRef<HTMLDivElement | null>(null);
+  const sheetTouchStartY = useRef<number | null>(null);
+  const sheetTouchStartOffset = useRef(0);
 
   // Map and route management
   const mapRef = useRef<MapboxMapHandle>(null);
-  const { route, routeSegments, loading: routeLoading, fetchRoute, clearRoute } = useMapboxDirections();
+  const { routeSegments, loading: routeLoading, fetchRoute } = useMapboxDirections();
   const map = mapRef.current?.getMap();
   const { fitRoute } = useMapFocus(map);
 
@@ -55,10 +63,37 @@ export default function CourierDashboardMobile() {
   }, [])
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setCollapsedOffset(Math.round(window.innerHeight * 0.45));
-    }
-  }, [])
+    if (!sheetContentRef.current) return;
+
+    const updateOffsets = () => {
+      const contentHeight = sheetContentRef.current?.scrollHeight ?? 0;
+      const fallbackHeight = typeof window !== 'undefined'
+        ? Math.round(window.innerHeight * 0.6)
+        : 400;
+      const sheetHeight = contentHeight > 0 ? contentHeight : fallbackHeight;
+      const nextOffset = Math.max(minCollapsedOffset, sheetHeight - sheetPeekHeight);
+      console.log('updateOffsets - contentHeight:', contentHeight, 'fallbackHeight:', fallbackHeight, 'sheetHeight:', sheetHeight, 'nextOffset:', nextOffset);
+      setCollapsedOffset(nextOffset);
+
+      const nav = document.querySelector('[data-bottom-nav="true"]') as HTMLElement | null;
+      if (nav) {
+        setBottomNavOffset(nav.getBoundingClientRect().height);
+      }
+    };
+
+    // Delay initial measurement to let content render
+    const timeoutId = setTimeout(updateOffsets, 100);
+
+    const observer = new ResizeObserver(updateOffsets);
+    observer.observe(sheetContentRef.current);
+
+    window.addEventListener('resize', updateOffsets);
+    return () => {
+      clearTimeout(timeoutId);
+      observer.disconnect();
+      window.removeEventListener('resize', updateOffsets);
+    };
+  }, [jobs.length])
 
   const handleToggleOnline = async () => {
     if (!uid || togglingOnline) return;
@@ -195,24 +230,67 @@ export default function CourierDashboardMobile() {
   const needsSetup = !hasPackageMode && !hasFoodMode;
 
   const handleSheetPointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    console.log('Pointer down triggered, collapsedOffset:', collapsedOffset, 'sheetOpen:', sheetOpen);
+    event.preventDefault();
+    event.stopPropagation();
     setIsDraggingSheet(true);
     sheetDragStartY.current = event.clientY;
+    sheetDragStartOffset.current = sheetOpen ? 0 : collapsedOffset;
+    
+    const handleMove = (e: globalThis.PointerEvent) => {
+      if (sheetDragStartY.current === null) return;
+      const delta = e.clientY - sheetDragStartY.current;
+      const base = sheetDragStartOffset.current;
+      const next = Math.min(Math.max(base + delta, 0), collapsedOffset);
+      const offset = next - base;
+      console.log('Move - delta:', delta, 'base:', base, 'next:', next, 'offset:', offset, 'collapsedOffset:', collapsedOffset);
+      setSheetDragOffset(offset);
+    };
+    
+    const handleUp = () => {
+      console.log('Pointer up triggered');
+      const base = sheetDragStartOffset.current;
+      const finalOffset = Math.min(Math.max(base + sheetDragOffset, 0), collapsedOffset);
+      const shouldClose = finalOffset > collapsedOffset * 0.4;
+      setSheetOpen(!shouldClose);
+      setIsDraggingSheet(false);
+      setSheetDragOffset(0);
+      sheetDragStartY.current = null;
+      
+      document.removeEventListener('pointermove', handleMove);
+      document.removeEventListener('pointerup', handleUp);
+    };
+    
+    document.addEventListener('pointermove', handleMove);
+    document.addEventListener('pointerup', handleUp);
   };
 
-  const handleSheetPointerMove = (event: PointerEvent<HTMLDivElement>) => {
-    if (!isDraggingSheet || sheetDragStartY.current === null) return;
-    const delta = event.clientY - sheetDragStartY.current;
-    if (delta < 0) return; // Only allow dragging down
-    setSheetDragOffset(delta);
+
+
+  const handleSheetTouchStart = (event: TouchEvent<HTMLDivElement>) => {
+    if (event.touches.length !== 1) return;
+    setIsDraggingSheet(true);
+    sheetTouchStartY.current = event.touches[0].clientY;
+    sheetTouchStartOffset.current = sheetOpen ? 0 : collapsedOffset;
   };
 
-  const handleSheetPointerUp = () => {
+  const handleSheetTouchMove = (event: TouchEvent<HTMLDivElement>) => {
+    if (!isDraggingSheet || sheetTouchStartY.current === null) return;
+    const delta = event.touches[0].clientY - sheetTouchStartY.current;
+    const base = sheetTouchStartOffset.current;
+    const next = Math.min(Math.max(base + delta, 0), collapsedOffset);
+    setSheetDragOffset(next - base);
+  };
+
+  const handleSheetTouchEnd = () => {
     if (!isDraggingSheet) return;
-    const shouldClose = sheetDragOffset > 80;
+    const base = sheetTouchStartOffset.current;
+    const finalOffset = Math.min(Math.max(base + sheetDragOffset, 0), collapsedOffset);
+    const shouldClose = finalOffset > collapsedOffset * 0.4;
     setSheetOpen(!shouldClose);
     setIsDraggingSheet(false);
     setSheetDragOffset(0);
-    sheetDragStartY.current = null;
+    sheetTouchStartY.current = null;
   };
 
   return (
@@ -225,7 +303,7 @@ export default function CourierDashboardMobile() {
               ref={mapRef}
               pickup={selectedJob?.pickup || userDoc?.courierProfile?.currentLocation || { lat: 37.7749, lng: -122.4194, label: "San Francisco" }}
               dropoff={selectedJob?.dropoff || userDoc?.courierProfile?.currentLocation || { lat: 37.7749, lng: -122.4194, label: "San Francisco" }}
-              courierLocation={userDoc?.courierProfile?.currentLocation || null}
+              courierLocation={(userDoc?.courierProfile?.currentLocation as any) || null}
               routeSegments={routeSegments}
               height="100%"
             />
@@ -334,21 +412,28 @@ export default function CourierDashboardMobile() {
 
       {/* Bottom Sheet - Jobs List */}
       <div
-        className="absolute bottom-0 left-0 right-0 z-30 bg-white rounded-t-3xl shadow-2xl max-h-[60vh] overflow-hidden"
+        ref={sheetRef}
+        className="absolute left-0 right-0 z-30 bg-white rounded-t-3xl shadow-2xl max-h-[60vh] overflow-hidden pointer-events-auto"
         style={{
-          transform: `translateY(${(sheetOpen ? 0 : collapsedOffset) + sheetDragOffset}px)`,
+          bottom: 0,
+          transform: `translateY(${Math.min(
+            Math.max((sheetOpen ? 0 : collapsedOffset) + sheetDragOffset, 0),
+            collapsedOffset
+          )}px)`,
           transition: isDraggingSheet ? 'none' : 'transform 200ms ease',
+          willChange: 'transform',
+          paddingBottom: `${bottomNavOffset}px`,
         }}
       >
+        <div ref={sheetContentRef}>
         {/* Drag Handle */}
         <div
-          className="flex justify-center pt-3 pb-2 cursor-pointer"
+          className="flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing select-none"
           onPointerDown={handleSheetPointerDown}
-          onPointerMove={handleSheetPointerMove}
-          onPointerUp={handleSheetPointerUp}
-          onPointerCancel={handleSheetPointerUp}
-          onClick={() => setSheetOpen(!sheetOpen)}
-          style={{ touchAction: 'none' }}
+          onTouchStart={handleSheetTouchStart}
+          onTouchMove={handleSheetTouchMove}
+          onTouchEnd={handleSheetTouchEnd}
+          style={{ touchAction: 'pan-y' }}
         >
           <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
         </div>
@@ -361,7 +446,12 @@ export default function CourierDashboardMobile() {
             </h2>
             <div className="flex items-center gap-3">
               <button
-                onClick={() => setSheetOpen(!sheetOpen)}
+                onClick={() => {
+                  if (isDraggingSheet) return;
+                  setSheetOpen((prev) => !prev);
+                  setSheetDragOffset(0);
+                  sheetDragStartY.current = null;
+                }}
                 className="text-xs text-gray-500 hover:text-gray-700"
               >
                 {sheetOpen ? 'Close' : 'Open'}
@@ -464,7 +554,7 @@ export default function CourierDashboardMobile() {
                         onClick={(e) => {
                           e.stopPropagation();
                           const fee = rateCard
-                            ? calcMiles(job.pickup, job.dropoff) * rateCard.feePerMile
+                            ? calcMiles(job.pickup, job.dropoff) * rateCard.perMile
                             : 0;
                           handleAcceptJob(job.id, fee);
                         }}
@@ -481,6 +571,7 @@ export default function CourierDashboardMobile() {
               ))}
             </div>
           )}
+        </div>
         </div>
       </div>
     </div>

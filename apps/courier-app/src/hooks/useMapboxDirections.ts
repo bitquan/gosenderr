@@ -111,14 +111,14 @@ export function useMapboxDirections(
   const routeSegments: RouteSegment[] = route
     ? [
         {
-          coordinates: route.legs[0]?.geometry?.coordinates || route.legs[0]?.steps.flatMap(s => s.geometry.coordinates) || [],
+          coordinates: (route.legs[0] as any)?.geometry?.coordinates || route.legs[0]?.steps.flatMap(s => s.geometry.coordinates) || [],
           color: '#3b82f6', // blue-500
-          type: 'to-pickup',
+          type: 'to-pickup' as const,
         },
         {
-          coordinates: route.legs[1]?.geometry?.coordinates || route.legs[1]?.steps.flatMap(s => s.geometry.coordinates) || [],
+          coordinates: (route.legs[1] as any)?.geometry?.coordinates || route.legs[1]?.steps.flatMap(s => s.geometry.coordinates) || [],
           color: '#10b981', // green-500
-          type: 'pickup-to-dropoff',
+          type: 'pickup-to-dropoff' as const,
         },
       ].filter(segment => segment.coordinates.length > 0)
     : []

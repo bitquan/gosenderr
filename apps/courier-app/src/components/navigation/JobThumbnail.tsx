@@ -10,7 +10,7 @@ interface JobThumbnailProps {
 
 export function JobThumbnail({ job, isSelected, onClick, map }: JobThumbnailProps) {
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
-  const rafRef = useRef<number>();
+  const rafRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
     if (!map) return;
@@ -74,10 +74,10 @@ export function JobThumbnail({ job, isSelected, onClick, map }: JobThumbnailProp
       >
         <div className="flex items-center gap-2 text-sm font-semibold whitespace-nowrap">
           <span>📦</span>
-          <span>${job.fee?.toFixed(2) || '0.00'}</span>
+          <span>${(job as any).fee?.toFixed(2) || '0.00'}</span>
         </div>
         <div className="text-xs mt-0.5 opacity-90">
-          {job.deliverySize || 'Package'}
+          {(job as any).deliverySize || 'Package'}
         </div>
       </div>
       {/* Arrow pointing down to marker */}
