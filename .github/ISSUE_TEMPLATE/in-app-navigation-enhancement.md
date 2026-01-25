@@ -63,6 +63,7 @@ Create reusable navigation components:
 - `apps/courier-app/src/components/navigation/NavigationMap.tsx`
   - Map with navigation-specific styling
   - Auto-follow mode (zoom 17-18)
+  - Overview camera toggle (show full route)
   - Bearing/rotation based on travel direction
   - Highlighted current segment
   
@@ -94,8 +95,9 @@ Create new dedicated navigation page:
 - `apps/courier-app/src/pages/navigation/active.tsx`
   - Full-screen map view
   - Floating instruction card at top
-  - Bottom action buttons (exit, recenter, overview)
+  - Bottom action buttons (exit, recenter, overview toggle)
   - Minimal UI for focus
+  - Camera mode state (follow vs overview)
 
 **Route to Add:**
 - `/navigation/active` - Active navigation view
@@ -172,9 +174,11 @@ Create new dedicated navigation page:
 
 #### 6.1 Map Rotation & Camera Control
 **Files to Create:**
-- `apps/courier-app/src/hooks/useNavigationCamera.ts`
-  - Auto-rotate map based on bearing
-  - Smooth camera transitions
+- `aToggle between follow mode (zoom 17-18) and overview mode (full route visible)
+  - Auto-rotate map based on bearing (follow mode only)
+  - Smooth camera transitions between modes
+  - Pitch adjustment (3D perspective)
+  - FitBounds to entire route in overview mode
   - Pitch adjustment (3D perspective)
   
 #### 6.2 Maneuver Icons & Lane Guidance
@@ -263,8 +267,10 @@ apps/courier-app/src/
 
 ### Should Have (P1)
 - [ ] Automatic rerouting when off-route (>50m)
-- [ ] Upcoming turns preview (next 2-3 steps)
-- [ ] Smooth map camera transitions
+- [ ] Overview/Follow mode toggle button
+- [ ] Overview mode shows entire route with bounds
+- [ ] Maneuver icons for each instruction type
+- [ ] "Recenter" button to re-follow location (in overview mode)
 - [ ] Maneuver icons for each instruction type
 - [ ] "Recenter" button to re-follow location
 - [ ] Waypoint arrival detection (pickup/dropoff)

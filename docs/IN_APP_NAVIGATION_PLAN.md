@@ -183,11 +183,13 @@ interface NavigationContextType {
   remainingSteps: RouteStep[]
   distanceToNextTurn: number
   timeRemaining: number
+  cameraMode: 'follow' | 'overview'  // NEW
   
   // Actions
   startNavigation: (job: Job) => Promise<void>
   stopNavigation: () => void
   updatePosition: (location: CourierLocation) => void
+  toggleCameraMode: () => void  // NEW
 }
 ```
 
@@ -200,11 +202,14 @@ interface NavigationContextType {
 
 ### NavigationMap
 - Full-screen Mapbox GL map
-- Auto-follow with zoom 17-18
+- **Camera Modes:**
+  - **Follow Mode (default):** Zoom 17-18, tracks courier position, optional rotation
+  - **Overview Mode:** FitBounds entire route, static view, no auto-follow
+- Toggle button (bottom-right) to switch between modes
 - Current position marker (pulsing blue)
-- Route line (highlighted current segment)
+- Route line (highlighted current segment in follow mode)
 - Pickup/dropoff markers
-- Optional: bearing rotation
+- Smooth transitions when switching modes
 
 ### StepList
 - Collapsible panel (bottom sheet)
@@ -268,12 +273,20 @@ interface NavigationContextType {
 **Rationale:** Prevents false positives (GPS drift, tunnels)
 
 ### Map Camera Settings
-- **Zoom:** 17 (street-level detail)
-- **Pitch:** 0° (top-down) initially, 45° optional
-- **Bearing:** Optional rotation based on heading
-- **Padding:** 20% from top for instruction card
+- **Follow Mode (Default)**
+  - **Zoom:** 17 (street-level detail)
+  - **Pitch:** 0° (top-down) initially, 45° optional
+  - **Bearing:** Optional rotation based on heading
+  - **Padding:** 20% from top for instruction card
+  - **Auto-follow:** Yes, smooth flyTo transitions
+- **Overview Mode**
+  - **Zoom:** Auto (fitBounds to show entire route)
+  - **Pitch:** 0° (top-down only)
+  - **Bearing:** 0° (north-up)
+  - **Padding:** 15% all sides
+  - **Auto-follow:** No, static until user returns to follow mode
 
-**Rationale:** Provides context without obstruction
+**Rationale:** Follow mode provides context for immediate driving decisions, overview mode lets couriers see the full journey and mentally plan ahead.
 
 ### State Persistence
 - Use React Context (not Redux)
