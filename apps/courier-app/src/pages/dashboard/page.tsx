@@ -40,10 +40,11 @@ export default function CourierDashboardMobile() {
   const sheetContentRef = useRef<HTMLDivElement | null>(null);
   const sheetTouchStartY = useRef<number | null>(null);
   const sheetTouchStartOffset = useRef(0);
+  const currentDragOffset = useRef(0); // Use ref to avoid re-renders during drag
 
   // Map and route management
   const mapRef = useRef<MapboxMapHandle>(null);
-  const { routeSegments, loading: routeLoading, fetchRoute, clearRoute } = useMapboxDirections();
+  const { routeSegments, loading: routeLoading, fetchJobRoute, clearRoute } = useMapboxDirections();
   const map = mapRef.current?.getMap();
   const { fitRoute, recenterOnDriver } = useMapFocus(map);
 
@@ -207,12 +208,12 @@ export default function CourierDashboardMobile() {
     }
 
     const courierLoc = userDoc.courierProfile.currentLocation;
-    fetchRoute(
+    fetchJobRoute(
       [courierLoc.lng, courierLoc.lat],
       [selectedJob.pickup.lng, selectedJob.pickup.lat],
       [selectedJob.dropoff.lng, selectedJob.dropoff.lat]
     );
-  }, [selectedJob, userDoc?.courierProfile?.currentLocation, fetchRoute, clearRoute]);
+  }, [selectedJob, userDoc?.courierProfile?.currentLocation, fetchJobRoute, clearRoute]);
   
   // Auto-fit map to route when route loads
   useEffect(() => {
@@ -280,31 +281,39 @@ export default function CourierDashboardMobile() {
   const needsSetup = !hasPackageMode && !hasFoodMode;
 
   const handleSheetPointerDown = (event: PointerEvent<HTMLDivElement>) => {
-    console.log('Pointer down triggered, collapsedOffset:', collapsedOffset, 'sheetOpen:', sheetOpen);
     event.preventDefault();
     event.stopPropagation();
+    event.currentTarget.setPointerCapture(event.pointerId);
     setIsDraggingSheet(true);
     sheetDragStartY.current = event.clientY;
     sheetDragStartOffset.current = sheetOpen ? 0 : collapsedOffset;
+    currentDragOffset.current = 0;
     
     const handleMove = (e: globalThis.PointerEvent) => {
-      if (sheetDragStartY.current === null) return;
+      if (sheetDragStartY.current === null || !sheetRef.current) return;
       const delta = e.clientY - sheetDragStartY.current;
       const base = sheetDragStartOffset.current;
       const next = Math.min(Math.max(base + delta, 0), collapsedOffset);
-      const offset = next - base;
-      console.log('Move - delta:', delta, 'base:', base, 'next:', next, 'offset:', offset, 'collapsedOffset:', collapsedOffset);
-      setSheetDragOffset(offset);
+      currentDragOffset.current = next - base;
+      
+      // Directly update transform without triggering re-render
+      const totalOffset = Math.min(Math.max(base + currentDragOffset.current, 0), collapsedOffset);
+      sheetRef.current.style.transform = `translateY(${totalOffset}px)`;
     };
     
     const handleUp = () => {
-      console.log('Pointer up triggered');
+      try {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      } catch {
+        // no-op
+      }
       const base = sheetDragStartOffset.current;
-      const finalOffset = Math.min(Math.max(base + sheetDragOffset, 0), collapsedOffset);
+      const finalOffset = Math.min(Math.max(base + currentDragOffset.current, 0), collapsedOffset);
       const shouldClose = finalOffset > collapsedOffset * 0.4;
       setSheetOpen(!shouldClose);
       setIsDraggingSheet(false);
       setSheetDragOffset(0);
+      currentDragOffset.current = 0;
       sheetDragStartY.current = null;
       
       document.removeEventListener('pointermove', handleMove);
@@ -317,36 +326,22 @@ export default function CourierDashboardMobile() {
 
 
 
-  const handleSheetTouchStart = (event: TouchEvent<HTMLDivElement>) => {
-    if (event.touches.length !== 1) return;
-    setIsDraggingSheet(true);
-    sheetTouchStartY.current = event.touches[0].clientY;
-    sheetTouchStartOffset.current = sheetOpen ? 0 : collapsedOffset;
+  const handleSheetTouchStart = () => {
+    // touch handled by pointer events on handle
   };
 
-  const handleSheetTouchMove = (event: TouchEvent<HTMLDivElement>) => {
-    if (!isDraggingSheet || sheetTouchStartY.current === null) return;
-    const delta = event.touches[0].clientY - sheetTouchStartY.current;
-    const base = sheetTouchStartOffset.current;
-    const next = Math.min(Math.max(base + delta, 0), collapsedOffset);
-    setSheetDragOffset(next - base);
+  const handleSheetTouchMove = () => {
+    // touch handled by pointer events on handle
   };
 
   const handleSheetTouchEnd = () => {
-    if (!isDraggingSheet) return;
-    const base = sheetTouchStartOffset.current;
-    const finalOffset = Math.min(Math.max(base + sheetDragOffset, 0), collapsedOffset);
-    const shouldClose = finalOffset > collapsedOffset * 0.4;
-    setSheetOpen(!shouldClose);
-    setIsDraggingSheet(false);
-    setSheetDragOffset(0);
-    sheetTouchStartY.current = null;
+    // touch handled by pointer events on handle
   };
 
   return (
-    <div className="relative h-screen w-full overflow-hidden bg-gray-100">
+    <div className="fixed inset-0 w-screen h-screen overflow-hidden bg-gray-100">
       {/* Full-Screen Map */}
-      <div className="absolute inset-0">
+      <div className="absolute inset-0" style={{ touchAction: 'pan-x pan-y' }}>
         {(selectedJob || userDoc?.courierProfile?.currentLocation) ? (
           <>
             <MapboxMap
@@ -393,11 +388,12 @@ export default function CourierDashboardMobile() {
       <button
         onClick={handleToggleOnline}
         disabled={togglingOnline}
-        className={`absolute top-4 right-4 z-20 px-4 py-2.5 rounded-xl font-semibold text-sm shadow-lg transition-all ${
+        className={`absolute top-safe-16 right-4 z-20 px-4 py-2.5 rounded-xl font-semibold text-sm shadow-lg transition-all ${
           userDoc?.courierProfile?.isOnline
             ? "bg-emerald-500 text-white"
             : "bg-gray-700 text-white"
         } ${togglingOnline ? "opacity-60" : "hover:scale-105"}`}
+        style={{ marginTop: 'max(env(safe-area-inset-top), 16px)' }}
       >
         <div className="flex items-center gap-2">
           <span
@@ -416,7 +412,8 @@ export default function CourierDashboardMobile() {
       {/* Filter Toggle Button (Top-Left) */}
       <button
         onClick={() => setHideIneligible(!hideIneligible)}
-        className="absolute top-4 left-4 z-20 px-4 py-2.5 bg-white rounded-xl font-semibold text-sm shadow-lg hover:scale-105 transition-transform"
+        className="absolute top-safe-16 left-4 z-20 px-4 py-2.5 bg-white rounded-xl font-semibold text-sm shadow-lg hover:scale-105 transition-transform"
+        style={{ marginTop: 'max(env(safe-area-inset-top), 16px)' }}
       >
         {hideIneligible ? "Show All" : "Hide Ineligible"}
       </button>
@@ -463,7 +460,7 @@ export default function CourierDashboardMobile() {
       {/* Bottom Sheet - Jobs List */}
       <div
         ref={sheetRef}
-        className="absolute left-0 right-0 z-30 bg-white rounded-t-3xl shadow-2xl max-h-[60vh] overflow-hidden pointer-events-auto"
+        className="absolute left-0 right-0 z-30 bg-white rounded-t-3xl shadow-2xl max-h-[60vh] overflow-hidden pointer-events-none"
         style={{
           bottom: 0,
           transform: `translateY(${Math.min(
@@ -472,10 +469,14 @@ export default function CourierDashboardMobile() {
           )}px)`,
           transition: isDraggingSheet ? 'none' : 'transform 200ms ease',
           willChange: 'transform',
-          paddingBottom: `${bottomNavOffset}px`,
+          paddingBottom: `var(--bottom-nav-height, ${bottomNavOffset}px)`,
         }}
       >
-        <div ref={sheetContentRef}>
+        <div
+          ref={sheetContentRef}
+          className="pointer-events-auto overflow-y-auto"
+          style={{ touchAction: 'pan-y' }}
+        >
         {/* Drag Handle */}
         <div
           className="flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing select-none"
@@ -483,7 +484,7 @@ export default function CourierDashboardMobile() {
           onTouchStart={handleSheetTouchStart}
           onTouchMove={handleSheetTouchMove}
           onTouchEnd={handleSheetTouchEnd}
-          style={{ touchAction: 'pan-y' }}
+          style={{ touchAction: 'none' }}
         >
           <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
         </div>

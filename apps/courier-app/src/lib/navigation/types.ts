@@ -63,5 +63,5 @@ export interface DirectionsOptions {
 export interface RouteSegment {
   coordinates: [number, number][]
   color: string
-  type: 'to-pickup' | 'pickup-to-dropoff'
+  type: 'to-pickup' | 'pickup-to-dropoff' | 'navigation'
 }

@@ -266,24 +266,46 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(({
 
   // Update route segments
   useEffect(() => {
-    if (!mapRef.current || !mapRef.current.isStyleLoaded()) return;
+    console.log('🗺️ MapboxMap route effect triggered:', {
+      hasMap: !!mapRef.current,
+      styleLoaded: mapRef.current?.isStyleLoaded(),
+      mapReady,
+      numSegments: routeSegments.length,
+      segments: routeSegments.map(s => ({
+        type: s.type,
+        numCoords: s.coordinates.length
+      }))
+    });
+
+    if (!mapRef.current || !mapReady) {
+      console.log('⏳ Map not ready yet, waiting...');
+      return;
+    }
 
     const map = mapRef.current;
     const mapboxgl = window.mapboxgl;
     if (!mapboxgl) return;
 
-    // Always remove existing route layers first
-    if (map.getLayer('route-to-pickup')) map.removeLayer('route-to-pickup');
-    if (map.getSource('route-to-pickup')) map.removeSource('route-to-pickup');
-    if (map.getLayer('route-pickup-to-dropoff')) map.removeLayer('route-pickup-to-dropoff');
-    if (map.getSource('route-pickup-to-dropoff')) map.removeSource('route-pickup-to-dropoff');
+    // Remove all existing route layers and sources
+    const routeLayerIds = ['route-to-pickup', 'route-pickup-to-dropoff', 'route-navigation'];
+    routeLayerIds.forEach(layerId => {
+      if (map.getLayer(layerId)) map.removeLayer(layerId);
+      if (map.getSource(layerId)) map.removeSource(layerId);
+    });
 
     // Only add routes if we have segments
-    if (routeSegments.length === 0) return;
+    if (routeSegments.length === 0) {
+      console.log('🗺️ No route segments to display');
+      return;
+    }
+
+    console.log('🗺️ Adding route segments to map:', routeSegments.length);
 
     routeSegments.forEach((segment) => {
         const sourceId = `route-${segment.type}`;
         const layerId = `route-${segment.type}`;
+      
+      console.log('  Adding route layer:', layerId, 'with', segment.coordinates.length, 'coordinates');
       map.addSource(sourceId, {
         type: 'geojson',
         data: {
@@ -306,12 +328,12 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(({
         },
         paint: {
           'line-color': segment.color,
-          'line-width': 4,
-          'line-opacity': 0.8,
+          'line-width': 6,
+          'line-opacity': 0.9,
         },
       });
     });
-  }, [routeSegments]);
+  }, [routeSegments, mapReady]);
 
   const token = import.meta.env.VITE_MAPBOX_TOKEN;
 

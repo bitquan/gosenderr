@@ -32,8 +32,8 @@ export default function CourierSettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8F9FF] px-6 py-10">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="fixed inset-0 w-screen h-screen overflow-y-auto pb-24 safe-top bg-[#F8F9FF]">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-4 sm:space-y-6">
         <Card variant="elevated">
           <CardHeader>
             <CardTitle>Courier Settings</CardTitle>

@@ -3,7 +3,7 @@
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { fetchJobRoute } from '@/lib/navigation/directions'
+import { fetchJobRoute as fetchJobRouteAPI } from '@/lib/navigation/directions'
 import type { DirectionsResponse, RouteData, RouteSegment } from '@/lib/navigation/types'
 
 interface UseMapboxDirectionsOptions {
@@ -18,9 +18,13 @@ interface UseMapboxDirectionsResult {
   error: Error | null
   fetchRoute: (
     currentLocation: [number, number],
+    destination: [number, number]
+  ) => Promise<RouteData>
+  fetchJobRoute: (
+    currentLocation: [number, number],
     pickup: [number, number],
     dropoff: [number, number]
-  ) => Promise<void>
+  ) => Promise<RouteData>
   clearRoute: () => void
 }
 
@@ -48,9 +52,9 @@ export function useMapboxDirections(
   )
 
   /**
-   * Fetch route from current location through pickup to dropoff
+   * Fetch route from current location through pickup to dropoff (full job route)
    */
-  const fetchRoute = useCallback(
+  const fetchJobRoute = useCallback(
     async (
       currentLocation: [number, number],
       pickup: [number, number],
@@ -61,16 +65,17 @@ export function useMapboxDirections(
       // Check cache first
       if (cacheRoutes && cacheRef.current.has(cacheKey)) {
         const cached = cacheRef.current.get(cacheKey)!
-        setRoute(cached.routes[0])
+        const routeData = cached.routes[0]
+        setRoute(routeData)
         setError(null)
-        return
+        return routeData
       }
 
       setLoading(true)
       setError(null)
 
       try {
-        const response = await fetchJobRoute(currentLocation, pickup, dropoff)
+        const response = await fetchJobRouteAPI(currentLocation, pickup, dropoff)
 
         if (response.routes && response.routes.length > 0) {
           const routeData = response.routes[0]
@@ -80,6 +85,8 @@ export function useMapboxDirections(
           if (cacheRoutes) {
             cacheRef.current.set(cacheKey, response)
           }
+
+          return routeData
         } else {
           throw new Error('No route found')
         }
@@ -93,6 +100,58 @@ export function useMapboxDirections(
       }
     },
     [cacheRoutes, getCacheKey]
+  )
+
+  /**
+   * Fetch simple point-to-point route (for navigation)
+   */
+  const fetchRoute = useCallback(
+    async (
+      currentLocation: [number, number],
+      destination: [number, number]
+    ) => {
+      const cacheKey = `${currentLocation[0]},${currentLocation[1]};${destination[0]},${destination[1]}`
+
+      // Check cache first
+      if (cacheRoutes && cacheRef.current.has(cacheKey)) {
+        const cached = cacheRef.current.get(cacheKey)!
+        const routeData = cached.routes[0]
+        setRoute(routeData)
+        setError(null)
+        return routeData
+      }
+
+      setLoading(true)
+      setError(null)
+
+      try {
+        // Use simple 2-point directions (not job route)
+        const { fetchDirections } = await import('@/lib/navigation/directions')
+        const response = await fetchDirections([currentLocation, destination])
+
+        if (response.routes && response.routes.length > 0) {
+          const routeData = response.routes[0]
+          setRoute(routeData)
+
+          // Cache the response
+          if (cacheRoutes) {
+            cacheRef.current.set(cacheKey, response)
+          }
+
+          return routeData
+        } else {
+          throw new Error('No route found')
+        }
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error('Failed to fetch route')
+        setError(error)
+        setRoute(null)
+        console.error('Failed to fetch route:', error)
+      } finally {
+        setLoading(false)
+      }
+    },
+    [cacheRoutes]
   )
 
   /**
@@ -136,6 +195,7 @@ export function useMapboxDirections(
     loading,
     error,
     fetchRoute,
+    fetchJobRoute,
     clearRoute,
   }
 }

@@ -67,6 +67,19 @@ export async function fetchDirections(
 
     const data: DirectionsResponse = await response.json()
 
+    console.log('📍 Mapbox Directions API response:', {
+      code: data.code,
+      numRoutes: data.routes?.length,
+      firstRoute: data.routes?.[0] ? {
+        hasGeometry: !!data.routes[0].geometry,
+        geometryType: data.routes[0].geometry?.type,
+        numCoordinates: data.routes[0].geometry?.coordinates?.length,
+        distance: data.routes[0].distance,
+        duration: data.routes[0].duration,
+        numLegs: data.routes[0].legs?.length
+      } : null
+    });
+
     if (data.code !== 'Ok') {
       throw new Error(`Directions API returned code: ${data.code}`)
     }

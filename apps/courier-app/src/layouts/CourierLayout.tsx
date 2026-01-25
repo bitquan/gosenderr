@@ -11,11 +11,9 @@ export default function CourierLayout() {
   }, [])
   
   return (
-    <div className="min-h-screen bg-[#F8F9FF]">
-      <div className="pb-24">
-        <Outlet />
-      </div>
+    <>
+      <Outlet />
       <BottomNav items={courierNavItems} />
-    </div>
+    </>
   )
 }
