@@ -81,7 +81,7 @@ export function useMapFocus(map: mapboxgl.Map | null): UseMapFocusResult {
    */
   const recenterOnDriver = useCallback(
     (location: [number, number]) => {
-      flyToLocation(location, 15)
+      flyToLocation(location, 13)
     },
     [flyToLocation]
   )

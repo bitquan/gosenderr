@@ -45,7 +45,7 @@ export default function CourierDashboardMobile() {
   const mapRef = useRef<MapboxMapHandle>(null);
   const { routeSegments, loading: routeLoading, fetchRoute } = useMapboxDirections();
   const map = mapRef.current?.getMap();
-  const { fitRoute } = useMapFocus(map);
+  const { fitRoute, recenterOnDriver } = useMapFocus(map);
 
   debugLogger.log('render', 'Dashboard render start', {
     userLoading,
@@ -190,6 +190,24 @@ export default function CourierDashboardMobile() {
     }
   }, [routeSegments, map, fitRoute]);
 
+  // Auto-follow driver location when tracking and no job selected
+  useEffect(() => {
+    console.log('Auto-follow check:', { 
+      hasMap: !!map, 
+      isTracking, 
+      hasSelectedJob: !!selectedJob,
+      hasLocation: !!userDoc?.courierProfile?.currentLocation 
+    });
+    
+    if (!map || !isTracking || selectedJob) return;
+    
+    const courierLoc = userDoc?.courierProfile?.currentLocation;
+    if (courierLoc) {
+      console.log('Recentering on driver at:', [courierLoc.lng, courierLoc.lat]);
+      recenterOnDriver([courierLoc.lng, courierLoc.lat]);
+    }
+  }, [map, isTracking, selectedJob, userDoc?.courierProfile?.currentLocation, recenterOnDriver]);
+
   const handleAcceptJob = async (jobId: string, fee: number) => {
     if (!uid) return;
     setClaiming(true);
@@ -301,8 +319,8 @@ export default function CourierDashboardMobile() {
           <>
             <MapboxMap
               ref={mapRef}
-              pickup={selectedJob?.pickup || userDoc?.courierProfile?.currentLocation || { lat: 37.7749, lng: -122.4194, label: "San Francisco" }}
-              dropoff={selectedJob?.dropoff || userDoc?.courierProfile?.currentLocation || { lat: 37.7749, lng: -122.4194, label: "San Francisco" }}
+              pickup={selectedJob?.pickup}
+              dropoff={selectedJob?.dropoff}
               courierLocation={(userDoc?.courierProfile?.currentLocation as any) || null}
               routeSegments={routeSegments}
               height="100%"

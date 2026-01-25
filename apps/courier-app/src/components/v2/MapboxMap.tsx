@@ -1,11 +1,11 @@
 
-import { useEffect, useRef, useImperativeHandle, forwardRef } from "react";
+import { useEffect, useRef, useImperativeHandle, forwardRef, useState } from "react";
 import { GeoPoint, CourierLocation } from "@/lib/v2/types";
 import type { RouteSegment } from "@/lib/navigation/types";
 
 interface MapboxMapProps {
-  pickup: GeoPoint;
-  dropoff: GeoPoint;
+  pickup?: GeoPoint;
+  dropoff?: GeoPoint;
   courierLocation?: CourierLocation | null;
   height?: string;
   routeSegments?: RouteSegment[];
@@ -27,6 +27,7 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(({
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const markersRef = useRef<{ pickup?: any; dropoff?: any; courier?: any }>({});
+  const [mapReady, setMapReady] = useState(false);
 
   useImperativeHandle(ref, () => ({
     getMap: () => mapRef.current,
@@ -43,46 +44,58 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(({
 
     const loadMapbox = async () => {
       if (!window.mapboxgl) {
-        const mapboxgl = await import("mapbox-gl");
-        window.mapboxgl = mapboxgl.default;
+        const mapboxglModule = await import("mapbox-gl");
+        window.mapboxgl = mapboxglModule.default;
       }
 
       const mapboxgl = window.mapboxgl;
-      mapboxgl.accessToken = token;
+      (mapboxgl as any).accessToken = token;
 
       if (!mapRef.current && mapContainer.current) {
+        // Use courier location or pickup as initial center
+        const initialCenter = courierLocation 
+          ? [courierLocation.lng, courierLocation.lat]
+          : pickup 
+          ? [pickup.lng, pickup.lat]
+          : [-77.4182, 38.9493]; // Default to DC area
+          
         const map = new mapboxgl.Map({
           container: mapContainer.current,
           style: "mapbox://styles/mapbox/streets-v12",
-          center: [pickup.lng, pickup.lat],
+          center: initialCenter as [number, number],
           zoom: 12,
         });
 
         mapRef.current = map;
 
         map.on("load", () => {
-          markersRef.current.pickup = new mapboxgl.Marker({ color: "#16a34a" })
-            .setLngLat([pickup.lng, pickup.lat])
-            .setPopup(
-              new mapboxgl.Popup().setHTML(
-                `<strong>Pickup</strong>${pickup.label ? `<br/>${pickup.label}` : ""}`,
-              ),
-            )
-            .addTo(map);
+          // Only create pickup/dropoff markers if they exist
+          if (pickup && dropoff) {
+            markersRef.current.pickup = new mapboxgl.Marker({ color: "#16a34a" })
+              .setLngLat([pickup.lng, pickup.lat])
+              .setPopup(
+                new mapboxgl.Popup().setHTML(
+                  `<strong>Pickup</strong>${pickup.label ? `<br/>${pickup.label}` : ""}`,
+                ),
+              )
+              .addTo(map);
 
-          markersRef.current.dropoff = new mapboxgl.Marker({ color: "#dc2626" })
-            .setLngLat([dropoff.lng, dropoff.lat])
-            .setPopup(
-              new mapboxgl.Popup().setHTML(
-                `<strong>Dropoff</strong>${dropoff.label ? `<br/>${dropoff.label}` : ""}`,
-              ),
-            )
-            .addTo(map);
+            markersRef.current.dropoff = new mapboxgl.Marker({ color: "#dc2626" })
+              .setLngLat([dropoff.lng, dropoff.lat])
+              .setPopup(
+                new mapboxgl.Popup().setHTML(
+                  `<strong>Dropoff</strong>${dropoff.label ? `<br/>${dropoff.label}` : ""}`,
+                ),
+              )
+              .addTo(map);
 
-          const bounds = new mapboxgl.LngLatBounds();
-          bounds.extend([pickup.lng, pickup.lat]);
-          bounds.extend([dropoff.lng, dropoff.lat]);
-          map.fitBounds(bounds, { padding: 50 });
+            const bounds = new mapboxgl.LngLatBounds();
+            bounds.extend([pickup.lng, pickup.lat]);
+            bounds.extend([dropoff.lng, dropoff.lat]);
+            map.fitBounds(bounds, { padding: 50 });
+          }
+
+          setMapReady(true);
 
           if (onMapLoad) {
             onMapLoad(map);
@@ -99,30 +112,118 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(({
         mapRef.current = null;
       }
     };
-  }, [pickup.lat, pickup.lng, dropoff.lat, dropoff.lng, pickup.label, dropoff.label, onMapLoad]);
+  }, [pickup?.lat, pickup?.lng, dropoff?.lat, dropoff?.lng, pickup?.label, dropoff?.label, onMapLoad]);
 
   useEffect(() => {
-    if (!mapRef.current) return;
+    console.log('🔵 Courier marker effect - courierLocation:', courierLocation, 'mapReady:', mapReady);
+    if (!mapReady || !mapRef.current) {
+      console.log('🔵 Map not ready yet');
+      return;
+    }
 
     const mapboxgl = window.mapboxgl;
-    if (!mapboxgl) return;
+    if (!mapboxgl) {
+      console.log('🔵 No mapboxgl');
+      return;
+    }
 
     if (courierLocation && courierLocation.lat && courierLocation.lng) {
+      console.log('🔵 Has location, creating/updating marker');
+      // Check if marker exists and is the old type (remove it to force recreation)
       if (markersRef.current.courier) {
+        const element = markersRef.current.courier.getElement();
+        // If it doesn't have our custom class, it's the old default marker - remove it
+        if (!element.classList.contains('courier-location-marker')) {
+          console.log('🔵 Removing old default marker');
+          markersRef.current.courier.remove();
+          markersRef.current.courier = null;
+        }
+      }
+      
+      if (markersRef.current.courier) {
+        console.log('🔵 Updating existing marker position');
         markersRef.current.courier.setLngLat([courierLocation.lng, courierLocation.lat]);
       } else {
-        markersRef.current.courier = new mapboxgl.Marker({ color: "#2563eb" })
+        console.log('🔵 Creating new custom marker');
+        // Create custom pulsing marker element
+        const el = document.createElement('div');
+        el.className = 'courier-location-marker';
+        el.style.cssText = `
+          width: 50px;
+          height: 50px;
+          position: relative;
+        `;
+        
+        // Inner blue dot
+        const dot = document.createElement('div');
+        dot.style.cssText = `
+          width: 24px;
+          height: 24px;
+          background: #3b82f6;
+          border: 4px solid white;
+          border-radius: 50%;
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          box-shadow: 0 0 12px rgba(59, 130, 246, 0.8), 0 3px 6px rgba(0, 0, 0, 0.3);
+          z-index: 10000;
+        `;
+        
+        // Pulsing halo
+        const halo = document.createElement('div');
+        halo.style.cssText = `
+          width: 100%;
+          height: 100%;
+          background: rgba(59, 130, 246, 0.4);
+          border-radius: 50%;
+          position: absolute;
+          top: 0;
+          left: 0;
+          animation: pulse-halo 2s ease-out infinite;
+          z-index: 9999;
+        `;
+        
+        // Add keyframe animation
+        const style = document.createElement('style');
+        style.textContent = `
+          @keyframes pulse-halo {
+            0% {
+              transform: scale(0.8);
+              opacity: 1;
+            }
+            100% {
+              transform: scale(2.5);
+              opacity: 0;
+            }
+          }
+        `;
+        
+        if (!document.querySelector('#courier-marker-styles')) {
+          style.id = 'courier-marker-styles';
+          document.head.appendChild(style);
+        }
+        
+        el.appendChild(halo);
+        el.appendChild(dot);
+        
+        console.log('🔵 Adding marker to map with element:', el);
+        markersRef.current.courier = new mapboxgl.Marker({ 
+          element: el,
+          anchor: 'center'
+        })
           .setLngLat([courierLocation.lng, courierLocation.lat])
-          .setPopup(new mapboxgl.Popup().setHTML("<strong>Senderr</strong>"))
           .addTo(mapRef.current);
+        console.log('🔵 Courier marker added successfully:', markersRef.current.courier);
       }
     } else {
+      console.log('🔵 No courierLocation, removing marker if exists');
       if (markersRef.current.courier) {
         markersRef.current.courier.remove();
         markersRef.current.courier = null;
       }
     }
-  }, [courierLocation?.lat, courierLocation?.lng]);
+  }, [courierLocation, mapReady]);
 
   useEffect(() => {
     if (!mapRef.current || !mapRef.current.isStyleLoaded()) return;
@@ -177,8 +278,8 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(({
           <p style={{ marginBottom: "8px" }}>Map unavailable</p>
           <p style={{ fontSize: "12px" }}>Set VITE_MAPBOX_TOKEN in .env.local</p>
           <div style={{ marginTop: "16px", fontSize: "14px", textAlign: "left" }}>
-              <p>📍 Pickup: {pickup.label || `${pickup.lat}, ${pickup.lng}`}</p>
-              <p>🎯 Dropoff: {dropoff.label || `${dropoff.lat}, ${dropoff.lng}`}</p>
+              <p>📍 Pickup: {pickup?.label || `${pickup?.lat}, ${pickup?.lng}`}</p>
+              <p>🎯 Dropoff: {dropoff?.label || `${dropoff?.lat}, ${dropoff?.lng}`}</p>
             {courierLocation && (
               <p>🚗 Courier: {courierLocation.lat}, {courierLocation.lng}</p>
             )}
