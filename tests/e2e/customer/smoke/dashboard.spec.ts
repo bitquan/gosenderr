@@ -10,8 +10,10 @@ test.describe('Customer Dashboard Smoke @smoke', () => {
     });
 
     await page.goto('/dashboard');
-    await expect(page.getByRole('heading', { name: /dashboard/i })).toBeVisible();
-    await expect(page.getByText(/active jobs/i)).toBeVisible();
-    await expect(page.getByRole('button', { name: /new delivery/i })).toBeVisible();
+    // Heading uses the user's display name (injected in CI) or a generic welcome — check for either
+    await expect(page.getByRole('heading', { name: /smoke|welcome/i })).toBeVisible();
+    await expect(page.getByText(/marketplace orders/i)).toBeVisible();
+    // Saved Addresses section has an "+ Add" action on the dashboard
+    await expect(page.getByRole('button', { name: /\+ Add/i })).toBeVisible();
   });
 });
