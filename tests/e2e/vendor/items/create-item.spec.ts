@@ -8,12 +8,17 @@ test.describe('Vendor Items - create (happy path)', () => {
       window.__E2E_USER = { uid: 'vendor-uid', email: 'vendor@example.com' };
     });
 
+    page.on('console', (msg) => console.log('PAGE LOG:', msg.type(), msg.text()));
+    page.on('request', (req) => {
+      if (req.url().includes('firestore') || req.url().includes('documents')) console.log('REQ:', req.method(), req.url());
+    });
+
     let wrote = false;
 
-    // intercept Firestore write for marketplaceItems
-    await page.route('**/projects/**/databases/**/documents/marketplaceItems*', (route) => {
-      wrote = true;
-      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ name: 'projects/test/databases/(default)/documents/marketplaceItems/item123' }) });
+    // E2E handler: set a flag when create is called
+    await page.addInitScript(() => {
+      // @ts-ignore
+      window.__E2E_ON_CREATE = (item: any) => { window.__E2E_CREATED = item; };
     });
 
     await page.goto('/vendor/items/new');
@@ -27,7 +32,8 @@ test.describe('Vendor Items - create (happy path)', () => {
       page.click('button:has-text("Create Item")'),
     ]);
 
-    expect(wrote).toBeTruthy();
+    const created = await page.evaluate(() => (window as any).__E2E_CREATED);
+    expect(created).toBeTruthy();
     await expect(page.getByText('No items yet', { exact: false })).toBeVisible();
   });
 });

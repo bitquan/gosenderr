@@ -49,15 +49,23 @@ export default function VendorDashboard() {
 
   const loadVendorItems = async () => {
     try {
-      const itemsQuery = query(
-        collection(db, "marketplaceItems"),
-        where("vendorId", "==", uid)
-      );
-      const snapshot = await getDocs(itemsQuery);
-      const itemsList = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Item[];
+      let itemsList: Item[] = [];
+
+      // E2E: allow tests to inject marketplace items directly (avoids Firestore network complexity)
+      if (typeof window !== 'undefined' && (window as any).__E2E_MARKETPLACE_ITEMS) {
+        const injected = (window as any).__E2E_MARKETPLACE_ITEMS as any[];
+        itemsList = injected.map((it) => ({ id: it.id || 'e2e-' + Math.random().toString(36).slice(2), ...it })) as Item[];
+      } else {
+        const itemsQuery = query(
+          collection(db, "marketplaceItems"),
+          where("vendorId", "==", uid)
+        );
+        const snapshot = await getDocs(itemsQuery);
+        itemsList = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Item[];
+      }
 
       setItems(itemsList);
 

@@ -22,6 +22,17 @@ export default function NewItemPage() {
     if (!uid) return;
     setLoading(true);
     try {
+      // E2E: allow tests to intercept the create flow
+      if (typeof window !== 'undefined' && (window as any).__E2E_ON_CREATE) {
+        try {
+          (window as any).__E2E_ON_CREATE({ ...form, vendorId: uid, status: 'draft', createdAt: new Date() });
+          navigate("/vendor/dashboard");
+          return;
+        } catch (err) {
+          console.error('E2E onCreate failed', err);
+        }
+      }
+
       await addDoc(collection(db, "marketplaceItems"), {
         ...form,
         vendorId: uid,

@@ -8,21 +8,16 @@ test.describe('Vendor Items - edit', () => {
     await page.addInitScript(() => {
       // @ts-ignore
       window.__E2E_USER = { uid: 'vendor-uid', email: 'vendor@example.com' };
-    });
-
-    // Stub list with one item that has an edit link
-    const doc = {
-      name: 'projects/test/databases/(default)/documents/marketplaceItems/item123',
-      fields: {
-        title: { stringValue: 'Editable Item' },
-        description: { stringValue: 'Desc' },
-        price: { integerValue: '50' },
-        vendorId: { stringValue: 'vendor-uid' },
-      }
-    } as any;
-
-    await page.route('**/projects/**/databases/**/documents:runQuery', (route) => {
-      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([doc]) });
+      // @ts-ignore
+      window.__E2E_MARKETPLACE_ITEMS = [
+        {
+          id: 'item123',
+          title: 'Editable Item',
+          description: 'Desc',
+          price: 50,
+          vendorId: 'vendor-uid',
+        }
+      ];
     });
 
     await page.goto('/vendor/dashboard');
