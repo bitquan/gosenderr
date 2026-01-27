@@ -12,8 +12,9 @@ test.describe('Customer Dashboard Smoke @smoke', () => {
     await page.goto('/dashboard');
     // Heading uses the user's display name (injected in CI) or a generic welcome — check for either
     await expect(page.getByRole('heading', { name: /smoke|welcome/i })).toBeVisible();
-    await expect(page.getByText(/marketplace orders/i)).toBeVisible();
-    // Saved Addresses section has an "+ Add" action on the dashboard
+    // Saved Addresses section has an "+ Add" action on the dashboard (stable presence)
     await expect(page.getByRole('button', { name: /\+ Add/i })).toBeVisible();
+    // Marketplace Orders may take longer to render in CI; allow a longer timeout
+    await expect(page.getByText(/marketplace orders/i)).toBeVisible({ timeout: 10000 });
   });
 });
