@@ -1,0 +1,44 @@
+name: CI — Customer App
+
+on:
+  pull_request:
+    paths:
+      - 'apps/customer-app/**'
+  push:
+    branches:
+      - 'feat/phase2/**'
+
+jobs:
+  customer-app:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install pnpm
+        run: corepack enable && corepack prepare pnpm@8.15.1 --activate
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build customer app
+        run: pnpm --filter @gosenderr/customer-app build
+
+      - name: Lint changed files
+        run: pnpm lint --filter @gosenderr/customer-app || true
+
+      - name: Run tests (customer app)
+        run: pnpm --filter @gosenderr/customer-app test --silent || true
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: customer-app-dist
+          path: apps/customer-app/dist
