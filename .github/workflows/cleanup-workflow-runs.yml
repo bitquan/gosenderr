@@ -1,0 +1,75 @@
+name: Cleanup old workflow runs
+
+on:
+  schedule:
+    # every 30 minutes
+    - cron: '*/30 * * * *'
+  workflow_dispatch: {}
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete old completed workflow runs (older than 3 hours)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const threeHoursAgo = Date.now() - 3 * 60 * 60 * 1000;
+            let page = 1;
+            let deleted = 0;
+            while (true) {
+              const resp = await github.rest.actions.listWorkflowRunsForRepo({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                per_page: 100,
+                page
+              });
+
+              const runs = resp.data.workflow_runs;
+              if (!runs || runs.length === 0) break;
+
+              for (const run of runs) {
+                if (!run.completed_at) continue;
+                const completedAt = new Date(run.completed_at).getTime();
+                if (completedAt > threeHoursAgo) continue; // keep recent runs
+
+                // Skip if run has artifacts
+                const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  run_id: run.id
+                });
+                if (artifacts.data.total_count > 0) {
+                  console.log(`Skipping run ${run.id} (${run.name}) due to artifacts`);
+                  continue;
+                }
+
+                // Only delete runs that are completed
+                if (run.status === 'completed') {
+                  try {
+                    await github.rest.actions.deleteWorkflowRun({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      run_id: run.id
+                    });
+                    console.log(`Deleted run ${run.id} (${run.name}) completed at ${run.completed_at}`);
+                    deleted++;
+                    // brief pause to avoid hammering the API
+                    await new Promise(r => setTimeout(r, 300));
+                  } catch (err) {
+                    console.log(`Failed to delete run ${run.id}: ${err}`);
+                  }
+                }
+              }
+
+              if (runs.length < 100) break;
+              page++;
+            }
+
+            return {deleted};
+      - name: Show summary
+        run: echo "Deletion result: ${{ steps.github-script.outputs.result }}"
