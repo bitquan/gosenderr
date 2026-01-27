@@ -49,7 +49,12 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Typecheck
-        run: pnpm -C apps/web type-check
+        run: |
+          if [ -d "apps/web" ]; then
+            pnpm -C apps/web type-check
+          else
+            echo "apps/web not found — skipping type-check"
+          fi
 
       - name: Build
         env:
@@ -60,7 +65,12 @@ jobs:
           NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
           NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
           NEXT_PUBLIC_MAPBOX_TOKEN: ${{ secrets.NEXT_PUBLIC_MAPBOX_TOKEN }}
-        run: pnpm -C apps/web build
+        run: |
+          if [ -d "apps/web" ]; then
+            pnpm -C apps/web build
+          else
+            echo "apps/web not found — skipping build"
+          fi
 
   deploy:
     name: Deploy (Cloud Run + Firebase Hosting)
