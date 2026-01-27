@@ -27,11 +27,23 @@ Both workflows now support manual execution from the GitHub UI.
 ### 2. Automated Testing
 
 **Test Job Features:**
+- **Status**: Currently disabled (requires dev server setup in CI)
 - Executes Playwright E2E tests from `apps/customer-app`
 - Automatically installs browser dependencies
 - Uploads test results as artifacts (30-day retention)
 - Provides Firebase configuration via environment variables
-- Runs in parallel with other jobs for faster feedback
+
+**Why Disabled:**
+E2E tests require a running dev server at `http://localhost:5180`. To enable:
+1. Add workflow steps to build and start dev server
+2. Wait for server readiness
+3. Run Playwright tests
+4. Clean up server process
+
+**Alternative Approaches:**
+- Add unit tests that don't require a running server
+- Use component tests with testing libraries
+- Set up proper CI test server configuration
 - Can be skipped in manual deployments (not recommended)
 
 **Test Artifacts:**
@@ -121,7 +133,7 @@ turbo run lint
 ```
 ┌─────────┐  ┌─────────┐  ┌──────────┐  ┌─────┐
 │  Test   │  │  Lint   │  │ Security │  │ CI  │
-│(optional)│  │         │  │          │  │     │
+│(disabled)│  │         │  │          │  │     │
 └────┬────┘  └────┬────┘  └────┬─────┘  └──┬──┘
      │            │             │            │
      └────────────┴─────────────┴────────────┘
@@ -367,15 +379,32 @@ git push origin feature/new-feature
 
 ## ⚠️ Known Issues
 
-### apps/web References
+### Test Job Disabled
 
-**Issue:** Workflows reference `apps/web` which doesn't exist in the current repository.
+**Issue:** E2E test job is currently disabled in the workflow.
 
-**Background:** According to `CLEANUP_AUDIT_JAN_2026.md`, `apps/web` is a legacy Next.js app that has been migrated to Vite apps (customer-app, courier-app, shifter-app, admin-app).
+**Reason:** Playwright E2E tests require a running dev server at `http://localhost:5180`, which is not configured in the CI workflow.
 
 **Impact:**
-- CI job's typecheck and build steps will fail
-- Next.js cache is ineffective
+- No automated E2E testing in CI
+- Tests must be run locally before merging
+
+**Solution Options:**
+1. Add dev server startup to workflow (build app, start server, run tests, cleanup)
+2. Convert to unit/component tests that don't need a server
+3. Use mock API responses for E2E tests
+4. Set up dedicated test environment
+
+**Status:** Can be re-enabled once dev server CI setup is implemented.
+
+### Legacy apps/web References (Resolved)
+
+**Issue:** ~~Workflows previously referenced `apps/web` which doesn't exist~~
+
+**Status:** ✅ Fixed in latest commit
+- Updated CI job to build `@gosenderr/shared` and `@gosenderr/ui` packages
+- Updated deploy-hosting.yml to monitor and build actual apps (customer, courier, shifter, admin)
+- Removed all references to non-existent `apps/web` directory
 
 **Workaround:** This pre-existing issue should be addressed in a separate PR to:
 1. Update build targets to correct apps
