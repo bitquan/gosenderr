@@ -73,4 +73,4 @@ jobs:
 
             return {deleted};
       - name: Show summary
-        run: echo "Deletion result: ${{ steps.cleanup.outputs.result }}"
+        run: echo "Cleanup job finished — see logs for deletion details"
