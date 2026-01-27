@@ -1,8 +1,12 @@
 name: CI + Deploy (Firebase Hosting)
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
-    branches: ['**']  # Run on all branches
+    branches: ['main', 'release/**', 'feat/**']
   pull_request:
     branches: [main]
 
