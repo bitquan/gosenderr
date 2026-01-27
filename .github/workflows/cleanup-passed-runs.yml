@@ -1,0 +1,129 @@
+name: Cleanup Passed Workflow Runs
+
+on:
+  workflow_dispatch:
+    inputs:
+      hours:
+        description: "Delete runs older than this many hours"
+        required: false
+        default: "3"
+      batch_size:
+        description: "Number of runs to delete per batch"
+        required: false
+        default: "25"
+      dry_run:
+        description: "If 'true' only list candidates; set to 'false' to delete"
+        required: false
+        default: "true"
+
+concurrency:
+  group: cleanup-passed-runs-${{ github.repository }}
+  cancel-in-progress: false
+
+permissions:
+  actions: write
+
+jobs:
+  cleanup:
+    name: Cleanup passed runs (manual)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (for context)
+        uses: actions/checkout@v4
+
+      - name: Setup Node (for small helper)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Find candidate runs (dry-run)
+        id: find
+        env:
+          HOURS: ${{ github.event.inputs.hours }}
+          BATCH_SIZE: ${{ github.event.inputs.batch_size }}
+          DRY_RUN: ${{ github.event.inputs.dry_run }}
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const hours = parseInt(process.env.HOURS || '3', 10);
+            const batchSize = parseInt(process.env.BATCH_SIZE || '25', 10);
+            const dryRun = (process.env.DRY_RUN || 'true').toLowerCase() === 'true';
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const cutoff = Date.now() - hours * 3600 * 1000;
+
+            core.info(`Searching for successful completed runs older than ${hours} hours (cutoff: ${new Date(cutoff).toISOString()})`);
+
+            const perPage = 100;
+            let page = 1;
+            const candidates = [];
+
+            while (true) {
+              const res = await github.rest.actions.listWorkflowRunsForRepo({ owner, repo, per_page: perPage, page });
+              const runs = res.data.workflow_runs || [];
+              if (runs.length === 0) break;
+
+              for (const run of runs) {
+                if (run.status !== 'completed' || run.conclusion !== 'success') continue;
+                const createdAt = new Date(run.created_at).getTime();
+                if (createdAt >= cutoff) continue;
+
+                // check artifacts
+                const art = await github.rest.actions.listWorkflowRunArtifacts({ owner, repo, run_id: run.id });
+                if ((art.data && art.data.total_count) && art.data.total_count > 0) {
+                  continue; // skip runs with artifacts
+                }
+
+                candidates.push({ id: run.id, name: run.name, run_number: run.run_number, created_at: run.created_at });
+              }
+
+              if (runs.length < perPage) break;
+              page += 1;
+              // safety stop to avoid long loops
+              if (page > 50) break;
+            }
+
+            core.info(`Found ${candidates.length} candidate runs (successful, completed, older than ${hours} hours, no artifacts)`);
+            core.setOutput('candidates_count', String(candidates.length));
+            core.setOutput('dry_run', String(dryRun));
+            core.setOutput('batch_size', String(batchSize));
+
+            if (dryRun) {
+              // print sample for review (first 100)
+              core.info('DRY RUN: sample of candidates (first 100):');
+              core.info(JSON.stringify(candidates.slice(0, 100), null, 2));
+              return { candidates_count: candidates.length };
+            }
+
+            // perform deletion in batches
+            let deleted = 0;
+            for (let i = 0; i < candidates.length; i += batchSize) {
+              const batch = candidates.slice(i, i + batchSize);
+              core.info(`Deleting batch ${i / batchSize + 1} (${batch.length} runs)`);
+              for (const c of batch) {
+                try {
+                  await github.rest.actions.deleteWorkflowRun({ owner, repo, run_id: c.id });
+                  deleted += 1;
+                  core.info(`Deleted run ${c.id} (run number ${c.run_number})`);
+                } catch (err) {
+                  core.warning(`Failed to delete run ${c.id}: ${err}`);
+                }
+              }
+              // short pause between batches to be polite
+              await new Promise((res) => setTimeout(res, 2000));
+            }
+
+            core.info(`Deletion complete. Deleted: ${deleted}`);
+            core.setOutput('deleted', String(deleted));
+
+      - name: Result summary
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const count = parseInt(core.getOutput('candidates_count') || '0', 10);
+            const deleted = parseInt(core.getOutput('deleted') || '0', 10);
+            const dryRun = core.getOutput('dry_run') === 'true';
+            core.info(`Summary: candidates=${count}, deleted=${deleted}, dry_run=${dryRun}`);
+            if (dryRun && count > 0) {
+              core.notice('This was a dry-run. Re-run the workflow with input `dry_run: false` to delete the listed runs.');
+            }
