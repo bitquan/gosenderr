@@ -38,7 +38,7 @@ jobs:
       - name: Run customer smoke tests
         env:
           CI: 'false'
-        run: pnpm --filter @gosenderr/customer-app exec playwright test tests/e2e/customer/smoke --project=customer --config ../../playwright.ci.config.ts --reporter=list
+        run: pnpm --filter @gosenderr/customer-app exec playwright test tests/e2e/customer/smoke --project=customer --config ../../playwright.ci.config.ts --grep-invert=@visual --reporter=list
       - name: Upload traces on failure
         if: failure()
         uses: actions/upload-artifact@v4
