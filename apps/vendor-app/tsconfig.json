@@ -19,6 +19,7 @@
     "noFallthroughCasesInSwitch": true,
 
     "baseUrl": ".",
+    "types": ["vite/client"],
     "paths": {
       "@/*": ["./src/*"],
       "@gosenderr/shared": ["../../packages/shared/src"]
