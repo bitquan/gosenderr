@@ -10,6 +10,7 @@ test.describe('Vendor Dashboard Smoke @smoke', () => {
 
     await page.goto('/vendor/dashboard');
     await expect(page.getByRole('heading', { name: /vendor dashboard/i })).toBeVisible();
-    await expect(page.getByRole('link', { name: /\+ new item/i })).toBeVisible();
+    // allow either the global nav link or the hero CTA to be present; just assert one is visible
+    await expect(page.getByRole('link', { name: /\+ new item/i }).first()).toBeVisible();
   });
 });
