@@ -15,6 +15,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // E2E helper: allow tests to inject a fake user for authentication
+    if (typeof window !== 'undefined' && (window as any).__E2E_USER) {
+      setUser((window as any).__E2E_USER as User)
+      setLoading(false)
+      return
+    }
+
     if (!auth) {
       setLoading(false)
       return

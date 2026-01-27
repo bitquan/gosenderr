@@ -3,6 +3,32 @@ import { test, expect } from '@playwright/test';
 const VENDOR_APP_URL = process.env.VITE_VENDOR_APP_URL ?? 'https://gosenderr-vendor.web.app';
 
 test.describe('Auth & vendor link tests', () => {
+  // Ensure tests inject a fake authenticated user early and stub user document reads so
+  // settings page reliably shows the vendor apply CTA when running in the VSCode extension
+  test.beforeEach(async ({ page }) => {
+    // Inject a fake authenticated user before any script runs
+    await page.addInitScript(() => {
+      // @ts-ignore - test helper
+      window.__E2E_USER = { uid: 'uid123', email: 'test+e2e@example.com', displayName: 'E2E' };
+    });
+
+    // Global stub for user doc reads
+    await page.route('**/projects/**/databases/**/documents/users/*', (route) => {
+      const body = {
+        name: `projects/test-project/databases/(default)/documents/users/uid123`,
+        fields: {
+          role: { stringValue: 'customer' }
+        },
+        createTime: new Date().toISOString(),
+        updateTime: new Date().toISOString()
+      } as any;
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
+    });
+
+    // Forward page console to the test runner to help debugging
+    page.on('console', (msg) => console.log('PAGE CONSOLE:', msg.type(), msg.text()));
+  });
+
   test('Login page is customer-only and sign button text is correct', async ({ page }) => {
     await page.goto('/login');
 
@@ -30,12 +56,31 @@ test.describe('Auth & vendor link tests', () => {
 
     // Intercept Firebase signUp network request and stub success
     await page.route('**/identitytoolkit.googleapis.com/**', (route) => {
-      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ idToken: 'fake', localId: 'uid123' }) });
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          idToken: 'fake-token',
+          refreshToken: 'refresh-token',
+          expiresIn: '3600',
+          localId: 'uid123',
+        }),
+      });
     });
 
     // Intercept Firestore write for users doc
     await page.route('**/firestore.googleapis.com/**', (route) => {
       route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({}) });
+    });
+
+    // Log page console messages to the test output to help debugging
+    page.on('console', (msg) => {
+      console.log('PAGE LOG:', msg.text());
+    });
+
+    // Accept alert that appears after signup to avoid blocking the page
+    page.once('dialog', async (dialog) => {
+      await dialog.accept();
     });
 
     await page.click('button[type="submit"]');
@@ -46,12 +91,45 @@ test.describe('Auth & vendor link tests', () => {
   });
 
   test('Vendor apply link opens vendor app', async ({ page, context }) => {
-    // Ensure settings page contains external vendor apply link
+    // Attach console listeners for debugging
+    page.on('console', (msg) => console.log('PAGE CONSOLE:', msg.type(), msg.text()));
+    page.on('pageerror', (err) => console.log('PAGE ERROR:', err.message));
+
+    // Set fake authenticated user BEFORE navigation so AuthProvider picks it up on load
+    await page.addInitScript(() => {
+      // @ts-ignore - test helper
+      window.__E2E_USER = { uid: 'uid123', email: 'test+e2e@example.com', displayName: 'E2E' };
+    });
+
+    // Stub Firestore reads for the user's doc with a proper document shape (no vendor application)
+    await page.route('**/projects/**/databases/**/documents/users/*', (route) => {
+      const body = {
+        name: `projects/test-project/databases/(default)/documents/users/uid123`,
+        fields: {
+          role: { stringValue: 'customer' }
+        },
+        createTime: new Date().toISOString(),
+        updateTime: new Date().toISOString()
+      } as any;
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
+    });
+
     await page.goto('/settings');
+
+    // Wait for the settings content to render (either the vendor card or an indication it's not present)
+    const applyLink = page.locator('a:has-text("Apply Now")');
+    await page.waitForTimeout(1000);
+
+    if (!(await applyLink.count())) {
+      console.log('DEBUG: Apply Now link not found — dumping settings HTML:');
+      const html = await page.content();
+      console.log(html.slice(0, 8000));
+      // Also dump any console messages collected on the page
+    }
 
     const [newPage] = await Promise.all([
       context.waitForEvent('page'),
-      page.click('a:has-text("Apply Now")'),
+      applyLink.click({ timeout: 60000 }),
     ]);
 
     await newPage.waitForLoadState('domcontentloaded');

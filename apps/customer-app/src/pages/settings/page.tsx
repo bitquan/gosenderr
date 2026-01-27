@@ -30,13 +30,19 @@ export default function CustomerSettingsPage() {
     if (!uid) return;
     
     const checkVendorStatus = async () => {
-      const userDoc = await getDoc(doc(db, `users/${uid}`));
-      const userData = userDoc.data();
-      
-      if (userData?.isVendor === true || userData?.vendorApplication?.status === "approved") {
-        setVendorStatus("approved");
-      } else if (userData?.vendorApplication?.status === "pending") {
-        setVendorStatus("pending");
+      try {
+        const userDoc = await getDoc(doc(db, `users/${uid}`));
+        const userData = userDoc.data();
+
+        console.log('Settings: uid=', uid, 'userData=', userData);
+
+        if (userData?.isVendor === true || userData?.vendorApplication?.status === "approved") {
+          setVendorStatus("approved");
+        } else if (userData?.vendorApplication?.status === "pending") {
+          setVendorStatus("pending");
+        }
+      } catch (err) {
+        console.error('Settings: failed to fetch user doc', err);
       }
     };
     

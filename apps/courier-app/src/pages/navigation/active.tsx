@@ -5,7 +5,8 @@ import { useUserDoc } from '@/hooks/v2/useUserDoc';
 import { NavigationHeader } from '@/components/navigation/NavigationHeader';
 import { MapboxMap, MapboxMapHandle } from '@/components/v2/MapboxMap';
 import type { RouteSegment } from '@/lib/navigation/types';
-import type mapboxgl from 'mapbox-gl';
+import type { Map as MapboxMapType } from 'mapbox-gl';
+import type { CourierLocation } from '@/lib/v2/types';
 
 export default function ActiveNavigationPage() {
   const navigate = useNavigate();
@@ -66,7 +67,7 @@ export default function ActiveNavigationPage() {
   const lastCenter = useRef<[number, number] | null>(null);
 
   const applyFollowCamera = (
-    map: mapboxgl.Map,
+    map: MapboxMapType,
     loc: { lat: number; lng: number },
     options: { force?: boolean } = {}
   ) => {
@@ -87,12 +88,12 @@ export default function ActiveNavigationPage() {
       zoom: 19,
       pitch: 65,
       duration: 700,
-      easing: (t) => t * (2 - t),
+      easing: (t: number) => t * (2 - t),
       essential: true
     });
   };
 
-  const applyOverviewCamera = (map: mapboxgl.Map) => {
+  const applyOverviewCamera = (map: MapboxMapType) => {
     const bounds = new (window as any).mapboxgl.LngLatBounds();
 
     if (routeSegments.length > 0) {
@@ -132,7 +133,7 @@ export default function ActiveNavigationPage() {
     map.easeTo({
       bearing: deviceHeading,
       duration: 240,
-      easing: (t) => t * (2 - t),
+      easing: (t: number) => t * (2 - t),
       essential: true
     });
   }, [deviceHeading, cameraMode]);
@@ -252,14 +253,10 @@ export default function ActiveNavigationPage() {
       map.easeTo({
         bearing: deviceHeading,
         duration: 300,
-        easing: (t) => t * (2 - t),
+        easing: (t: number) => t * (2 - t),
         essential: true
       });
     }
-  };
-
-  const handleToggleCamera = () => {
-    switchCameraMode(cameraMode === 'follow' ? 'overview' : 'follow');
   };
 
   if (!currentJob) {
@@ -310,7 +307,7 @@ export default function ActiveNavigationPage() {
           ref={mapRef}
           pickup={currentJob.pickup}
           dropoff={currentJob.dropoff}
-          courierLocation={userDoc?.courierProfile?.currentLocation || null}
+          courierLocation={(userDoc?.courierProfile?.currentLocation as CourierLocation) || null}
           routeSegments={routeSegments}
           height="100%"
         />

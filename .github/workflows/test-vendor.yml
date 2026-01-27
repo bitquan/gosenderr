@@ -1,0 +1,32 @@
+name: Test Vendor Smoke
+
+on:
+  pull_request:
+    paths:
+      - 'apps/vendor-app/**'
+      - 'packages/shared/**'
+      - 'tests/e2e/vendor/**'
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Start vendor app
+        run: pnpm --filter @gosenderr/vendor-app preview -- --port 5181 &
+      - name: Wait for vendor app
+        run: npx wait-on http://127.0.0.1:5181 --timeout 60000
+      - name: Run vendor smoke tests
+        run: pnpm test:smoke:vendor
+      - name: Upload traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces-vendor
+          path: apps/customer-app/test-results

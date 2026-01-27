@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useNavigationContext } from '@/contexts/NavigationContext';
 import { useMapboxDirections } from './useMapboxDirections';
 import type { Job } from '@/lib/v2/types';
-import type { CourierLocation, Location } from '@/lib/v2/types';
+import type { CourierLocation, ItemLocation } from '@/lib/v2/types';
 
 /**
  * Hook for managing navigation flow
@@ -12,7 +12,7 @@ import type { CourierLocation, Location } from '@/lib/v2/types';
 export function useNavigation() {
   const navigate = useNavigate();
   const context = useNavigationContext();
-  const { route, fetchRoute, loading: routeLoading, error: routeError } = useMapboxDirections();
+  const { fetchRoute, loading: routeLoading, error: routeError } = useMapboxDirections();
 
   /**
    * Start navigation for a job
@@ -21,7 +21,7 @@ export function useNavigation() {
   const startNavigationForJob = useCallback(async (
     job: Job,
     courierLocation: CourierLocation,
-    destination: Location
+    destination: ItemLocation
   ) => {
     if (!destination) {
       throw new Error('Destination location is required');
@@ -35,6 +35,10 @@ export function useNavigation() {
         [courierLocation.lng, courierLocation.lat],
         [destination.lng, destination.lat]
       );
+
+      if (!routeData) {
+        throw new Error('No route data returned');
+      }
       
       // Initialize navigation context with job and route
       context.startNavigation(job, routeData);

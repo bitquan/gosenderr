@@ -1,0 +1,32 @@
+name: Test Customer Smoke
+
+on:
+  pull_request:
+    paths:
+      - 'apps/customer-app/**'
+      - 'packages/shared/**'
+      - 'tests/e2e/customer/**'
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Start customer app
+        run: pnpm --filter @gosenderr/customer-app preview -- --port 5173 &
+      - name: Wait for customer app
+        run: npx wait-on http://127.0.0.1:5173 --timeout 60000
+      - name: Run customer smoke tests
+        run: pnpm test:smoke:customer
+      - name: Upload traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces-customer
+          path: apps/customer-app/test-results

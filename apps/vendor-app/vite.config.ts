@@ -9,4 +9,9 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  server: {
+    host: '127.0.0.1',
+    port: Number(process.env.PORT ?? process.env.VITE_PORT ?? 5181),
+    strictPort: true,
+  },
 })

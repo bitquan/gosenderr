@@ -19,12 +19,12 @@ interface UseMapboxDirectionsResult {
   fetchRoute: (
     currentLocation: [number, number],
     destination: [number, number]
-  ) => Promise<RouteData>
+  ) => Promise<RouteData | undefined>
   fetchJobRoute: (
     currentLocation: [number, number],
     pickup: [number, number],
     dropoff: [number, number]
-  ) => Promise<RouteData>
+  ) => Promise<RouteData | undefined>
   clearRoute: () => void
 }
 
