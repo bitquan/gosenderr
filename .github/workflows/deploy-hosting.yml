@@ -5,8 +5,12 @@ on:
     branches:
       - main
     paths:
-      - "apps/web/**"
+      - "apps/customer-app/**"
+      - "apps/courier-app/**"
+      - "apps/shifter-app/**"
+      - "apps/admin-app/**"
       - "packages/shared/**"
+      - "packages/ui/**"
       - "firebase.json"
       - ".firebaserc"
   workflow_dispatch:
@@ -67,11 +71,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build shared package
-        run: cd packages/shared && pnpm build
+      - name: Build packages
+        run: |
+          pnpm --filter @gosenderr/shared build
+          pnpm --filter @gosenderr/ui build
 
-      - name: Build web app
-        run: cd apps/web && pnpm build
+      - name: Build apps
+        run: pnpm --filter @gosenderr/customer-app build && pnpm --filter @gosenderr/courier-app build && pnpm --filter @gosenderr/shifter-app build && pnpm --filter @gosenderr/admin-app build
 
       - name: Deployment Start
         run: |
