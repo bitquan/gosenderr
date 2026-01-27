@@ -15,6 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Delete old completed workflow runs (older than 3 hours)
+        id: cleanup
         uses: actions/github-script@v7
         with:
           script: |
@@ -72,4 +73,4 @@ jobs:
 
             return {deleted};
       - name: Show summary
-        run: echo "Deletion result: ${{ steps.github-script.outputs.result }}"
+        run: echo "Deletion result: ${{ steps.cleanup.outputs.result }}"
