@@ -230,9 +230,6 @@ jobs:
       - name: Build shared packages
         run: pnpm --filter @gosenderr/shared build
 
-      - name: Build UI packages
-        run: pnpm --filter @gosenderr/ui build
-
       - name: Build Summary
         if: success()
         run: echo "::notice::Build completed successfully!"

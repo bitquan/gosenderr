@@ -62,7 +62,7 @@ E2E tests require a running dev server at `http://localhost:5180`. To enable:
 ### 3. Code Linting
 
 **Lint Job Features:**
-- Runs `turbo run lint` across all workspace packages
+- Runs `pnpm exec turbo run lint` across all workspace packages
 - Executes in parallel with test and ci jobs
 - Fails the workflow if linting issues are found
 - Provides clear success/failure notifications
@@ -77,7 +77,7 @@ E2E tests require a running dev server at `http://localhost:5180`. To enable:
 ```bash
 pnpm lint
 # or
-turbo run lint
+pnpm exec turbo run lint
 ```
 
 ### 4. Security Scanning
@@ -114,11 +114,6 @@ turbo run lint
 - **Key**: Based on `pnpm-lock.yaml`
 - **Benefit**: Skips rebuilding unchanged packages
 - **Optimization**: Lockfile-based to reduce invalidation
-
-#### Next.js Build Cache
-- **Path**: `apps/web/.next/cache` (Note: apps/web is legacy)
-- **Key**: Based on `pnpm-lock.yaml`
-- **Benefit**: Faster Next.js rebuilds
 
 **Expected Performance Improvements:**
 - First build: Baseline (no cache)
@@ -329,7 +324,7 @@ git push origin feature/new-feature
    ```bash
    pnpm lint
    # or
-   turbo run lint
+   pnpm exec turbo run lint
    ```
 3. Commit fixes and push
 
@@ -402,16 +397,9 @@ git push origin feature/new-feature
 **Issue:** ~~Workflows previously referenced `apps/web` which doesn't exist~~
 
 **Status:** ✅ Fixed in latest commit
-- Updated CI job to build `@gosenderr/shared` and `@gosenderr/ui` packages
+- Updated CI job to build `@gosenderr/shared` package
 - Updated deploy-hosting.yml to monitor and build actual apps (customer, courier, shifter, admin)
 - Removed all references to non-existent `apps/web` directory
-
-**Workaround:** This pre-existing issue should be addressed in a separate PR to:
-1. Update build targets to correct apps
-2. Remove Next.js-specific steps
-3. Update to Vite-based build process
-
-**Status:** Documented as pre-existing issue
 
 ## 🔄 Migration from Old Workflow
 
@@ -419,10 +407,10 @@ git push origin feature/new-feature
 
 **Added:**
 - ✅ Manual deployment trigger (workflow_dispatch)
-- ✅ Test job with Playwright
+- ✅ Test job with Playwright (currently disabled)
 - ✅ Lint job with Turbo
 - ✅ Security scanning with Trivy
-- ✅ Enhanced caching (Turbo + Next.js)
+- ✅ Enhanced caching (Turbo + pnpm store)
 - ✅ Job summaries and annotations
 - ✅ Explicit permissions for security
 

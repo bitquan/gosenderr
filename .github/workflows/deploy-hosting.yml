@@ -71,13 +71,20 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build packages
-        run: |
-          pnpm --filter @gosenderr/shared build
-          pnpm --filter @gosenderr/ui build
+      - name: Build shared package
+        run: pnpm --filter @gosenderr/shared build
 
-      - name: Build apps
-        run: pnpm --filter @gosenderr/customer-app build && pnpm --filter @gosenderr/courier-app build && pnpm --filter @gosenderr/shifter-app build && pnpm --filter @gosenderr/admin-app build
+      - name: Build customer app
+        run: pnpm --filter @gosenderr/customer-app build
+
+      - name: Build courier app
+        run: pnpm --filter @gosenderr/courier-app build
+
+      - name: Build shifter app
+        run: pnpm --filter @gosenderr/shifter-app build
+
+      - name: Build admin app
+        run: pnpm --filter @gosenderr/admin-app build
 
       - name: Deployment Start
         run: |
