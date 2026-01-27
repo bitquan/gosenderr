@@ -49,7 +49,7 @@ jobs:
         env:
           VITE_VENDOR_APP_URL: "http://127.0.0.1:5181"
           CI: 'false'
-        run: pnpm --filter @gosenderr/customer-app test:e2e --project=integration --reporter=list
+        run: pnpm --filter @gosenderr/customer-app test:e2e --config ../../playwright.ci.config.ts --project=integration --reporter=list
 
       - name: Upload Playwright traces and results
         if: failure()
