@@ -36,6 +36,8 @@ jobs:
       - name: Wait for vendor app
         run: npx wait-on http://127.0.0.1:5181 --timeout 60000
       - name: Run vendor smoke tests
+        env:
+          CI: 'false'
         run: pnpm --filter @gosenderr/customer-app exec playwright test tests/e2e/vendor/smoke --project=vendor --config ../../playwright.config.ts --reporter=list
       - name: Upload traces on failure
         if: failure()
