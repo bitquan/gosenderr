@@ -9,6 +9,16 @@ on:
       - "packages/shared/**"
       - "firebase.json"
       - ".firebaserc"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
 
 jobs:
   deploy:
@@ -24,9 +34,34 @@ jobs:
           node-version: "20"
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         with:
-          version: 8
+          version: 8.15.1
+          run_install: false
+
+      - name: Enable corepack
+        run: corepack enable
+
+      - name: Get pnpm store path
+        id: pnpm-store
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-store.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Cache Turbo
+        uses: actions/cache@v4
+        with:
+          path: ~/.turbo
+          key: ${{ runner.os }}-turbo-${{ hashFiles('**/pnpm-lock.yaml') }}-${{ hashFiles('**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx') }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-${{ hashFiles('**/pnpm-lock.yaml') }}-
+            ${{ runner.os }}-turbo-
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -37,6 +72,11 @@ jobs:
       - name: Build web app
         run: cd apps/web && pnpm build
 
+      - name: Deployment Start
+        run: |
+          ENV="${{ inputs.environment || 'production' }}"
+          echo "::notice::Starting Firebase Hosting deployment to $ENV environment..."
+
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
@@ -46,3 +86,8 @@ jobs:
           projectId: gosenderr-6773f
         env:
           FIREBASE_CLI_EXPERIMENTS: webframeworks
+
+      - name: Deployment Success
+        run: |
+          ENV="${{ inputs.environment || 'production' }}"
+          echo "::notice::Firebase Hosting deployment to $ENV completed successfully!"
