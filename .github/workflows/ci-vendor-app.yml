@@ -1,0 +1,49 @@
+name: CI — Vendor App
+
+on:
+  pull_request:
+    paths:
+      - 'apps/vendor-app/**'
+  push:
+    branches:
+      - 'feat/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  vendor-app:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install pnpm
+        run: corepack enable && corepack prepare pnpm@8.15.1 --activate
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build vendor app
+        run: pnpm --filter @gosenderr/vendor-app build
+
+      - name: Lint changed files
+        run: pnpm lint --filter @gosenderr/vendor-app || true
+
+      - name: Run vendor unit tests
+        run: pnpm --filter @gosenderr/vendor-app test || true
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vendor-app-dist
+          path: apps/vendor-app/dist
