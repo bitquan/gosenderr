@@ -29,10 +29,10 @@ jobs:
       - name: Build apps
         run: pnpm --filter @gosenderr/customer-app build && pnpm --filter @gosenderr/vendor-app build
 
-      - name: Start previews
+      - name: Start previews (serve built dist)
         run: |
-          pnpm --filter @gosenderr/customer-app preview -- --host 127.0.0.1 --port 5173 --strictPort &
-          pnpm --filter @gosenderr/vendor-app preview -- --host 127.0.0.1 --port 5181 --strictPort &
+          npx serve -s apps/customer-app/dist -l 5173 &
+          npx serve -s apps/vendor-app/dist -l 5181 &
 
       - name: Wait for apps
         run: npx wait-on http://127.0.0.1:5173 http://127.0.0.1:5181 --timeout 60000
