@@ -23,7 +23,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Install Playwright browsers/deps
-        run: pnpm -w exec playwright install --with-deps
+        run: pnpm --filter @gosenderr/customer-app exec playwright install --with-deps
       - name: Start vendor app
         run: pnpm --filter @gosenderr/vendor-app preview -- --port 5181 &
       - name: Wait for vendor app

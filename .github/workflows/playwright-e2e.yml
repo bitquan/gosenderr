@@ -25,7 +25,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Install Playwright browsers/deps
-        run: pnpm -w exec playwright install --with-deps
+        run: pnpm --filter @gosenderr/customer-app exec playwright install --with-deps
 
       - name: Build apps
         run: pnpm --filter @gosenderr/customer-app build && pnpm --filter @gosenderr/vendor-app build
