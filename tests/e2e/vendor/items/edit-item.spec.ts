@@ -18,6 +18,8 @@ test.describe('Vendor Items - edit', () => {
           vendorId: 'vendor-uid',
         }
       ];
+      // @ts-ignore
+      window.__E2E_ON_UPDATE = (payload: any) => { (window as any).__E2E_UPDATED = payload; };
     });
 
     await page.goto('/vendor/dashboard');
