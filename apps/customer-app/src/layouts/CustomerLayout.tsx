@@ -1,5 +1,5 @@
 import { Outlet } from 'react-router-dom'
-import { BottomNav, customerNavItems } from '../components/BottomNav'
+import { BottomNav, customerNavItems } from '@/components/ui/BottomNav'
 
 export default function CustomerLayout() {
   return (
