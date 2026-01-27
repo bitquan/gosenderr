@@ -16,8 +16,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+      - name: Enable pnpm (Corepack)
+        run: |
+          corepack enable
+          corepack prepare pnpm@^8 --activate
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      - name: Install Playwright browsers/deps
+        run: pnpm -w exec playwright install --with-deps
       - name: Start customer app
         run: pnpm --filter @gosenderr/customer-app preview -- --port 5173 &
       - name: Wait for customer app
