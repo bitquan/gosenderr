@@ -42,6 +42,18 @@ jobs:
       - name: Run tests (customer app)
         run: pnpm --filter @gosenderr/customer-app test --silent || true
 
+      - name: Post CI summary comment to PR
+        if: ${{ github.event_name == 'pull_request' && always() }}
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            **CI report** for `${{ github.workflow }}` (run [#${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}))
+            - Branch: `${{ github.ref }}`
+            - Result: ${{ job.status }}
+            - Artifacts: see workflow artifacts (if any)
+
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
