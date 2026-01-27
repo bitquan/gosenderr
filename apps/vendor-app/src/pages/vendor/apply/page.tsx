@@ -25,6 +25,19 @@ export default function VendorApplicationPage() {
 
     setLoading(true);
     try {
+      // E2E: allow tests to intercept application submission
+      if (typeof window !== 'undefined' && (window as any).__E2E_ON_APPLY) {
+        try {
+          (window as any).__E2E_ON_APPLY({ ...formData, userId: uid, status: 'pending', createdAt: new Date() });
+          alert("Application submitted! We'll review and get back to you within 24 hours.");
+          navigate("/vendor/dashboard");
+          setLoading(false);
+          return;
+        } catch (err) {
+          console.error('E2E onApply failed', err);
+        }
+      }
+
       // Create vendor application
       await setDoc(doc(db, `vendorApplications/${uid}`), {
         ...formData,
