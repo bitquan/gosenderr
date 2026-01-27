@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUserRole } from "@/hooks/v2/useUserRole";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
+import { VENDOR_APP_URL } from '@/config/apps';
 
 export function RoleSwitcher() {
   const navigate = useNavigate();
@@ -12,13 +13,17 @@ export function RoleSwitcher() {
   // All logged-in users can access both customer and vendor roles
   const roles = [
     { value: "customer", label: "Customer", icon: "👤", route: "/dashboard" },
-    { value: "vendor", label: "Vendor", icon: "🏪", route: "/vendor/dashboard" },
+    { value: "vendor", label: "Vendor", icon: "🏪", route: `${VENDOR_APP_URL}/vendor/dashboard` },
   ];
 
   const currentRole = roles.find((r) => r.value === role) || roles[0];
 
   const handleRoleSwitch = (route: string) => {
     setIsOpen(false);
+    if (route.startsWith('http')) {
+      window.location.href = route;
+      return;
+    }
     navigate(route);
   };
 

@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { getAuthSafe } from "@/lib/firebase/auth";
+import { VENDOR_APP_URL } from '@/config/apps';
 
 export default function CustomerSettingsPage() {
   const navigate = useNavigate();
@@ -153,12 +154,14 @@ export default function CustomerSettingsPage() {
                     Sell your products on our marketplace and reach thousands of customers. 
                     Easy setup, secure payments, and 24/7 support.
                   </p>
-                  <Link
-                    to="/vendor/apply"
+                  <a
+                    href={`${VENDOR_APP_URL}/vendor/apply`}
+                    target="_blank"
+                    rel="noreferrer"
                     className="inline-block px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all"
                   >
                     Apply Now
-                  </Link>
+                  </a>
                 </div>
               </div>
             </CardContent>

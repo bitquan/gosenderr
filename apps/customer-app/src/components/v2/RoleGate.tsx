@@ -2,6 +2,7 @@
 import { ReactNode, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUserRole } from '@/hooks/v2/useUserRole';
+import { VENDOR_APP_URL } from '@/config/apps';
 
 interface RoleGateProps {
   children: ReactNode;
@@ -29,7 +30,8 @@ export function RoleGate({ children, allowedRole }: RoleGateProps) {
       if (role === 'customer') {
         navigate('/jobs');
       } else if (role === 'vendor') {
-        navigate('/vendor/dashboard');
+        // Vendor portal is a separate app
+        window.location.href = `${VENDOR_APP_URL}/vendor/dashboard`;
       } else {
         navigate('/courier/dashboard');
       }

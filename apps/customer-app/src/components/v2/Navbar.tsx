@@ -6,6 +6,7 @@ import { getAuthSafe } from "@/lib/firebase/auth";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { useUserRole } from "@/hooks/v2/useUserRole";
 import { Link } from "react-router-dom";
+import { VENDOR_APP_URL } from '@/config/apps';
 
 interface NavbarProps {
   children: ReactNode;
@@ -76,68 +77,79 @@ export function Navbar({ children }: NavbarProps) {
 
           {/* Role Badge */}
           {user && role && (
-            <Link
-              to={
-                role === "admin"
-                  ? "/admin/dashboard"
-                  : role === "customer"
-                    ? "/dashboard"
-                    : role === "courier"
-                      ? "/courier/dashboard"
-                      : role === "runner"
-                        ? "/runner/dashboard"
-                        : role === "vendor"
-                          ? "/vendor/items"
-                          : "/dashboard"
-              }
-              style={{
-                padding: "6px 16px",
-                borderRadius: "20px",
-                fontSize: "14px",
-                fontWeight: "600",
-                background:
-                  role === "admin"
-                    ? "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
-                    : role === "customer"
-                      ? "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)"
-                      : role === "courier"
-                        ? "linear-gradient(135deg, #10b981 0%, #059669 100%)"
-                        : role === "runner"
-                          ? "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)"
-                          : role === "vendor"
-                            ? "linear-gradient(135deg, #ec4899 0%, #db2777 100%)"
-                            : "#6b7280",
-                color: "white",
-                textTransform: "uppercase",
-                letterSpacing: "0.5px",
-                boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                textDecoration: "none",
-                cursor: "pointer",
-                transition: "all 0.2s ease",
-                display: "inline-block",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "translateY(-1px)";
-                e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.2)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
-              }}
-              title={`Go to ${role} dashboard`}
-            >
-              {role === "admin"
-                ? "👨‍💼 Admin"
-                : role === "customer"
-                  ? "👤 Order Up"
-                  : role === "courier"
-                    ? "🚗 Senderr"
-                    : role === "runner"
-                      ? "🚚 Shifter"
-                      : role === "vendor"
-                        ? "🏪 Market Senderr"
+            role === 'vendor' ? (
+              <a
+                href={`${VENDOR_APP_URL}/vendor/items`}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  padding: '6px 16px',
+                  borderRadius: '20px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  background: 'linear-gradient(135deg, #ec4899 0%, #db2777 100%)',
+                  color: 'white',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                  textDecoration: 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  display: 'inline-block',
+                }}
+                title={`Go to vendor dashboard`}
+              >
+                🏪 Market Senderr
+              </a>
+            ) : (
+              <Link
+                to={
+                  role === 'admin'
+                    ? '/admin/dashboard'
+                    : role === 'customer'
+                      ? '/dashboard'
+                      : role === 'courier'
+                        ? '/courier/dashboard'
+                        : role === 'runner'
+                          ? '/runner/dashboard'
+                          : '/dashboard'
+                }
+                style={{
+                  padding: '6px 16px',
+                  borderRadius: '20px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  background:
+                    role === 'admin'
+                      ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                      : role === 'customer'
+                        ? 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)'
+                        : role === 'courier'
+                          ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+                          : role === 'runner'
+                            ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
+                            : '#6b7280',
+                  color: 'white',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                  textDecoration: 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  display: 'inline-block',
+                }}
+              >
+                {role === 'admin'
+                  ? '👨‍💼 Admin'
+                  : role === 'customer'
+                    ? '👤 Order Up'
+                    : role === 'courier'
+                      ? '🚗 Senderr'
+                      : role === 'runner'
+                        ? '🚚 Shifter'
                         : role}
-            </Link>
+              </Link>
+            )
           )}
 
           {/* Navigation Links - Responsive */}
@@ -228,8 +240,10 @@ export function Navbar({ children }: NavbarProps) {
             )}
 
             {user && role === "vendor" && (
-              <Link
-                to="/vendor/items"
+              <a
+                href={`${VENDOR_APP_URL}/vendor/items`}
+                target="_blank"
+                rel="noreferrer"
                 style={{
                   fontSize: "13px",
                   fontWeight: pathname.startsWith("/vendor") ? "600" : "400",
@@ -239,7 +253,7 @@ export function Navbar({ children }: NavbarProps) {
                 }}
               >
                 Items
-              </Link>
+              </a>
             )}
 
             {/* User Menu */}
