@@ -25,7 +25,7 @@ jobs:
       - name: Install Playwright browsers/deps
         run: pnpm --filter @gosenderr/customer-app exec playwright install --with-deps
       - name: Start customer app
-        run: pnpm --filter @gosenderr/customer-app preview -- --port 5173 &
+        run: pnpm --filter @gosenderr/customer-app preview -- --host 127.0.0.1 --port 5173 --strictPort &
       - name: Wait for customer app
         run: npx wait-on http://127.0.0.1:5173 --timeout 60000
       - name: Run customer smoke tests
