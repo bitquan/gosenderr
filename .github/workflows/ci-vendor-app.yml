@@ -43,8 +43,9 @@ jobs:
         run: pnpm --filter @gosenderr/vendor-app test || true
 
       - name: Post CI summary comment to PR
-        if: ${{ github.event_name == 'pull_request' && always() }}
+        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && always() }}
         uses: peter-evans/create-or-update-comment@v4
+        continue-on-error: true
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.pull_request.number }}
