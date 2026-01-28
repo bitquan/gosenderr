@@ -37,6 +37,7 @@ import SupportPage from './pages/support/page'
 import MarketplaceHome from './pages/marketplace/MarketplaceHome'
 import MarketplaceItemPage from './pages/marketplace/[itemId]/page'
 import MarketplaceCheckoutPage from './pages/marketplace/checkout/page'
+import OrderDetailPage from './pages/orders/[orderId]/page'
 
 // Vendor pages
 import VendorApplicationPage from './pages/vendor/apply/page'
@@ -91,6 +92,7 @@ function App() {
             <Route path="/marketplace/:itemId" element={<MarketplaceItemPage />} />
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/orders" element={<OrdersPage />} />
+            <Route path="/orders/:orderId" element={<OrderDetailPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/addresses" element={<AddressesPage />} />
