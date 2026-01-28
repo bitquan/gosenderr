@@ -76,7 +76,8 @@ export function Header() {
               </Link>
             )}
           </nav>
-Cart & Auth */}
+
+          {/* Right side - Cart & Auth */}
           <div className="flex items-center space-x-4">
             {/* Shopping Cart */}
             <button
