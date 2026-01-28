@@ -2,8 +2,10 @@ import * as functions from 'firebase-functions/v2';
 import * as admin from 'firebase-admin';
 import Stripe from 'stripe';
 
-// Import FieldValue at top level
-const FieldValue = admin.firestore.FieldValue;
+// Ensure admin is initialized (safe to call multiple times)
+if (!admin.apps.length) {
+  admin.initializeApp();
+}
 
 function getStripe() {
   const apiKey = process.env.STRIPE_SECRET_KEY;
@@ -124,8 +126,8 @@ export const createMarketplaceOrder = functions.https.onCall<CreateMarketplaceOr
         paymentIntentId: paymentIntent.id,
         paymentStatus: paymentIntent.status,
         status: 'pending',
-        createdAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp(),
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       };
 
       const orderRef = await db.collection('orders').add(orderData);
@@ -140,7 +142,7 @@ export const createMarketplaceOrder = functions.https.onCall<CreateMarketplaceOr
             const newStock = Math.max(0, currentStock - item.quantity);
             transaction.update(itemRef, {
               stock: newStock,
-              updatedAt: FieldValue.serverTimestamp(),
+              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
             });
           }
         });
