@@ -50,8 +50,8 @@ jobs:
           }
           EOF
 
-          # Start emulators in the background and capture logs
-          npx firebase emulators:start --config firebase.ci.json --only auth,firestore,storage --project ${FIREBASE_PROJECT} > emulators.log 2>&1 &
+          # Start emulators in the background and capture logs (exclude storage to avoid requiring storage config)
+          npx firebase emulators:start --config firebase.ci.json --only auth,firestore --project ${FIREBASE_PROJECT} > emulators.log 2>&1 &
           EMU_PID=$!
           echo "Emulators started in background (PID=$EMU_PID). Waiting for Auth emulator to be ready..."
 
@@ -63,9 +63,12 @@ jobs:
           echo "Auth emulator is up; seeding vendor user..."
           curl -s -X POST 'http://127.0.0.1:9095/identitytoolkit.googleapis.com/v1/accounts:signUp?key=fake-api-key' -H 'Content-Type: application/json' -d '{"email":"vender@sender.com","password":"admin123","returnSecureToken":true}' || true
 
+          echo "Installing Playwright browsers in package context"
+          pnpm --filter @gosenderr/customer-app exec -- playwright install --with-deps || { echo "playwright install failed"; tail -n +1 emulators.log; kill $EMU_PID || true; exit 1; }
+
           echo "Running Playwright tests"
-          # run Playwright from the workspace root so the config path resolves correctly
-          pnpm -w exec -- playwright test tests/e2e --config=apps/customer-app/playwright.config.ts --reporter=list || {
+          # run Playwright from the package so the binary resolves correctly
+          pnpm --filter @gosenderr/customer-app exec -- playwright test tests/e2e --reporter=list || {
             echo "Playwright failed — capturing emulator log"; tail -n +1 emulators.log; kill $EMU_PID || true; exit 1
           }
 
@@ -118,7 +121,9 @@ jobs:
       - name: Run Playwright E2E against preview
         env:
           CI: 'true'
-        run: pnpm --filter @gosenderr/customer-app exec -- playwright test tests/e2e --config=apps/customer-app/playwright.config.ts --reporter=list
+        run: |
+          pnpm --filter @gosenderr/customer-app exec -- playwright install --with-deps
+          pnpm --filter @gosenderr/customer-app exec -- playwright test tests/e2e --reporter=list --config=playwright.config.ts
 
       - name: Upload preview test artifacts on failure
         if: failure()
