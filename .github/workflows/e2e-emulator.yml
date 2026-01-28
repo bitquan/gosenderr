@@ -50,10 +50,19 @@ jobs:
           }
           EOF
 
-          # Start emulators in the background and capture logs (exclude storage to avoid requiring storage config)
-          npx firebase emulators:start --config firebase.ci.json --only auth,firestore --project ${FIREBASE_PROJECT} > emulators.log 2>&1 &
+          # Start emulators in the background and capture logs (include storage emulator for tests that require it)
+          npx firebase emulators:start --config firebase.ci.json --only auth,firestore,storage --project ${FIREBASE_PROJECT} > emulators.log 2>&1 &
           EMU_PID=$!
           echo "Emulators started in background (PID=$EMU_PID). Waiting for Auth emulator to be ready..."
+
+          # Export Vite env vars so the client will initialize and connect to emulators
+          export VITE_FIREBASE_API_KEY="fake-api-key"
+          export VITE_FIREBASE_AUTH_DOMAIN="127.0.0.1"
+          export VITE_FIREBASE_PROJECT_ID="${FIREBASE_PROJECT}"
+          export VITE_FIREBASE_STORAGE_BUCKET="${FIREBASE_PROJECT}.appspot.com"
+          export VITE_FIREBASE_APP_ID="1:000:web:fake"
+          export VITE_FIREBASE_AUTH_EMULATOR_HOST="127.0.0.1:9095"
+          export VITE_FIRESTORE_EMULATOR_HOST="127.0.0.1:8085"
 
           # wait for the auth emulator HTTP endpoint
           npx wait-on --timeout 60000 http://127.0.0.1:9095 || {
