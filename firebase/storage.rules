@@ -64,6 +64,18 @@ service firebase.storage {
       allow read: if true;
     }
 
+    // Marketplace vendor uploads: marketplace/{userId}/{photoFile}
+    match /marketplace/{userId}/{photoFile} {
+      // Vendor can upload their own marketplace photos (image types only, max 5MB)
+      allow write: if isSignedIn()
+        && uid() == userId
+        && request.resource.contentType.matches('image/(jpeg|png|webp)')
+        && request.resource.size < 5 * 1024 * 1024; // 5MB max
+
+      // Public read for marketplace images
+      allow read: if true;
+    }
+
     // Insurance documents: insurance/{userId}/{documentFile}
     match /insurance/{userId}/{documentFile} {
       // User can upload their own insurance documents
