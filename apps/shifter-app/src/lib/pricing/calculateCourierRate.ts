@@ -26,8 +26,8 @@ export function calculateCourierRate(
   job: JobInfo,
   now: Date = new Date()
 ): RateBreakdown {
-  let baseFare = rateCard.baseFare;
-  let perMileCharge = job.distance * rateCard.perMile;
+  const baseFare = rateCard.baseFare;
+  const perMileCharge = job.distance * rateCard.perMile;
   let timeCharge = 0;
   let peakMultiplier: number | undefined;
   let subtotal = baseFare + perMileCharge;

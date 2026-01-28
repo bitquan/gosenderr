@@ -34,7 +34,10 @@
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "2.0.0",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
     "esbuild": "^0.19.12",
+    "eslint": "^8.57.1",
     "firebase-admin": "^13.6.0",
     "firebase-tools": "13.24.1",
     "node-which": "^1.0.0",
@@ -42,8 +45,7 @@
     "turbo": "^2.3.3",
     "typescript": "^5.7.2",
     "vite": "^7.3.1",
-    "which": "^6.0.0",
-    "eslint": "^8.49.0"
+    "which": "^6.0.0"
   },
   "packageManager": "pnpm@8.15.1"
 }
