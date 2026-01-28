@@ -63,8 +63,8 @@ export default function ItemDetailPage() {
   }
 
   const inCart = item ? getItemQuantity(item.id!) : 0
-  const canAddMore = item ? (inCart + quantity) <= item.inventory.quantity : false
-  const isOutOfStock = item ? item.inventory.quantity === 0 : true
+  const canAddMore = item ? (inCart + quantity) <= item.stock : false
+  const isOutOfStock = item ? item.stock === 0 : true
 
   if (loading) {
     return (
@@ -155,7 +155,7 @@ export default function ItemDetailPage() {
             <span className="text-4xl font-bold text-gray-900">
               {formatPrice(item.price)}
             </span>
-            {item.shipping.methods.includes('free_shipping') && (
+            {item.featured && (
               <span className="text-sm font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full">
                 Free Shipping
               </span>
@@ -186,9 +186,9 @@ export default function ItemDetailPage() {
           <div className="mb-6">
             {isOutOfStock ? (
               <div className="text-red-600 font-medium">Out of Stock</div>
-            ) : item.inventory.quantity <= 5 ? (
+            ) : item.stock <= 5 ? (
               <div className="text-orange-600 font-medium">
-                Only {item.inventory.quantity} left in stock
+                Only {item.stock} left in stock
               </div>
             ) : (
               <div className="text-green-600 font-medium">In Stock</div>
@@ -213,13 +213,13 @@ export default function ItemDetailPage() {
                 <input
                   type="number"
                   min="1"
-                  max={item.inventory.quantity}
+                  max={item.stock}
                   value={quantity}
-                  onChange={(e) => setQuantity(Math.max(1, Math.min(item.inventory.quantity, parseInt(e.target.value) || 1)))}
+                  onChange={(e) => setQuantity(Math.max(1, Math.min(item.stock, parseInt(e.target.value) || 1)))}
                   className="w-20 text-center border border-gray-300 rounded-lg py-2 font-medium"
                 />
                 <button
-                  onClick={() => setQuantity(Math.min(item.inventory.quantity, quantity + 1))}
+                  onClick={() => setQuantity(Math.min(item.stock, quantity + 1))}
                   className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg hover:bg-gray-50"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
