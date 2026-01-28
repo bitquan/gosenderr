@@ -316,18 +316,28 @@ _Add any questions or blockers here as you work_
 - Secure payment processing indicator
 - Terms of Service acceptance notice
 
+#### ☁️ Cloud Function Created
+- **createMarketplaceOrder**: Handles complete order flow
+  - Creates Stripe PaymentIntent with auto-confirm
+  - Handles 3D Secure authentication if required
+  - Creates order document in Firestore
+  - Updates marketplace item inventory using transactions
+  - Stores shipping information and order details
+  - Returns orderId, clientSecret, and payment status
+  - Includes proper authentication checks
+  - Comprehensive error handling
+
+#### 🔧 Fixes Applied (Week 4)
+1. **CartItem Property Access**: Fixed PaymentForm and checkout page to properly access `cartItem.item.property` instead of `item.property` since CartItem wraps MarketplaceItem in an 'item' field
+2. **Firebase Emulator Connection**: Added emulator connection logic to firebase.ts for local development
+
 #### 🎯 Next Steps
 Phase 2, Week 4 continued:
-- Create `createPaymentIntent` Cloud Function
-- Create `marketplaceCheckout` Cloud Function
-- Implement order creation in Firestore
-- Build order confirmation page
-- Add email notifications
-- Update item inventory after purchase
-- Test complete checkout flow
-
-#### 🚫 Blockers
-Need to create Cloud Functions for payment processing
+- Create order confirmation page
+- Add email notifications via Cloud Functions
+- Test complete checkout flow with emulators
+- Add order tracking page
+- Update checklist items in marketplace-implementation.md
 
 ---
 
