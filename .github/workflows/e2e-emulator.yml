@@ -36,12 +36,42 @@ jobs:
         run: |
           set -euo pipefail
           echo "Starting emulators and seeding auth user..."
-          # Use Firebase emulators:exec so the envs are set for tests
-          npx firebase emulators:exec --only auth,firestore,storage --project ${FIREBASE_PROJECT} -- bash -lc "\
-            echo 'Seeding vendor user into Auth emulator'; \
-            curl -s -X POST 'http://localhost:9099/identitytoolkit.googleapis.com/v1/accounts:signUp?key=fake-api-key' -H 'Content-Type: application/json' -d '{\"email\":\"vender@sender.com\",\"password\":\"admin123\",\"returnSecureToken\":true}' || true; \
-            echo 'Running Playwright tests'; \
-            pnpm --filter @gosenderr/customer-app exec -- playwright test tests/e2e --config=apps/customer-app/playwright.config.ts --reporter=list"
+          # write a CI-specific firebase config to avoid default port conflicts
+          cat > firebase.ci.json <<'EOF'
+          {
+            "emulators": {
+              "auth": { "host": "127.0.0.1", "port": 9095 },
+              "firestore": { "host": "127.0.0.1", "port": 8085 },
+              "storage": { "host": "127.0.0.1", "port": 9199 },
+              "ui": { "host": "127.0.0.1", "port": 4050 },
+              "hub": { "host": "127.0.0.1", "port": 4401 },
+              "logging": { "host": "127.0.0.1", "port": 4501 }
+            }
+          }
+          EOF
+
+          # Start emulators in the background and capture logs
+          npx firebase emulators:start --config firebase.ci.json --only auth,firestore,storage --project ${FIREBASE_PROJECT} > emulators.log 2>&1 &
+          EMU_PID=$!
+          echo "Emulators started in background (PID=$EMU_PID). Waiting for Auth emulator to be ready..."
+
+          # wait for the auth emulator HTTP endpoint
+          npx wait-on --timeout 60000 http://127.0.0.1:9095 || {
+            echo "Auth emulator did not become available. Dumping emulator log:"; tail -n +1 emulators.log; kill $EMU_PID || true; exit 1
+          }
+
+          echo "Auth emulator is up; seeding vendor user..."
+          curl -s -X POST 'http://127.0.0.1:9095/identitytoolkit.googleapis.com/v1/accounts:signUp?key=fake-api-key' -H 'Content-Type: application/json' -d '{"email":"vender@sender.com","password":"admin123","returnSecureToken":true}' || true
+
+          echo "Running Playwright tests"
+          pnpm --filter @gosenderr/customer-app exec -- playwright test tests/e2e --config=apps/customer-app/playwright.config.ts --reporter=list || {
+            echo "Playwright failed — capturing emulator log"; tail -n +1 emulators.log; kill $EMU_PID || true; exit 1
+          }
+
+          # tests succeeded (or failed above); ensure the emulator process is terminated
+          echo "Tests completed; stopping emulators (PID=$EMU_PID)"; kill $EMU_PID || true
+          sleep 1
+          tail -n +1 emulators.log | sed -n '1,200p'
 
       - name: Upload test artifacts on failure
         if: failure()
