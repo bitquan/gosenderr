@@ -59,7 +59,7 @@ export default function RunnerJobsPage() {
     });
 
     return () => unsubscribe();
-  }, [router, activeTab]);
+  }, [navigate, activeTab]);
 
   const loadJobs = async (userId: string) => {
     setLoading(true);
@@ -162,7 +162,7 @@ export default function RunnerJobsPage() {
               </p>
               {activeTab === "active" && (
                 <a
-                  to="/runner/available-routes"
+                  href="/runner/available-routes"
                   className="text-purple-600 text-sm font-medium hover:underline"
                 >
                   Browse available jobs →
@@ -181,7 +181,7 @@ export default function RunnerJobsPage() {
                         <h3 className="text-lg font-bold text-gray-900">
                           Delivery to {job.customerName || "Customer"}
                         </h3>
-                        <StatusBadge status={job.status} />
+                        <StatusBadge status={job.status as any} />
                       </div>
                       <p className="text-sm text-gray-500">Job #{job.id}</p>
                     </div>
@@ -312,7 +312,7 @@ export default function RunnerJobsPage() {
           jobId={selectedJobForProof}
           runnerId={currentUserId}
           onClose={() => setSelectedJobForProof(null)}
-          onSubmit={handleProofSubmitted}
+          onComplete={handleProofSubmitted}
         />
       )}
     </div>

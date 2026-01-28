@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-        <string>GoSenderr Senderr</string>
+        <string>Gosenderr Courier</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -22,6 +22,33 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	
+	<!-- Location Permissions for Navigation -->
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>We need your location to provide turn-by-turn navigation and track deliveries in real-time.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>We need your location to show your position on the map and provide navigation during deliveries.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>We need your location in the background to track your delivery progress and update customers.</string>
+	
+	<!-- Background Modes -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+		<string>fetch</string>
+		<string>remote-notification</string>
+	</array>
+	
+	<!-- Camera Permission for Package Photos -->
+	<key>NSCameraUsageDescription</key>
+	<string>We need camera access to let you take photos of packages for delivery confirmation.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>We need photo library access to let you select package images.</string>
+	
+	<!-- Motion & Orientation for Map Rotation -->
+	<key>NSMotionUsageDescription</key>
+	<string>We use motion sensors to rotate the map as you turn, providing better navigation experience.</string>
+	
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
@@ -35,15 +62,10 @@
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationPortraitUpsideDown</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>

@@ -15,14 +15,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    console.log('🔐 AuthContext: Initializing auth listener', { hasAuth: !!auth });
+    
     if (!auth) {
+      console.error('🔐 AuthContext: Auth is not initialized!');
       setLoading(false)
       return
     }
 
+    console.log('🔐 AuthContext: Setting up onAuthStateChanged listener');
     const unsubscribe = onAuthStateChanged(auth, (user) => {
+      console.log('🔐 AuthContext: Auth state changed', { 
+        hasUser: !!user, 
+        uid: user?.uid,
+        email: user?.email 
+      });
       setUser(user)
       setLoading(false)
+    }, (error) => {
+      console.error('🔐 AuthContext: Auth state error', error);
+      setLoading(false);
     })
 
     return unsubscribe

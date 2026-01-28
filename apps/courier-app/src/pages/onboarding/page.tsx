@@ -6,6 +6,7 @@ import { db } from "@/lib/firebase";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { PackageRateCardBuilder } from "@/components/v2/PackageRateCardBuilder";
 import { FoodRateCardBuilder } from "@/components/v2/FoodRateCardBuilder";
+import { LoadingState } from "@gosenderr/ui";
 import { PackageRateCard, FoodRateCard } from "@gosenderr/shared";
 
 type VehicleType = "foot" | "bike" | "scooter" | "car" | "van" | "truck";

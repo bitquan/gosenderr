@@ -1,6 +1,6 @@
 
 import { motion } from 'framer-motion';
-import { GlassCard } from '@/components/GlassCard';
+import { GlassCard } from '@gosenderr/ui';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 
 type DeliveryType = 'on_demand' | 'route';

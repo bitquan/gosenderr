@@ -316,7 +316,7 @@ export default function CourierJobDetailPage() {
             <div className="space-y-3">
               {googleMapsPickupUrl && (
                 <a
-                  to={googleMapsPickupUrl}
+                  href={googleMapsPickupUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-xl hover:bg-green-100 transition-colors"
@@ -332,7 +332,7 @@ export default function CourierJobDetailPage() {
               
               {googleMapsDeliveryUrl && (
                 <a
-                  to={googleMapsDeliveryUrl}
+                  href={googleMapsDeliveryUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-xl hover:bg-red-100 transition-colors"
@@ -451,7 +451,7 @@ export default function CourierJobDetailPage() {
               {job.recipientPhone && (
                 <div>
                   <p className="text-sm text-gray-500 mb-1">Contact</p>
-                  <a to={`tel:${job.recipientPhone}`} className="font-semibold text-purple-600 hover:text-purple-700">
+                  <a href={`tel:${job.recipientPhone}`} className="font-semibold text-purple-600 hover:text-purple-700">
                     {job.recipientPhone}
                   </a>
                 </div>

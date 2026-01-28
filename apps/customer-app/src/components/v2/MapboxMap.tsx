@@ -75,6 +75,78 @@ export function MapboxMap({
             )
             .addTo(map);
 
+          // Fetch actual route from Mapbox Directions API
+          const fetchRoute = async () => {
+            try {
+              const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${pickup.lng},${pickup.lat};${dropoff.lng},${dropoff.lat}?geometries=geojson&access_token=${token}`;
+              const response = await fetch(url);
+              const data = await response.json();
+              
+              if (data.routes && data.routes[0]) {
+                const routeGeometry = data.routes[0].geometry;
+                
+                // Add route source and layer
+                map.addSource('route', {
+                  type: 'geojson',
+                  data: {
+                    type: 'Feature',
+                    properties: {},
+                    geometry: routeGeometry
+                  }
+                });
+
+                map.addLayer({
+                  id: 'route',
+                  type: 'line',
+                  source: 'route',
+                  layout: {
+                    'line-join': 'round',
+                    'line-cap': 'round'
+                  },
+                  paint: {
+                    'line-color': '#3b82f6',
+                    'line-width': 4,
+                    'line-opacity': 0.75
+                  }
+                });
+              }
+            } catch (error) {
+              console.error('Error fetching route:', error);
+              // Fallback to straight line if API fails
+              map.addSource('route', {
+                type: 'geojson',
+                data: {
+                  type: 'Feature',
+                  properties: {},
+                  geometry: {
+                    type: 'LineString',
+                    coordinates: [
+                      [pickup.lng, pickup.lat],
+                      [dropoff.lng, dropoff.lat]
+                    ]
+                  }
+                }
+              });
+
+              map.addLayer({
+                id: 'route',
+                type: 'line',
+                source: 'route',
+                layout: {
+                  'line-join': 'round',
+                  'line-cap': 'round'
+                },
+                paint: {
+                  'line-color': '#3b82f6',
+                  'line-width': 4,
+                  'line-opacity': 0.75
+                }
+              });
+            }
+          };
+
+          fetchRoute();
+
           // Fit bounds to show both markers
           const bounds = new mapboxgl.LngLatBounds();
           bounds.extend([pickup.lng, pickup.lat]);
