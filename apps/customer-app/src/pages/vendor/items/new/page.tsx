@@ -70,6 +70,7 @@ export default function NewVendorItem() {
         images: imageUrls,
         vendorId: uid,
         vendorName: userDoc?.displayName || "Vendor",
+        sellerId: uid, // for compatibility with items rules which expect sellerId
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });

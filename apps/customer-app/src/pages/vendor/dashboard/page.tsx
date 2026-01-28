@@ -39,7 +39,7 @@ export default function VendorDashboard() {
     try {
       const itemsQuery = query(
         collection(db, "items"),
-        where("vendorId", "==", uid)
+        where("sellerId", "==", uid)
       );
       const snapshot = await getDocs(itemsQuery);
       const itemsList = snapshot.docs.map((doc) => ({
