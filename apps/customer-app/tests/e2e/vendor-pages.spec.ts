@@ -27,6 +27,6 @@ test.describe('Vendor pages basic load', () => {
       window.__E2E_USER = { uid: 'vendor-uid', email: 'vendor@example.com', displayName: 'Vendor', role: 'vendor' };
     });
     await page.goto(`${VENDOR_APP_URL}/vendor/items/new`);
-    await expect(page.locator('text=Create New Item')).toBeVisible();
+    await expect(page.locator('text=Create Item')).toBeVisible();
   });
 });

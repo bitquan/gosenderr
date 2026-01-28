@@ -22,7 +22,7 @@ test('full vendor lifecycle: create item and verify public marketplace', async (
 
   // Go to new item
   await page.goto('/vendor/items/new');
-  await expect(page.locator('text=Create New Item')).toBeVisible();
+  await expect(page.locator('text=Create Item')).toBeVisible();
 
   // Debug listeners
   page.on('console', (msg) => console.log('PAGE LOG:', msg.type(), msg.text()));

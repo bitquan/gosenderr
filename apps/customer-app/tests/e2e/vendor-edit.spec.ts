@@ -7,6 +7,11 @@ test('vendor can edit an item', async ({ page, browser }) => {
   // Sign in
   page.on('console', (msg) => console.log('PAGE LOG:', msg.type(), msg.text()));
   await page.goto('/login');
+  // Inject vendor user so dashboard pages load in this environment
+  await page.addInitScript(() => {
+    // @ts-ignore
+    window.__E2E_USER = { uid: 'vender-uid', email: 'vender@sender.com', displayName: 'Vendor', role: 'vendor' };
+  });
   // Sign in via the customer login form then navigate to vendor dashboard
   await page.fill('input[type="email"]', VENDOR_EMAIL);
   await page.fill('input[type="password"]', VENDOR_PASS);

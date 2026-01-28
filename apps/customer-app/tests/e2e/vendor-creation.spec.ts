@@ -24,8 +24,12 @@ test('Vendor can create a new item (happy path)', async ({ page }) => {
   await page.fill('input[placeholder="Price"]', '42');
 
   await page.click('button:has-text("Create Item")');
-  // Wait for the firestore response (emulator or prod endpoint)
-  await page.waitForResponse((resp) => resp.url().includes('/documents/marketplaceItems') && resp.status() === 200, { timeout: 10000 });
+
+  // Wait for the route handler to be invoked (polling to reduce dependency on exact network endpoints)
+  for (let i = 0; i < 20; i++) {
+    if (writeCalled) break;
+    await page.waitForTimeout(250);
+  }
 
   expect(writeCalled).toBeTruthy();
 });

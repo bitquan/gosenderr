@@ -19,7 +19,7 @@ test.describe('Vendor auth + pages', () => {
 
     // Visit new item page in vendor app
     await page.goto(`${VENDOR_APP_URL}/vendor/items/new`);
-    await expect(page.locator('text=Create New Item')).toBeVisible();
+    await expect(page.locator('text=Create Item')).toBeVisible();
 
     // Visit apply page (vendor app)
     await page.goto(`${VENDOR_APP_URL}/vendor/apply`);

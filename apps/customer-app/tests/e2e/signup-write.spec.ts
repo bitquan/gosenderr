@@ -15,9 +15,9 @@ test('Signup triggers user doc write (happy path)', async ({ page }) => {
   await page.fill('input[placeholder="you@example.com"]', 'test+e2e@example.com');
   await page.fill('input[placeholder="Choose a password"]', 'password123');
 
-  // Intercept signup request (identitytoolkit) so auth resolves
+  // Intercept signup request (identitytoolkit) so auth resolves (include minimal fields expected by SDK)
   await page.route('**/identitytoolkit.googleapis.com/**', (route) => {
-    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ idToken: 'fake-token', refreshToken: 'r', expiresIn: '3600', localId: 'uid123' }) });
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ idToken: 'fake-token', refreshToken: 'r', expiresIn: '3600', localId: 'uid123', email: 'test+e2e@example.com', providerUserInfo: [] }) });
   });
 
   // Ensure alert does not block
