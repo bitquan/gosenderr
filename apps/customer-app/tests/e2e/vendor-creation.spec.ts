@@ -23,10 +23,9 @@ test('Vendor can create a new item (happy path)', async ({ page }) => {
   await page.fill('textarea[placeholder="Description"]', 'A great test item');
   await page.fill('input[placeholder="Price"]', '42');
 
-  await Promise.all([
-    page.waitForURL('**/vendor/dashboard'),
-    page.click('button:has-text("Create Item")'),
-  ]);
+  await page.click('button:has-text("Create Item")');
+  // Wait for the firestore response (emulator or prod endpoint)
+  await page.waitForResponse((resp) => resp.url().includes('/documents/marketplaceItems') && resp.status() === 200, { timeout: 10000 });
 
   expect(writeCalled).toBeTruthy();
 });

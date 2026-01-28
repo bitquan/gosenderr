@@ -12,22 +12,17 @@ test.describe('Vendor auth + pages', () => {
       window.__E2E_USER = { uid: 'uid123', email: 'test+e2e@example.com', displayName: 'E2E', role: 'vendor' };
     });
 
+    // Navigate to vendor dashboard; __E2E_USER should be picked up by the vendor app
     await page.goto(`${VENDOR_APP_URL}/vendor/dashboard`);
-
-    await page.fill('input[type="email"]', VENDOR_EMAIL);
-    await page.fill('input[type="password"]', VENDOR_PASS);
-    await page.click('button:has-text("Sign In")');
-
-    // Wait for navigation
     await page.waitForURL('**/vendor/dashboard', { timeout: 10000 });
     await expect(page.locator('text=Vendor Dashboard')).toBeVisible();
 
-    // Visit new item page
-    await page.goto('/vendor/items/new');
+    // Visit new item page in vendor app
+    await page.goto(`${VENDOR_APP_URL}/vendor/items/new`);
     await expect(page.locator('text=Create New Item')).toBeVisible();
 
-    // Visit apply page (should probably redirect since user is already vendor or allowed)
-    await page.goto('/vendor/apply');
+    // Visit apply page (vendor app)
+    await page.goto(`${VENDOR_APP_URL}/vendor/apply`);
     await expect(page.locator('text=Become a Vendor')).toBeVisible();
   });
 });

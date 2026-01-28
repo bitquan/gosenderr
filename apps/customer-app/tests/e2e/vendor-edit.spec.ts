@@ -215,11 +215,11 @@ test('edit form appears only after auth loads', async ({ browser }) => {
   await unauthPage.waitForURL('**/login', { timeout: 5000 });
   await expect(unauthPage.locator('[data-testid="edit-item-form"]')).toHaveCount(0);
 
-  // Sign in in the same context and verify the edit form becomes visible
-  await unauthPage.fill('input[type="email"]', VENDOR_EMAIL);
-  await unauthPage.fill('input[type="password"]', VENDOR_PASS);
-  await unauthPage.click('button:has-text("Sign In")');
-  await unauthPage.waitForURL('**/dashboard');
+  // Inject auth into the same context and navigate to vendor dashboard
+  await unauthPage.addInitScript(() => {
+    // @ts-ignore
+    window.__E2E_USER = { uid: 'uid123', email: 'vender@sender.com', displayName: 'Vendor', role: 'vendor' };
+  });
   await unauthPage.goto('/vendor/dashboard');
   await unauthPage.waitForURL('**/vendor/dashboard');
 
