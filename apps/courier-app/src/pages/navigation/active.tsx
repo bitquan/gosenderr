@@ -5,7 +5,8 @@ import { useUserDoc } from '@/hooks/v2/useUserDoc';
 import { NavigationHeader } from '@/components/navigation/NavigationHeader';
 import { MapboxMap, MapboxMapHandle } from '@/components/v2/MapboxMap';
 import type { RouteSegment } from '@/lib/navigation/types';
-import type mapboxgl from 'mapbox-gl';
+import type { Map as MapboxMapType } from 'mapbox-gl';
+import type { CourierLocation } from '@/lib/v2/types';
 
 export default function ActiveNavigationPage() {
   const navigate = useNavigate();
@@ -66,7 +67,7 @@ export default function ActiveNavigationPage() {
   const lastCenter = useRef<[number, number] | null>(null);
 
   const applyFollowCamera = (
-    map: mapboxgl.Map,
+    map: MapboxMapType,
     loc: { lat: number; lng: number },
     options: { force?: boolean } = {}
   ) => {
@@ -92,7 +93,7 @@ export default function ActiveNavigationPage() {
     });
   };
 
-  const applyOverviewCamera = (map: mapboxgl.Map) => {
+  const applyOverviewCamera = (map: MapboxMapType) => {
     const bounds = new (window as any).mapboxgl.LngLatBounds();
 
     if (routeSegments.length > 0) {
@@ -258,10 +259,6 @@ export default function ActiveNavigationPage() {
     }
   };
 
-  const handleToggleCamera = () => {
-    switchCameraMode(cameraMode === 'follow' ? 'overview' : 'follow');
-  };
-
   if (!currentJob) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-100">
@@ -310,7 +307,7 @@ export default function ActiveNavigationPage() {
           ref={mapRef}
           pickup={currentJob.pickup}
           dropoff={currentJob.dropoff}
-          courierLocation={userDoc?.courierProfile?.currentLocation as any || null}
+          courierLocation={(userDoc?.courierProfile?.currentLocation as CourierLocation) || null}
           routeSegments={routeSegments}
           height="100%"
         />

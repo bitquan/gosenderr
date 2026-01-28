@@ -31,7 +31,19 @@ export default function VendorDashboard() {
   });
 
   useEffect(() => {
-    if (!uid) return;
+    // wait for auth to initialize (uid === undefined)
+    if (uid === undefined) {
+      // fallback: if auth doesn't resolve within 1.5s, assume no user and stop spinner
+      const t = setTimeout(() => setLoading(false), 1500);
+      return () => clearTimeout(t);
+    }
+
+    // no user signed in — show empty state
+    if (!uid) {
+      setLoading(false);
+      return;
+    }
+
     loadVendorItems();
   }, [uid]);
 

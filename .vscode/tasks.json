@@ -143,6 +143,33 @@
       }
     },
     {
+      "label": "📦 Vendor App (Port 5181)",
+      "type": "shell",
+      "command": "PORT=5181 VITE_PORT=5181 pnpm --filter @gosenderr/vendor-app dev -- --host 127.0.0.1",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^([^\\s].*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "severity": 4,
+          "message": 5
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^.*VITE.*$",
+          "endsPattern": "^.*ready in.*$"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": false,
+        "clear": true
+      }
+    },
+    {
       "label": "🌐 Web/Marketing App (Port 3003)",
       "type": "shell",
       "command": "pnpm --filter @gosenderr/web dev",
@@ -174,7 +201,8 @@
         "🔧 Admin App (Port 3000)",
         "📦 Customer App (Port 5173)",
         "⚡ Courier App (Port 5174)",
-        "🚚 Shifter App (Port 5175)"
+        "🚚 Shifter App (Port 5175)",
+        "📦 Vendor App (Port 5181)"
       ],
       "problemMatcher": []
     },
@@ -195,7 +223,7 @@
     {
       "label": "🛑 Stop All Apps",
       "type": "shell",
-      "command": "lsof -ti:3000,5173,5174,5175,5180 | xargs kill -9 2>/dev/null || echo 'All ports cleared'",
+      "command": "lsof -ti:3000,5173,5174,5175,5176,5180,5181 | xargs kill -9 2>/dev/null || echo 'All ports cleared'",
       "problemMatcher": [],
       "presentation": {
         "reveal": "always",
