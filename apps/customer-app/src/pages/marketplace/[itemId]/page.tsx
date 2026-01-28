@@ -249,14 +249,14 @@ export default function ItemDetailPage() {
             <h2 className="font-semibold text-gray-900 mb-3">Sold by</h2>
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white text-lg font-semibold">
-                {item.vendor.name.charAt(0).toUpperCase()}
+                {item.vendorName?.charAt(0).toUpperCase() || 'V'}
               </div>
               <div>
-                <div className="font-medium text-gray-900">{item.vendor.name}</div>
-                {item.vendor.rating && (
+                <div className="font-medium text-gray-900">{item.vendorName || 'Vendor'}</div>
+                {item.rating && (
                   <div className="flex items-center gap-1 text-sm text-gray-600">
                     <span>⭐</span>
-                    <span>{item.vendor.rating.toFixed(1)}</span>
+                    <span>{item.rating.toFixed(1)}</span>
                   </div>
                 )}
               </div>
