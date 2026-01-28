@@ -123,8 +123,26 @@ service cloud.firestore {
       allow read, update, delete: if isAdmin();
     }
 
+    // Vendor applications: allow user create, admin approve/reject
+    match /vendorApplications/{userId} {
+      // Creatable only by the applicant and must set `status == "pending"`
+      allow create: if isSelf(userId)
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == "pending"
+        && request.resource.data.createdAt is timestamp;
+
+      // Applicant or admin can read
+      allow read: if isSelf(userId) || isAdmin();
+
+      // Only admin may approve/reject
+      allow update: if isAdmin()
+        && (request.resource.data.status in ["approved", "rejected"] || request.resource.data.status == resource.data.status);
+
+      allow delete: if isAdmin();
+    }
+
     // ========== MARKETPLACE ORDERS ==========
-    match /marketplaceOrders/{orderId} {
+    match /marketplaceOrders/{orderId} { 
       function isSeller() {
         return signedIn() && resource.data.sellerId == request.auth.uid;
       }
