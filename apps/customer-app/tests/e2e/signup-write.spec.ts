@@ -17,7 +17,19 @@ test('Signup triggers user doc write (happy path)', async ({ page }) => {
 
   // Intercept signup request (identitytoolkit) so auth resolves (include minimal fields expected by SDK)
   await page.route('**/identitytoolkit.googleapis.com/**', (route) => {
-    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ idToken: 'fake-token', refreshToken: 'r', expiresIn: '3600', localId: 'uid123', email: 'test+e2e@example.com', providerUserInfo: [] }) });
+    // Provide a more complete sign-up response that the Firebase SDK expects
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
+      idToken: 'fake-token',
+      refreshToken: 'r',
+      expiresIn: '3600',
+      localId: 'uid123',
+      email: 'test+e2e@example.com',
+      displayName: 'Test User',
+      emailVerified: false,
+      providerUserInfo: [],
+      registered: true,
+      kind: 'identitytoolkit#SignupNewUserResponse'
+    }) });
   });
 
   // Ensure alert does not block
