@@ -49,6 +49,8 @@ if curl -s "http://127.0.0.1:8080/v1/projects/gosenderr-6773f/databases/(default
 fi
 
 if [ "$SHOULD_SEED" = true ]; then
+    echo "🌱 Seeding demo users..."
+    FIREBASE_PROJECT_ID=gosenderr-6773f node scripts/seed-role-simulation.js
     echo "🌱 Seeding marketplace data..."
     npx tsx scripts/seed-marketplace.ts
 fi
@@ -56,6 +58,12 @@ fi
 echo ""
 echo "🎉 Ready! View Emulator UI at http://127.0.0.1:4000"
 echo "📦 Customer App running at http://127.0.0.1:5173"
+echo ""
+echo "👤 Demo Users:"
+echo "   customer@example.com / DemoPass123!"
+echo "   vendor@example.com / DemoPass123!"
+echo "   courier@example.com / DemoPass123!"
+echo "   admin@example.com / DemoPass123!"
 echo ""
 
 # Wait for emulator process
