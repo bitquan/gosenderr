@@ -22,6 +22,7 @@ let app: FirebaseApp | undefined;
 let dbInstance: Firestore | undefined;
 let storageInstance: FirebaseStorage | undefined;
 let functionsInstance: Functions | undefined;
+let authInstance: ReturnType<typeof getAuth> | undefined;
 
 if (isBrowser && isValidConfig) {
   try {
@@ -29,15 +30,15 @@ if (isBrowser && isValidConfig) {
     dbInstance = getFirestore(app);
     storageInstance = getStorage(app);
     functionsInstance = getFunctions(app);
+    authInstance = getAuth(app);
     console.log("Firebase initialized successfully");
     // If CI or local E2E sets emulator env vars, connect SDK to the emulators so tests operate against them.
     try {
       const authEmulator = (import.meta.env.VITE_FIREBASE_AUTH_EMULATOR_HOST || "").trim();
-      if (authEmulator) {
-        const auth = getAuth(app);
+      if (authEmulator && authInstance) {
         // authEmulator expected as host:port
         const [host, port] = authEmulator.split(":");
-        connectAuthEmulator(auth, `http://${host}:${port}`, { disableWarnings: true });
+        connectAuthEmulator(authInstance, `http://${host}:${port}`, { disableWarnings: true });
         console.log(`Connected Auth to emulator http://${host}:${port}`);
       }
     } catch (err) {
@@ -71,5 +72,6 @@ export const db = dbInstance as Firestore;
 export const storage = storageInstance as FirebaseStorage;
 export const functions = functionsInstance as Functions;
 
+export const auth = authInstance!;
 // Helper to check if Firebase is ready
 export const isFirebaseReady = () => !!dbInstance;
