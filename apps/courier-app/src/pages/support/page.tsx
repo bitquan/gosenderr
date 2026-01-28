@@ -222,7 +222,7 @@ export default function CourierSupportPage() {
                   safety concern), call immediately:
                 </p>
                 <a
-                  to="tel:1-800-SENDERR"
+                  href="tel:1-800-SENDERR"
                   className="inline-block px-6 py-3 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 transition"
                 >
                   📞 Call Emergency Line

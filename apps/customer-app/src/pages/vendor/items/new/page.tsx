@@ -63,7 +63,7 @@ export default function NewVendorItem() {
       const imageUrls = await uploadImages();
 
       // Create item
-      await addDoc(collection(db, "marketplaceItems"), {
+      await addDoc(collection(db, "items"), {
         ...formData,
         price: parseFloat(formData.price),
         weight: formData.weight ? parseFloat(formData.weight) : null,

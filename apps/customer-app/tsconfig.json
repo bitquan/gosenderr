@@ -25,7 +25,8 @@
     "paths": {
       "@/*": ["./src/*"],
       "@gosenderr/shared": ["../../packages/shared/src"]
-    }
+    },
+    "types": ["vite/client"]
   },
   "include": ["src"],
   "references": [{ "path": "./tsconfig.node.json" }]

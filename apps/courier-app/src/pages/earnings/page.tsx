@@ -109,22 +109,22 @@ export default function EarningsPage() {
         <div className="grid grid-cols-2 gap-4 mb-8">
           <StatCard
             icon="💵"
-            label="Total Earned"
+            title="Total Earned"
             value={`$${stats.totalEarnings.toFixed(2)}`}
           />
           <StatCard
             icon="📦"
-            label="Completed Jobs"
+            title="Completed Jobs"
             value={stats.completedJobs.toString()}
           />
           <StatCard
             icon="⏳"
-            label="Pending Payout"
+            title="Pending Payout"
             value={`$${stats.pendingPayout.toFixed(2)}`}
           />
           <StatCard
             icon="📊"
-            label="Avg per Job"
+            title="Avg per Job"
             value={`$${stats.avgPerJob.toFixed(2)}`}
           />
         </div>

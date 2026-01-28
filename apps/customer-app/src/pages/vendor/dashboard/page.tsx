@@ -38,7 +38,7 @@ export default function VendorDashboard() {
   const loadVendorItems = async () => {
     try {
       const itemsQuery = query(
-        collection(db, "marketplaceItems"),
+        collection(db, "items"),
         where("vendorId", "==", uid)
       );
       const snapshot = await getDocs(itemsQuery);
@@ -73,7 +73,7 @@ export default function VendorDashboard() {
     if (!confirm("Are you sure you want to delete this item?")) return;
 
     try {
-      await deleteDoc(doc(db, "marketplaceItems", itemId));
+      await deleteDoc(doc(db, "items", itemId));
       setItems(items.filter((i) => i.id !== itemId));
     } catch (error) {
       console.error("Failed to delete item:", error);

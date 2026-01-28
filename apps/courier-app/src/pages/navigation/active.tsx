@@ -87,7 +87,7 @@ export default function ActiveNavigationPage() {
       zoom: 19,
       pitch: 65,
       duration: 700,
-      easing: (t) => t * (2 - t),
+      easing: (t: number) => t * (2 - t),
       essential: true
     });
   };
@@ -132,7 +132,7 @@ export default function ActiveNavigationPage() {
     map.easeTo({
       bearing: deviceHeading,
       duration: 240,
-      easing: (t) => t * (2 - t),
+      easing: (t: number) => t * (2 - t),
       essential: true
     });
   }, [deviceHeading, cameraMode]);
@@ -252,7 +252,7 @@ export default function ActiveNavigationPage() {
       map.easeTo({
         bearing: deviceHeading,
         duration: 300,
-        easing: (t) => t * (2 - t),
+        easing: (t: number) => t * (2 - t),
         essential: true
       });
     }
@@ -310,7 +310,7 @@ export default function ActiveNavigationPage() {
           ref={mapRef}
           pickup={currentJob.pickup}
           dropoff={currentJob.dropoff}
-          courierLocation={userDoc?.courierProfile?.currentLocation || null}
+          courierLocation={userDoc?.courierProfile?.currentLocation as any || null}
           routeSegments={routeSegments}
           height="100%"
         />

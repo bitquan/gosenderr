@@ -100,7 +100,7 @@ export default function AdminFeatureFlagsPage() {
 
     setSaving(true)
     try {
-      await updateDoc(doc(db, 'featureFlags', 'config'), editedFlags)
+      await updateDoc(doc(db, 'featureFlags', 'config'), editedFlags as any)
       alert('✅ Feature flags saved successfully!')
     } catch (error) {
       console.error('Error saving flags:', error)

@@ -45,7 +45,7 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(({
     const loadMapbox = async () => {
       if (!window.mapboxgl) {
         const mapboxglModule = await import("mapbox-gl");
-        window.mapboxgl = mapboxglModule.default;
+        window.mapboxgl = mapboxglModule.default as any;
       }
 
       const mapboxgl = window.mapboxgl;

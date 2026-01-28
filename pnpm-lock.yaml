@@ -47,15 +47,24 @@ importers:
       '@stripe/stripe-js':
         specifier: ^8.6.3
         version: 8.6.3
+      browser-image-compression:
+        specifier: ^2.0.0
+        version: 2.0.2
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
       firebase:
         specifier: ^11.1.0
         version: 11.10.0
+      framer-motion:
+        specifier: ^11.18.2
+        version: 11.18.2(react-dom@19.2.3)(react@19.2.3)
       mapbox-gl:
         specifier: ^3.9.1
         version: 3.9.1
+      ngeohash:
+        specifier: ^0.6.0
+        version: 0.6.3
       react:
         specifier: ^19.0.0
         version: 19.2.3

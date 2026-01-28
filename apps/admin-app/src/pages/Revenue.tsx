@@ -300,7 +300,7 @@ export default function RevenuePage() {
                       cx="50%"
                       cy="50%"
                       outerRadius={80}
-                      label={(entry) => `${entry.type}: ${formatCurrency(entry.revenue)}`}
+                      label={(entry: any) => `${entry.type}: ${formatCurrency(entry.revenue)}`}
                     >
                       {stats.revenueByJobType.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
