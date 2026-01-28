@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { collection, query, where, getDocs, deleteDoc, doc } from "firebase/firestore";
+import { collection, query, where, getDocs, deleteDoc, doc, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { Package, Plus, DollarSign, ShoppingBag, TrendingUp } from "lucide-react";
 
 interface Item {
   id: string;
@@ -15,6 +16,7 @@ interface Item {
   images: string[];
   vendorId: string;
   vendorName: string;
+  stock: number;
   status: "active" | "sold" | "draft";
   createdAt: any;
 }
@@ -38,8 +40,9 @@ export default function VendorDashboard() {
   const loadVendorItems = async () => {
     try {
       const itemsQuery = query(
-        collection(db, "items"),
-        where("sellerId", "==", uid)
+        collection(db, "marketplaceItems"),
+        where("vendorId", "==", uid),
+        orderBy("createdAt", "desc")
       );
       const snapshot = await getDocs(itemsQuery);
       const itemsList = snapshot.docs.map((doc) => ({
@@ -50,17 +53,29 @@ export default function VendorDashboard() {
       setItems(itemsList);
 
       // Calculate stats
-      const active = itemsList.filter((i) => i.status === "active").length;
-      const sold = itemsList.filter((i) => i.status === "sold").length;
-      const revenue = itemsList
-        .filter((i) => i.status === "sold")
-        .reduce((sum, i) => sum + i.price, 0);
+      const activeListings = itemsList.filter((item) => item.status === "active").length;
+      const soldItems = itemsList.filter((item) => item.status === "sold").length;
+      
+      // Fetch vendor's orders for revenue calculation
+      const ordersSnapshot = await getDocs(collection(db, "orders"));
+      const vendorOrders = ordersSnapshot.docs.filter((doc) => {
+        const orderData = doc.data();
+        return orderData.items?.some((item: any) => item.vendorId === uid);
+      });
+
+      const totalRevenue = vendorOrders.reduce((sum, doc) => {
+        const orderData = doc.data();
+        const vendorItemsTotal = orderData.items
+          ?.filter((item: any) => item.vendorId === uid)
+          .reduce((itemSum: number, item: any) => itemSum + (item.price * item.quantity), 0) || 0;
+        return sum + vendorItemsTotal;
+      }, 0);
 
       setStats({
         totalItems: itemsList.length,
-        activeListings: active,
-        soldItems: sold,
-        totalRevenue: revenue,
+        activeListings,
+        soldItems,
+        totalRevenue,
       });
     } catch (error) {
       console.error("Failed to load vendor items:", error);
@@ -73,7 +88,7 @@ export default function VendorDashboard() {
     if (!confirm("Are you sure you want to delete this item?")) return;
 
     try {
-      await deleteDoc(doc(db, "items", itemId));
+      await deleteDoc(doc(db, "marketplaceItems", itemId));
       setItems(items.filter((i) => i.id !== itemId));
     } catch (error) {
       console.error("Failed to delete item:", error);
