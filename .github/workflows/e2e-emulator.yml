@@ -64,7 +64,8 @@ jobs:
           curl -s -X POST 'http://127.0.0.1:9095/identitytoolkit.googleapis.com/v1/accounts:signUp?key=fake-api-key' -H 'Content-Type: application/json' -d '{"email":"vender@sender.com","password":"admin123","returnSecureToken":true}' || true
 
           echo "Running Playwright tests"
-          pnpm --filter @gosenderr/customer-app exec -- playwright test tests/e2e --config=apps/customer-app/playwright.config.ts --reporter=list || {
+          # run Playwright from the workspace root so the config path resolves correctly
+          pnpm -w exec -- playwright test tests/e2e --config=apps/customer-app/playwright.config.ts --reporter=list || {
             echo "Playwright failed — capturing emulator log"; tail -n +1 emulators.log; kill $EMU_PID || true; exit 1
           }
 
