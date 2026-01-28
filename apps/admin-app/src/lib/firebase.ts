@@ -28,6 +28,25 @@ if (isValidConfig) {
     authInstance = getAuth(app)
     storageInstance = getStorage(app)
     functionsInstance = getFunctions(app)
+    
+    // Connect to emulators in development
+    if (import.meta.env.DEV) {
+      const { connectFirestoreEmulator } = await import('firebase/firestore')
+      const { connectAuthEmulator } = await import('firebase/auth')
+      const { connectStorageEmulator } = await import('firebase/storage')
+      const { connectFunctionsEmulator } = await import('firebase/functions')
+      
+      try {
+        connectFirestoreEmulator(dbInstance, '127.0.0.1', 8080)
+        connectAuthEmulator(authInstance, 'http://127.0.0.1:9099', { disableWarnings: true })
+        connectStorageEmulator(storageInstance, '127.0.0.1', 9199)
+        connectFunctionsEmulator(functionsInstance, '127.0.0.1', 5001)
+        console.log('Connected to Firebase Emulators')
+      } catch (e) {
+        console.log('Emulators already connected or not available')
+      }
+    }
+    
     console.log('Firebase initialized successfully')
   } catch (error) {
     console.error('Failed to initialize Firebase:', error)
