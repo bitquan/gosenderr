@@ -1,0 +1,247 @@
+# Dependabot configuration for GoSenderR monorepo
+# Automatically checks for dependency updates and security vulnerabilities
+# Learn more: https://docs.github.com/en/code-security/dependabot
+
+version: 2
+
+updates:
+  # ============================================
+  # ROOT WORKSPACE (pnpm workspace)
+  # ============================================
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/New_York"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "bitquan"
+    assignees:
+      - "bitquan"
+    labels:
+      - "dependencies"
+      - "root-workspace"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    # Group all non-major updates together to reduce PR noise
+    groups:
+      workspace-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # ============================================
+  # CUSTOMER APP (Primary user-facing app)
+  # ============================================
+  - package-ecosystem: "npm"
+    directory: "/apps/customer-app"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "bitquan"
+    labels:
+      - "dependencies"
+      - "customer-app"
+    commit-message:
+      prefix: "chore(customer-app)"
+    groups:
+      customer-app-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # ============================================
+  # COURIER APP (Courier-facing app)
+  # ============================================
+  - package-ecosystem: "npm"
+    directory: "/apps/courier-app"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "courier-app"
+    commit-message:
+      prefix: "chore(courier-app)"
+    groups:
+      courier-app-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # ============================================
+  # SHIFTER APP (Runner/Package delivery app)
+  # ============================================
+  - package-ecosystem: "npm"
+    directory: "/apps/shifter-app"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "shifter-app"
+    commit-message:
+      prefix: "chore(shifter-app)"
+    groups:
+      shifter-app-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # ============================================
+  # ADMIN APP (Admin dashboard)
+  # ============================================
+  - package-ecosystem: "npm"
+    directory: "/apps/admin-app"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "admin-app"
+    commit-message:
+      prefix: "chore(admin-app)"
+    groups:
+      admin-app-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # ============================================
+  # LANDING PAGE (Public landing page)
+  # ============================================
+  - package-ecosystem: "npm"
+    directory: "/apps/landing"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+      time: "09:00"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "landing-page"
+    commit-message:
+      prefix: "chore(landing)"
+    groups:
+      landing-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # ============================================
+  # FIREBASE CLOUD FUNCTIONS (CRITICAL)
+  # More frequent checks due to security sensitivity
+  # ============================================
+  - package-ecosystem: "npm"
+    directory: "/firebase/functions"
+    schedule:
+      interval: "daily"  # Daily because handles payments/sensitive data
+    open-pull-requests-limit: 10
+    reviewers:
+      - "bitquan"
+    labels:
+      - "dependencies"
+      - "firebase-functions"
+      - "security"
+    commit-message:
+      prefix: "chore(functions)"
+    # Don't group - review each update carefully
+    # Security-critical dependencies like Stripe should be reviewed individually
+
+  # ============================================
+  # SHARED PACKAGE (Shared types and utilities)
+  # ============================================
+  - package-ecosystem: "npm"
+    directory: "/packages/shared"
+    schedule:
+      interval: "weekly"
+      day: "thursday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "shared-package"
+    commit-message:
+      prefix: "chore(shared)"
+    groups:
+      shared-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # ============================================
+  # UI PACKAGE (Shared UI components)
+  # ============================================
+  - package-ecosystem: "npm"
+    directory: "/packages/ui"
+    schedule:
+      interval: "weekly"
+      day: "thursday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "ui-package"
+    commit-message:
+      prefix: "chore(ui)"
+    groups:
+      ui-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # ============================================
+  # GITHUB ACTIONS (CI/CD workflows)
+  # ============================================
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+      day: "1"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "ci-cd"
+      - "github-actions"
+    commit-message:
+      prefix: "chore(ci)"
+
+  # ============================================
+  # DOCKER (if you add Docker later)
+  # ============================================
+  # - package-ecosystem: "docker"
+  #   directory: "/"
+  #   schedule:
+  #     interval: "weekly"
+  #   labels:
+  #     - "dependencies"
+  #     - "docker"
