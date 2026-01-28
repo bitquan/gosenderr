@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 
 const VENDOR_EMAIL = 'vender@sender.com';
 const VENDOR_PASS = 'admin123';
+const VENDOR_APP_URL = process.env.VITE_VENDOR_APP_URL ?? 'http://127.0.0.1:5181';
 
 test.describe('Vendor auth + pages', () => {
   test('can sign in as vendor and access vendor pages', async ({ page }) => {
