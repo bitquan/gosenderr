@@ -17,16 +17,6 @@ export default function ItemDetailPage() {
   const [loading, setLoading] = useState(true)
   const [selectedImage, setSelectedImage] = useState(0)
   const [quantity, setQuantity] = useState(1)
-  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
-
-  useEffect(() => {
-    let active = true;
-
-    const loadItem = async () => {
-      if (!itemId) {
-        navigate("/marketplace");
-        return;
-      }
 
   useEffect(() => {
     if (itemId) {
