@@ -1,5 +1,6 @@
 import * as functions from 'firebase-functions/v2';
 import * as admin from 'firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
 import Stripe from 'stripe';
 
 // Ensure admin is initialized (safe to call multiple times)
@@ -84,7 +85,7 @@ export const createMarketplaceOrder = functions.https.onCall<CreateMarketplaceOr
       });
 
       // Create order in Firestore
-      const timestamp = admin.firestore.FieldValue.serverTimestamp();
+      const timestamp = FieldValue.serverTimestamp();
       
       const orderData = {
         customerId: request.auth.uid,
@@ -120,7 +121,6 @@ export const createMarketplaceOrder = functions.https.onCall<CreateMarketplaceOr
       const orderRef = await db.collection('orders').add(orderData);
 
       // Update inventory for each item
-      const timestamp = admin.firestore.FieldValue.serverTimestamp();
       for (const item of items) {
         const itemRef = db.collection('marketplaceItems').doc(item.itemId);
         await db.runTransaction(async (transaction) => {
