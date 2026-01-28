@@ -21,6 +21,12 @@ jobs:
       - name: Install pnpm
         run: corepack enable && corepack prepare pnpm@latest --activate
 
+      - name: Check pnpm availability
+        run: |
+          echo "PATH=$PATH"
+          which pnpm || echo "pnpm not found"
+          pnpm -v || true
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -38,11 +44,15 @@ jobs:
       - name: Run Playwright tests (smoke)
         env:
           VITE_VENDOR_APP_URL: "http://127.0.0.1:5181"
-        run: pnpm --filter @gosenderr/customer-app test:e2e --project=chromium --reporter=list
+        run: |
+          # Save artifacts to a known folder for upload
+          pnpm --filter @gosenderr/customer-app test:e2e --project=chromium --reporter=list --reporter=html --output-folder=apps/customer-app/test-results || true
 
       - name: Upload Playwright traces and results
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-traces
-          path: apps/customer-app/test-results
+          path: |
+            apps/customer-app/test-results/**
+            apps/customer-app/playwright-report/**
