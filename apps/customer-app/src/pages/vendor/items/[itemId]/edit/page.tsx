@@ -11,7 +11,7 @@ export default function EditVendorItem() {
   const { itemId } = useParams();
   const navigate = useNavigate();
   const { uid, loading: authLoading } = useAuthUser();
-  const { userDoc } = useUserDoc();
+  useUserDoc();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [images, setImages] = useState<string[]>([]);
