@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { useAuthUser } from '@/hooks/v2/useAuthUser';
-import { Package } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface OrderItem {
@@ -164,7 +163,9 @@ export default function VendorOrders() {
         {/* Orders List */}
         {filteredOrders.length === 0 ? (
           <div className="bg-white rounded-lg shadow p-12 text-center">
-            <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-3xl">📦</span>
+            </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">No orders found</h3>
             <p className="text-gray-600">
               {filter === 'all'
