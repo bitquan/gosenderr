@@ -73,14 +73,3 @@ export const functions = functionsInstance as Functions;
 
 // Helper to check if Firebase is ready
 export const isFirebaseReady = () => !!dbInstance;
-
-
-// Export with safe getters that throw meaningful errors
-export { app };
-
-export const db = dbInstance as Firestore;
-export const storage = storageInstance as FirebaseStorage;
-export const functions = functionsInstance as Functions;
-
-// Helper to check if Firebase is ready
-export const isFirebaseReady = () => !!dbInstance;
