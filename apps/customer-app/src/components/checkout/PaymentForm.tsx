@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useStripe, useElements, CardElement } from '@stripe/react-stripe-js'
 import { functions } from '../../lib/firebase'
 import { httpsCallable } from 'firebase/functions'
-import { useAuth } from '../../hooks/useAuth'
 import type { CartItem } from '../../contexts/CartContext'
 
 interface PaymentFormProps {
@@ -24,7 +23,6 @@ interface PaymentFormProps {
 export function PaymentForm({ amount, shippingInfo, items, onSuccess }: PaymentFormProps) {
   const stripe = useStripe()
   const elements = useElements()
-  const { user } = useAuth()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [processingPayment, setProcessingPayment] = useState(false)
@@ -76,12 +74,12 @@ export function PaymentForm({ amount, shippingInfo, items, onSuccess }: PaymentF
         currency: 'usd',
         paymentMethodId: paymentMethod.id,
         shippingInfo,
-        items: items.map(item => ({
-          itemId: item.id,
-          title: item.title,
-          quantity: item.quantity,
-          price: item.price,
-          vendorId: item.vendorId,
+        items: items.map(cartItem => ({
+          itemId: cartItem.item.id!,
+          title: cartItem.item.title,
+          quantity: cartItem.quantity,
+          price: cartItem.item.price,
+          vendorId: cartItem.item.vendorId,
         })),
       }) as { data: { clientSecret: string; orderId: string; status: string } }
 

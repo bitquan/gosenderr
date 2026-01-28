@@ -271,17 +271,17 @@ export default function MarketplaceCheckoutPage() {
               <h3 className="text-lg font-bold mb-4">Order Summary</h3>
               
               <div className="space-y-4 mb-6">
-                {items.map((item) => (
-                  <div key={item.id} className="flex gap-4">
+                {items.map((cartItem) => (
+                  <div key={cartItem.item.id} className="flex gap-4">
                     <img
-                      src={item.images[0]}
-                      alt={item.title}
+                      src={cartItem.item.images[0]}
+                      alt={cartItem.item.title}
                       className="w-16 h-16 object-cover rounded"
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{item.title}</p>
-                      <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
-                      <p className="text-sm font-medium">${(item.price * item.quantity).toFixed(2)}</p>
+                      <p className="font-medium text-sm truncate">{cartItem.item.title}</p>
+                      <p className="text-sm text-gray-600">Qty: {cartItem.quantity}</p>
+                      <p className="text-sm font-medium">${(cartItem.item.price * cartItem.quantity).toFixed(2)}</p>
                     </div>
                   </div>
                 ))}
