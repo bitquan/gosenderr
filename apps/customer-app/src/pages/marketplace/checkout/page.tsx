@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCart } from '../../../contexts/CartContext'
 import { useAuth } from '../../../hooks/useAuth'
@@ -41,10 +41,11 @@ export default function MarketplaceCheckoutPage() {
   const total = subtotal + shippingCost + tax
 
   // Redirect if cart is empty
-  if (items.length === 0) {
-    navigate('/marketplace')
-    return null
-  }
+  useEffect(() => {
+    if (items.length === 0) {
+      navigate('/marketplace')
+    }
+  }, [items.length, navigate])
 
   const handleShippingSubmit = (e: React.FormEvent) => {
     e.preventDefault()
