@@ -18,7 +18,7 @@
     {
       "label": "🔥 Firebase Emulators",
       "type": "shell",
-      "command": "firebase emulators:start --only firestore,auth,storage",
+      "command": "./scripts/start-emulators.sh",
       "isBackground": true,
       "problemMatcher": {
         "pattern": {
@@ -29,8 +29,8 @@
         },
         "background": {
           "activeOnStart": true,
-          "beginsPattern": ".*Starting emulators.*",
-          "endsPattern": ".*All emulators ready.*"
+          "beginsPattern": ".*Starting.*Emulators.*",
+          "endsPattern": ".*Ready.*View Emulator.*"
         }
       },
       "presentation": {
