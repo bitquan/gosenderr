@@ -1,0 +1,54 @@
+name: E2E (Emulator)
+
+on:
+  pull_request:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  e2e:
+    name: E2E against Firebase emulators
+    runs-on: ubuntu-latest
+    env:
+      FIREBASE_PROJECT: gosenderr-6773f
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Enable pnpm
+        run: corepack enable && corepack prepare pnpm@latest --activate
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install firebase-tools
+        run: npm i -g firebase-tools@latest
+
+      - name: Run Firebase emulators and Playwright E2E
+        env:
+          CI: 'true'
+        run: |
+          set -euo pipefail
+          echo "Starting emulators and seeding auth user..."
+          # Use Firebase emulators:exec so the envs are set for tests
+          npx firebase emulators:exec --only auth,firestore,storage --project ${FIREBASE_PROJECT} -- bash -lc "\
+            echo 'Seeding vendor user into Auth emulator'; \
+            curl -s -X POST 'http://localhost:9099/identitytoolkit.googleapis.com/v1/accounts:signUp?key=fake-api-key' -H 'Content-Type: application/json' -d '{\"email\":\"vender@sender.com\",\"password\":\"admin123\",\"returnSecureToken\":true}' || true; \
+            echo 'Running Playwright tests'; \
+            pnpm --filter @gosenderr/customer-app exec -- playwright test tests/e2e --config=apps/customer-app/playwright.config.ts --reporter=list"
+
+      - name: Upload test artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-artifacts
+          path: |
+            apps/customer-app/test-results/**
+            apps/customer-app/playwright-report/**
+            test-results/**
