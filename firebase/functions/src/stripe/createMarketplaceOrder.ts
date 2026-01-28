@@ -68,38 +68,20 @@ export const createMarketplaceOrder = functions.https.onCall<CreateMarketplaceOr
 
     try {
       const db = admin.firestore();
+      const stripe = getStripe();
       
-      // Check if running in emulator (for development without real Stripe key)
-      const isEmulator = process.env.FUNCTIONS_EMULATOR === 'true';
-      
-      // Use appropriate timestamp based on environment
-      const timestamp = isEmulator ? new Date() : admin.firestore.FieldValue.serverTimestamp();
-      
-      let paymentIntent: any;
-      
-      if (isEmulator) {
-        // Mock payment intent for emulator testing
-        console.log('Running in emulator mode - using mock payment intent');
-        paymentIntent = {
-          id: `pi_mock_${Date.now()}`,
-          client_secret: `pi_mock_${Date.now()}_secret_mock`,
-          status: 'succeeded',
-        };
-      } else {
-        // Real Stripe integration for production
-        const stripe = getStripe();
-        paymentIntent = await stripe.paymentIntents.create({
-          amount: Math.round(amount), // Already in cents from client
-          currency: currency.toLowerCase(),
-          payment_method: paymentMethodId,
-          confirm: true,
-          return_url: `${request.rawRequest.headers.origin}/orders`,
-          metadata: {
-            userId: request.auth.uid,
-            orderType: 'marketplace',
-          },
-        });
-      }
+      // Create payment intent with Stripe
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(amount), // Already in cents from client
+        currency: currency.toLowerCase(),
+        payment_method: paymentMethodId,
+        confirm: true,
+        return_url: `${request.rawRequest.headers.origin}/orders`,
+        metadata: {
+          userId: request.auth.uid,
+          orderType: 'marketplace',
+        },
+      });
 
       // Create order in Firestore
       const orderData = {
@@ -129,8 +111,8 @@ export const createMarketplaceOrder = functions.https.onCall<CreateMarketplaceOr
         paymentIntentId: paymentIntent.id,
         paymentStatus: paymentIntent.status,
         status: 'pending',
-        createdAt: timestamp,
-        updatedAt: timestamp,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       };
 
       const orderRef = await db.collection('orders').add(orderData);
@@ -145,7 +127,7 @@ export const createMarketplaceOrder = functions.https.onCall<CreateMarketplaceOr
             const newStock = Math.max(0, currentStock - item.quantity);
             transaction.update(itemRef, {
               stock: newStock,
-              updatedAt: timestamp,
+              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
             });
           }
         });
