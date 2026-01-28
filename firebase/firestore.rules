@@ -553,5 +553,100 @@ service cloud.firestore {
       // Only admins can read and write platform settings
       allow read, write: if isAdmin();
     }
+
+    // ========== MARKETPLACE ITEMS ==========
+    match /marketplaceItems/{itemId} {
+      // Anyone can read active items
+      allow read: if resource.data.status == 'active';
+      
+      // Vendors can create items
+      allow create: if signedIn() 
+        && isVendor()
+        && request.resource.data.vendorId == request.auth.uid
+        && request.resource.data.status in ['draft', 'active', 'inactive']
+        && request.resource.data.price > 0
+        && request.resource.data.quantity >= 0;
+      
+      // Vendors can update/delete their own items
+      allow update, delete: if signedIn() && request.auth.uid == resource.data.vendorId;
+      
+      // Admins can do anything
+      allow read, write: if isAdmin();
+    }
+
+    // ========== ORDERS ==========
+    match /orders/{orderId} {
+      // Customers can read their own orders
+      allow read: if signedIn() && request.auth.uid == resource.data.customerId;
+      
+      // Vendors can read orders for their items
+      allow read: if signedIn() && request.auth.uid == resource.data.vendorId;
+      
+      // Customers can create orders
+      allow create: if signedIn() 
+        && request.resource.data.customerId == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && request.resource.data.items.size() > 0;
+      
+      // Vendors can update order status
+      allow update: if signedIn() 
+        && request.auth.uid == resource.data.vendorId
+        && request.resource.data.status in ['confirmed', 'preparing', 'ready', 'out_for_delivery', 'cancelled'];
+      
+      // Customers can cancel pending orders
+      allow update: if signedIn() 
+        && request.auth.uid == resource.data.customerId
+        && resource.data.status == 'pending'
+        && request.resource.data.status == 'cancelled';
+      
+      // Admins can do anything
+      allow read, write: if isAdmin();
+    }
+
+    // ========== VENDOR APPLICATIONS ==========
+    match /vendorApplications/{userId} {
+      // Users can read their own application
+      allow read: if signedIn() && request.auth.uid == userId;
+      
+      // Users can create one application
+      allow create: if signedIn() 
+        && request.auth.uid == userId
+        && request.resource.data.status == 'pending';
+      
+      // Users can update their pending application
+      allow update: if signedIn() 
+        && request.auth.uid == userId
+        && resource.data.status == 'pending';
+      
+      // Admins can read and update all applications
+      allow read, update: if isAdmin();
+    }
+
+    // ========== CATEGORIES (optional) ==========
+    match /categories/{categoryId} {
+      // Anyone can read categories
+      allow read: if true;
+      
+      // Only admins can write categories
+      allow write: if isAdmin();
+    }
+
+    // ========== REVIEWS ==========
+    match /reviews/{reviewId} {
+      // Anyone can read reviews
+      allow read: if true;
+      
+      // Authenticated users can create reviews
+      allow create: if signedIn() 
+        && request.resource.data.reviewerId == request.auth.uid
+        && request.resource.data.rating >= 1 
+        && request.resource.data.rating <= 5;
+      
+      // Users can update their own reviews
+      allow update: if signedIn() && request.auth.uid == resource.data.reviewerId;
+      
+      // Admins can do anything
+      allow write: if isAdmin();
+    }
   }
 }
