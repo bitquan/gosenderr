@@ -317,6 +317,10 @@ _Add any questions or blockers here as you work_
 - Continue shopping button
 - Proceed to checkout button (navigation ready)
 
+#### 🔧 Fixes Applied (Week 3)
+1. **Firestore Permissions (commit: 707ce75e)**: Changed marketplace items to allow public read access. Previous rule `resource.data.status == 'active'` didn't work for queries. Now filtering by status happens client-side.
+2. **Cart Context Error (commit: 707ce75e)**: Added try/catch in Header component for useCart hook to handle HMR edge cases and prevent "must be used within CartProvider" errors during hot reload.
+
 #### 🎯 Next Steps
 Phase 2, Week 4:
 - Checkout page with order summary
