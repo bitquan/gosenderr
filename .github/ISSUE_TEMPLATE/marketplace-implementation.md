@@ -268,6 +268,69 @@ _Add any questions or blockers here as you work_
 
 ## 📝 Progress Updates
 
+### January 28, 2026 - Phase 2, Week 4 Started
+
+#### ✅ Completed Tasks
+
+**Checkout Page:**
+- Two-step checkout process (Shipping → Payment)
+- Progress indicator showing current step
+- Shipping information form with full validation
+- All required fields (name, email, phone, address, city, state, ZIP, country)
+- Order summary sidebar with real-time totals
+- Tax calculation (8% - placeholder for location-based)
+- Free shipping display
+- Secure checkout badge with encryption messaging
+
+**Stripe Payment Integration:**
+- PaymentForm component with Stripe Elements
+- CardElement for secure card input
+- Payment method creation with billing details
+- Test card information display (4242 4242 4242 4242)
+- Loading states during payment processing
+- Error handling and display
+- Success callback for order completion
+
+**Cart Integration:**
+- Updated CartSidebar to link to `/marketplace/checkout`
+- Checkout button navigates to marketplace checkout
+- Cart clears on successful payment
+- Redirects to order details after purchase
+
+#### 📊 Files Created (Week 4)
+- `pages/marketplace/checkout/page.tsx` - Marketplace checkout page
+- `components/checkout/PaymentForm.tsx` - Stripe payment form (updated)
+
+#### 📊 Files Modified (Week 4)
+- `App.tsx` - Added marketplace checkout route
+- `components/cart/CartSidebar.tsx` - Updated checkout link
+- `lib/firebase.ts` - Added emulator connections for development
+
+#### 🔧 Features Implemented
+- Shipping form with country selector (US, Canada, Mexico)
+- Payment step with Stripe Elements integration
+- Order summary with item images and quantities
+- Subtotal, shipping (free), and tax calculations
+- Edit shipping info button on payment step
+- Back to shopping button
+- Secure payment processing indicator
+- Terms of Service acceptance notice
+
+#### 🎯 Next Steps
+Phase 2, Week 4 continued:
+- Create `createPaymentIntent` Cloud Function
+- Create `marketplaceCheckout` Cloud Function
+- Implement order creation in Firestore
+- Build order confirmation page
+- Add email notifications
+- Update item inventory after purchase
+- Test complete checkout flow
+
+#### 🚫 Blockers
+Need to create Cloud Functions for payment processing
+
+---
+
 ### January 28, 2026 - Phase 2, Week 3 Progress
 
 #### ✅ Completed Tasks

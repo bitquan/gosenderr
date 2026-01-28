@@ -69,9 +69,9 @@ export function PaymentForm({ amount, shippingInfo, items, onSuccess }: PaymentF
         throw new Error(pmError.message)
       }
 
-      // Create payment intent via Cloud Function
-      const createPaymentIntent = httpsCallable(functions, 'createPaymentIntent')
-      const { data } = await createPaymentIntent({
+      // Create order and process payment via Cloud Function
+      const createMarketplaceOrder = httpsCallable(functions, 'createMarketplaceOrder')
+      const { data } = await createMarketplaceOrder({
         amount: Math.round(amount * 100), // Convert to cents
         currency: 'usd',
         paymentMethodId: paymentMethod.id,
@@ -83,16 +83,17 @@ export function PaymentForm({ amount, shippingInfo, items, onSuccess }: PaymentF
           price: item.price,
           vendorId: item.vendorId,
         })),
-      }) as { data: { clientSecret: string; orderId: string } }
+      }) as { data: { clientSecret: string; orderId: string; status: string } }
 
-      // Confirm payment
-      const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(data.clientSecret)
-
-      if (confirmError) {
-        throw new Error(confirmError.message)
-      }
-
-      if (paymentIntent?.status === 'succeeded') {
+      // Check payment status
+      if (data.status === 'succeeded') {
+        onSuccess(data.orderId)
+      } else if (data.status === 'requires_action') {
+        // Handle 3D Secure or other authentication
+        const { error: confirmError } = await stripe.confirmCardPayment(data.clientSecret)
+        if (confirmError) {
+          throw new Error(confirmError.message)
+        }
         onSuccess(data.orderId)
       } else {
         throw new Error('Payment failed')
