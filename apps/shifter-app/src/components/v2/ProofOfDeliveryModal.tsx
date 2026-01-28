@@ -7,6 +7,7 @@ import { db } from "@/lib/firebase/client";
 
 interface ProofOfDeliveryModalProps {
   jobId: string;
+  runnerId?: string;
   onClose: () => void;
   onComplete: () => void;
 }

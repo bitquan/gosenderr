@@ -12,6 +12,7 @@ import { Job as FeatureJob } from "@/features/jobs/shared/types";
 import { JobDoc } from "@/lib/v2/types";
 import { Link } from "react-router-dom";
 import { NotFoundPage } from "@/components/ui/NotFoundPage";
+import { useNavigation } from "@/hooks/useNavigation";
 
 // Convert JobDoc to features Job
 function convertJobDocToJob(jobDoc: JobDoc, id: string): FeatureJob {
@@ -25,6 +26,7 @@ export default function CourierJobDetail() {
   const { uid } = useAuthUser();
   const { job: jobDoc, loading: jobLoading } = useJob(jobId);
   const { userDoc } = useUserDoc();
+  const { startNavigation, isNavigating } = useNavigation();
 
   if (jobLoading) {
     return (
@@ -39,7 +41,7 @@ export default function CourierJobDetail() {
       <NotFoundPage
         title="Job not found"
         description="We couldn't locate that delivery job."
-        actionHref="/courier/dashboard"
+        actionHref="/dashboard"
         actionLabel="Back to Dashboard"
         emoji="🧾"
       />
@@ -53,7 +55,7 @@ export default function CourierJobDetail() {
       <NotFoundPage
         title="Access denied"
         description="This job isn't assigned to your account."
-        actionHref="/courier/dashboard"
+        actionHref="/dashboard"
         actionLabel="Back to Dashboard"
         emoji="🔒"
       />
@@ -61,14 +63,23 @@ export default function CourierJobDetail() {
   }
 
   const visibility = getJobVisibility(job, { uid, role: "courier" });
-  const pickupGoogleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${job.pickup.lat},${job.pickup.lng}`;
-  const dropoffGoogleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${job.dropoff.lat},${job.dropoff.lng}`;
+  
+  const handleStartNavigation = async (destination: 'pickup' | 'dropoff') => {
+    if (!userDoc?.location) {
+      alert('Unable to get your current location. Please enable location services.');
+      return;
+    }
+
+    const targetLocation = destination === 'pickup' ? job.pickup : job.dropoff;
+    await startNavigation(job, userDoc.location, targetLocation);
+  };
 
   return (
-    <div style={{ padding: "30px", maxWidth: "1200px", margin: "0 auto" }}>
+    <div className="fixed inset-0 w-screen h-screen overflow-y-auto pb-24 safe-top">
+      <div style={{ padding: "16px", maxWidth: "1200px", margin: "0 auto" }}>
       <div style={{ marginBottom: "20px" }}>
         <Link
-          to="/courier/dashboard"
+          to="/dashboard"
           style={{ color: "#6E56CF", textDecoration: "none" }}
         >
           ← Back to Dashboard
@@ -102,60 +113,62 @@ export default function CourierJobDetail() {
             job={job}
             courierUid={uid}
             onJobUpdated={() => {
+              // Navigate back to dashboard after completing the job
               if (job.status === "arrived_dropoff") {
-                setTimeout(() => navigate("/courier/dashboard"), 1000);
+                setTimeout(() => navigate("/dashboard"), 1000);
               }
             }}
           />
         </JobDetailsPanel>
       </div>
 
-      {/* Navigation Links */}
+      {/* Navigation Buttons */}
       <div style={{ marginBottom: "30px", display: "flex", gap: "12px" }}>
-        <a
-          to={pickupGoogleMapsUrl}
-          target="_blank"
-          rel="noopener noreferrer"
+        <button
+          onClick={() => handleStartNavigation('pickup')}
+          disabled={isNavigating || !userDoc?.location}
           style={{
             flex: 1,
             padding: "12px",
-            background: "#6E56CF",
+            background: isNavigating || !userDoc?.location ? "#ccc" : "#6E56CF",
             color: "white",
-            textDecoration: "none",
+            border: "none",
             borderRadius: "8px",
             textAlign: "center",
             fontWeight: "600",
+            cursor: isNavigating || !userDoc?.location ? "not-allowed" : "pointer",
           }}
         >
-          Navigate to Pickup 🗺️
-        </a>
-        <a
-          to={dropoffGoogleMapsUrl}
-          target="_blank"
-          rel="noopener noreferrer"
+          {isNavigating ? "Navigating..." : "Navigate to Pickup 🗺️"}
+        </button>
+        <button
+          onClick={() => handleStartNavigation('dropoff')}
+          disabled={isNavigating || !userDoc?.location}
           style={{
             flex: 1,
             padding: "12px",
-            background: "#16a34a",
+            background: isNavigating || !userDoc?.location ? "#ccc" : "#16a34a",
             color: "white",
-            textDecoration: "none",
+            border: "none",
             borderRadius: "8px",
             textAlign: "center",
             fontWeight: "600",
+            cursor: isNavigating || !userDoc?.location ? "not-allowed" : "pointer",
           }}
         >
-          Navigate to Dropoff 🗺️
-        </a>
+          {isNavigating ? "Navigating..." : "Navigate to Dropoff 🗺️"}
+        </button>
       </div>
 
       <div>
-        <h3>Live Map</h3>
+        <h3 style={{ fontSize: "1.125rem", fontWeight: "600", marginBottom: "12px" }}>Live Map</h3>
         <MapboxMap
           pickup={job.pickup}
           dropoff={job.dropoff}
           courierLocation={userDoc?.location || null}
-          height="500px"
+          height="300px"
         />
+      </div>
       </div>
     </div>
   );

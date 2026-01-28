@@ -360,7 +360,7 @@ export default function RunnerOnboardingPage() {
                 once your application is processed. Please check back or visit
                 your{" "}
                 <a
-                  to="/runner/dashboard"
+                  href="/runner/dashboard"
                   style={{ textDecoration: "underline", fontWeight: "600" }}
                 >
                   dashboard

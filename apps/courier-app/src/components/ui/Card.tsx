@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 
 interface CardProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
-  variant?: "default" | "elevated" | "gradient";
+  variant?: "default" | "elevated" | "gradient" | "outlined";
   hover?: boolean;
   padding?: "none" | "sm" | "md" | "lg";
 }
@@ -25,6 +25,7 @@ export function Card({
       "shadow-[0_8px_32px_rgba(107,78,255,0.12)] border border-purple-50",
     gradient:
       "bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] text-white shadow-[0_8px_32px_rgba(107,78,255,0.2)]",
+    outlined: "border border-gray-200 bg-white",
   };
 
   const hoverStyles = hover

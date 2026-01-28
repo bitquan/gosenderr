@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef, type PointerEvent, type TouchEvent } from "react";
 import { LoadingState } from "@gosenderr/ui";
 import { useNavigate, Link } from "react-router-dom";
 import { doc, updateDoc } from "firebase/firestore";
@@ -6,13 +6,16 @@ import { db } from "@/lib/firebase";
 import { useUserDoc } from "@/hooks/v2/useUserDoc";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { useOpenJobs } from "@/hooks/v2/useOpenJobs";
-import { MapboxMap } from "@/components/v2/MapboxMap";
+import { MapboxMap, MapboxMapHandle } from "@/components/v2/MapboxMap";
 import { claimJob } from "@/lib/v2/jobs";
 import { Job } from "@/lib/v2/types";
 import { calcMiles } from "@/lib/v2/pricing";
 import { getEligibilityReason } from "@/lib/v2/eligibility";
 import { useCourierLocationWriter } from "@/hooks/v2/useCourierLocationWriter";
 import { debugLogger } from "@/utils/debugLogger";
+import { useMapboxDirections } from "@/hooks/useMapboxDirections";
+import { useMapFocus } from "@/hooks/useMapFocus";
+import { JobThumbnail } from "@/components/navigation/JobThumbnail";
 
 export default function CourierDashboardMobile() {
   const navigate = useNavigate();
@@ -24,6 +27,26 @@ export default function CourierDashboardMobile() {
   const [hideIneligible, setHideIneligible] = useState(true);
   const [togglingOnline, setTogglingOnline] = useState(false);
   const { isTracking, permissionDenied } = useCourierLocationWriter();
+  const [sheetOpen, setSheetOpen] = useState(true);
+  const [isDraggingSheet, setIsDraggingSheet] = useState(false);
+  const [sheetDragOffset, setSheetDragOffset] = useState(0);
+  const [collapsedOffset, setCollapsedOffset] = useState(0);
+  const sheetDragStartY = useRef<number | null>(null);
+  const [bottomNavOffset, setBottomNavOffset] = useState(72);
+  const sheetPeekHeight = 56;
+  const minCollapsedOffset = 120;
+  const sheetRef = useRef<HTMLDivElement | null>(null);
+  const sheetDragStartOffset = useRef(0);
+  const sheetContentRef = useRef<HTMLDivElement | null>(null);
+  const sheetTouchStartY = useRef<number | null>(null);
+  const sheetTouchStartOffset = useRef(0);
+  const currentDragOffset = useRef(0); // Use ref to avoid re-renders during drag
+
+  // Map and route management
+  const mapRef = useRef<MapboxMapHandle>(null);
+  const { routeSegments, loading: routeLoading, fetchJobRoute, clearRoute } = useMapboxDirections();
+  const map = mapRef.current?.getMap();
+  const { fitRoute, recenterOnDriver } = useMapFocus(map);
 
   debugLogger.log('render', 'Dashboard render start', {
     userLoading,
@@ -39,6 +62,39 @@ export default function CourierDashboardMobile() {
       jobsCount: jobs.length
     })
   }, [])
+
+  useEffect(() => {
+    if (!sheetContentRef.current) return;
+
+    const updateOffsets = () => {
+      const contentHeight = sheetContentRef.current?.scrollHeight ?? 0;
+      const fallbackHeight = typeof window !== 'undefined'
+        ? Math.round(window.innerHeight * 0.6)
+        : 400;
+      const sheetHeight = contentHeight > 0 ? contentHeight : fallbackHeight;
+      const nextOffset = Math.max(minCollapsedOffset, sheetHeight - sheetPeekHeight);
+      console.log('updateOffsets - contentHeight:', contentHeight, 'fallbackHeight:', fallbackHeight, 'sheetHeight:', sheetHeight, 'nextOffset:', nextOffset);
+      setCollapsedOffset(nextOffset);
+
+      const nav = document.querySelector('[data-bottom-nav="true"]') as HTMLElement | null;
+      if (nav) {
+        setBottomNavOffset(nav.getBoundingClientRect().height);
+      }
+    };
+
+    // Delay initial measurement to let content render
+    const timeoutId = setTimeout(updateOffsets, 100);
+
+    const observer = new ResizeObserver(updateOffsets);
+    observer.observe(sheetContentRef.current);
+
+    window.addEventListener('resize', updateOffsets);
+    return () => {
+      clearTimeout(timeoutId);
+      observer.disconnect();
+      window.removeEventListener('resize', updateOffsets);
+    };
+  }, [jobs.length])
 
   const handleToggleOnline = async () => {
     if (!uid || togglingOnline) return;
@@ -66,7 +122,7 @@ export default function CourierDashboardMobile() {
         eligible: true,
         reason: undefined,
         pickupMiles: undefined,
-        jobMiles: calcMiles(job.pickup, job.dropoff),
+        jobMiles: (job.pickup && job.dropoff) ? calcMiles(job.pickup, job.dropoff) : 0,
       }));
     }
 
@@ -76,6 +132,17 @@ export default function CourierDashboardMobile() {
       : userDoc.courierProfile.foodRateCard;
 
     return jobs.map((job) => {
+      // Guard against missing pickup/dropoff data
+      if (!job.pickup || !job.dropoff) {
+        return {
+          job,
+          eligible: false,
+          reason: "Missing location data",
+          pickupMiles: undefined,
+          jobMiles: 0,
+        };
+      }
+
       const pickupMiles = calcMiles(courierLocation, job.pickup);
       const jobMiles = calcMiles(job.pickup, job.dropoff);
       const eligibilityResult = getEligibilityReason(rateCard, jobMiles, pickupMiles);
@@ -90,10 +157,20 @@ export default function CourierDashboardMobile() {
     });
   }, [jobs, userDoc]);
 
+  // Separate active job (accepted by this courier) from available jobs
+  const activeJob = useMemo(() => {
+    if (!uid) return null;
+    return jobs.find(job => job.courierUid === uid && job.status !== 'completed' && job.status !== 'cancelled') || null;
+  }, [jobs, uid]);
+
+  const availableJobs = useMemo(() => {
+    return jobsWithEligibility.filter(item => item.job.status === 'open');
+  }, [jobsWithEligibility]);
+
   const filteredJobs = useMemo(() => {
-    if (!hideIneligible) return jobsWithEligibility;
-    return jobsWithEligibility.filter((item) => item.eligible);
-  }, [jobsWithEligibility, hideIneligible]);
+    if (!hideIneligible) return availableJobs;
+    return availableJobs.filter((item) => item.eligible);
+  }, [availableJobs, hideIneligible]);
 
   useEffect(() => {
     if (!userLoading && userDoc) {
@@ -105,13 +182,64 @@ export default function CourierDashboardMobile() {
     }
   }, [userLoading, userDoc, navigate]);
 
+  // Auto-select active job if exists, otherwise first available job
   useEffect(() => {
-    if (filteredJobs.length > 0 && !selectedJob) {
+    if (activeJob) {
+      setSelectedJob(activeJob);
+    } else if (filteredJobs.length > 0 && !selectedJob) {
       setSelectedJob(filteredJobs[0].job);
-    } else if (filteredJobs.length === 0) {
+    } else if (filteredJobs.length === 0 && !activeJob) {
       setSelectedJob(null);
     }
-  }, [filteredJobs, selectedJob]);
+  }, [activeJob, filteredJobs, selectedJob]);
+
+  // Fetch route when job is selected
+  useEffect(() => {
+    if (!selectedJob || !userDoc?.courierProfile?.currentLocation) {
+      // Clear routes when no job is selected
+      clearRoute();
+      return;
+    }
+
+    // Skip if job doesn't have valid pickup/dropoff
+    if (!selectedJob.pickup || !selectedJob.dropoff) {
+      clearRoute();
+      return;
+    }
+
+    const courierLoc = userDoc.courierProfile.currentLocation;
+    fetchJobRoute(
+      [courierLoc.lng, courierLoc.lat],
+      [selectedJob.pickup.lng, selectedJob.pickup.lat],
+      [selectedJob.dropoff.lng, selectedJob.dropoff.lat]
+    );
+  }, [selectedJob, userDoc?.courierProfile?.currentLocation, fetchJobRoute, clearRoute]);
+  
+  // Auto-fit map to route when route loads
+  useEffect(() => {
+    if (routeSegments.length > 0 && map) {
+      const allCoordinates = routeSegments.flatMap(segment => segment.coordinates);
+      fitRoute(allCoordinates);
+    }
+  }, [routeSegments, map, fitRoute]);
+
+  // Auto-follow driver location when tracking and no job selected
+  useEffect(() => {
+    console.log('Auto-follow check:', { 
+      hasMap: !!map, 
+      isTracking, 
+      hasSelectedJob: !!selectedJob,
+      hasLocation: !!userDoc?.courierProfile?.currentLocation 
+    });
+    
+    if (!map || !isTracking || selectedJob) return;
+    
+    const courierLoc = userDoc?.courierProfile?.currentLocation;
+    if (courierLoc) {
+      console.log('Recentering on driver at:', [courierLoc.lng, courierLoc.lat]);
+      recenterOnDriver([courierLoc.lng, courierLoc.lat]);
+    }
+  }, [map, isTracking, selectedJob, userDoc?.courierProfile?.currentLocation, recenterOnDriver]);
 
   const handleAcceptJob = async (jobId: string, fee: number) => {
     if (!uid) return;
@@ -152,17 +280,90 @@ export default function CourierDashboardMobile() {
   const hasFoodMode = userDoc.courierProfile?.workModes?.foodEnabled;
   const needsSetup = !hasPackageMode && !hasFoodMode;
 
+  const handleSheetPointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setIsDraggingSheet(true);
+    sheetDragStartY.current = event.clientY;
+    sheetDragStartOffset.current = sheetOpen ? 0 : collapsedOffset;
+    currentDragOffset.current = 0;
+    
+    const handleMove = (e: globalThis.PointerEvent) => {
+      if (sheetDragStartY.current === null || !sheetRef.current) return;
+      const delta = e.clientY - sheetDragStartY.current;
+      const base = sheetDragStartOffset.current;
+      const next = Math.min(Math.max(base + delta, 0), collapsedOffset);
+      currentDragOffset.current = next - base;
+      
+      // Directly update transform without triggering re-render
+      const totalOffset = Math.min(Math.max(base + currentDragOffset.current, 0), collapsedOffset);
+      sheetRef.current.style.transform = `translateY(${totalOffset}px)`;
+    };
+    
+    const handleUp = () => {
+      try {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      } catch {
+        // no-op
+      }
+      const base = sheetDragStartOffset.current;
+      const finalOffset = Math.min(Math.max(base + currentDragOffset.current, 0), collapsedOffset);
+      const shouldClose = finalOffset > collapsedOffset * 0.4;
+      setSheetOpen(!shouldClose);
+      setIsDraggingSheet(false);
+      setSheetDragOffset(0);
+      currentDragOffset.current = 0;
+      sheetDragStartY.current = null;
+      
+      document.removeEventListener('pointermove', handleMove);
+      document.removeEventListener('pointerup', handleUp);
+    };
+    
+    document.addEventListener('pointermove', handleMove);
+    document.addEventListener('pointerup', handleUp);
+  };
+
+
+
+  const handleSheetTouchStart = () => {
+    // touch handled by pointer events on handle
+  };
+
+  const handleSheetTouchMove = () => {
+    // touch handled by pointer events on handle
+  };
+
+  const handleSheetTouchEnd = () => {
+    // touch handled by pointer events on handle
+  };
+
   return (
-    <div className="relative h-screen w-full overflow-hidden bg-gray-100">
+    <div className="fixed inset-0 w-screen h-screen overflow-hidden bg-gray-100">
       {/* Full-Screen Map */}
-      <div className="absolute inset-0">
+      <div className="absolute inset-0" style={{ touchAction: 'pan-x pan-y' }}>
         {(selectedJob || userDoc?.courierProfile?.currentLocation) ? (
-          <MapboxMap
-            pickup={selectedJob?.pickup || userDoc?.courierProfile?.currentLocation || { lat: 37.7749, lng: -122.4194, label: "San Francisco" }}
-            dropoff={selectedJob?.dropoff || userDoc?.courierProfile?.currentLocation || { lat: 37.7749, lng: -122.4194, label: "San Francisco" }}
-            courierLocation={userDoc?.courierProfile?.currentLocation || null}
-            height="100%"
-          />
+          <>
+            <MapboxMap
+              ref={mapRef}
+              pickup={selectedJob?.pickup}
+              dropoff={selectedJob?.dropoff}
+              courierLocation={(userDoc?.courierProfile?.currentLocation as any) || null}
+              routeSegments={routeSegments}
+              height="100%"
+            />
+            
+            {/* Job Thumbnails Overlay */}
+            {map && filteredJobs.map(({ job }) => (
+              <JobThumbnail
+                key={job.id}
+                job={job}
+                isSelected={selectedJob?.id === job.id}
+                onClick={() => setSelectedJob(job)}
+                map={map}
+              />
+            ))}
+          </>
         ) : (
           <div className="w-full h-full bg-gray-200 flex items-center justify-center">
             <div className="text-center">
@@ -173,15 +374,26 @@ export default function CourierDashboardMobile() {
         )}
       </div>
 
+      {/* Route Loading Indicator */}
+      {routeLoading && (
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-20 px-4 py-2 bg-white rounded-lg shadow-lg">
+          <div className="flex items-center gap-2">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-emerald-600"></div>
+            <span className="text-sm font-medium text-gray-700">Loading route...</span>
+          </div>
+        </div>
+      )}
+
       {/* Floating Online/Offline Button (Top-Right) */}
       <button
         onClick={handleToggleOnline}
         disabled={togglingOnline}
-        className={`absolute top-4 right-4 z-20 px-4 py-2.5 rounded-xl font-semibold text-sm shadow-lg transition-all ${
+        className={`absolute top-safe-16 right-4 z-20 px-4 py-2.5 rounded-xl font-semibold text-sm shadow-lg transition-all ${
           userDoc?.courierProfile?.isOnline
             ? "bg-emerald-500 text-white"
             : "bg-gray-700 text-white"
         } ${togglingOnline ? "opacity-60" : "hover:scale-105"}`}
+        style={{ marginTop: 'max(env(safe-area-inset-top), 16px)' }}
       >
         <div className="flex items-center gap-2">
           <span
@@ -200,7 +412,8 @@ export default function CourierDashboardMobile() {
       {/* Filter Toggle Button (Top-Left) */}
       <button
         onClick={() => setHideIneligible(!hideIneligible)}
-        className="absolute top-4 left-4 z-20 px-4 py-2.5 bg-white rounded-xl font-semibold text-sm shadow-lg hover:scale-105 transition-transform"
+        className="absolute top-safe-16 left-4 z-20 px-4 py-2.5 bg-white rounded-xl font-semibold text-sm shadow-lg hover:scale-105 transition-transform"
+        style={{ marginTop: 'max(env(safe-area-inset-top), 16px)' }}
       >
         {hideIneligible ? "Show All" : "Hide Ineligible"}
       </button>
@@ -245,9 +458,34 @@ export default function CourierDashboardMobile() {
       )}
 
       {/* Bottom Sheet - Jobs List */}
-      <div className="absolute bottom-0 left-0 right-0 z-30 bg-white rounded-t-3xl shadow-2xl max-h-[60vh] overflow-hidden">
+      <div
+        ref={sheetRef}
+        className="absolute left-0 right-0 z-30 bg-white rounded-t-3xl shadow-2xl max-h-[60vh] overflow-hidden pointer-events-none"
+        style={{
+          bottom: 0,
+          transform: `translateY(${Math.min(
+            Math.max((sheetOpen ? 0 : collapsedOffset) + sheetDragOffset, 0),
+            collapsedOffset
+          )}px)`,
+          transition: isDraggingSheet ? 'none' : 'transform 200ms ease',
+          willChange: 'transform',
+          paddingBottom: `var(--bottom-nav-height, ${bottomNavOffset}px)`,
+        }}
+      >
+        <div
+          ref={sheetContentRef}
+          className="pointer-events-auto overflow-y-auto"
+          style={{ touchAction: 'pan-y' }}
+        >
         {/* Drag Handle */}
-        <div className="flex justify-center pt-3 pb-2">
+        <div
+          className="flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing select-none"
+          onPointerDown={handleSheetPointerDown}
+          onTouchStart={handleSheetTouchStart}
+          onTouchMove={handleSheetTouchMove}
+          onTouchEnd={handleSheetTouchEnd}
+          style={{ touchAction: 'none' }}
+        >
           <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
         </div>
 
@@ -255,20 +493,63 @@ export default function CourierDashboardMobile() {
         <div className="px-6 pb-3 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold text-gray-900">
-              Available Sends ({filteredJobs.length})
+              {activeJob ? 'Active Send' : `Available Sends (${filteredJobs.length})`}
             </h2>
-            <Link
-              to="/settings"
-              className="text-xs text-gray-500 hover:text-gray-700"
-            >
-              Settings
-            </Link>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => {
+                  if (isDraggingSheet) return;
+                  setSheetOpen((prev) => !prev);
+                  setSheetDragOffset(0);
+                  sheetDragStartY.current = null;
+                }}
+                className="text-xs text-gray-500 hover:text-gray-700"
+              >
+                {sheetOpen ? 'Close' : 'Open'}
+              </button>
+              <Link
+                to="/settings"
+                className="text-xs text-gray-500 hover:text-gray-700"
+              >
+                Settings
+              </Link>
+            </div>
           </div>
         </div>
 
         {/* Jobs List Content */}
         <div className="overflow-y-auto max-h-[calc(60vh-80px)] pb-6">
-          {filteredJobs.length === 0 ? (
+          {activeJob ? (
+            // Show active job
+            <div className="px-4 pt-4">
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border-2 border-blue-300 shadow-md">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+                    ACTIVE
+                  </div>
+                  <span className="text-sm text-gray-600">
+                    {activeJob.status.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                  </span>
+                </div>
+                <div className="mb-2">
+                  <div className="text-sm text-gray-600 flex items-center gap-1 mb-1">
+                    <span className="text-green-600">📍</span>
+                    <span className="font-medium">Pickup:</span> {activeJob.pickup.label}
+                  </div>
+                  <div className="text-sm text-gray-600 flex items-center gap-1">
+                    <span className="text-red-600">🎯</span>
+                    <span className="font-medium">Dropoff:</span> {activeJob.dropoff.label}
+                  </div>
+                </div>
+                <button
+                  onClick={() => navigate(`/jobs/${activeJob.id}`)}
+                  className="w-full mt-3 bg-blue-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-blue-700"
+                >
+                  View Job Details
+                </button>
+              </div>
+            </div>
+          ) : filteredJobs.length === 0 ? (
             <div className="text-center py-12 px-6">
               {jobsWithEligibility.length === 0 ? (
                 <>
@@ -354,7 +635,7 @@ export default function CourierDashboardMobile() {
                         onClick={(e) => {
                           e.stopPropagation();
                           const fee = rateCard
-                            ? calcMiles(job.pickup, job.dropoff) * rateCard.feePerMile
+                            ? calcMiles(job.pickup, job.dropoff) * rateCard.perMile
                             : 0;
                           handleAcceptJob(job.id, fee);
                         }}
@@ -371,6 +652,7 @@ export default function CourierDashboardMobile() {
               ))}
             </div>
           )}
+        </div>
         </div>
       </div>
     </div>

@@ -43,7 +43,7 @@ export default function NewVendorItem() {
     for (const image of images) {
       const storageRef = ref(
         storage,
-        `marketplace/${uid}/${Date.now()}_${image.name}`
+        `items/${uid}/${Date.now()}_${image.name}`
       );
       await uploadBytes(storageRef, image);
       const url = await getDownloadURL(storageRef);
@@ -63,18 +63,32 @@ export default function NewVendorItem() {
       const imageUrls = await uploadImages();
 
       // Create item
-      await addDoc(collection(db, "marketplaceItems"), {
-        ...formData,
+      // Ensure Firestore item fields satisfy security rules
+      const itemPayload = {
+        title: formData.title,
+        description: formData.description,
         price: parseFloat(formData.price),
         weight: formData.weight ? parseFloat(formData.weight) : null,
+        // Keep images for UI but mirror to 'photos' which rules validate
         images: imageUrls,
+        photos: imageUrls,
+        // Map local category to allowed values (fallback to 'other')
+        category: ['electronics','furniture','clothing','food','other'].includes(formData.category)
+          ? formData.category
+          : 'other',
+        condition: 'new',
+        status: 'available', // must be one of ['available','pending','sold'] per rules
         vendorId: uid,
-        vendorName: userDoc?.displayName || "Vendor",
+        vendorName: userDoc?.displayName || 'Vendor',
+        sellerId: uid,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-      });
+      };
 
-      navigate("/vendor/dashboard");
+      const docRef = await addDoc(collection(db, 'items'), itemPayload);
+      console.log('Created item doc:', docRef.id);
+
+      navigate('/vendor/dashboard');
     } catch (error) {
       console.error("Failed to create item:", error);
       alert("Failed to create item. Please try again.");

@@ -101,30 +101,30 @@ export default function EarningsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8F9FF] p-6">
-      <div className="max-w-4xl mx-auto">
+    <div className="fixed inset-0 w-screen h-screen overflow-y-auto pb-24 safe-top bg-[#F8F9FF]">
+      <div className="max-w-4xl mx-auto p-4 sm:p-6">
         <h1 className="text-2xl font-bold text-gray-900 mb-6">💰 Earnings</h1>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 gap-4 mb-8">
           <StatCard
             icon="💵"
-            label="Total Earned"
+            title="Total Earned"
             value={`$${stats.totalEarnings.toFixed(2)}`}
           />
           <StatCard
             icon="📦"
-            label="Completed Jobs"
+            title="Completed Jobs"
             value={stats.completedJobs.toString()}
           />
           <StatCard
             icon="⏳"
-            label="Pending Payout"
+            title="Pending Payout"
             value={`$${stats.pendingPayout.toFixed(2)}`}
           />
           <StatCard
             icon="📊"
-            label="Avg per Job"
+            title="Avg per Job"
             value={`$${stats.avgPerJob.toFixed(2)}`}
           />
         </div>

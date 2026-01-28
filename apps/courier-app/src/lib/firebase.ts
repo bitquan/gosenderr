@@ -1,8 +1,9 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app'
 import { getFirestore, Firestore } from 'firebase/firestore'
-import { getAuth, Auth } from 'firebase/auth'
+import { getAuth, Auth, indexedDBLocalPersistence, initializeAuth } from 'firebase/auth'
 import { getStorage, FirebaseStorage } from 'firebase/storage'
 import { getFunctions, Functions } from 'firebase/functions'
+import { Capacitor } from '@capacitor/core'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
@@ -25,7 +26,18 @@ if (isValidConfig) {
   try {
     app = getApps().length ? getApp() : initializeApp(firebaseConfig)
     dbInstance = getFirestore(app)
-    authInstance = getAuth(app)
+    
+    // Initialize auth with proper persistence for Capacitor
+    if (Capacitor.isNativePlatform()) {
+      console.log('🔐 Initializing auth for native platform with indexedDB persistence');
+      authInstance = initializeAuth(app, {
+        persistence: indexedDBLocalPersistence
+      });
+    } else {
+      console.log('🔐 Initializing auth for web platform');
+      authInstance = getAuth(app);
+    }
+    
     storageInstance = getStorage(app)
     functionsInstance = getFunctions(app)
     console.log('Firebase initialized successfully')

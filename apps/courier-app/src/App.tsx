@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate, useLocation, Outlet } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
+import { NavigationProvider } from './contexts/NavigationContext'
 import { useAuth } from './hooks/useAuth'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { useEffect } from 'react'
@@ -12,6 +13,7 @@ import CourierLayout from './layouts/CourierLayout'
 import DashboardPage from './pages/dashboard/page'
 import LoginPage from './pages/Login'
 import JobDetailPage from './pages/jobs/[jobId]/page'
+import ActiveNavigationPage from './pages/navigation/active'
 import RoutesPage from './pages/routes/page'
 import ActiveRoutePage from './pages/active-route/page'
 import SettingsPage from './pages/settings/page'
@@ -73,10 +75,11 @@ function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          
-          <Route element={<ProtectedRoute />}>
+        <NavigationProvider>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            
+            <Route element={<ProtectedRoute />}>
             <Route element={<CourierLayout />}>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="/dashboard" element={<DashboardPage />} />
@@ -84,6 +87,7 @@ function App() {
               <Route path="/active-route" element={<ActiveRoutePage />} />
               <Route path="/jobs/:jobId" element={<JobDetailPage />} />
               <Route path="/jobs" element={<RoutesPage />} />
+              <Route path="/navigation/active" element={<ActiveNavigationPage />} />
               <Route path="/earnings" element={<EarningsPage />} />
               <Route path="/rate-cards" element={<RateCardsPage />} />
               <Route path="/equipment" element={<EquipmentPage />} />
@@ -95,6 +99,7 @@ function App() {
             </Route>
           </Route>
         </Routes>
+        </NavigationProvider>
       </AuthProvider>
     </ErrorBoundary>
   )

@@ -131,7 +131,7 @@ export default function CourierDashboardPage() {
         ...doc.data()
       })) as Job[]
       // Filter out jobs that already have a courier assigned
-      const availableJobs = jobs.filter(job => !job.courierUid)
+      const availableJobs = jobs.filter((job: any) => !job.courierUid)
       setAvailableJobs(availableJobs)
     })
 

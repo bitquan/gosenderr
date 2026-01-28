@@ -94,8 +94,8 @@ export default function CourierSupportPage() {
   });
 
   return (
-    <div className="min-h-screen bg-[#F8F9FF] px-6 py-10">
-      <div className="max-w-5xl mx-auto space-y-8">
+    <div className="fixed inset-0 w-screen h-screen overflow-y-auto pb-24 safe-top bg-[#F8F9FF]">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-6 sm:space-y-8">
         {/* Header */}
         <div className="text-center space-y-4">
           <h1 className="text-4xl font-bold text-gray-900">
@@ -222,7 +222,7 @@ export default function CourierSupportPage() {
                   safety concern), call immediately:
                 </p>
                 <a
-                  to="tel:1-800-SENDERR"
+                  href="tel:1-800-SENDERR"
                   className="inline-block px-6 py-3 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 transition"
                 >
                   📞 Call Emergency Line

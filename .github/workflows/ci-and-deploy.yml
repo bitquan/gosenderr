@@ -227,8 +227,33 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
+      - name: Typecheck
+        run: |
+          if [ -d "apps/web" ]; then
+            pnpm -C apps/web type-check
+          else
+            echo "Skipping type-check: apps/web not present"
+          fi
+
       - name: Build shared packages
         run: pnpm --filter @gosenderr/shared build
+
+      - name: Build
+        env:
+          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
+          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
+          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+          NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
+          NEXT_PUBLIC_MAPBOX_TOKEN: ${{ secrets.NEXT_PUBLIC_MAPBOX_TOKEN }}
+        run: |
+          if [ -d "apps/web" ]; then
+            echo "Building apps/web...";
+            pnpm -C apps/web build;
+          else
+            echo "Skipping build: apps/web directory not found";
+          fi
 
       - name: Build Summary
         if: success()

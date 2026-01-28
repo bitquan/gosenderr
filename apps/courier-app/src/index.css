@@ -3,8 +3,43 @@
 @tailwind utilities;
 
 @layer base {
+  html,
   body {
     @apply bg-white text-gray-900 antialiased;
+    overflow: hidden;
+    height: 100%;
+    width: 100%;
+    position: fixed;
+    overscroll-behavior: none;
+  }
+  
+  #root {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+  }
+  
+  /* Safe area support for notches and iOS */
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .safe-left {
+    padding-left: env(safe-area-inset-left);
+  }
+  
+  .safe-right {
+    padding-right: env(safe-area-inset-right);
+  }
+  
+  /* Prevent text from being too small on mobile */
+  * {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 }
 
