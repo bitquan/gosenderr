@@ -80,6 +80,9 @@ function App() {
           {/* Protected customer routes */}
           <Route element={<ProtectedRoute><CustomerLayout /></ProtectedRoute>}>
             
+            {/* Redirect /dashboard to /marketplace */}
+            <Route path="/dashboard" element={<Navigate to="/marketplace" replace />} />
+            
             {/* Customer &llowedRoles={['customer', 'vendor', 'buyer', 'seller']}>
                 <DashboardPage />
               </RoleGuard>
