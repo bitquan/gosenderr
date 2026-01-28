@@ -43,7 +43,7 @@ export default function NewVendorItem() {
     for (const image of images) {
       const storageRef = ref(
         storage,
-        `marketplace/${uid}/${Date.now()}_${image.name}`
+        `items/${uid}/${Date.now()}_${image.name}`
       );
       await uploadBytes(storageRef, image);
       const url = await getDownloadURL(storageRef);
