@@ -20,12 +20,26 @@ jobs:
         uses: github/codeql-action/analyze@v2
         continue-on-error: true
 
+      - name: Collect CodeQL SARIF
+        if: always()
+        run: |
+          mkdir -p results
+          if [ -f ../codeql-failed-run.sarif ]; then
+            cp ../codeql-failed-run.sarif results/codeql-failed-run.sarif
+          elif [ -f results/javascript.sarif ]; then
+            cp results/javascript.sarif results/codeql-failed-run.sarif
+          else
+            echo "No CodeQL SARIF found"
+          fi
+        shell: bash
+
       - name: Upload CodeQL failed SARIF as artifact
         if: always()
         uses: actions/upload-artifact@v4
+        continue-on-error: true
         with:
           name: codeql-failed-run
-          path: ../codeql-failed-run.sarif
+          path: results/codeql-failed-run.sarif
           if-no-files-found: warn
           retention-days: 30
 
@@ -34,4 +48,4 @@ jobs:
         uses: github/codeql-action/upload-sarif@v4
         continue-on-error: true
         with:
-          sarif_file: '../codeql-failed-run.sarif'
+          sarif_file: results/codeql-failed-run.sarif
