@@ -84,6 +84,8 @@ export const createMarketplaceOrder = functions.https.onCall<CreateMarketplaceOr
       });
 
       // Create order in Firestore
+      const timestamp = admin.firestore.FieldValue.serverTimestamp();
+      
       const orderData = {
         customerId: request.auth.uid,
         customerEmail: shippingInfo.email,
@@ -111,13 +113,14 @@ export const createMarketplaceOrder = functions.https.onCall<CreateMarketplaceOr
         paymentIntentId: paymentIntent.id,
         paymentStatus: paymentIntent.status,
         status: 'pending',
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: timestamp,
+        updatedAt: timestamp,
       };
 
       const orderRef = await db.collection('orders').add(orderData);
 
       // Update inventory for each item
+      const timestamp = admin.firestore.FieldValue.serverTimestamp();
       for (const item of items) {
         const itemRef = db.collection('marketplaceItems').doc(item.itemId);
         await db.runTransaction(async (transaction) => {
@@ -127,7 +130,7 @@ export const createMarketplaceOrder = functions.https.onCall<CreateMarketplaceOr
             const newStock = Math.max(0, currentStock - item.quantity);
             transaction.update(itemRef, {
               stock: newStock,
-              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+              updatedAt: timestamp,
             });
           }
         });
