@@ -31,6 +31,8 @@ export async function getAvailableItems(): Promise<Item[]> {
   );
 
   const snapshot = await getDocs(q);
+  console.log('getAvailableItems snapshot size:', snapshot.size);
+  snapshot.docs.forEach((d) => console.log('getAvailableItems doc:', d.id, d.data()));
   return snapshot.docs.map((doc) => ({
     id: doc.id,
     ...doc.data(),
