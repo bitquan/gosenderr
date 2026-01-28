@@ -1,7 +1,7 @@
 import { ReactNode } from 'react'
 import { Navigate } from 'react-router-dom'
-import { useAuth } from '../hooks/useAuth'
-import { useRole, UserRole } from '../hooks/useRole'
+import { useAuth } from '../../hooks/useAuth'
+import { useRole, UserRole } from '../../hooks/useRole'
 
 interface RoleGuardProps {
   children: ReactNode

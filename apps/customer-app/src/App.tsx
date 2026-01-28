@@ -32,7 +32,7 @@ import ReviewsPage from './pages/reviews/page'
 import ScheduledDeliveriesPage from './pages/scheduled-deliveries/page'
 import ShipPage from './pages/ship/page'
 import SupportPage from './pages/support/page'
-import MarketplacePage from './pages/marketplace/page'
+import MarketplaceHome from './pages/marketplace/MarketplaceHome'
 import MarketplaceItemPage from './pages/marketplace/[itemId]/page'
 
 // Vendor pages
@@ -51,7 +51,7 @@ function App() {
     <ErrorBoundary>
       <AuthProvider>
         <Routes>
-          {/* Public routes - redirect if already logged in */}
+          {/* Public routes */}
           <Route path="/login" element={
             <PublicOnlyRoute>
               <LoginPage />
@@ -63,13 +63,17 @@ function App() {
             </PublicOnlyRoute>
           } />
           
+          {/* Public marketplace route */}
+          <Route path="/" element={<CustomerLayout />}>
+            <Route index element={<MarketplaceHome />} />
+            <Route path="/marketplace" element={<MarketplaceHome />} />
+            <Route path="/marketplace/:itemId" element={<MarketplaceItemPage />} />
+          </Route>
+          
           {/* Protected customer routes */}
           <Route element={<ProtectedRoute><CustomerLayout /></ProtectedRoute>}>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
             
-            {/* Customer & Vendor shared routes */}
-            <Route path="/dashboard" element={
-              <RoleGuard allowedRoles={['customer', 'vendor', 'buyer', 'seller']}>
+            {/* Customer &llowedRoles={['customer', 'vendor', 'buyer', 'seller']}>
                 <DashboardPage />
               </RoleGuard>
             } />
