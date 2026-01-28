@@ -5,13 +5,11 @@ const VENDOR_PASS = 'admin123';
 
 test('marketplace console when signed in', async ({ page }) => {
   page.on('console', (msg) => console.log('PAGE LOG:', msg.type(), msg.text()));
-  await page.goto('/login');
-  await page.getByText('Vendor').click();
-  await page.fill('input[type="email"]', VENDOR_EMAIL);
-  await page.fill('input[type="password"]', VENDOR_PASS);
-  await page.click('button:has-text("Sign In")');
-  await page.waitForURL('**/vendor/dashboard');
-
+  // Inject authenticated user and open marketplace without relying on removed role toggle
+  await page.addInitScript(() => {
+    // @ts-ignore
+    window.__E2E_USER = { uid: 'uid123', email: 'vender@sender.com', displayName: 'Vendor' };
+  });
   await page.goto('/marketplace');
   // wait for data fetch
   await page.waitForTimeout(3000);

@@ -11,11 +11,13 @@ const ONE_PX_PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNg
 test('full vendor lifecycle: create item and verify public marketplace', async ({ page, browser }) => {
   // Sign in
   await page.goto('/login');
-  await page.getByText('Vendor').click();
+  // Sign in via customer login then navigate to vendor dashboard
   await page.fill('input[type="email"]', VENDOR_EMAIL);
   await page.fill('input[type="password"]', VENDOR_PASS);
   await page.click('button:has-text("Sign In")');
-  await page.waitForURL('**/vendor/dashboard', { timeout: 10000 });
+  await page.waitForURL('**/dashboard', { timeout: 10000 });
+  await page.goto('/vendor/dashboard');
+  await page.waitForURL('**/vendor/dashboard');
   await expect(page.locator('text=Vendor Dashboard')).toBeVisible();
 
   // Go to new item
@@ -42,7 +44,7 @@ test('full vendor lifecycle: create item and verify public marketplace', async (
   page.on('response', async (res) => {
     if (res.url().includes('/upload/') || res.url().includes('/v0/b/')) {
       console.log('RESP->', res.status(), res.url());
-      try { console.log('RESP TEXT:', await res.text()); } catch (e) {}
+      try { console.log('RESP TEXT:', await res.text()); } catch (e) { /* ignore: best-effort debug logging */ }
     }
   });
 

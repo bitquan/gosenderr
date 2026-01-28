@@ -7,10 +7,12 @@ test('vendor can edit an item', async ({ page, browser }) => {
   // Sign in
   page.on('console', (msg) => console.log('PAGE LOG:', msg.type(), msg.text()));
   await page.goto('/login');
-  await page.getByText('Vendor').click();
+  // Sign in via the customer login form then navigate to vendor dashboard
   await page.fill('input[type="email"]', VENDOR_EMAIL);
   await page.fill('input[type="password"]', VENDOR_PASS);
   await page.click('button:has-text("Sign In")');
+  await page.waitForURL('**/dashboard');
+  await page.goto('/vendor/dashboard');
   await page.waitForURL('**/vendor/dashboard');
 
   // Create a test item directly in the Firestore emulator (ensures deterministic presence and correct sellerId)
@@ -214,10 +216,11 @@ test('edit form appears only after auth loads', async ({ browser }) => {
   await expect(unauthPage.locator('[data-testid="edit-item-form"]')).toHaveCount(0);
 
   // Sign in in the same context and verify the edit form becomes visible
-  await unauthPage.getByText('Vendor').click();
   await unauthPage.fill('input[type="email"]', VENDOR_EMAIL);
   await unauthPage.fill('input[type="password"]', VENDOR_PASS);
   await unauthPage.click('button:has-text("Sign In")');
+  await unauthPage.waitForURL('**/dashboard');
+  await unauthPage.goto('/vendor/dashboard');
   await unauthPage.waitForURL('**/vendor/dashboard');
 
   await unauthPage.goto(`/vendor/items/${id}/edit`);

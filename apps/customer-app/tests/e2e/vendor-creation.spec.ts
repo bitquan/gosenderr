@@ -11,8 +11,8 @@ test('Vendor can create a new item (happy path)', async ({ page }) => {
 
   let writeCalled = false;
 
-  // Intercept Firestore add doc call and mark writeCalled
-  await page.route('**/firestore.googleapis.com/**/documents/marketplaceItems*', (route) => {
+  // Intercept Firestore add doc call and mark writeCalled (matches emulator or prod)
+  await page.route(/\/documents\/marketplaceItems.*/, (route) => {
     writeCalled = true;
     route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ name: 'projects/test-project/databases/(default)/documents/marketplaceItems/item123' }) });
   });

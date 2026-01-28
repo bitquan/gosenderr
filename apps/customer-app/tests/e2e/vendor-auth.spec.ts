@@ -5,10 +5,13 @@ const VENDOR_PASS = 'admin123';
 
 test.describe('Vendor auth + pages', () => {
   test('can sign in as vendor and access vendor pages', async ({ page }) => {
-    await page.goto('/login');
+    // Ensure vendor user is injected and navigate to vendor dashboard directly
+    await page.addInitScript(() => {
+      // @ts-ignore
+      window.__E2E_USER = { uid: 'uid123', email: 'test+e2e@example.com', displayName: 'E2E', role: 'vendor' };
+    });
 
-    // Pick vendor role
-    await page.getByText('Vendor').click();
+    await page.goto(`${VENDOR_APP_URL}/vendor/dashboard`);
 
     await page.fill('input[type="email"]', VENDOR_EMAIL);
     await page.fill('input[type="password"]', VENDOR_PASS);

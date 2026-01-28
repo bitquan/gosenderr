@@ -68,8 +68,8 @@ test.describe('Auth & vendor link tests', () => {
       });
     });
 
-    // Intercept Firestore write for users doc
-    await page.route('**/firestore.googleapis.com/**', (route) => {
+    // Intercept Firestore writes/reads (matches emulator or production document endpoints)
+    await page.route(/\/documents\//, (route) => {
       route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({}) });
     });
 

@@ -5,7 +5,8 @@ test('Signup triggers user doc write (happy path)', async ({ page }) => {
 
   let writeCalled = false;
 
-  await page.route('**/firestore.googleapis.com/**/documents/users*', (route) => {
+  // Match firestore document writes in emulator or production endpoints
+  await page.route(/\/documents\/users.*/, (route) => {
     writeCalled = true;
     route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({}) });
   });

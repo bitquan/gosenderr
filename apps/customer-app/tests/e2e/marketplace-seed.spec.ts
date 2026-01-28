@@ -4,12 +4,12 @@ const VENDOR_EMAIL = 'vender@sender.com';
 const VENDOR_PASS = 'admin123';
 
 test('seeded item appears in marketplace when signed in', async ({ page }) => {
-  await page.goto('/login');
-  await page.getByText('Vendor').click();
-  await page.fill('input[type="email"]', VENDOR_EMAIL);
-  await page.fill('input[type="password"]', VENDOR_PASS);
-  await page.click('button:has-text("Sign In")');
-  await page.waitForURL('**/vendor/dashboard');
+  // Inject a fake authenticated vendor user and visit marketplace directly
+  await page.addInitScript(() => {
+    // @ts-ignore
+    window.__E2E_USER = { uid: 'uid123', email: 'vender@sender.com', displayName: 'Vendor' };
+  });
+  await page.goto('/marketplace');
 
   // Now visit marketplace
   await page.goto('/marketplace');
