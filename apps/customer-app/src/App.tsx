@@ -1,5 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
+import { CartProvider } from './contexts/CartContext'
+import { CartSidebar } from './components/cart/CartSidebar'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 import { RoleGuard } from './components/auth/RoleGuard'
@@ -50,7 +52,9 @@ function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
-        <Routes>
+        <CartProvider>
+          <CartSidebar />
+          <Routes>
           {/* Public routes */}
           <Route path="/login" element={
             <PublicOnlyRoute>
@@ -179,6 +183,7 @@ function App() {
             } />
           </Route>
         </Routes>
+        </CartProvider>
       </AuthProvider>
     </ErrorBoundary>
   )
