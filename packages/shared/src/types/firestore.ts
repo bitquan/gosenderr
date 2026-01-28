@@ -6,7 +6,9 @@ export type UserRole =
   | "seller"
   | "courier"
   | "package_runner"
-  | "admin";
+  | "admin"
+  | "customer" // Legacy: alias for buyer
+  | "vendor"; // Legacy: alias for seller
 export type TransportMode = "walk" | "bike" | "scooter" | "car";
 
 // Legacy support
