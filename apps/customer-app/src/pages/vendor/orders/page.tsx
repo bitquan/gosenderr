@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../../../hooks/useAuth';
-import { collection, getDocs, query, where, doc, updateDoc } from 'firebase/firestore';
-import { db } from '../../../lib/firebase';
-import { Package, TrendingUp, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase/client';
+import { useAuthUser } from '@/hooks/v2/useAuthUser';
+import { Package } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface OrderItem {
@@ -42,15 +42,15 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function VendorOrders() {
-  const { user } = useAuth();
+  const { uid } = useAuthUser();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
 
   useEffect(() => {
-    if (!user) return;
+    if (!uid) return;
     fetchVendorOrders();
-  }, [user]);
+  }, [uid]);
 
   const fetchVendorOrders = async () => {
     try {
@@ -62,7 +62,7 @@ export default function VendorOrders() {
           ...doc.data(),
         }))
         .filter((order: any) => {
-          return order.items?.some((item: OrderItem) => item.vendorId === user!.uid);
+          return order.items?.some((item: OrderItem) => item.vendorId === uid);
         }) as Order[];
 
       // Sort by date (newest first)
@@ -176,7 +176,7 @@ export default function VendorOrders() {
           <div className="space-y-4">
             {filteredOrders.map((order) => {
               // Filter items to show only vendor's items
-              const vendorItems = order.items.filter((item) => item.vendorId === user!.uid);
+              const vendorItems = order.items.filter((item) => item.vendorId === uid);
               const vendorTotal = vendorItems.reduce(
                 (sum, item) => sum + item.price * item.quantity,
                 0
