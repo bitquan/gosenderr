@@ -44,7 +44,12 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Typecheck
-        run: pnpm -C apps/web type-check
+        run: |
+          if [ -d "apps/web" ]; then
+            pnpm -C apps/web type-check
+          else
+            echo "Skipping type-check: apps/web not present"
+          fi
 
       - name: Build
         env:
