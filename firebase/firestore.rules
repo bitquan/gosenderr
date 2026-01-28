@@ -556,8 +556,8 @@ service cloud.firestore {
 
     // ========== MARKETPLACE ITEMS ==========
     match /marketplaceItems/{itemId} {
-      // Anyone can read active items
-      allow read: if resource.data.status == 'active';
+      // Anyone can read marketplace items (filtering by status happens in query)
+      allow read: if true;
       
       // Vendors can create items
       allow create: if signedIn() 

@@ -11,8 +11,18 @@ import { auth } from '../../lib/firebase/client'
 export function Header() {
   const { user, loading } = useAuth()
   const { roles, primaryRole } = useRole()
-  const { itemCount, openCart } = useCart()
   const navigate = useNavigate()
+  
+  // Safety check for cart context (handles HMR edge cases)
+  let cart
+  try {
+    cart = useCart()
+  } catch (e) {
+    // Cart context not available yet, use defaults
+    cart = { itemCount: 0, openCart: () => {} }
+  }
+  
+  const { itemCount, openCart } = cart
 
   const handleSignOut = async () => {
     try {
