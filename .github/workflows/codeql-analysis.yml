@@ -11,11 +11,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v2
-        with:
-          languages: javascript, typescript
-
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v2
         continue-on-error: true
