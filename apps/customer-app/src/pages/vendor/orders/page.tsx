@@ -45,6 +45,8 @@ export default function VendorOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [dateFilter, setDateFilter] = useState('all'); // all, today, week, month
 
   useEffect(() => {
     if (!uid) return;
@@ -103,6 +105,43 @@ export default function VendorOrders() {
     ? orders 
     : orders.filter((order) => order.status === filter);
 
+  // Apply search filter
+  const searchedOrders = searchQuery
+    ? filteredOrders.filter((order) => {
+        const query = searchQuery.toLowerCase();
+        return (
+          order.id.toLowerCase().includes(query) ||
+          order.customerEmail.toLowerCase().includes(query) ||
+          order.shippingInfo.fullName.toLowerCase().includes(query) ||
+          order.items.some((item) => item.title.toLowerCase().includes(query))
+        );
+      })
+    : filteredOrders;
+
+  // Apply date filter
+  const finalOrders = searchedOrders.filter((order) => {
+    if (dateFilter === 'all') return true;
+    
+    const orderDate = order.createdAt?.toDate?.();
+    if (!orderDate) return false;
+    
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    if (dateFilter === 'today') {
+      return orderDate >= today;
+    } else if (dateFilter === 'week') {
+      const weekAgo = new Date(today);
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      return orderDate >= weekAgo;
+    } else if (dateFilter === 'month') {
+      const monthAgo = new Date(today);
+      monthAgo.setMonth(monthAgo.getMonth() - 1);
+      return orderDate >= monthAgo;
+    }
+    return true;
+  });
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -127,6 +166,29 @@ export default function VendorOrders() {
             >
               Back to Dashboard
             </Link>
+          </div>
+
+          {/* Search and Date Filter */}
+          <div className="flex flex-col sm:flex-row gap-4 mb-4">
+            <div className="flex-1">
+              <input
+                type="text"
+                placeholder="Search by order ID, customer name, email, or item..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+            <select
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+            >
+              <option value="all">All Time</option>
+              <option value="today">Today</option>
+              <option value="week">Last 7 Days</option>
+              <option value="month">Last 30 Days</option>
+            </select>
           </div>
 
           {/* Filter Tabs */}
@@ -160,8 +222,15 @@ export default function VendorOrders() {
           </div>
         </div>
 
+        {/* Results count */}
+        {(searchQuery || dateFilter !== 'all') && (
+          <div className="mb-4 text-sm text-gray-600">
+            Showing {finalOrders.length} of {orders.length} total orders
+          </div>
+        )}
+
         {/* Orders List */}
-        {filteredOrders.length === 0 ? (
+        {finalOrders.length === 0 ? (
           <div className="bg-white rounded-lg shadow p-12 text-center">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <span className="text-3xl">📦</span>
@@ -175,7 +244,7 @@ export default function VendorOrders() {
           </div>
         ) : (
           <div className="space-y-4">
-            {filteredOrders.map((order) => {
+            {finalOrders.map((order) => {
               // Filter items to show only vendor's items
               const vendorItems = order.items.filter((item) => item.vendorId === uid);
               const vendorTotal = vendorItems.reduce(
