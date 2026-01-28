@@ -68,10 +68,12 @@ export const createMarketplaceOrder = functions.https.onCall<CreateMarketplaceOr
 
     try {
       const db = admin.firestore();
-      const FieldValue = admin.firestore.FieldValue;
       
       // Check if running in emulator (for development without real Stripe key)
       const isEmulator = process.env.FUNCTIONS_EMULATOR === 'true';
+      
+      // Use appropriate timestamp based on environment
+      const timestamp = isEmulator ? new Date() : admin.firestore.FieldValue.serverTimestamp();
       
       let paymentIntent: any;
       
@@ -127,8 +129,8 @@ export const createMarketplaceOrder = functions.https.onCall<CreateMarketplaceOr
         paymentIntentId: paymentIntent.id,
         paymentStatus: paymentIntent.status,
         status: 'pending',
-        createdAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp(),
+        createdAt: timestamp,
+        updatedAt: timestamp,
       };
 
       const orderRef = await db.collection('orders').add(orderData);
@@ -143,7 +145,7 @@ export const createMarketplaceOrder = functions.https.onCall<CreateMarketplaceOr
             const newStock = Math.max(0, currentStock - item.quantity);
             transaction.update(itemRef, {
               stock: newStock,
-              updatedAt: FieldValue.serverTimestamp(),
+              updatedAt: timestamp,
             });
           }
         });
