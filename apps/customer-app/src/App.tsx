@@ -44,6 +44,7 @@ import VendorApplicationPage from './pages/vendor/apply/page'
 import VendorDashboard from './pages/vendor/dashboard/page'
 import NewVendorItem from './pages/vendor/items/new/page'
 import EditVendorItem from './pages/vendor/items/[itemId]/edit/page'
+import VendorOrders from './pages/vendor/orders/page'
 
 // Auth pages
 import LoginPage from './pages/Login'
@@ -189,6 +190,11 @@ function App() {
             <Route path="/vendor/items/:itemId/edit" element={
               <RoleGuard allowedRoles={['vendor', 'seller']}>
                 <EditVendorItem />
+              </RoleGuard>
+            } />
+            <Route path="/vendor/orders" element={
+              <RoleGuard allowedRoles={['vendor', 'seller']}>
+                <VendorOrders />
               </RoleGuard>
             } />
           </Route>

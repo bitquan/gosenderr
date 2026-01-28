@@ -114,12 +114,20 @@ export default function VendorDashboard() {
               <h1 className="text-3xl font-bold mb-2">Vendor Dashboard</h1>
               <p className="text-blue-100">Manage your marketplace listings</p>
             </div>
-            <Link
-              to="/vendor/items/new"
-              className="px-6 py-3 bg-white text-purple-600 rounded-xl font-semibold hover:shadow-lg transition-all"
-            >
-              + New Item
-            </Link>
+            <div className="flex space-x-3">
+              <Link
+                to="/vendor/orders"
+                className="px-6 py-3 bg-white/20 text-white rounded-xl font-semibold hover:bg-white/30 transition-all"
+              >
+                View Orders
+              </Link>
+              <Link
+                to="/vendor/items/new"
+                className="px-6 py-3 bg-white text-purple-600 rounded-xl font-semibold hover:shadow-lg transition-all"
+              >
+                + New Item
+              </Link>
+            </div>
           </div>
 
           {/* Stats Grid */}
