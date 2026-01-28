@@ -75,6 +75,8 @@ function App() {
             <Route path="/marketplace" element={<MarketplaceHome />} />
             <Route path="/marketplace/:itemId" element={<MarketplaceItemPage />} />
             <Route path="/marketplace/checkout" element={<MarketplaceCheckoutPage />} />
+            <Route path="/orders" element={<OrdersPage />} />
+            <Route path="/orders/:orderId" element={<OrderDetailPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>
           
