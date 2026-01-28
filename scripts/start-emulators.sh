@@ -37,14 +37,20 @@ for i in {1..30}; do
     sleep 1
 done
 
-# Check if there's any data already
-COLLECTION_COUNT=$(curl -s "http://127.0.0.1:8080/v1/projects/gosenderr-6773f/databases/(default)/documents/marketplaceItems" 2>/dev/null | grep -c "documents" || echo "0")
+# Check if there's any data already (simple check if port 8080 returns data)
+echo "🔍 Checking for existing marketplace data..."
+sleep 1
 
-if [ "$COLLECTION_COUNT" -lt "2" ]; then
+# Try to get documents, if it fails or returns empty, seed
+SHOULD_SEED=true
+if curl -s "http://127.0.0.1:8080/v1/projects/gosenderr-6773f/databases/(default)/documents/marketplaceItems" 2>/dev/null | grep -q "documents"; then
+    echo "✓ Marketplace data found, skipping seed"
+    SHOULD_SEED=false
+fi
+
+if [ "$SHOULD_SEED" = true ]; then
     echo "🌱 Seeding marketplace data..."
     npx tsx scripts/seed-marketplace.ts
-else
-    echo "✓ Marketplace data already exists, skipping seed"
 fi
 
 echo ""
