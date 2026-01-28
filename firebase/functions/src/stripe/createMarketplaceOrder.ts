@@ -39,7 +39,7 @@ interface CreateMarketplaceOrderData {
 
 export const createMarketplaceOrder = functions.https.onCall<CreateMarketplaceOrderData>(
   {
-    cors: true,
+    cors: ['http://localhost:5173', 'http://127.0.0.1:5173'],
     secrets: ['STRIPE_SECRET_KEY'],
   },
   async (request) => {
