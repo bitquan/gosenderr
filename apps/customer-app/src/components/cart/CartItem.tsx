@@ -22,7 +22,7 @@ export function CartItem({ cartItem, onUpdateQuantity, onRemove }: CartItemProps
   }
 
   const handleQuantityChange = (newQuantity: number) => {
-    if (newQuantity >= 1 && newQuantity <= item.inventory.quantity) {
+    if (newQuantity >= 1 && newQuantity <= item.stock) {
       onUpdateQuantity(newQuantity)
     }
   }
@@ -72,7 +72,7 @@ export function CartItem({ cartItem, onUpdateQuantity, onRemove }: CartItemProps
           
           <button
             onClick={() => handleQuantityChange(quantity + 1)}
-            disabled={quantity >= item.inventory.quantity}
+            disabled={quantity >= item.stock}
             className="w-7 h-7 flex items-center justify-center border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -89,7 +89,7 @@ export function CartItem({ cartItem, onUpdateQuantity, onRemove }: CartItemProps
         </div>
 
         {/* Stock warning */}
-        {quantity >= item.inventory.quantity && (
+        {quantity >= item.stock && (
           <p className="text-xs text-orange-600 mt-1">
             Max quantity reached
           </p>

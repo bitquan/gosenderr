@@ -74,6 +74,7 @@ function App() {
             <Route path="/marketplace" element={<MarketplaceHome />} />
             <Route path="/marketplace/:itemId" element={<MarketplaceItemPage />} />
             <Route path="/marketplace/checkout" element={<MarketplaceCheckoutPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
           </Route>
           
           {/* Protected customer routes */}

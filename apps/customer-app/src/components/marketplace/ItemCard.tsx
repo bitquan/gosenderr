@@ -10,7 +10,7 @@ interface ItemCardProps {
  */
 export function ItemCard({ item }: ItemCardProps) {
   const primaryImage = item.images?.[0] || '/placeholder-item.png'
-  const isOutOfStock = item.inventory.quantity === 0
+  const isOutOfStock = item.stock === 0
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -86,7 +86,7 @@ export function ItemCard({ item }: ItemCardProps) {
             <div className="text-2xl font-bold text-gray-900">
               {formatPrice(item.price)}
             </div>
-            {item.shipping.methods.includes('free_shipping') && (
+            {item.featured && (
               <span className="text-xs text-green-600 font-medium">
                 Free Shipping
               </span>
@@ -96,7 +96,7 @@ export function ItemCard({ item }: ItemCardProps) {
           {/* Quick info */}
           <div className="text-right">
             <div className="text-xs text-gray-500">
-              {item.inventory.quantity} in stock
+              {item.stock} in stock
             </div>
           </div>
         </div>
@@ -105,9 +105,9 @@ export function ItemCard({ item }: ItemCardProps) {
         <div className="mt-3 pt-3 border-t border-gray-100">
           <div className="flex items-center space-x-2">
             <div className="w-6 h-6 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs font-semibold">
-              {item.vendor.name.charAt(0).toUpperCase()}
+              {item.vendorName?.charAt(0).toUpperCase() || 'V'}
             </div>
-            <span className="text-sm text-gray-600">{item.vendor.name}</span>
+            <span className="text-sm text-gray-600">{item.vendorName || 'Vendor'}</span>
           </div>
         </div>
       </div>
