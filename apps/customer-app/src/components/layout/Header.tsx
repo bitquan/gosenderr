@@ -99,7 +99,6 @@ export function Header() {
               )}
             </button>
 
-          <div className="flex items-center space-x-4">
             {loading ? (
               <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />
             ) : user ? (
