@@ -44,8 +44,10 @@ jobs:
           version: 8.15.1
           run_install: false
 
-      - name: Enable corepack
-        run: corepack enable
+      - name: Enable corepack & activate pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@8.15.1 --activate
 
       - name: Get pnpm store path
         id: pnpm-store
@@ -118,8 +120,10 @@ jobs:
           version: 8.15.1
           run_install: false
 
-      - name: Enable corepack
-        run: corepack enable
+      - name: Enable corepack & activate pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@8.15.1 --activate
 
       - name: Get pnpm store path
         id: pnpm-store
@@ -201,8 +205,10 @@ jobs:
           version: 8.15.1
           run_install: false
 
-      - name: Enable corepack
-        run: corepack enable
+      - name: Enable corepack & activate pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@8.15.1 --activate
 
       - name: Get pnpm store path
         id: pnpm-store
@@ -289,8 +295,10 @@ jobs:
           version: 8.15.1
           run_install: false
 
-      - name: Enable corepack
-        run: corepack enable
+      - name: Enable corepack & activate pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@8.15.1 --activate
 
       - name: Get pnpm store path
         id: pnpm-store
