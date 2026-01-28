@@ -1,6 +1,47 @@
 {
   "version": "2.0.0",
   "tasks": [
+    // ==================== MARKETPLACE DEV (NEW) ====================
+    {
+      "label": "🛍️ Marketplace: Dev Mode",
+      "dependsOn": ["🔥 Firebase Emulators", "📦 Customer App (Port 5173)"],
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "🔥 Firebase Emulators",
+      "type": "shell",
+      "command": "firebase emulators:start --only firestore,auth,storage",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^.*$",
+          "file": 1,
+          "location": 2,
+          "message": 3
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*Starting emulators.*",
+          "endsPattern": ".*All emulators ready.*"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": false,
+        "echo": true,
+        "focus": false
+      }
+    },
+    
     // ==================== DEV SERVERS (Run These) ====================
     {
       "label": "🔧 Admin App (Port 3000)",

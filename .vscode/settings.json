@@ -1,0 +1,77 @@
+{
+  // Editor
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.organizeImports": "never"
+  },
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.tabSize": 2,
+  
+  // TypeScript
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "typescript.preferences.importModuleSpecifier": "relative",
+  
+  // Files
+  "files.exclude": {
+    "**/.git": true,
+    "**/.DS_Store": true,
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/.next": true,
+    "**/.turbo": true
+  },
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/dist/**": true,
+    "**/.next/**": true,
+    "**/.turbo/**": true
+  },
+  
+  // Search
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/.next": true,
+    "**/.turbo": true,
+    "**/pnpm-lock.yaml": true
+  },
+  
+  // ESLint
+  "eslint.workingDirectories": [
+    "./apps/customer-app",
+    "./apps/admin-app",
+    "./apps/courier-app",
+    "./apps/shifter-app",
+    "./apps/vendor-app"
+  ],
+  
+  // Prettier
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  
+  // Emmet
+  "emmet.includeLanguages": {
+    "typescript": "typescriptreact",
+    "javascript": "javascriptreact"
+  },
+  
+  // Terminal
+  "terminal.integrated.env.osx": {
+    "NODE_ENV": "development"
+  },
+  
+  // Recommended extensions reminder
+  "extensions.ignoreRecommendations": false
+}
