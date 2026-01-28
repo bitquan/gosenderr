@@ -15,6 +15,7 @@ import FeatureFlagsPage from './pages/FeatureFlags'
 import DisputesPage from './pages/Disputes'
 import CourierApprovalPage from './pages/CourierApproval'
 import RevenuePage from './pages/Revenue'
+import MarketplacePage from './pages/Marketplace'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
@@ -54,6 +55,7 @@ function App() {
                     <Route path="/disputes" element={<DisputesPage />} />
                     <Route path="/courier-approval" element={<CourierApprovalPage />} />
                     <Route path="/revenue" element={<RevenuePage />} />
+                    <Route path="/marketplace" element={<MarketplacePage />} />
                     <Route path="/audit-logs" element={<AuditLogsPage />} />
                     <Route path="/feature-flags" element={<FeatureFlagsPage />} />
                     <Route path="/settings" element={<SettingsPage />} />

@@ -41,6 +41,12 @@ export default function AdminSidebar() {
       ]
     },
     {
+      title: 'Marketplace',
+      items: [
+        { label: 'Items', path: '/marketplace', icon: '🛍️' }
+      ]
+    },
+    {
       title: 'Finance',
       items: [
         { label: 'Revenue', path: '/revenue', icon: '💰' }
