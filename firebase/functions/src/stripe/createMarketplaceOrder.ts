@@ -62,21 +62,36 @@ export const createMarketplaceOrder = functions.https.onCall<CreateMarketplaceOr
     }
 
     try {
-      const stripe = getStripe();
       const db = admin.firestore();
-
-      // Create payment intent
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(amount), // Already in cents from client
-        currency: currency.toLowerCase(),
-        payment_method: paymentMethodId,
-        confirm: true,
-        return_url: `${request.rawRequest.headers.origin}/orders`,
-        metadata: {
-          userId: request.auth.uid,
-          orderType: 'marketplace',
-        },
-      });
+      
+      // Check if running in emulator (for development without real Stripe key)
+      const isEmulator = process.env.FUNCTIONS_EMULATOR === 'true';
+      
+      let paymentIntent: any;
+      
+      if (isEmulator) {
+        // Mock payment intent for emulator testing
+        console.log('Running in emulator mode - using mock payment intent');
+        paymentIntent = {
+          id: `pi_mock_${Date.now()}`,
+          client_secret: `pi_mock_${Date.now()}_secret_mock`,
+          status: 'succeeded',
+        };
+      } else {
+        // Real Stripe integration for production
+        const stripe = getStripe();
+        paymentIntent = await stripe.paymentIntents.create({
+          amount: Math.round(amount), // Already in cents from client
+          currency: currency.toLowerCase(),
+          payment_method: paymentMethodId,
+          confirm: true,
+          return_url: `${request.rawRequest.headers.origin}/orders`,
+          metadata: {
+            userId: request.auth.uid,
+            orderType: 'marketplace',
+          },
+        });
+      }
 
       // Create order in Firestore
       const orderData = {

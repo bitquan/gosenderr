@@ -74,6 +74,7 @@ firestore-debug.log
 !.env.example
 !.env.local.example
 !.env.production.example
+.secret.local
 
 # Keys / credentials
 **/*.pem
