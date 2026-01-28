@@ -320,12 +320,14 @@ _Add any questions or blockers here as you work_
 #### 🔧 Fixes Applied (Week 3)
 1. **Firestore Permissions (commit: 707ce75e)**: Changed marketplace items to allow public read access. Previous rule `resource.data.status == 'active'` didn't work for queries. Now filtering by status happens client-side.
 2. **Cart Context Error (commit: 707ce75e)**: Added try/catch in Header component for useCart hook to handle HMR edge cases and prevent "must be used within CartProvider" errors during hot reload.
+3. **Firebase Emulator Connection**: Added emulator connection logic to firebase.ts to connect to local emulators in development mode (Firestore: 8080, Auth: 9099, Storage: 9199, Functions: 5001).
 
-#### 🎯 Next Steps
-Phase 2, Week 4:
-- Checkout page with order summary
-- Stripe integration for payments
-- Order creation and confirmation
+#### 🎯 Current Focus
+Phase 2, Week 4 - Starting Implementation:
+- Checkout page with order summary and shipping form
+- Stripe integration for payment processing
+- Order creation in Firestore
+- Order confirmation page
 - Cloud Functions for order processing
 
 #### 🚫 Blockers

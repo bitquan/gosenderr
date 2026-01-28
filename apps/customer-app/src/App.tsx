@@ -36,6 +36,7 @@ import ShipPage from './pages/ship/page'
 import SupportPage from './pages/support/page'
 import MarketplaceHome from './pages/marketplace/MarketplaceHome'
 import MarketplaceItemPage from './pages/marketplace/[itemId]/page'
+import MarketplaceCheckoutPage from './pages/marketplace/checkout/page'
 
 // Vendor pages
 import VendorApplicationPage from './pages/vendor/apply/page'
@@ -72,6 +73,7 @@ function App() {
             <Route index element={<MarketplaceHome />} />
             <Route path="/marketplace" element={<MarketplaceHome />} />
             <Route path="/marketplace/:itemId" element={<MarketplaceItemPage />} />
+            <Route path="/marketplace/checkout" element={<MarketplaceCheckoutPage />} />
           </Route>
           
           {/* Protected customer routes */}
