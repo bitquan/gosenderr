@@ -45,8 +45,7 @@ export default function EditVendorItem() {
       // Mark not-ready before loading
       try {
         (window as any).__GOSENDERR_EDIT_FORM_READY = false;
-      } catch (e) {}
-
+    } catch (e) { /* ignore: window may be unavailable in some environments */ }
       setLoading(true);
       try {
         const docRef = doc(db, "items", itemId as string);
@@ -100,9 +99,7 @@ export default function EditVendorItem() {
         try {
           (window as any).__GOSENDERR_EDIT_FORM_READY = formExists;
           console.log('Set window.__GOSENDERR_EDIT_FORM_READY', (window as any).__GOSENDERR_EDIT_FORM_READY);
-        } catch (e) {
-          console.log('Could not set window flag', e);
-        }
+        } catch (e) { console.log('Could not set window flag', e); }
       } catch (err) {
         console.log('DOM check error:', err);
       }
@@ -114,7 +111,7 @@ export default function EditVendorItem() {
     return () => {
       try {
         (window as any).__GOSENDERR_EDIT_FORM_READY = false;
-      } catch (e) {}
+      } catch (e) { /* ignore: window may be unavailable in some environments */ }
     };
   }, []);
 
