@@ -40,9 +40,8 @@ jobs:
           cat > firebase.ci.json <<'EOF'
           {
             "emulators": {
-              "auth": { "host": "127.0.0.1", "port": 9095 },
-              "firestore": { "host": "127.0.0.1", "port": 8085 },
-              "storage": { "host": "127.0.0.1", "port": 9199 },
+              "auth": { "host": "127.0.0.1", "port": 9099 },
+              "firestore": { "host": "127.0.0.1", "port": 8080 },
               "ui": { "host": "127.0.0.1", "port": 4050 },
               "hub": { "host": "127.0.0.1", "port": 4401 },
               "logging": { "host": "127.0.0.1", "port": 4501 }
@@ -50,10 +49,10 @@ jobs:
           }
           EOF
 
-          # Start emulators in the background and capture logs (include storage emulator for tests that require it)
-          npx firebase emulators:start --config firebase.ci.json --only auth,firestore,storage --project ${FIREBASE_PROJECT} > emulators.log 2>&1 &
+          # Start emulators in the background and capture logs (omit storage emulator to avoid requiring storage.rules)
+          npx firebase emulators:start --config firebase.ci.json --only auth,firestore --project ${FIREBASE_PROJECT} > emulators.log 2>&1 &
           EMU_PID=$!
-          echo "Emulators started in background (PID=$EMU_PID). Waiting for Auth emulator to be ready..."
+          echo "Emulators started in background (PID=$EMU_PID). Waiting for Auth and Firestore emulators to be ready..."
 
           # Export Vite env vars so the client will initialize and connect to emulators
           export VITE_FIREBASE_API_KEY="fake-api-key"
@@ -61,16 +60,23 @@ jobs:
           export VITE_FIREBASE_PROJECT_ID="${FIREBASE_PROJECT}"
           export VITE_FIREBASE_STORAGE_BUCKET="${FIREBASE_PROJECT}.appspot.com"
           export VITE_FIREBASE_APP_ID="1:000:web:fake"
-          export VITE_FIREBASE_AUTH_EMULATOR_HOST="127.0.0.1:9095"
-          export VITE_FIRESTORE_EMULATOR_HOST="127.0.0.1:8085"
+          export VITE_FIREBASE_AUTH_EMULATOR_HOST="127.0.0.1:9099"
+          export VITE_FIRESTORE_EMULATOR_HOST="127.0.0.1:8080"
 
-          # wait for the auth emulator HTTP endpoint
-          npx wait-on --timeout 60000 http://127.0.0.1:9095 || {
+          # Set standard env vars too so server-side test helpers pick up emulator host
+          export FIREBASE_AUTH_EMULATOR_HOST="127.0.0.1:9099"
+          export FIRESTORE_EMULATOR_HOST="127.0.0.1:8080"
+
+          # wait for the auth and firestore emulator endpoints
+          npx wait-on --timeout 60000 http://127.0.0.1:9099 || {
             echo "Auth emulator did not become available. Dumping emulator log:"; tail -n +1 emulators.log; kill $EMU_PID || true; exit 1
+          }
+          npx wait-on --timeout 60000 tcp:127.0.0.1:8080 || {
+            echo "Firestore emulator did not become available. Dumping emulator log:"; tail -n +1 emulators.log; kill $EMU_PID || true; exit 1
           }
 
           echo "Auth emulator is up; seeding vendor user..."
-          curl -s -X POST 'http://127.0.0.1:9095/identitytoolkit.googleapis.com/v1/accounts:signUp?key=fake-api-key' -H 'Content-Type: application/json' -d '{"email":"vender@sender.com","password":"admin123","returnSecureToken":true}' || true
+          curl -s -X POST 'http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts:signUp?key=fake-api-key' -H 'Content-Type: application/json' -d '{"email":"vender@sender.com","password":"admin123","returnSecureToken":true}' || true
 
           echo "Starting customer-app dev server on port 5180"
           pnpm --filter @gosenderr/customer-app exec -- vite --port 5180 --strictPort --host 127.0.0.1 > customer.log 2>&1 &

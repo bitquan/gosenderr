@@ -32,21 +32,34 @@ export const onAdminActionLog = functions.firestore
     }
 
     try {
-      // Increment admin's totalActions counter
-      await admin
-        .firestore()
-        .doc(`users/${adminId}`)
-        .update({
-          "adminProfile.totalActions":
-            admin.firestore.FieldValue.increment(1),
-          "adminProfile.lastActionAt": admin.firestore.Timestamp.now(),
-        });
+      // Safe helpers for FieldValue operations (emulator compatibility)
+      const fv = (admin.firestore as any).FieldValue
+      const ts = (admin.firestore as any).Timestamp
 
-      functions.logger.info(
-        `Logged admin action: ${logData.action} by ${adminId}`,
-      );
+      if (fv && typeof fv.increment === 'function' && typeof fv.serverTimestamp === 'function') {
+        // Use atomic update when available
+        await admin.firestore().doc(`users/${adminId}`).update({
+          'adminProfile.totalActions': fv.increment(1),
+          'adminProfile.lastActionAt': fv.serverTimestamp(),
+        })
+      } else {
+        // Fallback: use transaction to read-modify-write the counter and set timestamp
+        await admin.firestore().runTransaction(async (tx) => {
+          const ref = admin.firestore().doc(`users/${adminId}`)
+          const snap = await tx.get(ref)
+          const current = (snap.exists && snap.get('adminProfile.totalActions')) || 0
+          const newTotal = current + 1
+          const lastActionAt = (ts && typeof ts.fromDate === 'function') ? ts.fromDate(new Date()) : new Date()
+          tx.update(ref, {
+            'adminProfile.totalActions': newTotal,
+            'adminProfile.lastActionAt': lastActionAt,
+          })
+        })
+      }
+
+      functions.logger.info(`Logged admin action: ${logData.action} by ${adminId}`)
     } catch (error) {
-      functions.logger.error("Error updating admin action count:", error);
+      functions.logger.error('Error updating admin action count:', error)
       // Don't throw - logging should not block the original operation
     }
   });

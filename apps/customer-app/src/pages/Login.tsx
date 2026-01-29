@@ -1,14 +1,49 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { signInWithEmailAndPassword } from 'firebase/auth'
+import { doc, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore'
 import { auth } from '../lib/firebase'
+import { db } from '../lib/firebase/client'
+
+type LoginRole = 'customer' | 'vendor' | 'courier' | 'admin'
+
+const roleInfo = {
+  customer: {
+    icon: '👤',
+    title: 'Customer',
+    description: 'Browse marketplace and order deliveries',
+    gradient: 'from-blue-600 to-purple-600',
+    route: '/dashboard'
+  },
+  vendor: {
+    icon: '🏪',
+    title: 'Vendor',
+    description: 'Manage your marketplace items',
+    gradient: 'from-purple-600 to-pink-600',
+    route: '/vendor/dashboard'
+  },
+  courier: {
+    icon: '🚗',
+    title: 'Courier',
+    description: 'Deliver packages and earn money',
+    gradient: 'from-green-600 to-teal-600',
+    route: '/courier/dashboard'
+  },
+  admin: {
+    icon: '👨‍💼',
+    title: 'Admin',
+    description: 'Manage platform operations',
+    gradient: 'from-gray-600 to-gray-800',
+    route: '/admin/dashboard'
+  }
+}
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [role, setRole] = useState<'customer' | 'vendor'>('customer')
+  const [role, setRole] = useState<LoginRole>('customer')
   const navigate = useNavigate()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -17,10 +52,31 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      if (!auth) throw new Error('Firebase not initialized')
-      await signInWithEmailAndPassword(auth, email, password)
+      if (!auth || !db) throw new Error('Firebase not initialized')
+      
+      // Sign in user
+      const userCredential = await signInWithEmailAndPassword(auth, email, password)
+      const user = userCredential.user
+
+      // Get current user document
+      const userDocRef = doc(db, 'users', user.uid)
+      const userDoc = await getDoc(userDocRef)
+
+      if (userDoc.exists()) {
+        // Update user's primary role and add to roles array if not already there
+        const userData = userDoc.data()
+        const existingRoles = userData.roles || [userData.role]
+        
+        await updateDoc(userDocRef, {
+          primaryRole: role,
+          role: role, // Keep for backward compatibility
+          roles: existingRoles.includes(role) ? existingRoles : [...existingRoles, role],
+          updatedAt: serverTimestamp()
+        })
+      }
+
       // Navigate based on selected role
-      navigate(role === 'vendor' ? '/vendor/dashboard' : '/dashboard')
+      navigate(roleInfo[role].route)
     } catch (err: any) {
       setError(err.message || 'Failed to sign in')
     } finally {
@@ -44,29 +100,24 @@ export default function LoginPage() {
         >
           {/* Header */}
           <div 
-            className="px-8 py-10 text-center text-white"
-            style={{
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-            }}
+            className={`px-8 py-10 text-center text-white bg-gradient-to-r ${roleInfo[role].gradient}`}
           >
-            <div className="text-6xl mb-3">{role === 'vendor' ? '🏪' : '🛍️'}</div>
-            <h1 className="text-3xl font-bold mb-2">{role === 'vendor' ? 'Vendor Portal' : 'Customer Portal'}</h1>
-            <p className="text-purple-100 text-sm">{role === 'vendor' ? 'Manage your marketplace items' : 'Track orders & manage deliveries'}</p>
+            <div className="text-6xl mb-3">{roleInfo[role].icon}</div>
+            <h1 className="text-3xl font-bold mb-2">{roleInfo[role].title} Portal</h1>
+            <p className="text-purple-100 text-sm">{roleInfo[role].description}</p>
           </div>
 
           {/* Form */}
           <div className="px-8 py-8">
-            {/* Back Button */}
-            <a 
-              href="https://gosenderr-6773f.web.app"
-              className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 transition-colors"
-            >
-              <span className="text-xl">←</span>
-              <span className="text-sm font-medium">Back to role selection</span>
-            </a>
-            
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome Back</h2>
-            <p className="text-gray-600 mb-6 text-sm">Sign in to your customer account</p>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Welcome Back</h2>
+              <a 
+                href="/signup"
+                className="text-sm text-purple-600 hover:text-purple-800 font-medium"
+              >
+                Sign Up
+              </a>
+            </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
               {error && (
@@ -84,30 +135,21 @@ export default function LoginPage() {
                   Sign in as
                 </label>
                 <div className="grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setRole('customer')}
-                    className={`px-4 py-3 rounded-xl font-semibold transition-all ${
-                      role === 'customer'
-                        ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    <div className="text-2xl mb-1">👤</div>
-                    <div className="text-sm">Customer</div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setRole('vendor')}
-                    className={`px-4 py-3 rounded-xl font-semibold transition-all ${
-                      role === 'vendor'
-                        ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    <div className="text-2xl mb-1">🏪</div>
-                    <div className="text-sm">Vendor</div>
-                  </button>
+                  {(Object.keys(roleInfo) as LoginRole[]).map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => setRole(r)}
+                      className={`px-4 py-3 rounded-xl font-semibold transition-all ${
+                        role === r
+                          ? `bg-gradient-to-r ${roleInfo[r].gradient} text-white shadow-lg`
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      <div className="text-2xl mb-1">{roleInfo[r].icon}</div>
+                      <div className="text-sm">{roleInfo[r].title}</div>
+                    </button>
+                  ))}
                 </div>
               </div>
 
@@ -139,27 +181,26 @@ export default function LoginPage() {
                 />
               </div>
 
+              <div className="flex items-center justify-between text-sm">
+                <a href="/forgot-password" className="text-purple-600 hover:text-purple-800 font-medium">
+                  Forgot password?
+                </a>
+              </div>
+
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 px-4 text-white font-semibold rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{
-                  background: loading ? '#9ca3af' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                }}
+                className={`w-full py-3 px-4 text-white font-semibold rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r ${roleInfo[role].gradient}`}
               >
-                {loading ? '🔄 Signing in...' : `${role === 'vendor' ? '🏪' : '🛍️'} Sign In as ${role === 'vendor' ? 'Vendor' : 'Customer'}`}
+                {loading ? '🔄 Signing in...' : `${roleInfo[role].icon} Sign In as ${roleInfo[role].title}`}
               </button>
             </form>
-
-            <div className="mt-6 text-center text-sm text-gray-500">
-              <p>Don't have an account? Contact support to get started.</p>
-            </div>
           </div>
         </div>
 
         {/* Footer */}
         <div className="text-center mt-6 text-white text-sm">
-          <p className="opacity-90">© 2026 GoSenderr • Customer Portal</p>
+          <p className="opacity-90">© 2026 GoSenderR • Multi-Role Platform</p>
         </div>
       </div>
     </div>

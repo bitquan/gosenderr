@@ -1,0 +1,9 @@
+*** Begin Patch
+*** Update File: apps/customer-app/src/pages/vendor/items/[itemId]/edit/page.tsx
+@@
+-  const { uid, loading: authLoading } = useAuthUser();
+-  const { userDoc } = useUserDoc();
++  const { uid, loading: authLoading } = useAuthUser();
++  // useUserDoc may perform side effects; avoid declaring unused variables to satisfy tsc
++  useUserDoc();
+*** End Patch

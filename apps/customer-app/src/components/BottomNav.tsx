@@ -58,8 +58,8 @@ export function BottomNav({ items }: BottomNavProps) {
 
 // Customer navigation items
 export const customerNavItems: NavItem[] = [
-  { icon: "🏠", label: "Home", href: "/dashboard" },
-  { icon: "📋", label: "Jobs", href: "/jobs" },
-  { icon: "🚚", label: "Request", href: "/marketplace" },
+  { icon: "🏠", label: "Home", href: "/marketplace" },
+  { icon: "📦", label: "Orders", href: "/orders" },
+  { icon: "🚚", label: "Request", href: "/request-delivery" },
   { icon: "⚙️", label: "Settings", href: "/settings" },
 ];

@@ -27,7 +27,7 @@ export default function V2CourierSetup() {
             </p>
             <div style={{ marginTop: "30px", display: "flex", gap: "15px" }}>
               <Link
-                to="/courier/rate-cards"
+                to="/rate-cards"
                 style={{
                   padding: "12px 24px",
                   background: "#3b82f6",
@@ -41,7 +41,7 @@ export default function V2CourierSetup() {
                 Edit Rate Cards
               </Link>
               <Link
-                to="/courier/dashboard"
+                to="/dashboard"
                 style={{
                   padding: "12px 24px",
                   background: "#10b981",
@@ -69,7 +69,7 @@ export default function V2CourierSetup() {
               accept (packages, food, or both).
             </p>
             <Link
-              to="/courier/rate-cards"
+              to="/rate-cards"
               style={{
                 marginTop: "30px",
                 padding: "12px 24px",

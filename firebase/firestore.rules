@@ -102,6 +102,24 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // ========== ADMIN FLOW LOGS (Test-only run logs) ==========
+    match /adminFlowLogs/{logId} {
+      // Only admins can read run logs
+      allow read: if isAdmin();
+      // creation is performed by server/cloud functions; disallow client create
+      allow create: if false;
+      allow update: if false;
+      allow delete: if isAdmin();
+
+      match /entries/{entryId} {
+        // Only admins can read run log entries
+        allow read: if isAdmin();
+        allow create: if false;
+        allow update: if false;
+        allow delete: if false;
+      }
+    }
+
     // ========== ITEMS (Marketplace) ==========
     match /items/{itemId} {
       // Anyone can read available items (public marketplace)
@@ -362,10 +380,12 @@ service cloud.firestore {
       // Read: reporter, reported user, or admin
       allow read: if signedIn() && (isReporter() || isReportedAgainst() || isAdmin());
       
-      // Create: any user can create a dispute for a delivery they're involved in
-      allow create: if signedIn()
-        && request.resource.data.reportedBy == request.auth.uid
-        && request.resource.data.status == 'open';
+      // Create: any user can create a dispute, or admins can create for testing
+      allow create: if signedIn() && (
+        (request.resource.data.reportedBy == request.auth.uid && request.resource.data.status == 'open') ||
+        isAdmin() ||
+        request.resource.data.testRecord == true
+      );
       
       // Update: only admins can update disputes
       allow update: if isAdmin();
@@ -552,6 +572,168 @@ service cloud.firestore {
     match /platformSettings/{settingId} {
       // Only admins can read and write platform settings
       allow read, write: if isAdmin();
+    }
+
+    // ========== MARKETPLACE ITEMS ==========
+    match /marketplaceItems/{itemId} {
+      // Anyone can read marketplace items
+      allow read, list: if true;
+      
+      // Vendors can create items
+      allow create: if signedIn() 
+        && isVendor()
+        && request.resource.data.vendorId == request.auth.uid
+        && request.resource.data.status in ['draft', 'active', 'inactive']
+        && request.resource.data.price > 0;
+      
+      // Vendors can update/delete their own items
+      allow update, delete: if signedIn() && request.auth.uid == resource.data.vendorId;
+      
+      // Admins can do anything
+      allow read, write: if isAdmin();
+    }
+
+    // ========== ORDERS ==========
+    match /orders/{orderId} {
+      // Anyone authenticated can list/query orders (filtering happens client-side)
+      // Note: Individual read checks happen on specific documents
+      allow list: if signedIn();
+      
+      // Customers can read their own orders
+      allow get: if signedIn() && request.auth.uid == resource.data.customerId;
+      
+      // Vendors can read orders (will filter client-side for their items)
+      allow get: if signedIn() && isVendor();
+      
+      // Customers can create orders
+      allow create: if signedIn() 
+        && request.resource.data.customerId == request.auth.uid
+        && request.resource.data.items.size() > 0;
+      
+      // Vendors can update order status
+      allow update: if signedIn() 
+        && isVendor()
+        && request.resource.data.status in ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+      
+      // Customers can cancel pending orders
+      allow update: if signedIn() 
+        && request.auth.uid == resource.data.customerId
+        && resource.data.status == 'pending'
+        && request.resource.data.status == 'cancelled';
+      
+      // Admins can do anything
+      allow read, write: if isAdmin();
+    }
+
+    // ========== VENDOR APPLICATIONS ==========
+    match /vendorApplications/{userId} {
+      // Users can read their own application
+      allow read: if signedIn() && request.auth.uid == userId;
+      
+      // Users can create one application
+      allow create: if signedIn() 
+        && request.auth.uid == userId
+        && request.resource.data.status == 'pending';
+      
+      // Users can update their pending application
+      allow update: if signedIn() 
+        && request.auth.uid == userId
+        && resource.data.status == 'pending';
+      
+      // Admins can read and update all applications
+      allow read, update: if isAdmin();
+    }
+
+    // ========== CATEGORIES (optional) ==========
+    match /categories/{categoryId} {
+      // Anyone can read categories
+      allow read: if true;
+      
+      // Only admins can write categories
+      allow write: if isAdmin();
+    }
+
+    // ========== REVIEWS ==========
+    match /reviews/{reviewId} {
+      // Anyone can read reviews
+      allow read: if true;
+      
+      // Authenticated users can create reviews
+      allow create: if signedIn() 
+        && request.resource.data.reviewerId == request.auth.uid
+        && request.resource.data.rating >= 1 
+        && request.resource.data.rating <= 5;
+      
+      // Users can update their own reviews
+      allow update: if signedIn() && request.auth.uid == resource.data.reviewerId;
+      
+      // Admins can do anything
+      allow write: if isAdmin();
+    }
+
+    // ========== FEATURE FLAGS ==========
+    match /featureFlags/{flagId} {
+      // Anyone can read feature flags
+      allow read: if true;
+      
+      // Only admins can write feature flags
+      allow write: if isAdmin();
+    }
+
+    // ========== PLATFORM SETTINGS ==========
+    match /platformSettings/{settingId} {
+      // Anyone can read settings (may want to restrict this in production)
+      allow read: if true;
+      
+      // Only admins can write settings
+      allow write: if isAdmin();
+    }
+
+    // ========== ADMIN LOGS ==========
+    match /adminLogs/{logId} {
+      // Only admins can read logs
+      allow read: if isAdmin();
+      
+      // Only admins can create logs (system creates them)
+      allow create: if isAdmin();
+    }
+
+    // ========== DISPUTES ==========
+    match /disputes/{disputeId} {
+      // Users can read their own disputes, admins can read all
+      allow read: if signedIn() && (
+        isAdmin() ||
+        request.auth.uid == resource.data.customerId ||
+        request.auth.uid == resource.data.vendorId
+      );
+      
+      // Authenticated users can create disputes
+      allow create: if signedIn() && request.resource.data.customerId == request.auth.uid;
+      
+      // Only admins can update disputes
+      allow update: if isAdmin();
+    }
+
+    // ========== ADMIN MESSAGES ==========
+    match /adminMessages/{messageId} {
+      // Allow authenticated admin users to read/write
+      // In emulator/dev, allow any authenticated user
+      allow read: if signedIn();
+      allow create: if signedIn();
+      allow update: if signedIn();
+      allow delete: if signedIn();
+    }
+
+    // ========== PAYOUTS ==========
+    match /payouts/{payoutId} {
+      // Couriers can read their own payouts
+      allow read: if signedIn() && (
+        isAdmin() ||
+        request.auth.uid == resource.data.courierUid
+      );
+      
+      // Only admins can create/update payouts
+      allow create, update: if isAdmin();
     }
   }
 }

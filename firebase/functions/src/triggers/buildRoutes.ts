@@ -131,7 +131,7 @@ export const buildRoutes = functions.pubsub
           type: "local",
           status: "available",
           scheduledDate: tomorrowStart,
-          createdAt: admin.firestore.Timestamp.now(),
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
           area: {
             name: `Route ${routeId.substring(0, 6)}`,
             centerLat: cluster.center.lat,
@@ -165,7 +165,7 @@ export const buildRoutes = functions.pubsub
             routeId,
             routePosition: i + 1,
             status: "assigned",
-            updatedAt: admin.firestore.Timestamp.now(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
           });
         }
 

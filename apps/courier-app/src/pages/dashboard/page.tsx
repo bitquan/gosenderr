@@ -418,6 +418,21 @@ export default function CourierDashboardMobile() {
         {hideIneligible ? "Show All" : "Hide Ineligible"}
       </button>
 
+      {/* Recenter Map Button */}
+      {userDoc?.courierProfile?.currentLocation && (
+        <button
+          onClick={() => {
+            const courierLoc = userDoc.courierProfile?.currentLocation;
+            if (courierLoc) {
+              recenterOnDriver([courierLoc.lng, courierLoc.lat]);
+            }
+          }}
+          className="absolute bottom-32 right-4 z-20 w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-transform"
+        >
+          <span className="text-2xl">🎯</span>
+        </button>
+      )}
+
       {/* Setup Warning Banner */}
       {needsSetup && (
         <div className="absolute top-20 left-4 right-4 z-20 p-4 bg-yellow-50 border-2 border-yellow-400 rounded-xl shadow-lg">
@@ -491,7 +506,7 @@ export default function CourierDashboardMobile() {
 
         {/* Sheet Header */}
         <div className="px-6 pb-3 border-b border-gray-200">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-bold text-gray-900">
               {activeJob ? 'Active Send' : `Available Sends (${filteredJobs.length})`}
             </h2>
@@ -515,6 +530,28 @@ export default function CourierDashboardMobile() {
               </Link>
             </div>
           </div>
+          
+          {/* Quick Stats */}
+          {!activeJob && (
+            <div className="grid grid-cols-3 gap-2 mt-3">
+              <div className="bg-emerald-50 rounded-lg p-2 text-center">
+                <p className="text-xs text-emerald-600 font-medium">Available</p>
+                <p className="text-lg font-bold text-emerald-700">{filteredJobs.length}</p>
+              </div>
+              <div className="bg-blue-50 rounded-lg p-2 text-center">
+                <p className="text-xs text-blue-600 font-medium">Today</p>
+                <p className="text-lg font-bold text-blue-700">
+                  {userDoc?.courierProfile?.todayJobs || 0}
+                </p>
+              </div>
+              <div className="bg-purple-50 rounded-lg p-2 text-center">
+                <p className="text-xs text-purple-600 font-medium">Total</p>
+                <p className="text-lg font-bold text-purple-700">
+                  {userDoc?.courierProfile?.completedJobs || 0}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Jobs List Content */}

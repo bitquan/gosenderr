@@ -79,7 +79,7 @@ export function Navbar({ children }: NavbarProps) {
             <Link
               to={
                 role === "admin"
-                  ? "/admin/dashboard"
+                  ? "/dashboard"
                   : role === "customer"
                     ? "/customer/dashboard"
                     : role === "courier"

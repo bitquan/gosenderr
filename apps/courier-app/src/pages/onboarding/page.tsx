@@ -55,20 +55,12 @@ export default function CourierOnboarding() {
         setStep(4);
       }
     } else if (step === 3) {
-      if (!packageRateCard) {
-        alert("Please configure your package rate card");
-        return;
-      }
       if (foodEnabled) {
         setStep(4);
       } else {
         setStep(5);
       }
     } else if (step === 4) {
-      if (!foodRateCard) {
-        alert("Please configure your food rate card");
-        return;
-      }
       setStep(5);
     } else {
       setStep((step + 1) as Step);
@@ -99,6 +91,10 @@ export default function CourierOnboarding() {
     setSubmitting(true);
 
     try {
+      console.log('📝 Starting onboarding submission for user:', uid);
+      console.log('Package rate card:', packageRateCard);
+      console.log('Food rate card:', foodRateCard);
+
       const courierProfile: any = {
         vehicleType,
         serviceRadius,
@@ -106,18 +102,22 @@ export default function CourierOnboarding() {
           packagesEnabled,
           foodEnabled,
         },
-        status: "pending_review",
+        status: "pending",
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
 
       if (packageRateCard) {
         courierProfile.packageRateCard = packageRateCard;
+        console.log('✅ Added package rate card to profile');
       }
 
       if (foodRateCard) {
         courierProfile.foodRateCard = foodRateCard;
+        console.log('✅ Added food rate card to profile');
       }
+
+      console.log('📤 Saving to Firestore...', { courierProfile, role: 'courier' });
 
       await setDoc(
         doc(db, "users", uid),
@@ -129,10 +129,13 @@ export default function CourierOnboarding() {
         { merge: true },
       );
 
+      console.log('✅ Onboarding data saved successfully!');
+      console.log('🚀 Navigating to Stripe onboarding...');
+
       // Redirect to Stripe onboarding page
-      navigate("/courier/onboarding/stripe");
+      navigate("/onboarding/stripe");
     } catch (error) {
-      console.error("Failed to submit onboarding:", error);
+      console.error("❌ Failed to submit onboarding:", error);
       alert("Failed to submit. Please try again.");
       setSubmitting(false);
     }
@@ -168,9 +171,10 @@ export default function CourierOnboarding() {
   ];
 
   return (
-    <div style={{ padding: "30px", maxWidth: "800px", margin: "0 auto" }}>
-      {/* Progress Bar */}
-      <div style={{ marginBottom: "40px" }}>
+    <div className="fixed inset-0 w-screen h-screen overflow-y-auto bg-[#F8F9FF]" style={{ padding: "20px" }}>
+      <div style={{ maxWidth: "800px", margin: "0 auto", paddingBottom: "40px" }}>
+        {/* Progress Bar */}
+        <div style={{ marginBottom: "30px" }}>
         <div
           style={{
             display: "flex",
@@ -199,8 +203,8 @@ export default function CourierOnboarding() {
       {/* Step 1: Vehicle Type */}
       {step === 1 && (
         <div>
-          <h1 style={{ marginBottom: "10px" }}>Choose Your Vehicle</h1>
-          <p style={{ color: "#666", marginBottom: "30px" }}>
+          <h1 style={{ marginBottom: "8px", fontSize: "24px" }}>Choose Your Vehicle</h1>
+          <p style={{ color: "#666", marginBottom: "20px", fontSize: "14px" }}>
             Select the vehicle you'll use for deliveries
           </p>
 
@@ -208,8 +212,8 @@ export default function CourierOnboarding() {
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(2, 1fr)",
-              gap: "16px",
-              marginBottom: "30px",
+              gap: "12px",
+              marginBottom: "20px",
             }}
           >
             {vehicleOptions.map((option) => (
@@ -217,7 +221,7 @@ export default function CourierOnboarding() {
                 key={option.value}
                 onClick={() => setVehicleType(option.value)}
                 style={{
-                  padding: "20px",
+                  padding: "16px",
                   border: `2px solid ${vehicleType === option.value ? "#3b82f6" : "#e5e7eb"}`,
                   borderRadius: "12px",
                   background:
@@ -226,7 +230,7 @@ export default function CourierOnboarding() {
                   textAlign: "left",
                 }}
               >
-                <div style={{ fontSize: "32px", marginBottom: "8px" }}>
+                <div style={{ fontSize: "28px", marginBottom: "6px" }}>
                   {option.label.split(" ")[0]}
                 </div>
                 <div style={{ fontWeight: "600", marginBottom: "4px" }}>
@@ -425,7 +429,6 @@ export default function CourierOnboarding() {
               currentRateCard={packageRateCard || undefined}
               onSave={async (rateCard) => {
                 setPackageRateCard(rateCard);
-                handleNext();
               }}
             />
           </div>
@@ -447,7 +450,24 @@ export default function CourierOnboarding() {
             >
               ← Back
             </button>
-            {!packageRateCard && (
+            {packageRateCard ? (
+              <button
+                onClick={handleNext}
+                style={{
+                  flex: 1,
+                  padding: "14px",
+                  background: "#3b82f6",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontSize: "16px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                }}
+              >
+                Next →
+              </button>
+            ) : (
               <button
                 onClick={() => {
                   setPackagesEnabled(false);
@@ -489,7 +509,6 @@ export default function CourierOnboarding() {
               currentRateCard={foodRateCard || undefined}
               onSave={async (rateCard) => {
                 setFoodRateCard(rateCard);
-                handleNext();
               }}
             />
           </div>
@@ -511,7 +530,24 @@ export default function CourierOnboarding() {
             >
               ← Back
             </button>
-            {!foodRateCard && (
+            {foodRateCard ? (
+              <button
+                onClick={handleNext}
+                style={{
+                  flex: 1,
+                  padding: "14px",
+                  background: "#3b82f6",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontSize: "16px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                }}
+              >
+                Next →
+              </button>
+            ) : (
               <button
                 onClick={() => {
                   setFoodEnabled(false);
@@ -665,6 +701,7 @@ export default function CourierOnboarding() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

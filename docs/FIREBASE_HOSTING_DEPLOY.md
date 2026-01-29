@@ -60,6 +60,15 @@ firebase.json      # Firebase hosting configuration
 
 3. Keep the ignore pattern minimal in `firebase.json` (don't ignore `**/.*` which would ignore `.npmrc`)
 
+Automating vendoring for Functions
+
+To avoid manual vendoring, we've added a small predeploy script that builds and copies `@gosenderr/shared` into `firebase/functions/vendor` before packaging functions for deploy.
+
+- Run locally before deploying functions: `pnpm predeploy:functions` (or `node scripts/predeploy-vendor-shared.js`).
+- The script is also run automatically during `firebase deploy` via a `predeploy` hook in `firebase.json`.
+
+This keeps the Cloud Build happy (resolves local file dependency issues) and reduces manual steps during deploys.
+
 ### Issue: SWC Dependencies Missing
 
 **Warning**: You may see `Failed to patch lockfile, please try uninstalling and reinstalling next in this workspace`. This is a warning and won't prevent deployment.

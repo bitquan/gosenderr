@@ -11,13 +11,16 @@
     "shell": "npm run build && firebase functions:shell",
     "start": "npm run shell",
     "deploy": "firebase deploy --only functions",
-    "logs": "firebase functions:log"
+    "logs": "firebase functions:log",
+    "test:integration": "mocha -r ts-node/register test/**/*.spec.ts --timeout 20000"
   },
   "engines": {
     "node": "20"
   },
   "dependencies": {
-    "@gosenderr/shared": "file:../../packages/shared",
+    "@gosenderr/shared": "file:vendor/@gosenderr/shared",
+    "@types/cors": "^2.8.19",
+    "cors": "^2.8.6",
     "firebase-admin": "^12.0.0",
     "firebase-functions": "^5.0.0",
     "stripe": "^17.5.0"
@@ -28,7 +31,12 @@
     "eslint": "^8.9.0",
     "eslint-config-google": "^0.14.0",
     "eslint-plugin-import": "^2.25.4",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "mocha": "^10.8.2",
+    "chai": "^4.3.7",
+    "ts-node": "^10.9.1",
+    "@types/mocha": "^10.0.10",
+    "@types/chai": "^4.3.4"
   },
   "private": true
 }

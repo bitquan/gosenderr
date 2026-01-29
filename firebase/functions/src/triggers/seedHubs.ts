@@ -151,7 +151,7 @@ export const seedHubs = functions.https.onCall(async (data, context) => {
         inboundRoutes: [],
         dailyPackageVolume: 0,
         activeRunners: 0,
-        createdAt: admin.firestore.Timestamp.now(),
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
         isActive: true,
       };
 

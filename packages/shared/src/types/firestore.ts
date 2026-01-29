@@ -6,7 +6,9 @@ export type UserRole =
   | "seller"
   | "courier"
   | "package_runner"
-  | "admin";
+  | "admin"
+  | "customer" // Legacy: alias for buyer
+  | "vendor"; // Legacy: alias for seller
 export type TransportMode = "walk" | "bike" | "scooter" | "car";
 
 // Legacy support
@@ -137,6 +139,9 @@ export interface CourierProfile {
   serviceRadius: number; // miles
   currentLocation?: { lat: number; lng: number };
   stripeConnectAccountId?: string;
+  // Runtime stats (optional)
+  todayJobs?: number;
+  completedJobs?: number;
 }
 
 // Legacy courier data for backward compatibility

@@ -228,7 +228,8 @@ export default function EquipmentPage() {
   ];
 
   return (
-    <div style={{ maxWidth: "1000px", margin: "0 auto", padding: "20px" }}>
+    <div className="fixed inset-0 w-screen h-screen overflow-y-auto pb-24 safe-top bg-[#F8F9FF]">
+      <div style={{ maxWidth: "1000px", margin: "0 auto", padding: "20px" }}>
       <h1 style={{ marginBottom: "16px", fontSize: "28px", fontWeight: "600" }}>
         Equipment & Badges
       </h1>
@@ -512,6 +513,7 @@ export default function EquipmentPage() {
             );
           })}
         </div>
+      </div>
       </div>
     </div>
   );

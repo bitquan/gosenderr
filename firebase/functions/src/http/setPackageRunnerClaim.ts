@@ -107,14 +107,14 @@ export const setPackageRunnerClaim = functions.https.onCall(
       const updateData: any = {
         "packageRunnerProfile.status": approved ? "approved" : "rejected",
         "packageRunnerProfile.approvedAt": approved
-          ? admin.firestore.Timestamp.now()
+          ? admin.firestore.FieldValue.serverTimestamp()
           : null,
         "packageRunnerProfile.rejectedAt": !approved
-          ? admin.firestore.Timestamp.now()
+          ? admin.firestore.FieldValue.serverTimestamp()
           : null,
         "packageRunnerProfile.approvedBy": approved ? context.auth.uid : null,
         "packageRunnerProfile.rejectedBy": !approved ? context.auth.uid : null,
-        updatedAt: admin.firestore.Timestamp.now(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       };
 
       if (!approved && rejectionReason) {
@@ -131,7 +131,7 @@ export const setPackageRunnerClaim = functions.https.onCall(
           : "reject_package_runner",
         targetUserId: runnerId,
         targetEmail: runnerData?.email || null,
-        timestamp: admin.firestore.Timestamp.now(),
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
         metadata: {
           approved,
           rejectionReason: rejectionReason || null,

@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { 
   collection, 
   query, 
@@ -10,84 +9,48 @@ import {
   Timestamp
 } from 'firebase/firestore'
 import { db } from '../lib/firebase'
-import { useAuth } from '../contexts/AuthContext'
+import { Card, CardHeader, CardTitle, CardContent } from '../components/Card'
+import { exportToCSV, formatAuditLogsForExport } from '../lib/csvExport'
 
-interface AdminAction {
+interface AdminLog {
   id: string
-  adminId: string
-  adminEmail: string
   action: string
-  targetUserId: string
-  targetUserEmail?: string
-  timestamp: Timestamp
-  metadata: Record<string, any>
+  timestamp: any
+  adminEmail?: string
+  userId?: string
+  itemId?: string
+  orderId?: string
+  settingId?: string
+  oldStatus?: string
+  newStatus?: string
+  amount?: number
+  reason?: string
+  metadata?: Record<string, any>
 }
 
-export default function AuditLogs() {
-  const navigate = useNavigate()
-  const { user } = useAuth()
-  const [logs, setLogs] = useState<AdminAction[]>([])
+export default function AuditLogsPage() {
+  const [logs, setLogs] = useState<AdminLog[]>([])
   const [loading, setLoading] = useState(true)
   const [filterAction, setFilterAction] = useState<string>('all')
-  const [dateRange, setDateRange] = useState<'all' | 'today' | 'week' | 'month'>('all')
+  const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
-    if (!user) {
-      navigate('/login')
-      return
-    }
     loadLogs()
-  }, [user, filterAction, dateRange])
+  }, [])
 
   const loadLogs = async () => {
     try {
-      setLoading(true)
-      let q = query(
-        collection(db, 'adminActionLogs'),
+      const q = query(
+        collection(db, 'adminLogs'),
         orderBy('timestamp', 'desc'),
-        limit(100)
+        limit(200)
       )
-
-      // Filter by action type
-      if (filterAction !== 'all') {
-        q = query(
-          collection(db, 'adminActionLogs'),
-          where('action', '==', filterAction),
-          orderBy('timestamp', 'desc'),
-          limit(100)
-        )
-      }
-
-      // Filter by date range
-      if (dateRange !== 'all') {
-        const now = new Date()
-        let startDate = new Date()
-        
-        switch (dateRange) {
-          case 'today':
-            startDate.setHours(0, 0, 0, 0)
-            break
-          case 'week':
-            startDate.setDate(now.getDate() - 7)
-            break
-          case 'month':
-            startDate.setMonth(now.getMonth() - 1)
-            break
-        }
-
-        q = query(
-          collection(db, 'adminActionLogs'),
-          where('timestamp', '>=', Timestamp.fromDate(startDate)),
-          orderBy('timestamp', 'desc'),
-          limit(100)
-        )
-      }
 
       const snapshot = await getDocs(q)
       const logsData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
-      })) as AdminAction[]
+      })) as AdminLog[]
       
       setLogs(logsData)
     } catch (error) {
@@ -97,26 +60,52 @@ export default function AuditLogs() {
     }
   }
 
-  const getActionBadge = (action: string) => {
-    const badges: Record<string, { color: string; label: string }> = {
-      'promote_admin': { color: 'bg-red-100 text-red-800', label: '👑 Promote Admin' },
-      'demote_admin': { color: 'bg-orange-100 text-orange-800', label: '⬇️ Demote Admin' },
-      'approve_runner': { color: 'bg-green-100 text-green-800', label: '✅ Approve Runner' },
-      'reject_runner': { color: 'bg-yellow-100 text-yellow-800', label: '❌ Reject Runner' },
-      'ban_user': { color: 'bg-red-100 text-red-800', label: '🚫 Ban User' },
-      'unban_user': { color: 'bg-blue-100 text-blue-800', label: '✅ Unban User' },
+  const filteredLogs = logs.filter(log => {
+    // Filter by action type
+    if (filterAction !== 'all' && log.action !== filterAction) {
+      return false
     }
 
+    // Filter by search query
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase()
+      return (
+        log.action.toLowerCase().includes(query) ||
+        log.adminEmail?.toLowerCase().includes(query) ||
+        log.userId?.toLowerCase().includes(query) ||
+        log.itemId?.toLowerCase().includes(query) ||
+        log.orderId?.toLowerCase().includes(query)
+      )
+    }
+
+    return true
+  })
+
+  const getActionBadge = (action: string) => {
+    const badges: Record<string, { color: string; label: string }> = {
+      item_status_changed: { color: 'bg-blue-100 text-blue-800', label: 'Item Status' },
+      item_featured: { color: 'bg-purple-100 text-purple-800', label: 'Item Featured' },
+      item_unfeatured: { color: 'bg-gray-100 text-gray-800', label: 'Item Unfeatured' },
+      item_deleted: { color: 'bg-red-100 text-red-800', label: 'Item Deleted' },
+      order_status_change: { color: 'bg-yellow-100 text-yellow-800', label: 'Order Status' },
+      order_refunded: { color: 'bg-red-100 text-red-800', label: 'Order Refunded' },
+      order_notes_updated: { color: 'bg-blue-100 text-blue-800', label: 'Order Notes' },
+      setting_updated: { color: 'bg-green-100 text-green-800', label: 'Setting Updated' },
+      user_status_changed: { color: 'bg-orange-100 text-orange-800', label: 'User Status' },
+      flag_toggled: { color: 'bg-indigo-100 text-indigo-800', label: 'Feature Flag' },
+      user_suspended: { color: 'bg-orange-100 text-orange-800', label: 'User Suspended' },
+      user_banned: { color: 'bg-red-100 text-red-800', label: 'User Banned' },
+      user_role_changed: { color: 'bg-blue-100 text-blue-800', label: 'Role Changed' },
+      dispute_resolved: { color: 'bg-green-100 text-green-800', label: 'Dispute Resolved' }
+    }
+    
     const badge = badges[action] || { color: 'bg-gray-100 text-gray-800', label: action }
-    return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badge.color}`}>
-        {badge.label}
-      </span>
-    )
+    return badge
   }
 
-  const formatTimestamp = (timestamp: Timestamp) => {
-    const date = timestamp.toDate()
+  const formatTimestamp = (timestamp: any) => {
+    if (!timestamp) return 'Unknown'
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp)
     const now = new Date()
     const diffMs = now.getTime() - date.getTime()
     const diffMins = Math.floor(diffMs / 60000)
@@ -131,130 +120,136 @@ export default function AuditLogs() {
     return date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
-      year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
       hour: '2-digit',
       minute: '2-digit'
     })
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-[#6B4EFF] to-[#9D7FFF] bg-clip-text text-transparent mb-2">
-            Audit Logs
-          </h1>
-          <p className="text-gray-600">View all administrative actions and system events</p>
-        </div>
+  const renderLogDetails = (log: AdminLog) => {
+    const details: string[] = []
+    
+    if (log.userId) details.push(`User: ${log.userId.slice(0, 12)}...`)
+    if (log.itemId) details.push(`Item: ${log.itemId.slice(0, 12)}...`)
+    if (log.orderId) details.push(`Order: ${log.orderId.slice(0, 12)}...`)
+    if (log.settingId) details.push(`Setting: ${log.settingId}`)
+    if (log.oldStatus && log.newStatus) details.push(`${log.oldStatus} → ${log.newStatus}`)
+    if (log.amount) details.push(`Amount: $${log.amount.toFixed(2)}`)
+    if (log.reason) details.push(`Reason: ${log.reason}`)
+    
+    return details.length > 0 ? details.join(' • ') : 'No additional details'
+  }
 
-        {/* Filters */}
-        <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">Audit Logs</h1>
+        <p className="text-gray-600 mt-2">Track all administrative actions and system events</p>
+      </div>
+
+      {/* Filters */}
+      <Card>
+        <CardContent className="p-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Action Type Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Action Type
-              </label>
+              <input
+                type="text"
+                placeholder="Search by admin, user, item, or order ID..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full p-2 border rounded"
+              />
+            </div>
+            
+            <div>
               <select
                 value={filterAction}
                 onChange={(e) => setFilterAction(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full p-2 border rounded"
               >
                 <option value="all">All Actions</option>
-                <option value="promote_admin">Promote Admin</option>
-                <option value="demote_admin">Demote Admin</option>
-                <option value="approve_runner">Approve Runner</option>
-                <option value="reject_runner">Reject Runner</option>
-                <option value="ban_user">Ban User</option>
-                <option value="unban_user">Unban User</option>
-              </select>
-            </div>
-
-            {/* Date Range Filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Date Range
-              </label>
-              <select
-                value={dateRange}
-                onChange={(e) => setDateRange(e.target.value as any)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              >
-                <option value="all">All Time</option>
-                <option value="today">Today</option>
-                <option value="week">Last 7 Days</option>
-                <option value="month">Last 30 Days</option>
+                <option value="item_status_changed">Item Status Changes</option>
+                <option value="item_featured">Item Featured</option>
+                <option value="item_deleted">Item Deleted</option>
+                <option value="order_status_change">Order Status Changes</option>
+                <option value="order_refunded">Order Refunds</option>
+                <option value="setting_updated">Setting Updates</option>
+                <option value="flag_toggled">Feature Flags</option>
               </select>
             </div>
           </div>
+          
+          <div className="mt-3 text-sm text-gray-500">
+            Showing {filteredLogs.length} of {logs.length} log entries
+          </div>
+        </CardContent>
+      </Card>
 
-          <div className="mt-4 flex items-center justify-between">
-            <p className="text-sm text-gray-500">
-              Showing {logs.length} {logs.length === 1 ? 'entry' : 'entries'}
-            </p>
+      {/* Logs Table */}
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <CardTitle>Activity Log</CardTitle>
             <button
-              onClick={loadLogs}
-              className="text-sm text-purple-600 hover:text-purple-700 font-medium"
+              onClick={() => exportToCSV(formatAuditLogsForExport(filteredLogs), 'audit-logs')}
+              disabled={filteredLogs.length === 0}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
             >
-              🔄 Refresh
+              📥 Export CSV
             </button>
           </div>
-        </div>
-
-        {/* Logs List */}
-        {loading ? (
-          <div className="flex justify-center items-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
-          </div>
-        ) : logs.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-sm p-12 text-center">
-            <p className="text-gray-500 text-lg">No audit logs found</p>
-            <p className="text-gray-400 text-sm mt-2">Admin actions will appear here</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {logs.map((log) => (
-              <div
-                key={log.id}
-                className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      {getActionBadge(log.action)}
-                      <span className="text-sm text-gray-500">
-                        {formatTimestamp(log.timestamp)}
-                      </span>
+        </CardHeader>
+        <CardContent>
+          {filteredLogs.length === 0 ? (
+            <div className="p-12 text-center">
+              <div className="text-6xl mb-4">📋</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">No Logs Found</h3>
+              <p className="text-gray-600">
+                {searchQuery || filterAction !== 'all'
+                  ? 'Try adjusting your filters'
+                  : 'No administrative actions have been logged yet'}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filteredLogs.map(log => {
+                const badge = getActionBadge(log.action)
+                
+                return (
+                  <div
+                    key={log.id}
+                    className="border-b pb-3 last:border-b-0 hover:bg-gray-50 p-3 rounded transition-colors"
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-3">
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${badge.color}`}>
+                          {badge.label}
+                        </span>
+                        <span className="text-sm text-gray-500">
+                          by {log.adminEmail || 'Unknown Admin'}
+                        </span>
+                      </div>
+                      <span className="text-sm text-gray-400">{formatTimestamp(log.timestamp)}</span>
                     </div>
                     
-                    <div className="space-y-1">
-                      <p className="text-gray-900">
-                        <span className="font-semibold">{log.adminEmail}</span>
-                        {' '}performed action on{' '}
-                        <span className="font-semibold">{log.targetUserEmail || log.targetUserId}</span>
-                      </p>
-                      
-                      {log.metadata && Object.keys(log.metadata).length > 0 && (
-                        <details className="mt-2">
-                          <summary className="text-sm text-gray-500 cursor-pointer hover:text-gray-700">
-                            View Details
-                          </summary>
-                          <div className="mt-2 p-3 bg-gray-50 rounded-lg">
-                            <pre className="text-xs text-gray-600 overflow-x-auto">
-                              {JSON.stringify(log.metadata, null, 2)}
-                            </pre>
-                          </div>
-                        </details>
-                      )}
-                    </div>
+                    <p className="text-sm text-gray-600 ml-3">
+                      {renderLogDetails(log)}
+                    </p>
                   </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+                )
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }
