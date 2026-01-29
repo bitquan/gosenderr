@@ -90,12 +90,12 @@ export const banUser = functions.https.onCall(
         .doc(`users/${targetUserId}`)
         .update({
           banned: banned,
-          bannedAt: banned ? admin.firestore.Timestamp.now() : null,
+          bannedAt: banned ? admin.firestore.FieldValue.serverTimestamp() : null,
           bannedBy: banned ? context.auth.uid : null,
           banReason: banned && reason ? reason : null,
-          unbannedAt: !banned ? admin.firestore.Timestamp.now() : null,
+          unbannedAt: !banned ? admin.firestore.FieldValue.serverTimestamp() : null,
           unbannedBy: !banned ? context.auth.uid : null,
-          updatedAt: admin.firestore.Timestamp.now(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
 
       // 8. Log admin action
