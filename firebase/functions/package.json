@@ -17,7 +17,7 @@
     "node": "20"
   },
   "dependencies": {
-    "@gosenderr/shared": "file:../../packages/shared",
+    "@gosenderr/shared": "file:vendor/@gosenderr/shared",
     "@types/cors": "^2.8.19",
     "cors": "^2.8.6",
     "firebase-admin": "^12.0.0",
