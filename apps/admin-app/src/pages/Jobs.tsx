@@ -6,6 +6,8 @@ import { Card, CardHeader, CardTitle, CardContent } from '../components/Card'
 import { StatusBadge } from '../components/Badge'
 import { formatCurrency, formatDate } from '../lib/utils'
 import { getFunctions, httpsCallable } from 'firebase/functions'
+import { exportToCSV, formatJobsForExport } from '../lib/csvExport'
+import { CreateJobModal } from '../components/CreateJobModal'
 
 interface Job {
   id: string
@@ -33,6 +35,7 @@ export default function AdminJobsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>('all')
   const [showCancelModal, setShowCancelModal] = useState(false)
+  const [showCreateModal, setShowCreateModal] = useState(false)
   const [cancellingJobId, setCancellingJobId] = useState<string | null>(null)
   const [cancelReason, setCancelReason] = useState('')
   const [processing, setProcessing] = useState<string | null>(null)
@@ -81,7 +84,7 @@ export default function AdminJobsPage() {
     }
   }
 
-  const exportToCSV = () => {
+  const downloadFilteredJobsCSV = () => {
     const headers = ['ID', 'Status', 'Customer', 'Courier', 'Pickup', 'Delivery', 'Fee', 'Created']
     const rows = filteredJobs.map(job => [
       job.id,
@@ -151,7 +154,7 @@ export default function AdminJobsPage() {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 -mt-6 space-y-4">
-        {/* Search and Export */}
+        {/* Search and Export and Create */}
         <div className="bg-white rounded-2xl shadow-lg p-4 flex gap-3 flex-wrap">
           <input
             type="text"
@@ -161,7 +164,13 @@ export default function AdminJobsPage() {
             className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
           />
           <button
-            onClick={exportToCSV}
+            onClick={() => setShowCreateModal(true)}
+            className="px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors whitespace-nowrap"
+          >
+            ➕ Create Job
+          </button>
+          <button
+            onClick={downloadFilteredJobsCSV}
             className="px-6 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-colors"
           >
             📊 Export CSV
@@ -203,6 +212,20 @@ export default function AdminJobsPage() {
         </div>
 
         {/* Jobs List */}
+        <Card variant="elevated">
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <CardTitle>Jobs ({filteredJobs.length})</CardTitle>
+              <button
+                onClick={() => exportToCSV(formatJobsForExport(filteredJobs), 'delivery-jobs')}
+                disabled={filteredJobs.length === 0}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
+              >
+                📥 Export CSV
+              </button>
+            </div>
+          </CardHeader>
+          <CardContent>
         {loading ? (
           <div className="text-center py-12">Loading...</div>
         ) : (
@@ -284,6 +307,8 @@ export default function AdminJobsPage() {
             ))}
           </div>
         )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Cancel Job Modal */}
@@ -333,6 +358,13 @@ export default function AdminJobsPage() {
           </div>
         </div>
       )}
+
+      {/* Create Job Modal */}
+      <CreateJobModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onJobCreated={() => loadJobs()}
+      />
     </div>
   )
 }

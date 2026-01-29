@@ -67,17 +67,7 @@ export function CourierJobActions({ job, courierUid, estimatedFee, onJobUpdated 
     return (
       <button
         onClick={handleAccept}
-        style={{
-          width: '100%',
-          padding: '12px',
-          background: '#16a34a',
-          color: 'white',
-          border: 'none',
-          borderRadius: '8px',
-          fontSize: '16px',
-          fontWeight: '600',
-          cursor: 'pointer',
-        }}
+        className="w-full py-4 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl active:scale-95 transition-all"
       >
         Accept Job {estimatedFee && `- $${estimatedFee.toFixed(2)}`}
       </button>
@@ -87,12 +77,12 @@ export function CourierJobActions({ job, courierUid, estimatedFee, onJobUpdated 
   if (nextStatus) {
     const statusLabels: Record<JobStatus, string> = {
       open: 'Open',
-      assigned: 'Start Heading to Pickup',
-      enroute_pickup: 'Mark Arrived at Pickup',
-      arrived_pickup: 'Mark Package Picked Up',
-      picked_up: 'Start Heading to Dropoff',
-      enroute_dropoff: 'Mark Arrived at Dropoff',
-      arrived_dropoff: 'Mark Completed',
+      assigned: '▶️ Start Heading to Pickup',
+      enroute_pickup: '📍 Mark Arrived at Pickup',
+      arrived_pickup: '📦 Mark Package Picked Up',
+      picked_up: '🚗 Start Heading to Dropoff',
+      enroute_dropoff: '🎯 Mark Arrived at Dropoff',
+      arrived_dropoff: '✅ Mark Completed',
       completed: 'Completed',
       cancelled: 'Cancelled',
       disputed: 'Disputed',
@@ -100,20 +90,25 @@ export function CourierJobActions({ job, courierUid, estimatedFee, onJobUpdated 
       failed: 'Failed',
     };
 
+    const buttonColors: Record<JobStatus, string> = {
+      open: 'bg-gray-500',
+      assigned: 'bg-blue-600',
+      enroute_pickup: 'bg-orange-600',
+      arrived_pickup: 'bg-purple-600',
+      picked_up: 'bg-blue-600',
+      enroute_dropoff: 'bg-orange-600',
+      arrived_dropoff: 'bg-emerald-600',
+      completed: 'bg-gray-500',
+      cancelled: 'bg-gray-500',
+      disputed: 'bg-gray-500',
+      expired: 'bg-gray-500',
+      failed: 'bg-gray-500',
+    };
+
     return (
       <button
         onClick={handleUpdateStatus}
-        style={{
-          width: '100%',
-          padding: '12px',
-          background: '#2563eb',
-          color: 'white',
-          border: 'none',
-          borderRadius: '8px',
-          fontSize: '16px',
-          fontWeight: '600',
-          cursor: 'pointer',
-        }}
+        className={`w-full py-4 ${buttonColors[nextStatus]} text-white rounded-xl font-semibold shadow-lg hover:shadow-xl active:scale-95 transition-all`}
       >
         {statusLabels[nextStatus]}
       </button>

@@ -139,6 +139,9 @@ export interface CourierProfile {
   serviceRadius: number; // miles
   currentLocation?: { lat: number; lng: number };
   stripeConnectAccountId?: string;
+  // Runtime stats (optional)
+  todayJobs?: number;
+  completedJobs?: number;
 }
 
 // Legacy courier data for backward compatibility

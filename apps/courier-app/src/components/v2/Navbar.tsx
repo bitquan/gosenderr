@@ -83,7 +83,7 @@ export function Navbar({ children }: NavbarProps) {
                   : role === "customer"
                     ? "/customer/dashboard"
                     : role === "courier"
-                      ? "/courier/dashboard"
+                      ? "/dashboard"
                       : role === "runner"
                         ? "/runner/dashboard"
                         : role === "vendor"
@@ -214,7 +214,7 @@ export function Navbar({ children }: NavbarProps) {
 
             {user && role === "courier" && (
               <Link
-                to="/courier/dashboard"
+                to="/dashboard"
                 style={{
                   fontSize: "13px",
                   fontWeight: pathname.startsWith("/courier") ? "600" : "400",

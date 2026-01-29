@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '../../../lib/firebase'
 import { useAuth } from '../../../hooks/useAuth'
@@ -39,7 +39,6 @@ interface Order {
 
 export default function OrderDetailPage() {
   const { orderId } = useParams<{ orderId: string }>()
-  const navigate = useNavigate()
   const { user } = useAuth()
   const [order, setOrder] = useState<Order | null>(null)
   const [loading, setLoading] = useState(true)
@@ -66,8 +65,8 @@ export default function OrderDetailPage() {
         }
 
         setOrder({
-          id: orderDoc.id,
           ...orderData,
+          id: orderDoc.id,
         })
       } catch (err) {
         console.error('Error fetching order:', err)

@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { Card, CardContent } from '../components/Card'
+import { exportToCSV, formatItemsForExport } from '../lib/csvExport'
 
 interface MarketplaceItem {
   id: string
@@ -46,7 +48,8 @@ export default function AdminMarketplacePage() {
     }
   }
 
-  const handleStatusChange = async (itemId: string, newStatus: string) => {
+  const handleStatusChange = async (itemId: string, newStatus: string, e?: React.MouseEvent) => {
+    if (e) e.preventDefault()
     try {
       await updateDoc(doc(db, 'marketplaceItems', itemId), {
         status: newStatus,
@@ -60,7 +63,8 @@ export default function AdminMarketplacePage() {
     }
   }
 
-  const handleFeatureToggle = async (itemId: string, featured: boolean) => {
+  const handleFeatureToggle = async (itemId: string, featured: boolean, e?: React.MouseEvent) => {
+    if (e) e.preventDefault()
     try {
       await updateDoc(doc(db, 'marketplaceItems', itemId), {
         featured: !featured,
@@ -74,7 +78,8 @@ export default function AdminMarketplacePage() {
     }
   }
 
-  const handleDeleteItem = async (itemId: string) => {
+  const handleDeleteItem = async (itemId: string, e?: React.MouseEvent) => {
+    if (e) e.preventDefault()
     if (!confirm('Are you sure you want to delete this item? This cannot be undone.')) return
     
     try {
@@ -114,9 +119,18 @@ export default function AdminMarketplacePage() {
   return (
     <div className="min-h-screen bg-[#F8F9FF] pb-8">
       <div className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] rounded-b-[32px] p-6 text-white shadow-lg">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold mb-2">🛍️ Marketplace Management</h1>
-          <p className="text-purple-100">{items.length} total items</p>
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">🛍️ Marketplace Management</h1>
+            <p className="text-purple-100">{items.length} total items</p>
+          </div>
+          <button
+            onClick={() => exportToCSV(formatItemsForExport(filteredItems), 'marketplace-items')}
+            disabled={filteredItems.length === 0}
+            className="px-4 py-2 bg-white text-purple-600 rounded-lg hover:bg-purple-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
+          >
+            📥 Export CSV
+          </button>
         </div>
       </div>
 
@@ -187,8 +201,13 @@ export default function AdminMarketplacePage() {
         ) : (
           <div className="space-y-3">
             {filteredItems.map((item) => (
-              <Card key={item.id} variant="elevated">
-                <CardContent className="p-6">
+              <Link 
+                key={item.id} 
+                to={`/marketplace/${item.id}`}
+                className="block"
+              >
+                <Card variant="elevated" className="hover:shadow-xl transition-shadow cursor-pointer">
+                  <CardContent className="p-6">
                   <div className="flex gap-6">
                     {/* Item Image */}
                     <div className="w-24 h-24 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
@@ -241,7 +260,7 @@ export default function AdminMarketplacePage() {
                       </div>
 
                       {/* Action Buttons */}
-                      <div className="flex gap-2 flex-wrap">
+                      <div className="flex gap-2 flex-wrap" onClick={(e) => e.preventDefault()}>
                         <select
                           value={item.status}
                           onChange={(e) => handleStatusChange(item.id, e.target.value)}
@@ -253,7 +272,7 @@ export default function AdminMarketplacePage() {
                         </select>
 
                         <button
-                          onClick={() => handleFeatureToggle(item.id, item.featured)}
+                          onClick={(e) => handleFeatureToggle(item.id, item.featured, e)}
                           className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                             item.featured
                               ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
@@ -264,14 +283,7 @@ export default function AdminMarketplacePage() {
                         </button>
 
                         <button
-                          onClick={() => window.open(`/marketplace/${item.id}`, '_blank')}
-                          className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-200 transition-colors"
-                        >
-                          👁️ View
-                        </button>
-
-                        <button
-                          onClick={() => handleDeleteItem(item.id)}
+                          onClick={(e) => handleDeleteItem(item.id, e)}
                           className="px-3 py-1.5 bg-red-100 text-red-700 rounded-lg text-sm font-medium hover:bg-red-200 transition-colors"
                         >
                           🗑️ Delete
@@ -281,6 +293,7 @@ export default function AdminMarketplacePage() {
                   </div>
                 </CardContent>
               </Card>
+            </Link>
             ))}
           </div>
         )}

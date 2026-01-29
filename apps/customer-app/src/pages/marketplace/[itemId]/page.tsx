@@ -63,8 +63,9 @@ export default function ItemDetailPage() {
   }
 
   const inCart = item ? getItemQuantity(item.id!) : 0
-  const canAddMore = item ? (inCart + quantity) <= item.stock : false
-  const isOutOfStock = item ? item.stock === 0 : true
+  const availableStock = item ? (item.stock ?? 0) : 0
+  const canAddMore = item ? (inCart + quantity) <= availableStock : false
+  const isOutOfStock = availableStock === 0
 
   if (loading) {
     return (
@@ -186,9 +187,9 @@ export default function ItemDetailPage() {
           <div className="mb-6">
             {isOutOfStock ? (
               <div className="text-red-600 font-medium">Out of Stock</div>
-            ) : item.stock <= 5 ? (
+            ) : availableStock <= 5 ? (
               <div className="text-orange-600 font-medium">
-                Only {item.stock} left in stock
+                Only {availableStock} left in stock
               </div>
             ) : (
               <div className="text-green-600 font-medium">In Stock</div>
@@ -213,13 +214,13 @@ export default function ItemDetailPage() {
                 <input
                   type="number"
                   min="1"
-                  max={item.stock}
+                  max={availableStock}
                   value={quantity}
-                  onChange={(e) => setQuantity(Math.max(1, Math.min(item.stock, parseInt(e.target.value) || 1)))}
+                  onChange={(e) => setQuantity(Math.max(1, Math.min(availableStock, parseInt(e.target.value) || 1)))}
                   className="w-20 text-center border border-gray-300 rounded-lg py-2 font-medium"
                 />
                 <button
-                  onClick={() => setQuantity(Math.min(item.stock, quantity + 1))}
+                  onClick={() => setQuantity(Math.min(availableStock, quantity + 1))}
                   className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg hover:bg-gray-50"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

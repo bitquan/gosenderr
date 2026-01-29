@@ -18,7 +18,7 @@ const db = admin.firestore();
 export const stripeWebhook = functions.https.onRequest(
   { 
     cors: true,
-    secrets: ['STRIPE_WEBHOOK_SECRET']
+    // secrets: ['STRIPE_WEBHOOK_SECRET']
   },
   async (req, res) => {
     const sig = req.headers['stripe-signature'];

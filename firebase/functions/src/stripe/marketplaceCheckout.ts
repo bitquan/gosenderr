@@ -25,7 +25,7 @@ interface MarketplaceCheckoutData {
 export const marketplaceCheckout = functions.https.onCall<MarketplaceCheckoutData>(
   {
     cors: true,
-    secrets: ['STRIPE_SECRET_KEY'],
+    // secrets: ['STRIPE_SECRET_KEY'],
   },
   async (request) => {
     // Authentication check

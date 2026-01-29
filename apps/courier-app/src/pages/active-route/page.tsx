@@ -122,7 +122,7 @@ export default function ActiveRoutePage() {
 
       if (allCompleted) {
         alert("🎉 Route completed! Great job!");
-        navigate("/courier/dashboard");
+        navigate("/dashboard");
       }
     } catch (error) {
       console.error("Error completing stop:", error);
@@ -161,7 +161,7 @@ export default function ActiveRoutePage() {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => navigate("/courier/routes")}
+            onClick={() => navigate("/routes")}
             className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
           >
             View Available Routes

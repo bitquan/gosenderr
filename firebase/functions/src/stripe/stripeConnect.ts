@@ -20,7 +20,7 @@ interface StripeConnectData {
 export const stripeConnect = functions.https.onCall<StripeConnectData>(
   {
     cors: true,
-    secrets: ['STRIPE_SECRET_KEY'],
+    // secrets: ['STRIPE_SECRET_KEY'],
   },
   async (request) => {
     // Authentication check

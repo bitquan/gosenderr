@@ -34,16 +34,26 @@ export default function AdminSidebar() {
       ]
     },
     {
+      title: 'Communications',
+      items: [
+        { label: 'Messaging', path: '/messaging', icon: '💬' },
+        { label: 'Disputes', path: '/disputes', icon: '⚖️' }
+      ]
+    },
+    {
       title: 'Operations',
       items: [
         { label: 'Jobs', path: '/jobs', icon: '📦' },
-        { label: 'Disputes', path: '/disputes', icon: '⚖️' }
+        { label: 'Courier Rates', path: '/rate-cards-comparison', icon: '💲' }
       ]
     },
     {
       title: 'Marketplace',
       items: [
-        { label: 'Items', path: '/marketplace', icon: '🛍️' }
+        { label: 'Items', path: '/marketplace', icon: '🛍️' },
+        { label: 'Flagged Content', path: '/flagged-content', icon: '🚩' },
+        { label: 'Orders', path: '/marketplace-orders', icon: '📦' },
+        { label: 'Categories', path: '/categories', icon: '📁' }
       ]
     },
     {
@@ -55,6 +65,7 @@ export default function AdminSidebar() {
     {
       title: 'System',
       items: [
+        { label: 'System Check', path: '/system-check', icon: '🔧' },
         { label: 'Audit Logs', path: '/audit-logs', icon: '📋' },
         { label: 'Feature Flags', path: '/feature-flags', icon: '🎚️' },
         { label: 'Settings', path: '/settings', icon: '⚙️' }
@@ -86,7 +97,7 @@ export default function AdminSidebar() {
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-full w-64 bg-white border-r border-gray-200 z-40 transform transition-transform duration-300 ease-in-out overflow-y-auto ${
+        className={`fixed top-0 left-0 h-full w-64 bg-white border-r border-gray-200 z-40 transform transition-transform duration-300 ease-in-out flex flex-col ${
           isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
       >
@@ -115,7 +126,7 @@ export default function AdminSidebar() {
         </div>
 
         {/* Navigation Groups */}
-        <nav className="p-4 space-y-6">
+        <nav className="p-4 space-y-6 flex-1 overflow-y-auto">
           {navGroups.map((group) => (
             <div key={group.title}>
               <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-3">
@@ -148,7 +159,7 @@ export default function AdminSidebar() {
         </nav>
 
         {/* Footer */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 bg-gray-50">
+        <div className="p-4 border-t border-gray-200 bg-gray-50">
           <div className="text-xs text-gray-500 text-center">
             <p>GoSenderr Admin v1.0</p>
             <p className="mt-1">© 2026</p>

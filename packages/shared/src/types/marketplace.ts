@@ -72,15 +72,14 @@ export interface MarketplaceItem {
   status: ItemStatus;
   isPromoted?: boolean;
   isFeatured?: boolean;
-
+  featured?: boolean;
+  
   // Stats
   views?: number;
   favorites?: number;
   sold?: number;
-
-  // Timestamps
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
+  stock?: number;
+  rating?: number;
   publishedAt?: Timestamp;
 }
 

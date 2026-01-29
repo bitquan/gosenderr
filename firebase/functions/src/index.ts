@@ -13,6 +13,7 @@ export { buildLongRoutes } from "./triggers/buildLongRoutes";
 export { seedHubs } from "./triggers/seedHubs";
 export { buildLongHaulRoutes } from "./triggers/buildLongHaulRoutes";
 export { onAdminActionLog } from "./triggers/onAdminActionLog";
+export { onUserCreate } from "./triggers/onUserCreate";
 
 // HTTP Callable Functions
 export { setPackageRunnerClaim } from "./http/setPackageRunnerClaim";

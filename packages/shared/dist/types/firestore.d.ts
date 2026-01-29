@@ -1,5 +1,5 @@
 import { Timestamp } from "firebase/firestore";
-export type UserRole = "buyer" | "seller" | "courier" | "package_runner" | "admin";
+export type UserRole = "buyer" | "seller" | "courier" | "package_runner" | "admin" | "customer" | "vendor";
 export type TransportMode = "walk" | "bike" | "scooter" | "car";
 export type LegacyUserRole = "customer" | "courier" | "admin";
 export interface PackageRateCard {
@@ -103,6 +103,8 @@ export interface CourierProfile {
         lng: number;
     };
     stripeConnectAccountId?: string;
+    todayJobs?: number;
+    completedJobs?: number;
 }
 export interface CourierData {
     isOnline: boolean;

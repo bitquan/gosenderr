@@ -13,6 +13,7 @@ interface CartItemProps {
 export function CartItem({ cartItem, onUpdateQuantity, onRemove }: CartItemProps) {
   const { item, quantity } = cartItem
   const primaryImage = item.images?.[0] || '/placeholder-item.png'
+  const available = item.stock ?? 0
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -22,7 +23,8 @@ export function CartItem({ cartItem, onUpdateQuantity, onRemove }: CartItemProps
   }
 
   const handleQuantityChange = (newQuantity: number) => {
-    if (newQuantity >= 1 && newQuantity <= item.stock) {
+    const available = item.stock ?? 0
+    if (newQuantity >= 1 && newQuantity <= available) {
       onUpdateQuantity(newQuantity)
     }
   }
@@ -72,7 +74,7 @@ export function CartItem({ cartItem, onUpdateQuantity, onRemove }: CartItemProps
           
           <button
             onClick={() => handleQuantityChange(quantity + 1)}
-            disabled={quantity >= item.stock}
+            disabled={quantity >= available}
             className="w-7 h-7 flex items-center justify-center border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -89,7 +91,7 @@ export function CartItem({ cartItem, onUpdateQuantity, onRemove }: CartItemProps
         </div>
 
         {/* Stock warning */}
-        {quantity >= item.stock && (
+        {quantity >= available && (
           <p className="text-xs text-orange-600 mt-1">
             Max quantity reached
           </p>

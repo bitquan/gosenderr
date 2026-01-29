@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore'
 import { db } from '../../lib/firebase/client'
-import { MarketplaceItem, ItemCondition } from '@gosenderr/shared'
+import { MarketplaceItem } from '@gosenderr/shared'
 import { SearchBar } from '../../components/marketplace/SearchBar'
 import { CategoryNav } from '../../components/marketplace/CategoryNav'
 import { FilterSidebar, FilterOptions } from '../../components/marketplace/FilterSidebar'

@@ -87,7 +87,7 @@ export const runnerNavItems: NavItem[] = [
 ];
 
 export const adminNavItems: NavItem[] = [
-  { icon: "🏠", label: "Home", href: "/admin/dashboard" },
+  { icon: "🏠", label: "Home", href: "/dashboard" },
   { icon: "👥", label: "Users", href: "/admin/users" },
   { icon: "🚚", label: "Runners", href: "/admin/runners" },
   { icon: "📦", label: "Packages", href: "/admin/packages" },

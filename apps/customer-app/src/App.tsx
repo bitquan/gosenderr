@@ -86,12 +86,15 @@ function App() {
             
             {/* Redirect /dashboard to /marketplace */}
             <Route path="/dashboard" element={<Navigate to="/marketplace" replace />} />
-            
-            {/* Customer &llowedRoles={['customer', 'vendor', 'buyer', 'seller']}>
+
+            {/* Customer dashboard */}
+            <Route path="/dashboard" element={
+              <RoleGuard allowedRoles={["customer", "vendor", "buyer", "seller"]}>
                 <DashboardPage />
               </RoleGuard>
             } />
-            <Route path="/marketplace" element={<MarketplacePage />} />
+
+            <Route path="/marketplace" element={<MarketplaceHome />} />
             <Route path="/marketplace/:itemId" element={<MarketplaceItemPage />} />
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/orders" element={<OrdersPage />} />

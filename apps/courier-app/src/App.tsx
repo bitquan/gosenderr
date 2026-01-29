@@ -12,6 +12,7 @@ import CourierLayout from './layouts/CourierLayout'
 // Pages
 import DashboardPage from './pages/dashboard/page'
 import LoginPage from './pages/Login'
+import SignupPage from './pages/Signup'
 import JobDetailPage from './pages/jobs/[jobId]/page'
 import ActiveNavigationPage from './pages/navigation/active'
 import RoutesPage from './pages/routes/page'
@@ -78,6 +79,7 @@ function App() {
         <NavigationProvider>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
             
             <Route element={<ProtectedRoute />}>
             <Route element={<CourierLayout />}>

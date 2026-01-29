@@ -31,7 +31,7 @@ export function RoleGate({ children, allowedRole }: RoleGateProps) {
       } else if (role === 'vendor') {
         navigate('/vendor/dashboard');
       } else {
-        navigate('/courier/dashboard');
+        navigate('/dashboard');
       }
     }
   }, [role, loading, allowedRole, navigate]);

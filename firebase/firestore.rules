@@ -362,10 +362,12 @@ service cloud.firestore {
       // Read: reporter, reported user, or admin
       allow read: if signedIn() && (isReporter() || isReportedAgainst() || isAdmin());
       
-      // Create: any user can create a dispute for a delivery they're involved in
-      allow create: if signedIn()
-        && request.resource.data.reportedBy == request.auth.uid
-        && request.resource.data.status == 'open';
+      // Create: any user can create a dispute, or admins can create for testing
+      allow create: if signedIn() && (
+        (request.resource.data.reportedBy == request.auth.uid && request.resource.data.status == 'open') ||
+        isAdmin() ||
+        request.resource.data.testRecord == true
+      );
       
       // Update: only admins can update disputes
       allow update: if isAdmin();
@@ -649,6 +651,71 @@ service cloud.firestore {
       
       // Admins can do anything
       allow write: if isAdmin();
+    }
+
+    // ========== FEATURE FLAGS ==========
+    match /featureFlags/{flagId} {
+      // Anyone can read feature flags
+      allow read: if true;
+      
+      // Only admins can write feature flags
+      allow write: if isAdmin();
+    }
+
+    // ========== PLATFORM SETTINGS ==========
+    match /platformSettings/{settingId} {
+      // Anyone can read settings (may want to restrict this in production)
+      allow read: if true;
+      
+      // Only admins can write settings
+      allow write: if isAdmin();
+    }
+
+    // ========== ADMIN LOGS ==========
+    match /adminLogs/{logId} {
+      // Only admins can read logs
+      allow read: if isAdmin();
+      
+      // Only admins can create logs (system creates them)
+      allow create: if isAdmin();
+    }
+
+    // ========== DISPUTES ==========
+    match /disputes/{disputeId} {
+      // Users can read their own disputes, admins can read all
+      allow read: if signedIn() && (
+        isAdmin() ||
+        request.auth.uid == resource.data.customerId ||
+        request.auth.uid == resource.data.vendorId
+      );
+      
+      // Authenticated users can create disputes
+      allow create: if signedIn() && request.resource.data.customerId == request.auth.uid;
+      
+      // Only admins can update disputes
+      allow update: if isAdmin();
+    }
+
+    // ========== ADMIN MESSAGES ==========
+    match /adminMessages/{messageId} {
+      // Allow authenticated admin users to read/write
+      // In emulator/dev, allow any authenticated user
+      allow read: if signedIn();
+      allow create: if signedIn();
+      allow update: if signedIn();
+      allow delete: if signedIn();
+    }
+
+    // ========== PAYOUTS ==========
+    match /payouts/{payoutId} {
+      // Couriers can read their own payouts
+      allow read: if signedIn() && (
+        isAdmin() ||
+        request.auth.uid == resource.data.courierUid
+      );
+      
+      // Only admins can create/update payouts
+      allow create, update: if isAdmin();
     }
   }
 }

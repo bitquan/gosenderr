@@ -62,8 +62,8 @@ export default function CourierStripeOnboardingPage() {
       const origin = window.location.origin;
       const data = await createStripeConnectLink({
         accountId: courierProfile?.stripeConnectAccountId || null,
-        refreshUrl: `${origin}/courier/onboarding/stripe`,
-        returnUrl: `${origin}/courier/onboarding/stripe?success=1`,
+        refreshUrl: `${origin}/onboarding/stripe`,
+        returnUrl: `${origin}/onboarding/stripe?success=1`,
       });
 
       // Save Stripe account ID to courierProfile
@@ -88,11 +88,11 @@ export default function CourierStripeOnboardingPage() {
   };
 
   const handleSkipForNow = () => {
-    navigate("/courier/dashboard");
+    navigate("/dashboard");
   };
 
   const handleGoToDashboard = () => {
-    navigate("/courier/dashboard");
+    navigate("/dashboard");
   };
 
   if (loading) {

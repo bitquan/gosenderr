@@ -1,241 +1,191 @@
 import { useEffect, useState } from 'react'
-import { doc, onSnapshot, updateDoc } from 'firebase/firestore'
+import { collection, getDocs, doc, updateDoc, Timestamp } from 'firebase/firestore'
 import { db } from '../lib/firebase'
+import { useAuth } from '../hooks/useAuth'
 import { Card, CardHeader, CardTitle, CardContent } from '../components/Card'
-import { Link } from 'react-router-dom'
 
-interface FeatureFlags {
-  marketplace: {
-    enabled: boolean
-    itemListings: boolean
-    combinedPayments: boolean
-  }
-  delivery: {
-    onDemand: boolean
-    routes: boolean
-    longRoutes: boolean
-    longHaul: boolean
-  }
-  courier: {
-    rateCards: boolean
-    equipmentBadges: boolean
-    workModes: boolean
-  }
-  seller: {
-    stripeConnect: boolean
-    multiplePhotos: boolean
-    foodListings: boolean
-  }
-  customer: {
-    liveTracking: boolean
-    proofPhotos: boolean
-    routeDelivery: boolean
-    packageShipping: boolean
-  }
-  packageRunner: {
-    enabled: boolean
-    hubNetwork: boolean
-    packageTracking: boolean
-  }
-  admin: {
-    courierApproval: boolean
-    equipmentReview: boolean
-    disputeManagement: boolean
-    analytics: boolean
-    featureFlagsControl: boolean
-  }
-  advanced: {
-    pushNotifications: boolean
-    ratingEnforcement: boolean
-    autoCancel: boolean
-    refunds: boolean
-  }
-  ui: {
-    modernStyling: boolean
-    darkMode: boolean
-    animations: boolean
-  }
+interface FeatureFlag {
+  id: string
+  name: string
+  description: string
+  enabled: boolean
+  category: string
+  createdAt?: any
+  updatedAt?: any
 }
 
 export default function FeatureFlagsPage() {
-  const [flags, setFlags] = useState<FeatureFlags | null>(null)
+  const { user } = useAuth()
+  const [flags, setFlags] = useState<FeatureFlag[]>([])
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [editedFlags, setEditedFlags] = useState<FeatureFlags | null>(null)
+  const [updating, setUpdating] = useState<string | null>(null)
 
   useEffect(() => {
-    const unsubscribe = onSnapshot(
-      doc(db, 'featureFlags', 'config'),
-      (snapshot) => {
-        if (snapshot.exists()) {
-          const data = snapshot.data() as FeatureFlags
-          setFlags(data)
-          setEditedFlags(data)
-        }
-        setLoading(false)
-      },
-      (error) => {
-        console.error('Error loading feature flags:', error)
-        setLoading(false)
-      }
-    )
-
-    return () => unsubscribe()
+    loadFlags()
   }, [])
 
-  const handleToggle = (category: keyof FeatureFlags, flag: string) => {
-    if (!editedFlags) return
-    
-    setEditedFlags({
-      ...editedFlags,
-      [category]: {
-        ...editedFlags[category],
-        [flag]: !(editedFlags[category] as any)[flag]
-      }
-    })
-  }
-
-  const handleSave = async () => {
-    if (!editedFlags) return
-
-    setSaving(true)
+  const loadFlags = async () => {
     try {
-      await updateDoc(doc(db, 'featureFlags', 'config'), editedFlags as any)
-      alert('✅ Feature flags saved successfully!')
+      const snapshot = await getDocs(collection(db, 'featureFlags'))
+      const flagsData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as FeatureFlag))
+      
+      // Sort by category then name
+      flagsData.sort((a, b) => {
+        if (a.category === b.category) {
+          return a.name.localeCompare(b.name)
+        }
+        return a.category.localeCompare(b.category)
+      })
+      
+      setFlags(flagsData)
     } catch (error) {
-      console.error('Error saving flags:', error)
-      alert('Failed to save feature flags')
+      console.error('Error loading feature flags:', error)
     } finally {
-      setSaving(false)
+      setLoading(false)
     }
   }
 
-  const hasChanges = JSON.stringify(flags) !== JSON.stringify(editedFlags)
+  const toggleFlag = async (flagId: string, currentValue: boolean) => {
+    setUpdating(flagId)
+    try {
+      await updateDoc(doc(db, 'featureFlags', flagId), {
+        enabled: !currentValue,
+        updatedAt: Timestamp.now()
+      })
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center">
-        <p className="text-gray-600">Loading feature flags...</p>
-      </div>
-    )
+      // Update local state
+      setFlags(flags.map(flag => 
+        flag.id === flagId ? { ...flag, enabled: !currentValue } : flag
+      ))
+
+      console.log(`Feature flag ${flagId} ${!currentValue ? 'enabled' : 'disabled'}`)
+    } catch (error) {
+      console.error('Error toggling feature flag:', error)
+      alert('Failed to update feature flag')
+    } finally {
+      setUpdating(null)
+    }
   }
 
-  if (!editedFlags) {
-    return (
-      <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center">
-        <p className="text-gray-600">Feature flags not found</p>
-      </div>
-    )
-  }
+  // Group flags by category
+  const flagsByCategory = flags.reduce((acc, flag) => {
+    if (!acc[flag.category]) {
+      acc[flag.category] = []
+    }
+    acc[flag.category].push(flag)
+    return acc
+  }, {} as Record<string, FeatureFlag[]>)
 
-  const categories = [
-    { key: 'marketplace', title: '🛒 Marketplace', icon: '🛒' },
-    { key: 'delivery', title: '🚚 Delivery', icon: '🚚' },
-    { key: 'courier', title: '⚡ Courier', icon: '⚡' },
-    { key: 'seller', title: '🏪 Seller', icon: '🏪' },
-    { key: 'customer', title: '📦 Customer', icon: '📦' },
-    { key: 'packageRunner', title: '🚛 Package Runners', icon: '🚛' },
-    { key: 'admin', title: '🔧 Admin', icon: '🔧' },
-    { key: 'advanced', title: '⚙️ Advanced', icon: '⚙️' },
-    { key: 'ui', title: '🎨 UI', icon: '🎨' }
-  ]
+  const categoryIcons: Record<string, string> = {
+    marketplace: '🛒',
+    delivery: '🚚',
+    payments: '💳',
+    notifications: '🔔',
+    system: '⚙️'
+  }
 
   return (
     <div className="min-h-screen bg-[#F8F9FF] pb-8">
       <div className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] rounded-b-[32px] p-6 text-white shadow-lg">
         <div className="max-w-6xl mx-auto">
-          <Link 
-            to="/dashboard" 
-            className="inline-flex items-center text-white/80 hover:text-white mb-4 transition-colors"
-          >
-            <span className="mr-2">←</span>
-            Back to Dashboard
-          </Link>
           <h1 className="text-3xl font-bold mb-2">🎚️ Feature Flags</h1>
-          <p className="text-purple-100">Platform feature configuration</p>
+          <p className="text-purple-100">Enable or disable platform features</p>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 -mt-6 space-y-4">
-        {/* Save Banner */}
-        {hasChanges && (
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 -mt-8 space-y-6">
+        {loading ? (
           <Card variant="elevated">
-            <CardContent className="p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
-              <div className="flex items-center justify-between">
-                <p className="text-yellow-900 font-semibold">⚠️ You have unsaved changes</p>
-                <button
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="px-6 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-all disabled:opacity-50"
-                >
-                  {saving ? 'Saving...' : 'Save Changes'}
-                </button>
-              </div>
+            <CardContent className="p-8 text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+              <p className="mt-4 text-gray-600">Loading feature flags...</p>
             </CardContent>
           </Card>
-        )}
-
-        {/* Feature Categories */}
-        {categories.map(({ key, title, icon }) => {
-          const categoryFlags = editedFlags[key as keyof FeatureFlags] as Record<string, boolean>
-          
-          return (
-            <Card key={key} variant="elevated">
+        ) : (
+          Object.entries(flagsByCategory).map(([category, categoryFlags]) => (
+            <Card key={category} variant="elevated">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <span>{icon}</span>
-                  <span>{title}</span>
+                <CardTitle>
+                  {categoryIcons[category] || '📋'} {category.charAt(0).toUpperCase() + category.slice(1)}
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {Object.entries(categoryFlags).map(([flagKey, flagValue]) => (
+                <div className="space-y-4">
+                  {categoryFlags.map(flag => (
                     <div
-                      key={flagKey}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                      key={flag.id}
+                      className="flex items-center justify-between p-4 border-2 border-gray-200 rounded-xl hover:border-purple-200 transition-colors"
                     >
-                      <div>
-                        <p className="font-semibold text-gray-900 capitalize">
-                          {flagKey.replace(/([A-Z])/g, ' $1').trim()}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {key}.{flagKey}
-                        </p>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900">{flag.name}</h3>
+                        <p className="text-sm text-gray-600 mt-1">{flag.description}</p>
                       </div>
+
                       <button
-                        onClick={() => handleToggle(key as keyof FeatureFlags, flagKey)}
-                        className={`relative w-14 h-7 rounded-full transition-colors ${
-                          flagValue ? 'bg-green-500' : 'bg-gray-300'
-                        }`}
+                        onClick={() => toggleFlag(flag.id, flag.enabled)}
+                        disabled={updating === flag.id}
+                        className={`
+                          relative inline-flex h-8 w-16 items-center rounded-full transition-colors
+                          ${flag.enabled ? 'bg-green-500' : 'bg-gray-300'}
+                          ${updating === flag.id ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                        `}
                       >
-                        <div
-                          className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-transform ${
-                            flagValue ? 'translate-x-8' : 'translate-x-1'
-                          }`}
+                        <span
+                          className={`
+                            inline-block h-6 w-6 transform rounded-full bg-white transition-transform
+                            ${flag.enabled ? 'translate-x-9' : 'translate-x-1'}
+                          `}
                         />
                       </button>
+
+                      <div className="ml-4 text-right">
+                        <span
+                          className={`
+                            inline-block px-3 py-1 rounded-full text-sm font-medium
+                            ${flag.enabled 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-gray-100 text-gray-800'
+                            }
+                          `}
+                        >
+                          {flag.enabled ? 'Enabled' : 'Disabled'}
+                        </span>
+                      </div>
                     </div>
                   ))}
                 </div>
               </CardContent>
             </Card>
-          )
-        })}
+          ))
+        )}
 
-        {/* Bottom Save Button */}
-        {hasChanges && (
+        {!loading && flags.length === 0 && (
           <Card variant="elevated">
-            <CardContent className="p-6">
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="w-full py-3 px-4 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-700 transition-all disabled:opacity-50"
-              >
-                {saving ? 'Saving Changes...' : 'Save All Changes'}
-              </button>
+            <CardContent className="p-12 text-center">
+              <div className="text-6xl mb-4">🎚️</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">No Feature Flags</h3>
+              <p className="text-gray-600">No feature flags have been configured yet.</p>
             </CardContent>
           </Card>
         )}
+
+        {/* Warning banner */}
+        <Card variant="elevated">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3 text-amber-800 bg-amber-50 p-4 rounded-lg">
+              <div className="text-2xl">⚠️</div>
+              <div>
+                <h4 className="font-semibold mb-1">Caution</h4>
+                <p className="text-sm">
+                  Changing feature flags affects all users immediately. Be careful when disabling critical features like payments or marketplace functionality.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

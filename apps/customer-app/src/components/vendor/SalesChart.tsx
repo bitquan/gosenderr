@@ -35,9 +35,8 @@ export function SalesChart({ data }: SalesChartProps) {
     const chartWidth = rect.width - padding.left - padding.right;
     const chartHeight = rect.height - padding.top - padding.bottom;
 
-    // Find max values
+    // Find max revenue value
     const maxRevenue = Math.max(...data.map(d => d.revenue), 100);
-    const maxOrders = Math.max(...data.map(d => d.orders), 10);
 
     // Draw grid lines
     ctx.strokeStyle = '#e5e7eb';
