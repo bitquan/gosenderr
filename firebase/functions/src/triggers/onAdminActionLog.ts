@@ -39,7 +39,7 @@ export const onAdminActionLog = functions.firestore
         .update({
           "adminProfile.totalActions":
             admin.firestore.FieldValue.increment(1),
-          "adminProfile.lastActionAt": admin.firestore.Timestamp.now(),
+          "adminProfile.lastActionAt": admin.firestore.FieldValue.serverTimestamp(),
         });
 
       functions.logger.info(
