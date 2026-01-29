@@ -2,6 +2,8 @@ import { test, expect } from "@playwright/test";
 
 // Ensure a clean auth state before each test to avoid leaked sessions
 test.beforeEach(async ({ page }) => {
+  // Ensure we're on the app origin before accessing localStorage
+  await page.goto('/');
   await page.context().clearCookies();
   await page.evaluate(() => localStorage.clear());
 });

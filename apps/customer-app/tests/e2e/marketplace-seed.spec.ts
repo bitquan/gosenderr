@@ -4,6 +4,7 @@ const VENDOR_EMAIL = 'vender@sender.com';
 const VENDOR_PASS = 'admin123';
 
 test('seeded item appears in marketplace when signed in', async ({ page }) => {
+  await page.goto('/');
   await page.context().clearCookies();
   await page.evaluate(() => localStorage.clear());
   await page.goto('/login');
