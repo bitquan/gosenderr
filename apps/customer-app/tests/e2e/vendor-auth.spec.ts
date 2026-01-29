@@ -3,6 +3,12 @@ import { test, expect } from '@playwright/test';
 const VENDOR_EMAIL = 'vender@sender.com';
 const VENDOR_PASS = 'admin123';
 
+// Ensure a clean auth state before each test to avoid leaked sessions
+test.beforeEach(async ({ page }) => {
+  await page.context().clearCookies();
+  await page.evaluate(() => localStorage.clear());
+});
+
 test.describe('Vendor auth + pages', () => {
   test('can sign in as vendor and access vendor pages', async ({ page }) => {
     await page.goto('/login');
