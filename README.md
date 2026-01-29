@@ -1,5 +1,8 @@
 # GoSenderr Monorepo
 
+[![CI: Emulators & Tests](https://github.com/bitquan/gosenderr/actions/workflows/emulator-tests.yml/badge.svg?branch=main)](https://github.com/bitquan/gosenderr/actions/workflows/emulator-tests.yml)
+
+
 A modern on-demand delivery platform with web apps (Vite + React + TypeScript) that can be packaged as native iOS and Android apps using Capacitor.
 
 ## 🏗️ Project Structure

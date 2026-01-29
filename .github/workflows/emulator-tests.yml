@@ -7,6 +7,10 @@ on:
 jobs:
   emu-tests:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18, 20]
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -14,7 +18,18 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ matrix.node-version }}
+
+      - name: Cache pnpm store and node_modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pnpm-store
+            ~/.cache/pnpm
+            node_modules
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}-node-${{ matrix.node-version }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
 
       - name: Install pnpm
         run: npm i -g pnpm@latest
@@ -29,17 +44,24 @@ jobs:
         env:
           GCLOUD_PROJECT: demo
         run: |
-          npx firebase emulators:exec --only firestore,auth "pnpm --prefix firebase/functions run test:integration"
+          npx firebase emulators:exec --only firestore,auth "pnpm --prefix firebase/functions run test:integration -- --reporter mocha-junit-reporter --reporter-options mochaFile=functions-test-results/results.xml"
 
       - name: Run Admin App tests under emulators (Vitest)
         env:
           GCLOUD_PROJECT: demo
         run: |
-          npx firebase emulators:exec --only firestore,auth "pnpm --prefix apps/admin-app test -- --run --reporter verbose"
+          # generate JUnit output for CI troubleshooting
+          npx firebase emulators:exec --only firestore,auth "pnpm --prefix apps/admin-app test -- --run --reporter junit"
 
-      - name: Upload test results (if any)
+      - name: Collect test artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: vitest-results
-          path: apps/admin-app/test-results || ''
+          name: test-results
+          path: |
+            functions-test-results/**
+            apps/admin-app/vitest-junit.xml
+
+      - name: Show workspace (for debugging)
+        if: ${{ github.event.action == 'opened' || github.event.action == 'synchronize' }}
+        run: ls -la
