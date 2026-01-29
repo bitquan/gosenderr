@@ -602,6 +602,9 @@ These hooks:
 
 ## 🐛 Known Issues & TODOs
 
+See triage issue: https://github.com/bitquan/gosenderr/issues/72
+
+
 ### Cleanup Needed
 
 1. **Duplicate components**: `components/v2/PackageBadges.tsx` and `components/v2/PhotoGallery.tsx` exist but are NOT used. Should be deleted (features/jobs/shared/ versions are the canonical ones).
