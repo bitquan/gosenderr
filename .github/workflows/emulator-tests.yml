@@ -98,9 +98,9 @@ jobs:
             apps/admin-app/vitest-junit.xml
 
       - name: Warn about missing FIREBASE_TOKEN
-        if: ${{ !secrets.FIREBASE_TOKEN }}
+        if: "${{ !secrets.FIREBASE_TOKEN }}"
         run: echo "Warning: FIREBASE_TOKEN is not configured; some emulator features may show warnings in CI. Consider adding as a repository secret."
 
       - name: Show workspace (for debugging)
-        if: ${{ github.event.action == 'opened' || github.event.action == 'synchronize' }}
+        if: "${{ github.event.action == 'opened' || github.event.action == 'synchronize' }}"
         run: ls -la
