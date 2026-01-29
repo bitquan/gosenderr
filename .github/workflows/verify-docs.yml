@@ -30,17 +30,9 @@ jobs:
           cache: 'pnpm'
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 8.15.1
-
-      - name: Verify pnpm available
         run: |
-          if ! command -v pnpm >/dev/null; then
-            echo "pnpm not found — falling back to corepack"
-            corepack enable
-            corepack prepare pnpm@8.15.1 --activate
-          fi
+          corepack enable
+          corepack prepare pnpm@8.15.1 --activate
           pnpm --version
 
       - name: Install dependencies
