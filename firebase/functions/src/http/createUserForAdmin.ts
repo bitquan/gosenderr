@@ -8,7 +8,7 @@ interface CreateUserRequest {
   role: string; // courier | admin | customer | vendor | package_runner
 }
 
-export const createUserForAdmin = functions.https.onCall(async (data: CreateUserRequest, context) => {
+export async function createUserForAdminHandler(data: CreateUserRequest, context: functions.https.CallableContext) {
   if (!context.auth) {
     throw new functions.https.HttpsError('unauthenticated', 'Authentication required');
   }
@@ -80,6 +80,8 @@ export const createUserForAdmin = functions.https.onCall(async (data: CreateUser
     return { success: true, uid: userRecord.uid };
   } catch (error: any) {
     functions.logger.error('createUserForAdmin error', error);
-    throw new functions.https.HttpsError('internal', error.message || 'Failed to create user');
+    throw error; // rethrow original error so tests can see stack
   }
-});
+}
+
+export const createUserForAdmin = functions.https.onCall(createUserForAdminHandler);

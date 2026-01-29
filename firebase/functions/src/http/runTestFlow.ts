@@ -7,7 +7,7 @@ interface RunTestFlowRequest {
   cleanup?: boolean; // whether to delete test artifacts on completion
 }
 
-export const runTestFlow = functions.https.onCall(async (data: RunTestFlowRequest, context) => {
+export async function runTestFlowHandler(data: RunTestFlowRequest, context: functions.https.CallableContext) {
   if (!context.auth) {
     throw new functions.https.HttpsError('unauthenticated', 'Authentication required');
   }
@@ -67,7 +67,7 @@ export const runTestFlow = functions.https.onCall(async (data: RunTestFlowReques
       }
 
       await userRef.set(updates, { merge: true });
-      await log('Onboarding data written', { updates });
+      await log('Onboarding data written', { updatedFields: Object.keys(updates) });
     }
 
     // Step: marketplace (for vendor)
@@ -108,6 +108,8 @@ export const runTestFlow = functions.https.onCall(async (data: RunTestFlowReques
     await runLogRef.update({ status: 'failed', error: error.message || String(error), finishedAt: admin.firestore.FieldValue.serverTimestamp() });
     await log('Test flow failed', { error: error.message });
     functions.logger.error('runTestFlow error', error);
-    throw new functions.https.HttpsError('internal', error.message || 'Test flow failed');
+    throw error; // rethrow so tests get stack
   }
-});
+}
+
+export const runTestFlow = functions.https.onCall(runTestFlowHandler);
