@@ -5,6 +5,7 @@ import { db } from '../lib/firebase'
 import { Card, CardHeader, CardTitle, CardContent } from '../components/Card'
 import EditRoleModal from '../components/EditRoleModal'
 import BanUserModal from '../components/BanUserModal'
+import CreateUserModal from '../components/CreateUserModal'
 import { exportToCSV, formatUsersForExport } from '../lib/csvExport'
 
 interface User {
@@ -26,6 +27,7 @@ export default function AdminUsersPage() {
   const [filter, setFilter] = useState<'all' | 'customer' | 'courier' | 'package_runner' | 'vendor' | 'admin'>('all')
   const [editRoleUser, setEditRoleUser] = useState<User | null>(null)
   const [banUser, setBanUser] = useState<User | null>(null)
+  const [createUserOpen, setCreateUserOpen] = useState(false)
 
   useEffect(() => {
     loadUsers()
@@ -67,12 +69,20 @@ export default function AdminUsersPage() {
           {users.length === 0 && !loading && (
             <p className="text-yellow-200 text-sm mt-2">⚠️ No users found in database</p>
           )}
-          <button
-            onClick={() => loadUsers()}
-            className="mt-3 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg text-sm font-semibold transition"
-          >
-            🔄 Refresh
-          </button>
+          <div className="mt-3 flex gap-2">
+            <button
+              onClick={() => setCreateUserOpen(true)}
+              className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg text-sm font-semibold transition"
+            >
+              ➕ Create User
+            </button>
+            <button
+              onClick={() => loadUsers()}
+              className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg text-sm font-semibold transition"
+            >
+              🔄 Refresh
+            </button>
+          </div>
         </div>
       </div>
 
@@ -273,6 +283,15 @@ export default function AdminUsersPage() {
         onSuccess={() => {
           loadUsers()
           setBanUser(null)
+        }}
+      />
+
+      <CreateUserModal
+        isOpen={createUserOpen}
+        onClose={() => setCreateUserOpen(false)}
+        onSuccess={() => {
+          loadUsers()
+          setCreateUserOpen(false)
         }}
       />
     </div>

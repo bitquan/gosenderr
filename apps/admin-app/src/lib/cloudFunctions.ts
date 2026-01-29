@@ -60,3 +60,51 @@ export async function createStripeConnectLink(data: StripeConnectData): Promise<
     throw new Error(error.message || 'Failed to create Stripe Connect link');
   }
 }
+
+// --- Admin-only callable helpers ---
+
+interface CreateUserRequest {
+  email: string
+  password: string
+  displayName?: string
+  role: 'courier' | 'admin' | 'customer' | 'vendor' | 'package_runner'
+}
+
+interface CreateUserResult {
+  success: boolean
+  uid?: string
+}
+
+interface RunTestFlowRequest {
+  targetUserId: string
+  steps?: string[]
+  cleanup?: boolean
+}
+
+interface RunTestFlowResult {
+  success: boolean
+  runLogId?: string
+}
+
+const createUserForAdminFn = httpsCallable<CreateUserRequest, CreateUserResult>(functions, 'createUserForAdmin')
+const runTestFlowFn = httpsCallable<RunTestFlowRequest, RunTestFlowResult>(functions, 'runTestFlow')
+
+export async function createUserForAdmin(data: CreateUserRequest): Promise<CreateUserResult> {
+  try {
+    const res = await createUserForAdminFn(data)
+    return res.data
+  } catch (error: any) {
+    console.error('createUserForAdmin error', error)
+    throw new Error(error.message || 'Failed to create user')
+  }
+}
+
+export async function runTestFlow(data: RunTestFlowRequest): Promise<RunTestFlowResult> {
+  try {
+    const res = await runTestFlowFn(data)
+    return res.data
+  } catch (error: any) {
+    console.error('runTestFlow error', error)
+    throw new Error(error.message || 'Failed to run test flow')
+  }
+}

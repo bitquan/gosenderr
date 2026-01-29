@@ -5,6 +5,7 @@ import { db } from '../lib/firebase'
 import { Card, CardHeader, CardTitle, CardContent } from '../components/Card'
 import EditRoleModal from '../components/EditRoleModal'
 import BanUserModal from '../components/BanUserModal'
+import RunTestFlowModal from '../components/RunTestFlowModal'
 
 interface AdminLog {
   id: string
@@ -77,6 +78,7 @@ export default function UserDetailPage() {
     totalSpent: 0,
     totalEarned: 0,
   })
+  const [runFlowOpen, setRunFlowOpen] = useState(false)
   const [activityLogs, setActivityLogs] = useState<AdminLog[]>([])
   const [logsLoading, setLogsLoading] = useState(true)
 
@@ -398,6 +400,11 @@ export default function UserDetailPage() {
                   <span className="px-2 py-1 rounded-full bg-orange-500 text-white text-xs font-semibold">⚠️ SUSPENDED</span>
                 )}
               </div>
+              <div className="mt-4 flex gap-2">
+                <button onClick={() => setEditRoleModalOpen(true)} className="px-4 py-2 bg-white text-purple-700 rounded-lg">Edit Role</button>
+                <button onClick={() => setBanModalOpen(true)} className="px-4 py-2 bg-red-600 text-white rounded-lg">{user.banned ? 'Unban' : 'Ban'}</button>
+                <button onClick={() => setRunFlowOpen(true)} className="px-4 py-2 bg-gradient-to-r from-[#6B4EFF] to-[#9D7FFF] text-white rounded-lg">Run Test Flow</button>
+              </div>
             </div>
           </div>
         </div>
@@ -716,6 +723,13 @@ export default function UserDetailPage() {
           </div>
         </div>
       )}
+
+      {/* Run Test Flow Modal */}
+      <RunTestFlowModal
+        userId={user?.id}
+        isOpen={runFlowOpen}
+        onClose={() => setRunFlowOpen(false)}
+      />
 
       {/* Suspend Modal */}
       {showSuspendModal && (
