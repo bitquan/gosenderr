@@ -20,12 +20,13 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: Cache pnpm store and node_modules
+      - name: Cache pnpm store, node_modules, and Firebase emulator binaries
         uses: actions/cache@v4
         with:
           path: |
             ~/.pnpm-store
             ~/.cache/pnpm
+            ~/.cache/firebase/emulators
             node_modules
           key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}-node-${{ matrix.node-version }}
           restore-keys: |
@@ -44,14 +45,14 @@ jobs:
         env:
           GCLOUD_PROJECT: demo
         run: |
-          npx firebase emulators:exec --only firestore,auth "pnpm --prefix firebase/functions run test:integration -- --reporter mocha-junit-reporter --reporter-options mochaFile=functions-test-results/results.xml"
+          # ensure function package deps are installed and result dir exists
+          npx firebase emulators:exec --only firestore,auth "cd firebase/functions && pnpm install && mkdir -p ../functions-test-results && pnpm run test:integration -- --reporter mocha-junit-reporter --reporter-options mochaFile=../functions-test-results/results.xml"
 
       - name: Run Admin App tests under emulators (Vitest)
         env:
           GCLOUD_PROJECT: demo
         run: |
-          # generate JUnit output for CI troubleshooting
-          npx firebase emulators:exec --only firestore,auth "pnpm --prefix apps/admin-app test -- --run --reporter junit"
+          npx firebase emulators:exec --only firestore,auth "cd apps/admin-app && pnpm install && pnpm run test -- --run --reporter junit --reporter-options outputFile=vitest-junit.xml"
 
       - name: Collect test artifacts
         if: always()
@@ -61,6 +62,10 @@ jobs:
           path: |
             functions-test-results/**
             apps/admin-app/vitest-junit.xml
+
+      - name: Warn about missing FIREBASE_TOKEN
+        if: ${{ !secrets.FIREBASE_TOKEN }}
+        run: echo "Warning: FIREBASE_TOKEN is not configured; some emulator features may show warnings in CI. Consider adding as a repository secret."
 
       - name: Show workspace (for debugging)
         if: ${{ github.event.action == 'opened' || github.event.action == 'synchronize' }}
