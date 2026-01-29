@@ -19,6 +19,8 @@ export { onUserCreate } from "./triggers/onUserCreate";
 export { setPackageRunnerClaim } from "./http/setPackageRunnerClaim";
 export { setAdminClaim } from "./http/setAdminClaim";
 export { banUser } from "./http/banUser";
+export { createUserForAdmin } from "./http/createUserForAdmin";
+export { runTestFlow } from "./http/runTestFlow";
 
 // Stripe Functions
 export * from "./stripe";
