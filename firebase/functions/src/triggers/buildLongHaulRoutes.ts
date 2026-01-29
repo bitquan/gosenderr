@@ -163,7 +163,7 @@ export const buildLongHaulRoutes = functions.pubsub
             platformFees,
             totalCustomerPaid,
           },
-          createdAt: admin.firestore.Timestamp.now(),
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
         };
 
         // Add route to batch
@@ -187,7 +187,7 @@ export const buildLongHaulRoutes = functions.pubsub
             const legIndex = pkg.journey.indexOf(journeyLeg);
             batch.update(packageRef, {
               [`journey.${legIndex}.routeId`]: routeId,
-              updatedAt: admin.firestore.Timestamp.now(),
+              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
             });
           }
         }

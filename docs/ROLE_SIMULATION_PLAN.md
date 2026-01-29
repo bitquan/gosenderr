@@ -120,3 +120,23 @@ The script:
 
 - Use Stripe test keys or bypass payments?
 - Should we auto-complete job status transitions in the script?
+
+## Testing & Tools
+
+- The UI tests and unit tests mock Firestore snapshots; use the provided helper in the repo at `apps/admin-app/src/tests/firestoreMock.ts` to obtain consistent `DocumentSnapshot` and `QuerySnapshot` shapes (`data()` method for documents and `docs` array for queries).
+- Functions integration tests should invoke exported handlers (e.g., `runSystemSimulationHandler`) directly when possible to avoid network-dependent flaky behavior.
+- Add a CI job that starts the emulators and runs both the functions integration tests and the frontend Vitest suite to catch regressions.
+
+### FIREBASE_TOKEN in CI
+
+To allow Firebase CLI operations that require authentication (and to avoid emulator warnings), add a repository secret named `FIREBASE_TOKEN` containing a token obtained from `firebase login:ci` (or prefer a GCP service account for scoped permissions). Example validation step in GitHub Actions:
+
+```yaml
+- name: Validate FIREBASE_TOKEN (if provided)
+  if: ${{ secrets.FIREBASE_TOKEN }}
+  env:
+    FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+  run: firebase projects:list --token "$FIREBASE_TOKEN" --format=json || (echo "FIREBASE_TOKEN invalid" && exit 1)
+```
+
+This step ensures the token is valid and will fail early with a clear message if not.

@@ -8,7 +8,10 @@
   "functions": {
     "source": "firebase/functions",
     "codebase": "default",
-    "runtime": "nodejs20"
+    "runtime": "nodejs20",
+    "predeploy": [
+      "node scripts/predeploy-vendor-shared.js"
+    ]
   },
   "hosting": [
     {

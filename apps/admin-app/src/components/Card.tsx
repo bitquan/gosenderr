@@ -76,15 +76,17 @@ export function CardHeader({
 export function CardTitle({
   children,
   className,
+  as = 'h3',
   ...props
-}: HTMLAttributes<HTMLHeadingElement>) {
+}: HTMLAttributes<HTMLHeadingElement> & { as?: keyof JSX.IntrinsicElements }) {
+  const Tag = as as any
   return (
-    <h3
+    <Tag
       className={cn('text-lg font-semibold text-gray-900', className)}
       {...props}
     >
       {children}
-    </h3>
+    </Tag>
   )
 }
 

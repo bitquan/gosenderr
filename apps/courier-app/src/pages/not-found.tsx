@@ -5,7 +5,7 @@ export default function CourierNotFound() {
     <NotFoundPage
       title="Courier page not found"
       description="That courier page doesn’t exist."
-      actionHref="/courier/dashboard"
+      actionHref="/dashboard"
       actionLabel="Back to Dashboard"
       emoji="🚴"
     />

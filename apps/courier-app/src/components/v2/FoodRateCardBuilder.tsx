@@ -30,6 +30,12 @@ export function FoodRateCardBuilder({
   const [restaurantWaitPay, setRestaurantWaitPay] = useState(
     currentRateCard?.restaurantWaitPay?.toString() || "0.20",
   );
+  const [maxPickupDistanceMiles, setMaxPickupDistanceMiles] = useState(
+    currentRateCard?.maxPickupDistanceMiles?.toString() || ""
+  );
+  const [maxDeliveryDistanceMiles, setMaxDeliveryDistanceMiles] = useState(
+    currentRateCard?.maxDeliveryDistanceMiles?.toString() || ""
+  );
   const [optionalFees, setOptionalFees] = useState<
     Array<{ name: string; amount: number }>
   >(currentRateCard?.optionalFees || []);
@@ -231,6 +237,14 @@ export function FoodRateCardBuilder({
       ...(peakHours.length > 0 && { peakHours }),
     };
 
+    // Add optional distance limits
+    if (maxPickupDistanceMiles) {
+      rateCard.maxPickupDistanceMiles = parseFloat(maxPickupDistanceMiles);
+    }
+    if (maxDeliveryDistanceMiles) {
+      rateCard.maxDeliveryDistanceMiles = parseFloat(maxDeliveryDistanceMiles);
+    }
+
     setSaving(true);
     try {
       await onSave(rateCard);
@@ -368,6 +382,100 @@ export function FoodRateCardBuilder({
                 /min
               </span>
             </div>
+          </div>
+        </div>
+
+        {/* Distance Limits */}
+        <div
+          style={{
+            marginBottom: "24px",
+            padding: "20px",
+            background: "#f9fafb",
+            borderRadius: "8px",
+          }}
+        >
+          <h3
+            style={{
+              fontSize: "16px",
+              fontWeight: "600",
+              marginBottom: "16px",
+            }}
+          >
+            Distance Limits (Optional)
+          </h3>
+
+          <div style={{ marginBottom: "16px" }}>
+            <label
+              style={{
+                display: "block",
+                marginBottom: "8px",
+                fontSize: "14px",
+                fontWeight: "500",
+              }}
+            >
+              Max Pickup Distance (miles)
+            </label>
+            <input
+              type="number"
+              step="0.1"
+              min="0"
+              placeholder="Leave empty for unlimited"
+              value={maxPickupDistanceMiles}
+              onChange={(e) => setMaxPickupDistanceMiles(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "10px 12px",
+                border: "1px solid #d1d5db",
+                borderRadius: "6px",
+                fontSize: "14px",
+              }}
+            />
+            <p
+              style={{
+                fontSize: "12px",
+                color: "#6b7280",
+                marginTop: "4px",
+              }}
+            >
+              Maximum distance customers can be from restaurant
+            </p>
+          </div>
+
+          <div>
+            <label
+              style={{
+                display: "block",
+                marginBottom: "8px",
+                fontSize: "14px",
+                fontWeight: "500",
+              }}
+            >
+              Max Delivery Distance (miles)
+            </label>
+            <input
+              type="number"
+              step="0.1"
+              min="0"
+              placeholder="Leave empty for unlimited"
+              value={maxDeliveryDistanceMiles}
+              onChange={(e) => setMaxDeliveryDistanceMiles(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "10px 12px",
+                border: "1px solid #d1d5db",
+                borderRadius: "6px",
+                fontSize: "14px",
+              }}
+            />
+            <p
+              style={{
+                fontSize: "12px",
+                color: "#6b7280",
+                marginTop: "4px",
+              }}
+            >
+              Maximum distance between restaurant and delivery location
+            </p>
           </div>
         </div>
 

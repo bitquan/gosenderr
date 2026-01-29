@@ -14,9 +14,18 @@ interface Stats {
   completedJobs: number
   totalRevenue: number
   todayJobs: number
+  totalItems: number
+  activeItems: number
+  totalOrders: number
+  pendingOrders: number
+  ordersRevenue: number
+  userGrowth: number
+  revenueGrowth: number
   usersByRole: { name: string; value: number; color: string }[]
   jobsByStatus: { name: string; value: number }[]
   last7Days: { date: string; jobs: number; revenue: number }[]
+  last30Days: { date: string; users: number; revenue: number }[]
+  topCategories: { name: string; items: number; sales: number }[]
 }
 
 export default function AdminDashboardPage() {
@@ -28,9 +37,18 @@ export default function AdminDashboardPage() {
     completedJobs: 0,
     totalRevenue: 0,
     todayJobs: 0,
+    totalItems: 0,
+    activeItems: 0,
+    totalOrders: 0,
+    pendingOrders: 0,
+    ordersRevenue: 0,
+    userGrowth: 0,
+    revenueGrowth: 0,
     usersByRole: [],
     jobsByStatus: [],
-    last7Days: []
+    last7Days: [],
+    last30Days: [],
+    topCategories: []
   })
   const [loading, setLoading] = useState(true)
 
@@ -107,6 +125,113 @@ export default function AdminDashboardPage() {
           })
         }
 
+        // Load marketplace items
+        const itemsSnap = await getDocs(collection(db, 'marketplaceItems'))
+        const items = itemsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }))
+        const totalItems = items.length
+        const activeItems = items.filter(i => i.status === 'active').length
+
+        // Load marketplace orders
+        const ordersSnap = await getDocs(collection(db, 'orders'))
+        const orders = ordersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }))
+        const totalOrders = orders.length
+        const pendingOrders = orders.filter(o => ['pending', 'processing'].includes(o.status)).length
+        const ordersRevenue = orders.filter(o => o.status === 'completed').reduce((sum, o) => sum + (o.total || 0), 0)
+
+        // User growth (last 30 days vs previous 30 days)
+        const thirtyDaysAgo = new Date()
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+        const sixtyDaysAgo = new Date()
+        sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60)
+
+        const usersLast30 = users.filter(u => {
+          const createdAt = u.createdAt?.toDate?.()
+          return createdAt && createdAt >= thirtyDaysAgo
+        }).length
+
+        const usersPrevious30 = users.filter(u => {
+          const createdAt = u.createdAt?.toDate?.()
+          return createdAt && createdAt >= sixtyDaysAgo && createdAt < thirtyDaysAgo
+        }).length
+
+        const userGrowth = usersPrevious30 > 0 
+          ? ((usersLast30 - usersPrevious30) / usersPrevious30) * 100 
+          : 0
+
+        // Revenue growth (last 7 days vs previous 7 days)
+        const sevenDaysAgo = new Date()
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+        const fourteenDaysAgo = new Date()
+        fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14)
+
+        const revenueLast7 = jobs
+          .filter(j => {
+            const createdAt = j.createdAt?.toDate?.()
+            return createdAt && createdAt >= sevenDaysAgo && j.status === 'completed'
+          })
+          .reduce((sum, j) => sum + (j.agreedFee || 0), 0)
+
+        const revenuePrevious7 = jobs
+          .filter(j => {
+            const createdAt = j.createdAt?.toDate?.()
+            return createdAt && createdAt >= fourteenDaysAgo && createdAt < sevenDaysAgo && j.status === 'completed'
+          })
+          .reduce((sum, j) => sum + (j.agreedFee || 0), 0)
+
+        const revenueGrowth = revenuePrevious7 > 0 
+          ? ((revenueLast7 - revenuePrevious7) / revenuePrevious7) * 100 
+          : 0
+
+        // Last 30 days user and revenue data
+        const last30Days = []
+        for (let i = 29; i >= 0; i--) {
+          const date = new Date()
+          date.setDate(date.getDate() - i)
+          date.setHours(0, 0, 0, 0)
+          const nextDate = new Date(date)
+          nextDate.setDate(nextDate.getDate() + 1)
+
+          const dayUsers = users.filter(u => {
+            const createdAt = u.createdAt?.toDate?.()
+            return createdAt && createdAt >= date && createdAt < nextDate
+          }).length
+
+          const dayRevenue = jobs
+            .filter(j => {
+              const createdAt = j.createdAt?.toDate?.()
+              return createdAt && createdAt >= date && createdAt < nextDate && j.status === 'completed'
+            })
+            .reduce((sum, j) => sum + (j.agreedFee || 0), 0) +
+          orders
+            .filter(o => {
+              const createdAt = o.createdAt?.toDate?.()
+              return createdAt && createdAt >= date && createdAt < nextDate && o.status === 'completed'
+            })
+            .reduce((sum, o) => sum + (o.total || 0), 0)
+
+          last30Days.push({
+            date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            users: dayUsers,
+            revenue: dayRevenue
+          })
+        }
+
+        // Top categories by items and sales
+        const categoriesSnap = await getDocs(collection(db, 'categories'))
+        const categories = categoriesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }))
+        
+        const topCategories = categories.map(cat => {
+          const categoryItems = items.filter(i => i.category === cat.id).length
+          const categorySales = orders.filter(o => 
+            o.items?.some((item: any) => items.find(i => i.id === item.itemId)?.category === cat.id)
+          ).length
+          return {
+            name: cat.name,
+            items: categoryItems,
+            sales: categorySales
+          }
+        }).sort((a, b) => b.sales - a.sales).slice(0, 5)
+
         setStats({ 
           totalUsers, 
           totalJobs, 
@@ -114,9 +239,18 @@ export default function AdminDashboardPage() {
           completedJobs, 
           totalRevenue, 
           todayJobs,
+          totalItems,
+          activeItems,
+          totalOrders,
+          pendingOrders,
+          ordersRevenue,
+          userGrowth,
+          revenueGrowth,
           usersByRole,
           jobsByStatus,
-          last7Days
+          last7Days,
+          last30Days,
+          topCategories
         })
       } catch (error) {
         console.error('Error loading stats:', error)
@@ -138,12 +272,17 @@ export default function AdminDashboardPage() {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 -mt-8 space-y-6">
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           <Card variant="elevated">
             <CardContent className="p-6 text-center">
               <div className="text-4xl mb-2">👥</div>
               <p className="text-3xl font-bold text-purple-600">{loading ? '...' : stats.totalUsers}</p>
               <p className="text-sm text-gray-600 mt-1">Total Users</p>
+              {!loading && stats.userGrowth !== 0 && (
+                <p className={`text-xs mt-1 font-semibold ${stats.userGrowth > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {stats.userGrowth > 0 ? '↑' : '↓'} {Math.abs(stats.userGrowth).toFixed(1)}% (30d)
+                </p>
+              )}
             </CardContent>
           </Card>
 
@@ -151,7 +290,33 @@ export default function AdminDashboardPage() {
             <CardContent className="p-6 text-center">
               <div className="text-4xl mb-2">📦</div>
               <p className="text-3xl font-bold text-blue-600">{loading ? '...' : stats.totalJobs}</p>
-              <p className="text-sm text-gray-600 mt-1">Total Jobs</p>
+              <p className="text-sm text-gray-600 mt-1">Delivery Jobs</p>
+            </CardContent>
+          </Card>
+
+          <Card variant="elevated">
+            <CardContent className="p-6 text-center">
+              <div className="text-4xl mb-2">🛍️</div>
+              <p className="text-3xl font-bold text-indigo-600">{loading ? '...' : stats.totalItems}</p>
+              <p className="text-sm text-gray-600 mt-1">Marketplace Items</p>
+              {!loading && (
+                <p className="text-xs mt-1 text-green-600 font-semibold">
+                  {stats.activeItems} active
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card variant="elevated">
+            <CardContent className="p-6 text-center">
+              <div className="text-4xl mb-2">🛒</div>
+              <p className="text-3xl font-bold text-pink-600">{loading ? '...' : stats.totalOrders}</p>
+              <p className="text-sm text-gray-600 mt-1">Orders</p>
+              {!loading && stats.pendingOrders > 0 && (
+                <p className="text-xs mt-1 text-orange-600 font-semibold">
+                  {stats.pendingOrders} pending
+                </p>
+              )}
             </CardContent>
           </Card>
 
@@ -167,15 +332,20 @@ export default function AdminDashboardPage() {
             <CardContent className="p-6 text-center">
               <div className="text-4xl mb-2">✅</div>
               <p className="text-3xl font-bold text-green-600">{loading ? '...' : stats.completedJobs}</p>
-              <p className="text-sm text-gray-600 mt-1">Completed</p>
+              <p className="text-sm text-gray-600 mt-1">Completed Jobs</p>
             </CardContent>
           </Card>
 
           <Card variant="elevated">
             <CardContent className="p-6 text-center">
               <div className="text-4xl mb-2">💰</div>
-              <p className="text-2xl font-bold text-purple-600">{loading ? '...' : formatCurrency(stats.totalRevenue)}</p>
+              <p className="text-2xl font-bold text-purple-600">{loading ? '...' : formatCurrency(stats.totalRevenue + stats.ordersRevenue)}</p>
               <p className="text-sm text-gray-600 mt-1">Total Revenue</p>
+              {!loading && stats.revenueGrowth !== 0 && (
+                <p className={`text-xs mt-1 font-semibold ${stats.revenueGrowth > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {stats.revenueGrowth > 0 ? '↑' : '↓'} {Math.abs(stats.revenueGrowth).toFixed(1)}% (7d)
+                </p>
+              )}
             </CardContent>
           </Card>
 
@@ -331,6 +501,63 @@ export default function AdminDashboardPage() {
                 </ResponsiveContainer>
               </CardContent>
             </Card>
+
+            {/* Last 30 Days User Growth */}
+            <Card variant="elevated">
+              <CardHeader>
+                <CardTitle>📊 30-Day User Growth & Revenue</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={stats.last30Days}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis yAxisId="left" />
+                    <YAxis yAxisId="right" orientation="right" />
+                    <Tooltip />
+                    <Legend />
+                    <Line 
+                      yAxisId="left"
+                      type="monotone" 
+                      dataKey="users" 
+                      stroke="#6366F1" 
+                      strokeWidth={2}
+                      name="New Users"
+                    />
+                    <Line 
+                      yAxisId="right"
+                      type="monotone" 
+                      dataKey="revenue" 
+                      stroke="#10B981" 
+                      strokeWidth={2}
+                      name="Revenue ($)"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* Top Categories */}
+            {stats.topCategories.length > 0 && (
+              <Card variant="elevated">
+                <CardHeader>
+                  <CardTitle>🏆 Top Categories</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={stats.topCategories}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="items" fill="#6B4EFF" name="Items Listed" />
+                      <Bar dataKey="sales" fill="#10B981" name="Sales" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            )}
           </>
         )}
       </div>

@@ -38,8 +38,7 @@ export default function EarningsPage() {
       const jobsQuery = query(
         collection(db, "jobs"),
         where("courierUid", "==", uid),
-        where("status", "==", "delivered"),
-        orderBy("completedAt", "desc")
+        where("status", "==", "completed")
       );
       const jobsSnap = await getDocs(jobsQuery);
       const jobs = jobsSnap.docs.map((doc) => ({
@@ -56,17 +55,20 @@ export default function EarningsPage() {
       const avgPerJob = completedCount > 0 ? totalEarnings / completedCount : 0;
 
       // Get payouts (if implemented)
-      const payoutsQuery = query(
-        collection(db, "payouts"),
-        where("courierUid", "==", uid),
-        orderBy("createdAt", "desc")
-      );
-      const payoutsSnap = await getDocs(payoutsQuery);
-      const payoutsData = payoutsSnap.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as PayoutRecord[];
-
+      let payoutsData: PayoutRecord[] = [];
+      try {
+        const payoutsQuery = query(
+          collection(db, "payouts"),
+          where("courierUid", "==", uid)
+        );
+        const payoutsSnap = await getDocs(payoutsQuery);
+        payoutsData = payoutsSnap.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as PayoutRecord[];
+      } catch (e) {
+        console.log('Payouts collection not found or accessible, skipping...');
+      }
       const pendingPayout = payoutsData
         .filter((p) => p.status === "pending")
         .reduce((sum, p) => sum + p.amount, 0);

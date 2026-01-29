@@ -1,2 +1,0 @@
-import{g as f}from"./vendor-CMTvl_mn.js";import{r as s}from"./maps-EHn3Z3R7.js";function l(t,n){for(var o=0;o<n.length;o++){const e=n[o];if(typeof e!="string"&&!Array.isArray(e)){for(const r in e)if(r!=="default"&&!(r in t)){const a=Object.getOwnPropertyDescriptor(e,r);a&&Object.defineProperty(t,r,a.get?a:{enumerable:!0,get:()=>e[r]})}}}return Object.freeze(Object.defineProperty(t,Symbol.toStringTag,{value:"Module"}))}var p=s();const i=f(p),u=l({__proto__:null,default:i},[p]);export{u as m};
-//# sourceMappingURL=mapbox-gl-DiJjCrt8.js.map

@@ -1,6 +1,47 @@
 {
   "version": "2.0.0",
   "tasks": [
+    // ==================== MARKETPLACE DEV (NEW) ====================
+    {
+      "label": "🛍️ Marketplace: Dev Mode",
+      "dependsOn": ["🔥 Firebase Emulators", "📦 Customer App (Port 5173)"],
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "🔥 Firebase Emulators",
+      "type": "shell",
+      "command": "./scripts/start-emulators.sh",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^.*$",
+          "file": 1,
+          "location": 2,
+          "message": 3
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*Starting.*Emulators.*",
+          "endsPattern": ".*Ready.*View Emulator.*"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": false,
+        "echo": true,
+        "focus": false
+      }
+    },
+    
     // ==================== DEV SERVERS (Run These) ====================
     {
       "label": "🔧 Admin App (Port 3000)",
@@ -189,6 +230,16 @@
         "panel": "dedicated",
         "focus": false
       }
+    },
+    {
+      "label": "Run Admin App Tests",
+      "type": "shell",
+      "command": "pnpm --prefix apps/admin-app run test -- --run --reporter verbose",
+      "group": "test",
+      "presentation": {
+        "reveal": "silent"
+      },
+      "problemMatcher": []
     },
 
     // ==================== STOP TASKS ====================

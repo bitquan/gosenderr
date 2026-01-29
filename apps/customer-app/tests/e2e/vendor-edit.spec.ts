@@ -6,6 +6,8 @@ const VENDOR_PASS = 'admin123';
 test('vendor can edit an item', async ({ page, browser }) => {
   // Sign in
   page.on('console', (msg) => console.log('PAGE LOG:', msg.type(), msg.text()));
+  await page.context().clearCookies();
+  await page.evaluate(() => localStorage.clear());
   await page.goto('/login');
   await page.getByText('Vendor').click();
   await page.fill('input[type="email"]', VENDOR_EMAIL);

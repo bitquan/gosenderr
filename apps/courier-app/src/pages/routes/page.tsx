@@ -59,7 +59,7 @@ export default function CourierRoutesPage() {
       });
 
       alert("Route accepted! Redirecting to active route...");
-      navigate("/courier/active-route");
+      navigate("/active-route");
     } catch (error) {
       console.error("Error accepting route:", error);
       alert("Failed to accept route. Please try again.");

@@ -1,0 +1,93 @@
+name: E2E (Emulator)
+
+on:
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    name: E2E against Firebase emulators
+    runs-on: ubuntu-latest
+    env:
+      FIREBASE_PROJECT: gosenderr-6773f
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Enable pnpm
+        run: corepack enable && corepack prepare pnpm@latest --activate
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install firebase-tools
+        run: npm i -g firebase-tools@latest
+
+      - name: Run Firebase emulators and Playwright E2E
+        env:
+          CI: 'true'
+        run: |
+          set -euo pipefail
+          echo "Starting emulators and seeding auth user..."
+          cat > firebase.ci.json <<'EOF'
+          {
+            "emulators": {
+              "auth": { "host": "127.0.0.1", "port": 9095 },
+              "firestore": { "host": "127.0.0.1", "port": 8085 },
+              "storage": { "host": "127.0.0.1", "port": 9199 },
+              "ui": { "host": "127.0.0.1", "port": 4050 },
+              "hub": { "host": "127.0.0.1", "port": 4401 },
+              "logging": { "host": "127.0.0.1", "port": 4501 }
+            }
+          }
+          EOF
+
+          # Start emulators in the background and capture logs
+          npx firebase emulators:start --config firebase.ci.json --only auth,firestore,storage --project ${FIREBASE_PROJECT} > emulators.log 2>&1 &
+          EMU_PID=$!
+          echo "Emulators started in background (PID=$EMU_PID). Waiting for Auth emulator to be ready..."
+
+          # wait for the auth emulator HTTP endpoint
+          npx wait-on --timeout 60000 http://127.0.0.1:9095 || {
+            echo "Auth emulator did not become available. Dumping emulator log:"; tail -n +1 emulators.log; kill $EMU_PID || true; exit 1
+          }
+
+          echo "Auth emulator is up; seeding vendor user..."
+          curl -s -X POST 'http://127.0.0.1:9095/identitytoolkit.googleapis.com/v1/accounts:signUp?key=fake-api-key' -H 'Content-Type: application/json' -d '{"email":"vendor@sender.com","password":"admin123","returnSecureToken":true}' || true
+
+          echo "Starting customer-app dev server on port 5180"
+          pnpm --filter @gosenderr/customer-app exec -- vite --port 5180 --strictPort --host 127.0.0.1 > customer.log 2>&1 &
+          SERVER_PID=$!
+          npx wait-on --timeout 60000 http://127.0.0.1:5180 || { echo "Customer app server did not become available. Dumping customer log:"; tail -n +1 customer.log; kill $SERVER_PID || true; tail -n +1 emulators.log; kill $EMU_PID || true; exit 1; }
+
+          echo "Installing Playwright browsers in package context"
+          pnpm --filter @gosenderr/customer-app exec -- playwright install --with-deps || { echo "playwright install failed"; tail -n +1 customer.log; tail -n +1 emulators.log; kill $SERVER_PID || true; kill $EMU_PID || true; exit 1; }
+
+          echo "Running Playwright tests"
+          pnpm --filter @gosenderr/customer-app exec -- playwright test tests/e2e --reporter=list || {
+            echo "Playwright failed — capturing customer and emulator logs"; tail -n +1 customer.log; tail -n +1 emulators.log; kill $SERVER_PID || true; kill $EMU_PID || true; exit 1
+          }
+
+          echo "Tests completed; stopping customer server (PID=$SERVER_PID) and emulators (PID=$EMU_PID)"; kill $SERVER_PID || true; kill $EMU_PID || true
+          sleep 1
+          tail -n +1 customer.log | sed -n '1,200p'
+          tail -n +1 emulators.log | sed -n '1,200p'
+
+      - name: Upload test artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-artifacts
+          path: |
+            apps/customer-app/test-results/**
+            apps/customer-app/playwright-report/**
+            test-results/**

@@ -10,7 +10,7 @@ const db = admin.firestore();
 export const autoCancel = functions.pubsub
   .schedule("every 5 minutes")
   .onRun(async (context) => {
-    const now = admin.firestore.Timestamp.now();
+    const now = admin.firestore.Timestamp.fromDate(new Date());
     const cutoffTime = new Date(now.toMillis() - 30 * 60 * 1000); // 30 minutes ago
     const cutoffTimestamp = admin.firestore.Timestamp.fromDate(cutoffTime);
 

@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { collection, getDocs, doc, updateDoc } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { Card, CardHeader, CardTitle, CardContent } from '../components/Card'
 import EditRoleModal from '../components/EditRoleModal'
 import BanUserModal from '../components/BanUserModal'
+import CreateUserModal from '../components/CreateUserModal'
+import { exportToCSV, formatUsersForExport } from '../lib/csvExport'
 
 interface User {
   id: string
@@ -24,6 +27,7 @@ export default function AdminUsersPage() {
   const [filter, setFilter] = useState<'all' | 'customer' | 'courier' | 'package_runner' | 'vendor' | 'admin'>('all')
   const [editRoleUser, setEditRoleUser] = useState<User | null>(null)
   const [banUser, setBanUser] = useState<User | null>(null)
+  const [createUserOpen, setCreateUserOpen] = useState(false)
 
   useEffect(() => {
     loadUsers()
@@ -61,7 +65,24 @@ export default function AdminUsersPage() {
       <div className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] rounded-b-[32px] p-6 text-white shadow-lg">
         <div className="max-w-6xl mx-auto">
           <h1 className="text-3xl font-bold mb-2">👥 User Management</h1>
-          <p className="text-purple-100">{users.length} total users</p>
+          <p className="text-purple-100">{users.length} total users {loading && '(loading...)'}</p>
+          {users.length === 0 && !loading && (
+            <p className="text-yellow-200 text-sm mt-2">⚠️ No users found in database</p>
+          )}
+          <div className="mt-3 flex gap-2">
+            <button
+              onClick={() => setCreateUserOpen(true)}
+              className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg text-sm font-semibold transition"
+            >
+              ➕ Create User
+            </button>
+            <button
+              onClick={() => loadUsers()}
+              className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg text-sm font-semibold transition"
+            >
+              🔄 Refresh
+            </button>
+          </div>
         </div>
       </div>
 
@@ -113,12 +134,49 @@ export default function AdminUsersPage() {
         </div>
 
         {/* Users List */}
-        {loading ? (
-          <div className="text-center py-12">Loading...</div>
-        ) : (
-          <div className="space-y-3">
-            {filteredUsers.map((user) => (
-              <Card key={user.id} variant="elevated">
+        <Card variant="elevated">
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <CardTitle>
+                {filter === 'all' ? 'All Users' : 
+                 filter === 'customer' ? 'Customers' :
+                 filter === 'courier' ? 'Couriers' :
+                 filter === 'package_runner' ? 'Runners' :
+                 filter === 'vendor' ? 'Vendors' :
+                 filter === 'admin' ? 'Admins' : 'Users'} ({filteredUsers.length})
+              </CardTitle>
+              <button
+                onClick={() => exportToCSV(formatUsersForExport(filteredUsers), 'users')}
+                disabled={filteredUsers.length === 0}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
+              >
+                📥 Export CSV
+              </button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-2"></div>
+                <p className="text-gray-600">Loading users...</p>
+              </div>
+            ) : filteredUsers.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-gray-600 text-lg">No users found</p>
+                {filter !== 'all' && (
+                  <button
+                    onClick={() => setFilter('all')}
+                    className="mt-4 text-purple-600 hover:text-purple-700 font-semibold"
+                  >
+                    View All Users
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredUsers.map((user) => (
+              <Link key={user.id} to={`/users/${user.id}`}>
+              <Card variant="elevated" className="hover:shadow-lg transition-shadow cursor-pointer">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between flex-wrap gap-4">
                     <div className="flex items-center gap-4">
@@ -199,9 +257,12 @@ export default function AdminUsersPage() {
                   </div>
                 </CardContent>
               </Card>
-            ))}
-          </div>
-        )}
+              </Link>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Modals */}
@@ -222,6 +283,15 @@ export default function AdminUsersPage() {
         onSuccess={() => {
           loadUsers()
           setBanUser(null)
+        }}
+      />
+
+      <CreateUserModal
+        isOpen={createUserOpen}
+        onClose={() => setCreateUserOpen(false)}
+        onSuccess={() => {
+          loadUsers()
+          setCreateUserOpen(false)
         }}
       />
     </div>

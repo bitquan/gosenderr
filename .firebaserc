@@ -1,5 +1,8 @@
 {
   "projects": {
-    "default": "gosenderr-6773f"
+    "default": "gosenderr-6773f",
+    "dev": "gosenderr-dev",
+    "staging": "gosenderr-staging",
+    "prod": "gosenderr-6773f"
   }
 }

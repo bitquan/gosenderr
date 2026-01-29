@@ -75,100 +75,93 @@ export default function CourierJobDetail() {
   };
 
   return (
-    <div className="fixed inset-0 w-screen h-screen overflow-y-auto pb-24 safe-top">
-      <div style={{ padding: "16px", maxWidth: "1200px", margin: "0 auto" }}>
-      <div style={{ marginBottom: "20px" }}>
+    <div className="fixed inset-0 w-screen h-screen overflow-y-auto bg-[#F8F9FF] pb-24 safe-top">
+      {/* Header */}
+      <div className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] p-6 text-white shadow-lg sticky top-0 z-10">
         <Link
           to="/dashboard"
-          style={{ color: "#6E56CF", textDecoration: "none" }}
+          className="inline-flex items-center text-white/90 hover:text-white mb-3 transition-colors text-sm"
         >
-          ← Back to Dashboard
+          <span className="mr-2">←</span>
+          Back to Dashboard
         </Link>
-      </div>
-
-      <div style={{ marginBottom: "30px" }}>
-        <h1 style={{ margin: 0, marginBottom: "8px" }}>Active Job</h1>
-        <div style={{ color: "#666", fontSize: "14px" }}>
+        <h1 className="text-2xl font-bold">Active Delivery</h1>
+        <p className="text-purple-100 text-sm mt-1">
           Accepted: {job.updatedAt?.toDate?.()?.toLocaleString() || "Just now"}
+        </p>
+      </div>
+
+      <div className="max-w-4xl mx-auto px-4 py-4 space-y-4">
+        {/* Status Timeline */}
+        <div className="bg-white rounded-2xl shadow-lg p-6">
+          <h2 className="text-lg font-bold text-gray-900 mb-4">Progress</h2>
+          <StatusTimeline currentStatus={job.status} />
         </div>
-      </div>
 
-      {/* Status Timeline */}
-      <div
-        style={{
-          marginBottom: "30px",
-          padding: "20px",
-          background: "white",
-          borderRadius: "8px",
-          border: "1px solid #ddd",
-        }}
-      >
-        <StatusTimeline currentStatus={job.status} />
-      </div>
-
-      {/* Job Details Panel with Actions */}
-      <div style={{ marginBottom: "30px" }}>
-        <JobDetailsPanel job={job} visibility={visibility} showStatus={true}>
-          <CourierJobActions
-            job={job}
-            courierUid={uid}
-            onJobUpdated={() => {
-              // Navigate back to dashboard after completing the job
-              if (job.status === "arrived_dropoff") {
-                setTimeout(() => navigate("/dashboard"), 1000);
-              }
-            }}
+        {/* Live Map */}
+        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+          <div className="p-4 border-b border-gray-200">
+            <h3 className="text-lg font-bold text-gray-900">Live Map</h3>
+          </div>
+          <MapboxMap
+            pickup={job.pickup}
+            dropoff={job.dropoff}
+            courierLocation={userDoc?.location || null}
+            height="300px"
           />
-        </JobDetailsPanel>
-      </div>
+        </div>
 
-      {/* Navigation Buttons */}
-      <div style={{ marginBottom: "30px", display: "flex", gap: "12px" }}>
-        <button
-          onClick={() => handleStartNavigation('pickup')}
-          disabled={isNavigating || !userDoc?.location}
-          style={{
-            flex: 1,
-            padding: "12px",
-            background: isNavigating || !userDoc?.location ? "#ccc" : "#6E56CF",
-            color: "white",
-            border: "none",
-            borderRadius: "8px",
-            textAlign: "center",
-            fontWeight: "600",
-            cursor: isNavigating || !userDoc?.location ? "not-allowed" : "pointer",
-          }}
-        >
-          {isNavigating ? "Navigating..." : "Navigate to Pickup 🗺️"}
-        </button>
-        <button
-          onClick={() => handleStartNavigation('dropoff')}
-          disabled={isNavigating || !userDoc?.location}
-          style={{
-            flex: 1,
-            padding: "12px",
-            background: isNavigating || !userDoc?.location ? "#ccc" : "#16a34a",
-            color: "white",
-            border: "none",
-            borderRadius: "8px",
-            textAlign: "center",
-            fontWeight: "600",
-            cursor: isNavigating || !userDoc?.location ? "not-allowed" : "pointer",
-          }}
-        >
-          {isNavigating ? "Navigating..." : "Navigate to Dropoff 🗺️"}
-        </button>
-      </div>
+        {/* Job Details Panel with Actions */}
+        <div className="bg-white rounded-2xl shadow-lg p-6">
+          <JobDetailsPanel job={job} visibility={visibility} showStatus={true}>
+            <CourierJobActions
+              job={job}
+              courierUid={uid}
+              onJobUpdated={() => {
+                // Navigate back to dashboard after completing the job
+                if (job.status === "arrived_dropoff") {
+                  setTimeout(() => navigate("/dashboard"), 1000);
+                }
+              }}
+            />
+          </JobDetailsPanel>
+        </div>
 
-      <div>
-        <h3 style={{ fontSize: "1.125rem", fontWeight: "600", marginBottom: "12px" }}>Live Map</h3>
-        <MapboxMap
-          pickup={job.pickup}
-          dropoff={job.dropoff}
-          courierLocation={userDoc?.location || null}
-          height="300px"
-        />
-      </div>
+        {/* Navigation Buttons */}
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={() => handleStartNavigation('pickup')}
+            disabled={isNavigating || !userDoc?.location}
+            className={`py-4 px-4 rounded-xl font-semibold text-white shadow-lg transition-all ${
+              isNavigating || !userDoc?.location
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] hover:shadow-xl active:scale-95"
+            }`}
+          >
+            <div className="text-center">
+              <div className="text-2xl mb-1">📍</div>
+              <div className="text-sm">
+                {isNavigating ? "Navigating..." : "Navigate to Pickup"}
+              </div>
+            </div>
+          </button>
+          <button
+            onClick={() => handleStartNavigation('dropoff')}
+            disabled={isNavigating || !userDoc?.location}
+            className={`py-4 px-4 rounded-xl font-semibold text-white shadow-lg transition-all ${
+              isNavigating || !userDoc?.location
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-gradient-to-br from-emerald-500 to-emerald-600 hover:shadow-xl active:scale-95"
+            }`}
+          >
+            <div className="text-center">
+              <div className="text-2xl mb-1">🎯</div>
+              <div className="text-sm">
+                {isNavigating ? "Navigating..." : "Navigate to Dropoff"}
+              </div>
+            </div>
+          </button>
+        </div>
       </div>
     </div>
   );

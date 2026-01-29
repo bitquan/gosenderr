@@ -1,60 +1,25 @@
-import { useState, useEffect } from 'react'
-import { doc, getDoc, setDoc } from 'firebase/firestore'
-import { auth, db } from '../lib/firebase'
-import { Card, CardHeader, CardTitle, CardContent } from '../components/Card'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { collection, getDocs, doc, updateDoc, Timestamp, addDoc } from 'firebase/firestore'
+import { db } from '../lib/firebase'
+import { Card, CardHeader, CardTitle, CardContent } from '../components/Card'
 
-interface PlatformSettings {
-  siteName: string
-  supportEmail: string
-  supportPhone: string
-  commissionRate: number
-  deliveryFee: {
-    base: number
-    perKm: number
-    expressMultiplier: number
-  }
-  autoCancelTimeout: number
-  notifications: {
-    emailEnabled: boolean
-    smsEnabled: boolean
-    pushEnabled: boolean
-  }
-  features: {
-    marketplaceEnabled: boolean
-    packageRunnerEnabled: boolean
-    expressDeliveryEnabled: boolean
-  }
+interface Setting {
+  id: string
+  group: string
+  key: string
+  value: any
+  label: string
+  description?: string
+  type: 'string' | 'number' | 'boolean' | 'object'
+  updatedAt?: any
 }
 
-const defaultSettings: PlatformSettings = {
-  siteName: 'GoSenderr',
-  supportEmail: 'support@gosenderr.com',
-  supportPhone: '+1-555-0100',
-  commissionRate: 15,
-  deliveryFee: {
-    base: 5,
-    perKm: 1.5,
-    expressMultiplier: 2
-  },
-  autoCancelTimeout: 30,
-  notifications: {
-    emailEnabled: true,
-    smsEnabled: false,
-    pushEnabled: true
-  },
-  features: {
-    marketplaceEnabled: true,
-    packageRunnerEnabled: true,
-    expressDeliveryEnabled: true
-  }
-}
-
-export default function AdminSettingsPage() {
-  const [settings, setSettings] = useState<PlatformSettings>(defaultSettings)
+export default function SettingsPage() {
+  const [settings, setSettings] = useState<Setting[]>([])
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [hasChanges, setHasChanges] = useState(false)
+  const [saving, setSaving] = useState<string | null>(null)
+  const [editingValues, setEditingValues] = useState<Record<string, any>>({})
 
   useEffect(() => {
     loadSettings()
@@ -62,12 +27,20 @@ export default function AdminSettingsPage() {
 
   const loadSettings = async () => {
     try {
-      const docRef = doc(db, 'platformSettings', 'main')
-      const docSnap = await getDoc(docRef)
+      const snapshot = await getDocs(collection(db, 'platformSettings'))
+      const settingsData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as Setting))
       
-      if (docSnap.exists()) {
-        setSettings({ ...defaultSettings, ...docSnap.data() })
-      }
+      setSettings(settingsData)
+      
+      // Initialize editing values
+      const initialValues: Record<string, any> = {}
+      settingsData.forEach(setting => {
+        initialValues[setting.id] = setting.value
+      })
+      setEditingValues(initialValues)
     } catch (error) {
       console.error('Error loading settings:', error)
     } finally {
@@ -75,332 +48,244 @@ export default function AdminSettingsPage() {
     }
   }
 
-  const handleSave = async () => {
-    setSaving(true)
+  const handleSave = async (settingId: string) => {
+    setSaving(settingId)
     try {
-      await setDoc(doc(db, 'platformSettings', 'main'), settings)
-      alert('Settings saved successfully')
-      setHasChanges(false)
-    } catch (error: any) {
-      console.error('Error saving settings:', error)
-      alert(`Failed to save: ${error.message}`)
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const updateSetting = (path: string, value: any) => {
-    setSettings(prev => {
-      const newSettings = { ...prev }
-      const keys = path.split('.')
-      let current: any = newSettings
+      const newValue = editingValues[settingId]
       
-      for (let i = 0; i < keys.length - 1; i++) {
-        current = current[keys[i]]
-      }
-      
-      current[keys[keys.length - 1]] = value
-      setHasChanges(true)
-      return newSettings
-    })
-  }
+      await updateDoc(doc(db, 'platformSettings', settingId), {
+        value: newValue,
+        updatedAt: Timestamp.now()
+      })
 
-  const handleSignOut = async () => {
-    if (!window.confirm('Sign out of admin account?')) return
-    try {
-      await auth.signOut()
+      // Log admin action
+      await addDoc(collection(db, 'adminLogs'), {
+        action: 'setting_updated',
+        settingId,
+        timestamp: Timestamp.now(),
+        adminEmail: 'admin@example.com' // TODO: get from auth
+      })
+
+      await loadSettings()
+      alert('Setting saved successfully')
     } catch (error) {
-      console.error('Error signing out:', error)
-      alert('Failed to sign out')
+      console.error('Error saving setting:', error)
+      alert('Failed to save setting')
+    } finally {
+      setSaving(null)
     }
+  }
+
+  const handleValueChange = (settingId: string, value: any, type: string) => {
+    let parsedValue = value
+    
+    if (type === 'number') {
+      parsedValue = parseFloat(value) || 0
+    } else if (type === 'boolean') {
+      parsedValue = value === 'true' || value === true
+    }
+    
+    setEditingValues(prev => ({
+      ...prev,
+      [settingId]: parsedValue
+    }))
+  }
+
+  const renderValueInput = (setting: Setting) => {
+    const value = editingValues[setting.id]
+    
+    if (setting.type === 'boolean') {
+      return (
+        <select
+          value={value ? 'true' : 'false'}
+          onChange={(e) => handleValueChange(setting.id, e.target.value, setting.type)}
+          className="flex-1 p-2 border rounded"
+        >
+          <option value="true">Enabled</option>
+          <option value="false">Disabled</option>
+        </select>
+      )
+    }
+    
+    if (setting.type === 'number') {
+      return (
+        <input
+          type="number"
+          step="0.01"
+          value={value}
+          onChange={(e) => handleValueChange(setting.id, e.target.value, setting.type)}
+          className="flex-1 p-2 border rounded"
+        />
+      )
+    }
+    
+    if (setting.type === 'string') {
+      return (
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => handleValueChange(setting.id, e.target.value, setting.type)}
+          className="flex-1 p-2 border rounded"
+        />
+      )
+    }
+    
+    // For objects, show JSON
+    return (
+      <textarea
+        value={JSON.stringify(value, null, 2)}
+        onChange={(e) => {
+          try {
+            const parsed = JSON.parse(e.target.value)
+            handleValueChange(setting.id, parsed, setting.type)
+          } catch (err) {
+            // Invalid JSON, don't update
+          }
+        }}
+        className="flex-1 p-2 border rounded font-mono text-sm"
+        rows={4}
+      />
+    )
+  }
+
+  const groupedSettings = settings.reduce((acc, setting) => {
+    if (!acc[setting.group]) {
+      acc[setting.group] = []
+    }
+    acc[setting.group].push(setting)
+    return acc
+  }, {} as Record<string, Setting[]>)
+
+  const groupLabels: Record<string, string> = {
+    general: 'General Settings',
+    marketplace: 'Marketplace Settings',
+    payments: 'Payment Settings',
+    delivery: 'Delivery Settings',
+    notifications: 'Notification Settings'
+  }
+
+  const groupIcons: Record<string, string> = {
+    general: '⚙️',
+    marketplace: '🛒',
+    payments: '💳',
+    delivery: '🚚',
+    notifications: '🔔'
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center">
-        <p className="text-gray-600">Loading settings...</p>
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[#F8F9FF] pb-8">
-      <div className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] rounded-b-[32px] p-6 text-white shadow-lg">
-        <div className="max-w-6xl mx-auto">
-          <Link 
-            to="/dashboard" 
-            className="inline-flex items-center text-white/80 hover:text-white mb-4 transition-colors"
-          >
-            <span className="mr-2">←</span>
-            Back to Dashboard
-          </Link>
-          <h1 className="text-3xl font-bold mb-2">⚙️ Platform Settings</h1>
-          <p className="text-purple-100">Configure platform-wide options</p>
-        </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">Platform Settings</h1>
+        <p className="text-gray-600 mt-2">Configure platform-wide settings and preferences</p>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 -mt-8 space-y-6">
-        {/* Save Button */}
-        {hasChanges && (
-          <div className="bg-yellow-50 border-2 border-yellow-300 rounded-xl p-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">⚠️</span>
-              <p className="text-sm font-semibold text-yellow-800">You have unsaved changes</p>
-            </div>
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="px-6 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors disabled:opacity-50"
+      {/* Quick Links to Advanced Settings */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Advanced Settings</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid md:grid-cols-3 gap-4">
+            <Link 
+              to="/settings/payment" 
+              className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 border-2 border-purple-200 rounded-xl hover:shadow-lg transition-all text-center"
             >
-              {saving ? 'Saving...' : 'Save Changes'}
-            </button>
+              <div className="text-4xl mb-2">💳</div>
+              <h3 className="font-bold text-gray-900">Payment Settings</h3>
+              <p className="text-sm text-gray-600 mt-1">Stripe, fees, payouts</p>
+            </Link>
+
+            <Link 
+              to="/settings/email" 
+              className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200 rounded-xl hover:shadow-lg transition-all text-center"
+            >
+              <div className="text-4xl mb-2">📧</div>
+              <h3 className="font-bold text-gray-900">Email Settings</h3>
+              <p className="text-sm text-gray-600 mt-1">SMTP, templates</p>
+            </Link>
+
+            <Link 
+              to="/settings/security" 
+              className="p-4 bg-gradient-to-br from-red-50 to-red-100 border-2 border-red-200 rounded-xl hover:shadow-lg transition-all text-center"
+            >
+              <div className="text-4xl mb-2">🔒</div>
+              <h3 className="font-bold text-gray-900">Security</h3>
+              <p className="text-sm text-gray-600 mt-1">Access control, admins</p>
+            </Link>
           </div>
-        )}
+        </CardContent>
+      </Card>
 
-        {/* General Settings */}
-        <Card variant="elevated">
-          <CardHeader>
-            <CardTitle>🏢 General Information</CardTitle>
-          </CardHeader>
+      {/* Settings Groups */}
+      <div className="space-y-6">
+        {Object.entries(groupedSettings).map(([group, groupSettings]) => (
+          <Card key={group}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <span className="text-2xl">{groupIcons[group] || '📋'}</span>
+                {groupLabels[group] || group}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {groupSettings.map(setting => (
+                  <div key={setting.id} className="border-b pb-4 last:border-b-0">
+                    <div className="mb-2">
+                      <label className="block font-semibold text-gray-900">
+                        {setting.label}
+                      </label>
+                      {setting.description && (
+                        <p className="text-sm text-gray-500">{setting.description}</p>
+                      )}
+                    </div>
+                    
+                    <div className="flex items-center gap-3">
+                      {renderValueInput(setting)}
+                      
+                      <button
+                        onClick={() => handleSave(setting.id)}
+                        disabled={saving === setting.id || editingValues[setting.id] === setting.value}
+                        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                      >
+                        {saving === setting.id ? 'Saving...' : 'Save'}
+                      </button>
+                    </div>
+                    
+                    {setting.updatedAt && (
+                      <p className="text-xs text-gray-400 mt-2">
+                        Last updated: {setting.updatedAt.toDate?.()?.toLocaleString() || 'Unknown'}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {settings.length === 0 && (
+        <Card>
           <CardContent>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Site Name</label>
-                <input
-                  type="text"
-                  value={settings.siteName}
-                  onChange={(e) => updateSetting('siteName', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Support Email</label>
-                <input
-                  type="email"
-                  value={settings.supportEmail}
-                  onChange={(e) => updateSetting('supportEmail', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Support Phone</label>
-                <input
-                  type="tel"
-                  value={settings.supportPhone}
-                  onChange={(e) => updateSetting('supportPhone', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Pricing Configuration */}
-        <Card variant="elevated">
-          <CardHeader>
-            <CardTitle>💰 Pricing & Fees</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Platform Commission Rate (%)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.1"
-                  value={settings.commissionRate}
-                  onChange={(e) => updateSetting('commissionRate', parseFloat(e.target.value))}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Currently: {settings.commissionRate}% of each transaction
-                </p>
-              </div>
-
-              <div className="grid md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Base Delivery Fee ($)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.5"
-                    value={settings.deliveryFee.base}
-                    onChange={(e) => updateSetting('deliveryFee.base', parseFloat(e.target.value))}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Per Kilometer ($)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.1"
-                    value={settings.deliveryFee.perKm}
-                    onChange={(e) => updateSetting('deliveryFee.perKm', parseFloat(e.target.value))}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Express Multiplier (x)</label>
-                  <input
-                    type="number"
-                    min="1"
-                    step="0.1"
-                    value={settings.deliveryFee.expressMultiplier}
-                    onChange={(e) => updateSetting('deliveryFee.expressMultiplier', parseFloat(e.target.value))}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  />
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Job Settings */}
-        <Card variant="elevated">
-          <CardHeader>
-            <CardTitle>📦 Job Configuration</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Auto-Cancel Timeout (minutes)
-              </label>
-              <input
-                type="number"
-                min="5"
-                step="5"
-                value={settings.autoCancelTimeout}
-                onChange={(e) => updateSetting('autoCancelTimeout', parseInt(e.target.value))}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Jobs will auto-cancel if no courier accepts within this time
+            <div className="p-12 text-center">
+              <div className="text-6xl mb-4">⚙️</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">No Settings Found</h3>
+              <p className="text-gray-600">
+                Platform settings have not been configured yet.
               </p>
             </div>
           </CardContent>
         </Card>
-
-        {/* Notifications */}
-        <Card variant="elevated">
-          <CardHeader>
-            <CardTitle>🔔 Notification Settings</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <label className="flex items-center justify-between p-4 bg-gray-50 rounded-xl cursor-pointer">
-                <div>
-                  <p className="font-semibold text-gray-900">Email Notifications</p>
-                  <p className="text-sm text-gray-600">Send emails for important events</p>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={settings.notifications.emailEnabled}
-                  onChange={(e) => updateSetting('notifications.emailEnabled', e.target.checked)}
-                  className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500"
-                />
-              </label>
-
-              <label className="flex items-center justify-between p-4 bg-gray-50 rounded-xl cursor-pointer">
-                <div>
-                  <p className="font-semibold text-gray-900">SMS Notifications</p>
-                  <p className="text-sm text-gray-600">Send text messages for urgent updates</p>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={settings.notifications.smsEnabled}
-                  onChange={(e) => updateSetting('notifications.smsEnabled', e.target.checked)}
-                  className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500"
-                />
-              </label>
-
-              <label className="flex items-center justify-between p-4 bg-gray-50 rounded-xl cursor-pointer">
-                <div>
-                  <p className="font-semibold text-gray-900">Push Notifications</p>
-                  <p className="text-sm text-gray-600">Send push notifications to mobile apps</p>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={settings.notifications.pushEnabled}
-                  onChange={(e) => updateSetting('notifications.pushEnabled', e.target.checked)}
-                  className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500"
-                />
-              </label>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Feature Toggles */}
-        <Card variant="elevated">
-          <CardHeader>
-            <CardTitle>🎛️ Feature Toggles</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <label className="flex items-center justify-between p-4 bg-gray-50 rounded-xl cursor-pointer">
-                <div>
-                  <p className="font-semibold text-gray-900">Marketplace</p>
-                  <p className="text-sm text-gray-600">Enable vendor marketplace features</p>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={settings.features.marketplaceEnabled}
-                  onChange={(e) => updateSetting('features.marketplaceEnabled', e.target.checked)}
-                  className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500"
-                />
-              </label>
-
-              <label className="flex items-center justify-between p-4 bg-gray-50 rounded-xl cursor-pointer">
-                <div>
-                  <p className="font-semibold text-gray-900">Package Runner</p>
-                  <p className="text-sm text-gray-600">Enable long-distance package delivery</p>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={settings.features.packageRunnerEnabled}
-                  onChange={(e) => updateSetting('features.packageRunnerEnabled', e.target.checked)}
-                  className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500"
-                />
-              </label>
-
-              <label className="flex items-center justify-between p-4 bg-gray-50 rounded-xl cursor-pointer">
-                <div>
-                  <p className="font-semibold text-gray-900">Express Delivery</p>
-                  <p className="text-sm text-gray-600">Enable express/priority delivery options</p>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={settings.features.expressDeliveryEnabled}
-                  onChange={(e) => updateSetting('features.expressDeliveryEnabled', e.target.checked)}
-                  className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500"
-                />
-              </label>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Account Actions */}
-        <Card variant="elevated">
-          <CardHeader>
-            <CardTitle>👤 Account</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <button
-              onClick={handleSignOut}
-              className="w-full py-3 px-4 rounded-xl border-2 border-red-200 text-red-600 font-semibold hover:bg-red-50 transition-all"
-            >
-              Sign Out
-            </button>
-          </CardContent>
-        </Card>
-      </div>
+      )}
     </div>
   )
 }

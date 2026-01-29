@@ -14,7 +14,8 @@ async function signInVendor(page: any) {
 
 test.describe('Vendor pages basic load', () => {
   test('apply page loads and shows heading', async ({ page }) => {
-    await page.goto('/vendor/apply');
+  await page.context().clearCookies();
+  await page.evaluate(() => localStorage.clear());
     await expect(page.locator('text=Become a Vendor')).toBeVisible();
   });
 

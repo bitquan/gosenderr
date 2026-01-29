@@ -4,7 +4,7 @@ import * as admin from "firebase-admin";
 export const autoCancelExpiredFoodDeliveries = functions.pubsub
   .schedule("every 5 minutes")
   .onRun(async (context) => {
-    const now = admin.firestore.Timestamp.now();
+    const now = admin.firestore.Timestamp.fromDate(new Date());
 
     try {
       // Find expired food deliveries

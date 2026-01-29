@@ -1,8 +1,8 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app'
-import { getFirestore, Firestore } from 'firebase/firestore'
-import { getAuth, Auth } from 'firebase/auth'
-import { getStorage, FirebaseStorage } from 'firebase/storage'
-import { getFunctions, Functions } from 'firebase/functions'
+import { getFirestore, Firestore, connectFirestoreEmulator } from 'firebase/firestore'
+import { getAuth, Auth, connectAuthEmulator } from 'firebase/auth'
+import { getStorage, FirebaseStorage, connectStorageEmulator } from 'firebase/storage'
+import { getFunctions, Functions, connectFunctionsEmulator } from 'firebase/functions'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
@@ -28,6 +28,21 @@ if (isValidConfig) {
     authInstance = getAuth(app)
     storageInstance = getStorage(app)
     functionsInstance = getFunctions(app)
+    
+    // Connect to Firebase Emulators in development
+    if (import.meta.env.DEV) {
+      try {
+        connectFirestoreEmulator(dbInstance, '127.0.0.1', 8080)
+        connectAuthEmulator(authInstance, 'http://127.0.0.1:9099', { disableWarnings: true })
+        connectStorageEmulator(storageInstance, '127.0.0.1', 9199)
+        connectFunctionsEmulator(functionsInstance, '127.0.0.1', 5001)
+        console.log('Connected to Firebase Emulators')
+      } catch (emulatorError) {
+        // Emulator already connected (ignore error on hot reload)
+        console.log('Emulator connection already established')
+      }
+    }
+    
     console.log('Firebase initialized successfully')
   } catch (error) {
     console.error('Failed to initialize Firebase:', error)
