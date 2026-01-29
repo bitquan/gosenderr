@@ -135,9 +135,9 @@ The customer portal allows users to:
 - [x] Insurance options
 - [x] Pricing calculation based on dimensions + weight + distance
 - [x] Tracking number generation
-- [ ] Label generation (TODO)
-- [ ] Schedule pickup or drop-off (TODO)
-- [ ] Carrier selection (TODO - single carrier for now)
+- [ ] Label generation (TODO) — See issue: https://github.com/bitquan/gosenderr/issues/68
+- [ ] Schedule pickup or drop-off (TODO) — See issue: https://github.com/bitquan/gosenderr/issues/69
+- [ ] Carrier selection (TODO - single carrier for now) — See issue: https://github.com/bitquan/gosenderr/issues/70
 - **Location:** `/customer/packages/new` (web)
 - **Files:**
   - `apps/web/src/app/customer/packages/new/page.tsx`
@@ -366,7 +366,7 @@ The customer portal allows users to:
 - [x] Stored in Firestore `savedAddresses`
 - **Location:** `/customer/addresses` (web)
 - **Files:** `apps/web/src/app/customer/addresses/page.tsx`
-- **Note:** Google Places integration TODO
+- **Note:** Google Places integration TODO — See issue: https://github.com/bitquan/gosenderr/issues/71
 
 ### ✅ Favorite Couriers (Implemented)
 - [x] Save favorite couriers

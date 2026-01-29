@@ -26,3 +26,17 @@ Next steps
 
 Notes
 - I created initial drafts for the canonical docs as skeletons — these will be filled in iteratively.
+
+Archived files (moved to `docs/archive/` in branch `docs/archive-phase1`):
+- `finishtoday.md` — Outdated day-of checklist; replaced by general onboarding and maintenance guides.
+- `ISSUE_33_README.md` — Issue-specific readme for a completed task.
+- `POST_MERGE_VERIFICATION.md` — Duplicate of deployment / post-merge steps consolidated in `DEPLOYMENT.md`.
+- `PR_11_DEPLOYMENT.md`, `PR_11_REVIEW.md` — PR-specific notes and artifacts.
+- `VITE_MIGRATION_PLAN.md` — Large migration plan archived; key takeaways extracted into `DEVELOPMENT.md` as needed.
+- `history/` (whole folder) — Archived checkpoint and historical docs; keep as read-only history.
+- `github-actions-fixes/` — Workflow fixes and ad-hoc scripts archived (if needed for reproduction, they remain in archive).
+
+Rationale: These documents are either historical, PR/issue-specific, or one-off migration notes. Archiving preserves history while keeping `docs/` focused on canonical, maintained references.
+
+Next step: Open PR to review the archive move (branch `docs/archive-phase1`) and solicit quick approval; if approved, merge and link archived files from `PHASE1_AUDIT.md`.
+
