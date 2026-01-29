@@ -85,7 +85,7 @@ export const setAdminClaim = functions.https.onCall(
       // 6. Update Firestore user document
       const updateData: any = {
         role: isAdmin ? "admin" : oldRole,
-        updatedAt: admin.firestore.Timestamp.now(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       };
 
       if (isAdmin) {
@@ -93,7 +93,7 @@ export const setAdminClaim = functions.https.onCall(
         updateData.adminProfile = {
           permissions: ["all"], // Full permissions by default
           isSuperAdmin: false,
-          promotedAt: admin.firestore.Timestamp.now(),
+          promotedAt: admin.firestore.FieldValue.serverTimestamp(),
           promotedBy: context.auth.uid,
           lastLoginAt: null,
           totalActions: 0,
@@ -113,7 +113,7 @@ export const setAdminClaim = functions.https.onCall(
         targetEmail: targetData?.email || null,
         oldRole,
         newRole: isAdmin ? "admin" : oldRole,
-        timestamp: admin.firestore.Timestamp.now(),
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
         metadata: {
           isAdminGranted: isAdmin,
         },

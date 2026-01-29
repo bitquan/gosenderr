@@ -46,7 +46,7 @@ export async function logAdminAction(params: {
       action: params.action,
       targetUserId: params.targetUserId || null,
       targetEmail: params.targetEmail || null,
-      timestamp: admin.firestore.Timestamp.now(),
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
       metadata: params.metadata || {},
     });
   } catch (error) {
@@ -110,7 +110,7 @@ export async function updateUserRole(
     .doc(`users/${uid}`)
     .update({
       role: newRole,
-      updatedAt: admin.firestore.Timestamp.now(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
   // Update custom claims
@@ -150,10 +150,10 @@ export async function setBanStatus(
     .doc(`users/${uid}`)
     .update({
       banned: banned,
-      bannedAt: banned ? admin.firestore.Timestamp.now() : null,
+      bannedAt: banned ? admin.firestore.FieldValue.serverTimestamp() : null,
       bannedBy: banned ? adminId : null,
       banReason: banned && reason ? reason : null,
-      updatedAt: admin.firestore.Timestamp.now(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
   // Log action
