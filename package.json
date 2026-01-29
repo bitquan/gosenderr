@@ -34,7 +34,9 @@
     "deploy:web:run": "bash scripts/deploy-cloudrun-web.sh",
     "deploy:web:hosting": "firebase deploy --only hosting:gosenderr-6773f --project gosenderr-6773f --non-interactive",
     "deploy:web": "pnpm deploy:web:run && pnpm deploy:web:hosting",
-    "predeploy:functions": "node scripts/predeploy-vendor-shared.js"
+    "predeploy:functions": "node scripts/predeploy-vendor-shared.js",
+    "verify:phase0": "bash scripts/verify-phase0.sh",
+    "verify:docs": "bash scripts/verify-docs.sh"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "2.0.7",
