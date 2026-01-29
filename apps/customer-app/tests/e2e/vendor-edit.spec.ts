@@ -6,6 +6,7 @@ const VENDOR_PASS = 'admin123';
 test('vendor can edit an item', async ({ page, browser }) => {
   // Sign in
   page.on('console', (msg) => console.log('PAGE LOG:', msg.type(), msg.text()));
+  await page.goto('/');
   await page.context().clearCookies();
   await page.evaluate(() => localStorage.clear());
   await page.goto('/login');
@@ -168,6 +169,9 @@ test('edit form appears only after auth loads', async ({ browser }) => {
   const tempPage = await browser.newPage();
   const VENDOR_EMAIL = 'vender@sender.com';
   const VENDOR_PASS = 'admin123';
+
+  // Ensure the page is at our app origin so window globals are accessible
+  await tempPage.goto('/');
 
   const projectId = (await tempPage.evaluate(() => (window as any).__FIREBASE_DEFAULTS__?.projectId || null)) || 'gosenderr-6773f';
   const apiKey = (await tempPage.evaluate(() => (window as any).__FIREBASE_DEFAULTS__?.apiKey || null)) || 'fake-api-key';

@@ -1,0 +1,35 @@
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# Dependencies
+node_modules/
+pnpm-lock.yaml
+
+# Environment
+.env.local
+.env.production
+
+# Firebase
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+.firebase/
+
+# Mobile
+ios/App/Pods/
+android/app/build/
+*.xcworkspace/
+*.xcodeproj/
+
+# Archives (old docs)
+docs/archive/
+
+# Test artifacts
+playwright-report/
+test-results/
+
+# Logs
+*.log

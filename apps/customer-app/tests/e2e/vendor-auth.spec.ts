@@ -5,6 +5,7 @@ const VENDOR_PASS = 'admin123';
 
 // Ensure a clean auth state before each test to avoid leaked sessions
 test.beforeEach(async ({ page }) => {
+  await page.goto('/');
   await page.context().clearCookies();
   await page.evaluate(() => localStorage.clear());
 });

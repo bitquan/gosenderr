@@ -15,8 +15,12 @@ const firebaseConfig = {
 
 // Only initialize on client side (not during build/SSR)
 const isBrowser = typeof window !== "undefined";
+// Consider config valid in emulator/CI environments even if apiKey is a dummy value.
 const isValidConfig =
-  firebaseConfig.apiKey && firebaseConfig.apiKey.startsWith("AIza");
+  (firebaseConfig.apiKey && firebaseConfig.apiKey.startsWith("AIza")) ||
+  Boolean(import.meta.env.VITE_FIREBASE_AUTH_EMULATOR_HOST) ||
+  Boolean(import.meta.env.VITE_FIRESTORE_EMULATOR_HOST) ||
+  Boolean(import.meta.env.VITE_FIREBASE_PROJECT_ID);
 
 let app: FirebaseApp | undefined;
 let dbInstance: Firestore | undefined;
