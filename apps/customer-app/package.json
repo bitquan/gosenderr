@@ -7,7 +7,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext ts,tsx",
-    "test:e2e": "playwright test",
+    "test:e2e": "bash ../../scripts/start-emulators.sh && playwright test tests/e2e --config=playwright.config.ts",
     "test:e2e:ui": "playwright test --ui",
     "cap:sync": "pnpm build && npx cap sync",
     "cap:open:ios": "npx cap open ios",
