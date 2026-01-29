@@ -41,6 +41,15 @@ jobs:
       - name: Install Firebase CLI
         run: pnpm dlx firebase-tools --version
 
+      - name: Validate FIREBASE_TOKEN (if provided)
+        if: ${{ secrets.FIREBASE_TOKEN }}
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: |
+          echo "Validating FIREBASE_TOKEN..."
+          # projects:list is a lightweight call to validate token authentication
+          firebase projects:list --token "$FIREBASE_TOKEN" --format=json >/dev/null || (echo "FIREBASE_TOKEN is invalid or lacks permissions" && exit 1)
+
       - name: Run Functions integration tests under emulators
         env:
           GCLOUD_PROJECT: demo
