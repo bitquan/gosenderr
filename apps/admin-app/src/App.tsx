@@ -28,6 +28,7 @@ import CategoriesPage from './pages/Categories'
 import MessagingPage from './pages/Messaging'
 import SystemCheckPage from './pages/SystemCheck'
 import RateCardsComparison from './pages/RateCardsComparison'
+import AdminFlowLogsPage from './pages/AdminFlowLogs'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
@@ -79,6 +80,7 @@ function App() {
                     <Route path="/system-check" element={<SystemCheckPage />} />
                     <Route path="/audit-logs" element={<AuditLogsPage />} />
                     <Route path="/feature-flags" element={<FeatureFlagsPage />} />
+                    <Route path="/admin-flow-logs" element={<AdminFlowLogsPage />} />
                     <Route path="/settings" element={<SettingsPage />} />
                     <Route path="/settings/payment" element={<PaymentSettingsPage />} />
                     <Route path="/settings/email" element={<EmailSettingsPage />} />

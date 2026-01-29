@@ -231,6 +231,16 @@
         "focus": false
       }
     },
+    {
+      "label": "Run Admin App Tests",
+      "type": "shell",
+      "command": "pnpm --prefix apps/admin-app run test -- --run --reporter verbose",
+      "group": "test",
+      "presentation": {
+        "reveal": "silent"
+      },
+      "problemMatcher": []
+    },
 
     // ==================== STOP TASKS ====================
     {

@@ -22,6 +22,8 @@ export default function CreateUserModal({ isOpen, onClose, onSuccess }: CreateUs
   const [role, setRole] = useState<'customer' | 'courier' | 'package_runner' | 'vendor' | 'admin'>('customer')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [diagLoading, setDiagLoading] = useState(false)
+  const [diagResult, setDiagResult] = useState<any | null>(null)
 
   if (!isOpen) return null
 
@@ -82,9 +84,37 @@ export default function CreateUserModal({ isOpen, onClose, onSuccess }: CreateUs
         </div>
 
         <div className="flex gap-3">
-          <button onClick={onClose} disabled={loading} className="flex-1 px-4 py-3 border-2 border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all">Cancel</button>
+          <button onClick={onClose} disabled={loading} className="px-4 py-3 border-2 border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all">Cancel</button>
+
+          {/* Diagnostic button for emulator debugging only - visible on localhost */}
+          {typeof window !== 'undefined' && window.location.hostname.includes('localhost') && (
+            <button
+              onClick={async () => {
+                setDiagResult(null)
+                setDiagLoading(true)
+                try {
+                  const mod = await import('../lib/cloudFunctions')
+                  const res = await mod.diagnoseCreateUserCall()
+                  setDiagResult(res)
+                } catch (err: any) {
+                  setDiagResult({ error: err.message || String(err) })
+                } finally {
+                  setDiagLoading(false)
+                }
+              }}
+              disabled={diagLoading}
+              className="px-3 py-3 border-2 border-yellow-300 text-yellow-800 rounded-xl font-semibold hover:bg-yellow-50 transition-all"
+            >
+              {diagLoading ? 'Diagnosing...' : 'Diag'}
+            </button>
+          )}
+
           <button onClick={handleCreate} disabled={loading} className="flex-1 px-4 py-3 bg-gradient-to-r from-[#6B4EFF] to-[#9D7FFF] text-white rounded-xl font-semibold hover:shadow-lg transition-all">{loading ? 'Creating...' : 'Create User'}</button>
         </div>
+
+        {diagResult && (
+          <pre className="mt-3 p-3 bg-gray-50 border rounded-lg text-sm overflow-auto">{JSON.stringify(diagResult, null, 2)}</pre>
+        )}
       </div>
     </div>
   )

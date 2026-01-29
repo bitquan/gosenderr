@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { collection, query, orderBy, getDocs, doc, getDoc } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { Card, CardHeader, CardTitle, CardContent } from '../components/Card'
+import { simulateRule } from '../lib/cloudFunctions'
 
 interface FlowLog {
   id: string
@@ -13,10 +15,15 @@ interface FlowLog {
 }
 
 export default function AdminFlowLogsPage() {
+  const navigate = useNavigate()
   const [logs, setLogs] = useState<FlowLog[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [selected, setSelected] = useState<FlowLog | null>(null)
   const [entries, setEntries] = useState<any[]>([])
+
+  const [simulateLoading, setSimulateLoading] = useState(false)
+  const [simulateResult, setSimulateResult] = useState<any | null>(null)
 
   useEffect(() => { loadLogs() }, [])
 
@@ -26,8 +33,9 @@ export default function AdminFlowLogsPage() {
       const q = query(collection(db, 'adminFlowLogs'), orderBy('startedAt', 'desc'))
       const snap = await getDocs(q)
       setLogs(snap.docs.map(d => ({ id: d.id, ...d.data() } as FlowLog)))
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to load flow logs', err)
+      setError(err?.message || String(err))
     } finally {
       setLoading(false)
     }
@@ -38,8 +46,9 @@ export default function AdminFlowLogsPage() {
       const q = query(collection(db, `adminFlowLogs/${id}/entries`), orderBy('ts', 'asc'))
       const snap = await getDocs(q)
       setEntries(snap.docs.map(d => ({ id: d.id, ...d.data() })))
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to load entries', err)
+      setError(err?.message || String(err))
       setEntries([])
     }
   }
@@ -50,17 +59,26 @@ export default function AdminFlowLogsPage() {
         <div className="max-w-6xl mx-auto">
           <h1 className="text-3xl font-bold mb-2">🧪 Admin Test Flow Runs</h1>
           <p className="text-purple-100">Run logs for test flows initiated by admins</p>
+          <div className="mt-4 flex gap-2">
+            <button onClick={() => navigate('/system-check')} className="px-4 py-2 rounded bg-indigo-600 text-white mr-2">Run System Simulation</button>
+          </div>
         </div>
       </div>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 -mt-6 space-y-4">
         <Card variant="elevated">
           <CardHeader>
-            <CardTitle>Recent Runs</CardTitle>
+            <CardTitle as="h2">Recent Runs</CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
               <div className="text-center py-8">Loading...</div>
+            ) : error ? (
+              <div className="text-center py-8">
+                <div className="text-red-600 font-semibold">Failed to load runs</div>
+                <div className="text-sm text-gray-600 mt-2">{error}</div>
+                <div className="text-sm text-gray-500 mt-2">Tip: sign in as an admin in the emulator (create a user and set role 'admin' in {'/users/{uid}'}) to view run logs.</div>
+              </div>
             ) : logs.length === 0 ? (
               <div className="text-center py-8">No runs yet</div>
             ) : (
@@ -108,6 +126,58 @@ export default function AdminFlowLogsPage() {
                     </ul>
                   )}
                 </div>
+
+                <div className="mt-4">
+                  <div className="flex gap-2 items-center">
+                    <button
+                      onClick={async () => {
+                        if (!selected) return
+                        setSimulateLoading(true)
+                        setSimulateResult(null)
+                        try {
+                          const res = await simulateRule({ op: 'get', path: `adminFlowLogs/${selected.id}`, auth: { uid: selected.adminId } })
+                          setSimulateResult(res)
+                        } catch (err: any) {
+                          setSimulateResult({ error: err?.message || String(err) })
+                        } finally {
+                          setSimulateLoading(false)
+                        }
+                      }}
+                      className="px-3 py-1 rounded bg-blue-100"
+                    >
+                      {simulateLoading ? 'Testing...' : 'Test Rules (as admin)'}
+                    </button>
+
+                    <button
+                      onClick={async () => {
+                        if (!selected) return
+                        setSimulateLoading(true)
+                        setSimulateResult(null)
+                        try {
+                          const res = await simulateRule({ op: 'get', path: `adminFlowLogs/${selected.id}`, auth: { uid: `fake-${Date.now()}` } })
+                          setSimulateResult(res)
+                        } catch (err: any) {
+                          setSimulateResult({ error: err?.message || String(err) })
+                        } finally {
+                          setSimulateLoading(false)
+                        }
+                      }}
+                      className="px-3 py-1 rounded bg-gray-100"
+                    >
+                      {simulateLoading ? 'Testing...' : 'Test Rules (as other)'}
+                    </button>
+
+                    <div className="ml-4 text-sm text-gray-600">Result:</div>
+                    <div className="ml-2">
+                      {simulateResult ? (
+                        <pre className="text-xs text-gray-600 max-w-full overflow-auto bg-gray-50 p-2 rounded">{JSON.stringify(simulateResult, null, 2)}</pre>
+                      ) : (
+                        <div className="text-xs text-gray-400">No result yet</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
               </div>
             </CardContent>
           </Card>

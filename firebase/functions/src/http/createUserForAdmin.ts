@@ -9,12 +9,17 @@ interface CreateUserRequest {
 }
 
 export async function createUserForAdminHandler(data: CreateUserRequest, context: functions.https.CallableContext) {
+  functions.logger.info('createUserForAdmin invoked', { auth: context.auth || null })
+
   if (!context.auth) {
     throw new functions.https.HttpsError('unauthenticated', 'Authentication required');
   }
 
   // Ensure only admins can call
-  const callerDoc = await admin.firestore().doc(`users/${context.auth.uid}`).get();
+  const callerRef = admin.firestore().doc(`users/${context.auth.uid}`)
+  const callerDoc = await callerRef.get();
+  functions.logger.info('createUserForAdmin callerDoc', { exists: callerDoc.exists, data: callerDoc.data?.() })
+
   if (!callerDoc.exists || callerDoc.data()?.role !== 'admin') {
     throw new functions.https.HttpsError('permission-denied', 'Admin privileges required');
   }
@@ -37,7 +42,27 @@ export async function createUserForAdminHandler(data: CreateUserRequest, context
 
   try {
     // Create auth user
+    functions.logger.info('createUserForAdmin creating auth user', { email });
     const userRecord = await admin.auth().createUser({ email, password, displayName });
+    functions.logger.info('createUserForAdmin created auth user', { uid: userRecord.uid });
+
+    // Provide a safe server timestamp (FieldValue may be undefined in some emulator contexts)
+    const getServerTimestamp = () => {
+      const fv = (admin.firestore as any).FieldValue
+      if (fv && typeof fv.serverTimestamp === 'function') {
+        functions.logger.info('using FieldValue.serverTimestamp')
+        return fv.serverTimestamp()
+      }
+
+      const ts = (admin.firestore as any).Timestamp
+      if (ts && typeof ts.fromDate === 'function') {
+        functions.logger.info('using Timestamp.fromDate fallback')
+        return ts.fromDate(new Date())
+      }
+
+      functions.logger.warn('Firestore Timestamp unavailable; falling back to JS Date')
+      return new Date()
+    }
 
     // Set custom claims
     await admin.auth().setCustomUserClaims(userRecord.uid, { role, admin: role === 'admin' });
@@ -47,8 +72,8 @@ export async function createUserForAdminHandler(data: CreateUserRequest, context
       email: email.toLowerCase(),
       fullName: displayName || null,
       role,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: getServerTimestamp(),
+      updatedAt: getServerTimestamp(),
     };
 
     // Default profiles
@@ -74,13 +99,19 @@ export async function createUserForAdminHandler(data: CreateUserRequest, context
       targetUserId: userRecord.uid,
       email,
       role,
-      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      timestamp: getServerTimestamp(),
     });
 
     return { success: true, uid: userRecord.uid };
   } catch (error: any) {
-    functions.logger.error('createUserForAdmin error', error);
-    throw error; // rethrow original error so tests can see stack
+    functions.logger.error('createUserForAdmin error', { message: error?.message || String(error), code: error?.code || null, stack: error?.stack || null });
+
+    // Map common auth errors to HttpsError codes for clearer client errors
+    if (error && typeof error.code === 'string' && error.code.startsWith('auth/')) {
+      throw new functions.https.HttpsError('already-exists', error.message || 'Auth error');
+    }
+
+    throw new functions.https.HttpsError('internal', error?.message || 'Internal error in createUserForAdmin');
   }
 }
 

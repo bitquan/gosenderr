@@ -1,8 +1,13 @@
-import { useState } from 'react'
-import { collection, getDocs, addDoc, Timestamp, query, limit, where, doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore'
+import { useEffect, useState } from 'react'
+import { collection, getDocs, addDoc, Timestamp, query, limit, where, doc, getDoc, updateDoc, deleteDoc, onSnapshot, orderBy } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { getAuth } from 'firebase/auth'
 import { Card, CardHeader, CardTitle, CardContent } from '../components/Card'
+import SystemFlowMap from '../components/SystemFlowMap'
+import { runSystemSimulation } from '../lib/cloudFunctions'
+
+export type RunLogEntry = { id: string, message: string, meta?: any, ts?: any }
+
 
 interface TestResult {
   name: string
@@ -74,6 +79,12 @@ export default function SystemCheckPage() {
 
     setRunning(false)
   }
+
+
+
+  // ===== System Header Buttons =====
+  // Add Run buttons in the UI header by using the page-level doc title area
+  // We'll render them in the JSX below near the page header when returning the component
 
   // ===== AUTHENTICATION & AUTHORIZATION =====
   const testAuthStatus = async () => {
@@ -204,6 +215,50 @@ export default function SystemCheckPage() {
     } catch (error) {
       const duration = Date.now() - start
       addResult('Record Count Analysis', 'failed', `Count failed: ${(error as any).message}`, duration)
+    }
+  }
+
+  // ===== System Simulation (orchestrated) =====
+  const [runEntries, setRunEntries] = useState<RunLogEntry[]>([])
+  const [runId, setRunId] = useState<string | null>(null)
+  const [simRunning, setSimRunning] = useState(false)
+  const [intensity, setIntensity] = useState<number>(1)
+  const [runSummary, setRunSummary] = useState<any | null>(null)
+
+  // Start system simulation, subscribe to run log entries and stop when run completes
+  const startSystemSimulation = async () => {
+    setSimRunning(true)
+    setRunEntries([])
+    setRunSummary(null)
+    try {
+      const res = await runSystemSimulation({ intensity, cleanup: true })
+      if (!res || !res.runLogId) throw new Error('No run id returned')
+      setRunId(res.runLogId)
+      setRunSummary({ created: res.created, runLogId: res.runLogId })
+
+      // Subscribe to entries
+      const q = query(collection(db, `adminFlowLogs/${res.runLogId}/entries`), orderBy('ts', 'asc'))
+      const unsub = onSnapshot(q, snap => {
+        const docs = snap.docs.map(d => ({ id: d.id, ...d.data() })) as RunLogEntry[]
+        setRunEntries(docs)
+      }, err => {
+        console.error('run entries subscription error', err)
+      })
+
+      // auto-unsubscribe when finished (listen for run doc status change)
+      const runDocRef = doc(db, 'adminFlowLogs', res.runLogId)
+      const unsubRun = onSnapshot(runDocRef, d => {
+        const data = d.data() as any
+        if (data?.status === 'complete' || data?.status === 'failed') {
+          unsub()
+          unsubRun()
+          setSimRunning(false)
+        }
+      })
+    } catch (error: any) {
+      console.error('run system simulation failed', error)
+      setRunSummary({ error: error?.message || String(error) })
+      setSimRunning(false)
     }
   }
 
@@ -599,15 +654,85 @@ export default function SystemCheckPage() {
           </Card>
         </div>
 
-        {/* Run Tests Button */}
-        <div className="flex gap-3">
-          <button
-            onClick={runAllTests}
-            disabled={running}
-            className="px-6 py-3 bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] text-white rounded-lg hover:shadow-lg transition font-semibold disabled:opacity-50"
-          >
-            {running ? '⏳ Running Comprehensive Tests...' : '▶️ Run All Tests (18 total)'}
-          </button>
+        {/* Run Tests & System Simulation Buttons */}
+        <div className="flex gap-3 items-start">
+          <div className="flex gap-3">
+            <button
+              onClick={runAllTests}
+              disabled={running}
+              className="px-6 py-3 bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] text-white rounded-lg hover:shadow-lg transition font-semibold disabled:opacity-50"
+            >
+              {running ? '⏳ Running Comprehensive Tests...' : '▶️ Run All Tests (18 total)'}
+            </button>
+
+            <label className="text-sm text-gray-700 mr-2 self-center">Intensity:</label>
+            <select value={intensity} onChange={(e) => setIntensity(Number(e.target.value))} className="rounded px-2 py-1 mr-4 self-center">
+              <option value={1}>Small (1)</option>
+              <option value={3}>Medium (3)</option>
+              <option value={5}>Large (5)</option>
+            </select>
+
+            <button
+              onClick={startSystemSimulation}
+              disabled={simRunning}
+              className="px-4 py-3 rounded bg-indigo-600 text-white hover:shadow-md disabled:opacity-50"
+            >
+              {simRunning ? 'Running Simulation...' : '🔁 Run System Simulation'}
+            </button>
+          </div>
+
+          {/* Live Flow Map and entries */}
+          <div className="ml-auto w-full md:w-1/2">
+            <Card>
+              <CardHeader>
+                <CardTitle>System Flow Map</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <SystemFlowMap entries={runEntries} />
+                  <div className="mt-3 bg-gray-50 p-3 rounded max-h-40 overflow-auto text-xs">
+                    {runEntries.length === 0 ? (
+                      <div className="text-gray-500">No simulation entries yet</div>
+                    ) : (
+                      <ul className="space-y-2">
+                        {runEntries.map(e => (
+                          <li key={e.id} className="border-b pb-1">
+                            <div className="text-xs text-gray-500">{new Date(e.ts?.toDate?.() || e.ts || Date.now()).toLocaleString()}</div>
+                            <div>{e.message}</div>
+                            {e.meta && <pre className="text-xs text-gray-600 mt-1 whitespace-pre-wrap">{JSON.stringify(e.meta, null, 2)}</pre>}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+
+                  {/* Summary card for simulation results */}
+                  {runSummary && (
+                    <div className="mt-3">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Simulation Summary</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          {runSummary.error ? (
+                            <div className="text-red-600">Error: {runSummary.error}</div>
+                          ) : (
+                            <div className="text-sm">
+                              <div>Run ID: {runSummary.runLogId}</div>
+                              <div>Created Users: {runSummary.created?.users?.length || 0}</div>
+                              <div>Created Items: {runSummary.created?.items?.length || 0}</div>
+                              <div>Created Jobs: {runSummary.created?.jobs?.length || 0}</div>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </div>
+                  )}
+
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         {/* Test Results */}

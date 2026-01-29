@@ -29,12 +29,22 @@ export async function runTestFlowHandler(data: RunTestFlowRequest, context: func
   }
 
   const runLogRef = admin.firestore().collection('adminFlowLogs').doc();
-  const log = (msg: string, meta: any = {}) => runLogRef.collection('entries').add({ message: msg, meta, ts: admin.firestore.FieldValue.serverTimestamp() });
+
+  // Safe timestamp helper (some emulator contexts may not expose FieldValue)
+  const getServerTimestamp = () => {
+    const fv = (admin.firestore as any).FieldValue
+    if (fv && typeof fv.serverTimestamp === 'function') return fv.serverTimestamp()
+    const ts = (admin.firestore as any).Timestamp
+    if (ts && typeof ts.fromDate === 'function') return ts.fromDate(new Date())
+    return new Date()
+  }
+
+  const log = (msg: string, meta: any = {}) => runLogRef.collection('entries').add({ message: msg, meta, ts: getServerTimestamp() });
 
   await runLogRef.set({
     adminId: context.auth.uid,
     targetUserId,
-    startedAt: admin.firestore.FieldValue.serverTimestamp(),
+    startedAt: getServerTimestamp(),
     status: 'running',
   });
 
@@ -57,9 +67,18 @@ export async function runTestFlowHandler(data: RunTestFlowRequest, context: func
         'courierProfile.vehicleType': 'car',
         'courierProfile.serviceRadius': 15,
         'courierProfile.workModes': { packagesEnabled: true, foodEnabled: true },
-        'courierProfile.status': role === 'courier' ? 'pending' : admin.firestore.FieldValue.delete(),
-        'courierProfile.updatedAt': admin.firestore.FieldValue.serverTimestamp(),
+        'courierProfile.updatedAt': getServerTimestamp(),
       };
+
+      // Only set status if courier or if FieldValue.delete is available; otherwise omit the key
+      if (role === 'courier') {
+        updates['courierProfile.status'] = 'pending'
+      } else {
+        const fv = (admin.firestore as any).FieldValue
+        if (fv && typeof fv.delete === 'function') {
+          updates['courierProfile.status'] = fv.delete()
+        }
+      }
 
       if (role === 'courier') {
         updates['courierProfile.packageRateCard'] = { baseFee: 8, perMile: 2, perMinute: 0.3 };
@@ -77,7 +96,7 @@ export async function runTestFlowHandler(data: RunTestFlowRequest, context: func
         title: 'Test Item',
         price: 12.5,
         vendorId: targetUserId,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: getServerTimestamp(),
       };
       const itemRef = await admin.firestore().collection('marketplaceItems').add(item);
       await log('Marketplace item created', { itemId: itemRef.id });
@@ -91,7 +110,7 @@ export async function runTestFlowHandler(data: RunTestFlowRequest, context: func
     }
 
     // Finalize
-    await runLogRef.update({ status: 'complete', finishedAt: admin.firestore.FieldValue.serverTimestamp() });
+    await runLogRef.update({ status: 'complete', finishedAt: getServerTimestamp() });
     await log('Test flow completed');
 
     // Cleanup if requested

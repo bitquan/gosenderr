@@ -102,6 +102,24 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // ========== ADMIN FLOW LOGS (Test-only run logs) ==========
+    match /adminFlowLogs/{logId} {
+      // Only admins can read run logs
+      allow read: if isAdmin();
+      // creation is performed by server/cloud functions; disallow client create
+      allow create: if false;
+      allow update: if false;
+      allow delete: if isAdmin();
+
+      match /entries/{entryId} {
+        // Only admins can read run log entries
+        allow read: if isAdmin();
+        allow create: if false;
+        allow update: if false;
+        allow delete: if false;
+      }
+    }
+
     // ========== ITEMS (Marketplace) ==========
     match /items/{itemId} {
       // Anyone can read available items (public marketplace)

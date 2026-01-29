@@ -87,8 +87,55 @@ interface RunTestFlowResult {
 }
 
 const createUserForAdminFn = httpsCallable<CreateUserRequest, CreateUserResult>(functions, 'createUserForAdmin')
+const diagnoseCreateUserCallFn = httpsCallable<Record<string, unknown>, any>(functions, 'diagnoseCreateUserCall')
 const runTestFlowFn = httpsCallable<RunTestFlowRequest, RunTestFlowResult>(functions, 'runTestFlow')
 
+// Simulate Firestore rules for a given path under the emulator (admin-only)
+interface SimulateRuleRequest {
+  op: 'get' | 'list' | 'set' | 'update' | 'delete'
+  path: string
+  payload?: any
+  auth?: { uid?: string; claims?: Record<string, any> }
+}
+
+interface SimulateRuleResult {
+  allowed: boolean
+  status: number
+  body?: any
+}
+
+const simulateRuleFn = httpsCallable<SimulateRuleRequest, SimulateRuleResult>(functions, 'simulateRule')
+
+interface RunSystemSimulationRequest {
+  intensity?: number
+  cleanup?: boolean
+}
+interface RunSystemSimulationResult {
+  success: boolean
+  runLogId?: string
+  created?: any
+}
+const runSystemSimulationFn = httpsCallable<RunSystemSimulationRequest, RunSystemSimulationResult>(functions, 'runSystemSimulation')
+
+export async function simulateRule(data: SimulateRuleRequest): Promise<SimulateRuleResult> {
+  try {
+    const res = await simulateRuleFn(data)
+    return res.data
+  } catch (error: any) {
+    console.error('simulateRule error', error)
+    throw new Error(error.message || 'Failed to simulate rule')
+  }
+}
+
+export async function runSystemSimulation(data: RunSystemSimulationRequest): Promise<RunSystemSimulationResult> {
+  try {
+    const res = await runSystemSimulationFn(data)
+    return res.data
+  } catch (error: any) {
+    console.error('runSystemSimulation error', error)
+    throw new Error(error.message || 'Failed to run system simulation')
+  }
+}
 export async function createUserForAdmin(data: CreateUserRequest): Promise<CreateUserResult> {
   try {
     const res = await createUserForAdminFn(data)
@@ -106,5 +153,18 @@ export async function runTestFlow(data: RunTestFlowRequest): Promise<RunTestFlow
   } catch (error: any) {
     console.error('runTestFlow error', error)
     throw new Error(error.message || 'Failed to run test flow')
+  }
+}
+
+/**
+ * Emulator-only diagnostic call to inspect auth + caller user doc
+ */
+export async function diagnoseCreateUserCall(): Promise<any> {
+  try {
+    const res = await diagnoseCreateUserCallFn({})
+    return res.data
+  } catch (error: any) {
+    console.error('diagnoseCreateUserCall error', error)
+    throw new Error(error.message || 'Failed diagnostic')
   }
 }
