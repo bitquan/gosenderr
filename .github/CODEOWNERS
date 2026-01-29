@@ -1,0 +1,5 @@
+# CODEOWNERS
+/docs/ @bitquan
+/apps/_archive/ @bitquan
+/apps/* @bitquan
+/.github/ @bitquan

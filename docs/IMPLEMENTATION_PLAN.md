@@ -10,7 +10,7 @@
 ## Phase Checklist
 
 - [x] **Phase 0:** Copilot Workspace Setup (CURRENT)
-- [ ] **Phase 1:** Documentation Cleanup (2 days)
+- [x] **Phase 1:** Documentation Cleanup (2 days) — **Status: Complete (merged PR #73 on 2026-01-29)**
 - [ ] **Phase 2:** Remove Dead Code (1 day)
 - [ ] **Phase 3:** Fix TypeScript Builds (2 days)
 - [ ] **Phase 4:** Courier Map Shell (3 days)
