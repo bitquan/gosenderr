@@ -13,7 +13,7 @@ import { mockOnSnapshotForDoc } from '../../tests/firestoreMock'
 vi.mock('firebase/firestore', async (importOriginal) => {
   const orig = await importOriginal()
   return {
-    ...orig,
+    ...(orig as any),
     onSnapshot: mockOnSnapshotForDoc(null, { created: { users: ['u1'], items: ['i1'], jobs: ['j1'] } })
   }
 })

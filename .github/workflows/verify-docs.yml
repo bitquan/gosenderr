@@ -50,7 +50,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run link checker (lychee)
-        uses: lycheeverse/lychee-action@v3
+        uses: lycheeverse/lychee-action@v1
         with:
           # Exclude archived docs
           args: "docs --exclude docs/archive --no-progress --ignore-files .lychee-ignore"
