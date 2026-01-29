@@ -120,3 +120,9 @@ The script:
 
 - Use Stripe test keys or bypass payments?
 - Should we auto-complete job status transitions in the script?
+
+## Testing & Tools
+
+- The UI tests and unit tests mock Firestore snapshots; use the provided helper in the repo at `apps/admin-app/src/tests/firestoreMock.ts` to obtain consistent `DocumentSnapshot` and `QuerySnapshot` shapes (`data()` method for documents and `docs` array for queries).
+- Functions integration tests should invoke exported handlers (e.g., `runSystemSimulationHandler`) directly when possible to avoid network-dependent flaky behavior.
+- Add a CI job that starts the emulators and runs both the functions integration tests and the frontend Vitest suite to catch regressions.
