@@ -59,7 +59,25 @@
     "unsuspends",
     "unsuspended",
     "Sendrs",
-    "Senderrs"
+    "Senderrs",
+    "Segoe",
+    "firebaseapp",
+    "geolocation",
+    "xcodeproj",
+    "dropoffs",
+    "oneline",
+    "cooldown",
+    "backgrounded",
+    "Instacart",
+    "standups",
+    "finishtoday",
+    "ngeohash",
+    "chargebacks",
+    "Unsuspension",
+    "unbans"
+  ],
+  "ignoreRegExpList": [
+    "[A-Za-z0-9_-]{16,}"
   ],
   "ignorePaths": ["docs/archive/**"]
 }
