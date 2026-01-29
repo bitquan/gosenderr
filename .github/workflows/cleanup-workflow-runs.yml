@@ -5,7 +5,7 @@ on:
     inputs:
       days:
         description: 'Delete workflow runs older than this many days'
-        required: true
+        required: false
         default: '30'
       branch:
         description: 'Optional: only consider runs from this branch (leave empty for all)'
@@ -13,7 +13,7 @@ on:
         default: ''
       preview:
         description: 'If true, only preview runs to delete (no deletion)'
-        required: true
+        required: false
         default: 'true'
 
 permissions:
@@ -28,9 +28,11 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
-            const days = parseInt(core.getInput('days', { required: true }))
-            const branch = core.getInput('branch')
-            const preview = core.getInput('preview') === 'true'
+            const daysInput = core.getInput('days') || '30'
+            const days = parseInt(daysInput, 10)
+            if (isNaN(days) || days <= 0) throw new Error(`Invalid 'days' input: ${daysInput}. Provide a positive integer.`)
+            const branch = core.getInput('branch') || ''
+            const preview = (core.getInput('preview') || 'true') === 'true'
             const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
             core.info(`Cutoff date: ${cutoff.toISOString()}`)
 
