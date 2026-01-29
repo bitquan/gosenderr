@@ -29,10 +29,10 @@ jobs:
           node-version: '18'
           cache: 'pnpm'
 
-      - name: Enable corepack and prepare pnpm
-        run: |
-          corepack enable
-          corepack prepare pnpm@8.15.1 --activate
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8.15.1
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
