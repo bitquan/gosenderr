@@ -47,8 +47,8 @@ export const createUserForAdmin = functions.https.onCall(async (data: CreateUser
       email: email.toLowerCase(),
       fullName: displayName || null,
       role,
-      createdAt: admin.firestore.Timestamp.now(),
-      updatedAt: admin.firestore.Timestamp.now(),
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     };
 
     // Default profiles
@@ -74,7 +74,7 @@ export const createUserForAdmin = functions.https.onCall(async (data: CreateUser
       targetUserId: userRecord.uid,
       email,
       role,
-      timestamp: admin.firestore.Timestamp.now(),
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
     });
 
     return { success: true, uid: userRecord.uid };

@@ -29,12 +29,12 @@ export const runTestFlow = functions.https.onCall(async (data: RunTestFlowReques
   }
 
   const runLogRef = admin.firestore().collection('adminFlowLogs').doc();
-  const log = (msg: string, meta: any = {}) => runLogRef.collection('entries').add({ message: msg, meta, ts: admin.firestore.Timestamp.now() });
+  const log = (msg: string, meta: any = {}) => runLogRef.collection('entries').add({ message: msg, meta, ts: admin.firestore.FieldValue.serverTimestamp() });
 
   await runLogRef.set({
     adminId: context.auth.uid,
     targetUserId,
-    startedAt: admin.firestore.Timestamp.now(),
+    startedAt: admin.firestore.FieldValue.serverTimestamp(),
     status: 'running',
   });
 
@@ -58,7 +58,7 @@ export const runTestFlow = functions.https.onCall(async (data: RunTestFlowReques
         'courierProfile.serviceRadius': 15,
         'courierProfile.workModes': { packagesEnabled: true, foodEnabled: true },
         'courierProfile.status': role === 'courier' ? 'pending' : admin.firestore.FieldValue.delete(),
-        'courierProfile.updatedAt': admin.firestore.Timestamp.now(),
+        'courierProfile.updatedAt': admin.firestore.FieldValue.serverTimestamp(),
       };
 
       if (role === 'courier') {
@@ -77,7 +77,7 @@ export const runTestFlow = functions.https.onCall(async (data: RunTestFlowReques
         title: 'Test Item',
         price: 12.5,
         vendorId: targetUserId,
-        createdAt: admin.firestore.Timestamp.now(),
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
       };
       const itemRef = await admin.firestore().collection('marketplaceItems').add(item);
       await log('Marketplace item created', { itemId: itemRef.id });
@@ -91,7 +91,7 @@ export const runTestFlow = functions.https.onCall(async (data: RunTestFlowReques
     }
 
     // Finalize
-    await runLogRef.update({ status: 'complete', finishedAt: admin.firestore.Timestamp.now() });
+    await runLogRef.update({ status: 'complete', finishedAt: admin.firestore.FieldValue.serverTimestamp() });
     await log('Test flow completed');
 
     // Cleanup if requested
@@ -105,7 +105,7 @@ export const runTestFlow = functions.https.onCall(async (data: RunTestFlowReques
 
     return { success: true, runLogId: runLogRef.id };
   } catch (error: any) {
-    await runLogRef.update({ status: 'failed', error: error.message || String(error), finishedAt: admin.firestore.Timestamp.now() });
+    await runLogRef.update({ status: 'failed', error: error.message || String(error), finishedAt: admin.firestore.FieldValue.serverTimestamp() });
     await log('Test flow failed', { error: error.message });
     functions.logger.error('runTestFlow error', error);
     throw new functions.https.HttpsError('internal', error.message || 'Test flow failed');
