@@ -1,8 +1,8 @@
 import { assert } from 'chai'
 import * as admin from 'firebase-admin'
 
-// Import handler directly from source (ts-node/register in mocha ensures TS is runnable)
-const { transferPayoutHandler } = require('../src/stripe/transferPayout')
+// Import handler directly from source
+import { transferPayoutHandler } from '../src/stripe/transferPayout'
 
 describe('transferPayout trigger', function () {
   before(async function () {
@@ -95,6 +95,70 @@ describe('transferPayout trigger', function () {
     } finally {
       try { await admin.firestore().doc(`deliveryJobs/${jobRef.id}`).delete() } catch (e) {}
       try { const ps = await admin.firestore().collection('payouts').where('jobId', '==', jobRef.id).get(); for (const d of ps.docs) await admin.firestore().doc(d.ref.path).delete() } catch (e) {}
+      try { await admin.auth().deleteUser(courier.uid) } catch (e) {}
+      try { await admin.firestore().doc(`users/${courier.uid}`).delete() } catch (e) {}
+    }
+  })
+
+  it('should mark payout failed when transfer throws an error', async function () {
+    const courier = await admin.auth().createUser({ email: `failcourier+${Date.now()}@example.com`, password: 'password' })
+    await admin.firestore().doc(`users/${courier.uid}`).set({ courierProfile: { stripeAccountId: 'acct_fail' } })
+
+    const jobRef = admin.firestore().collection('deliveryJobs').doc()
+    const before = { paymentStatus: 'captured', customerConfirmation: { received: false }, courierUid: courier.uid, pricing: { courierEarnings: 30.0 } }
+    await jobRef.set(before)
+
+    const after = Object.assign({}, before, { customerConfirmation: { received: true } })
+    const change: any = { before: { data: () => before }, after: { data: () => after } }
+    const context: any = { params: { jobId: jobRef.id } }
+
+    // Stripe mock that throws
+    const stripeMock = { transfers: { create: async () => { throw new Error('insufficient_funds') } } }
+
+    try {
+      const result = await transferPayoutHandler(change, context, stripeMock)
+      assert.ok(result && result.success === false)
+
+      const jobDoc = await admin.firestore().doc(`deliveryJobs/${jobRef.id}`).get()
+      const jobData = jobDoc.data()
+      assert.equal(jobData?.payout?.status, 'failed')
+      assert.ok(jobData?.payout?.errorMessage)
+
+      const payoutsSnap = await admin.firestore().collection('payouts').where('jobId', '==', jobRef.id).get()
+      assert.equal(payoutsSnap.size, 1)
+      const p = payoutsSnap.docs[0].data()
+      assert.equal(p.status, 'failed')
+      assert.ok(p.errorMessage)
+    } finally {
+      try { await admin.firestore().doc(`deliveryJobs/${jobRef.id}`).delete() } catch (e) {}
+      try { const ps = await admin.firestore().collection('payouts').where('jobId', '==', jobRef.id).get(); for (const d of ps.docs) await admin.firestore().doc(d.ref.path).delete() } catch (e) {}
+      try { await admin.auth().deleteUser(courier.uid) } catch (e) {}
+      try { await admin.firestore().doc(`users/${courier.uid}`).delete() } catch (e) {}
+    }
+  })
+
+  it('should be idempotent and do nothing if payout already completed', async function () {
+    const courier = await admin.auth().createUser({ email: `idemp+${Date.now()}@example.com`, password: 'password' })
+    await admin.firestore().doc(`users/${courier.uid}`).set({ courierProfile: { stripeAccountId: 'acct_test' } })
+
+    const jobRef = admin.firestore().collection('deliveryJobs').doc()
+    const before = { paymentStatus: 'captured', customerConfirmation: { received: false }, courierUid: courier.uid }
+    // Simulate already completed payout
+    const after = Object.assign({}, before, { customerConfirmation: { received: true }, payout: { status: 'completed', transferId: 'tr_existing' } })
+    await jobRef.set(after)
+
+    const change: any = { before: { data: () => before }, after: { data: () => after } }
+    const context: any = { params: { jobId: jobRef.id } }
+
+    try {
+      const result = await transferPayoutHandler(change, context, { transfers: { create: async () => ({ id: 'tr_new', amount: 1000 }) } })
+      // Handler should have exited early and returned null
+      assert.equal(result, null)
+
+      const payoutsSnap = await admin.firestore().collection('payouts').where('jobId', '==', jobRef.id).get()
+      assert.equal(payoutsSnap.size, 0)
+    } finally {
+      try { await admin.firestore().doc(`deliveryJobs/${jobRef.id}`).delete() } catch (e) {}
       try { await admin.auth().deleteUser(courier.uid) } catch (e) {}
       try { await admin.firestore().doc(`users/${courier.uid}`).delete() } catch (e) {}
     }
