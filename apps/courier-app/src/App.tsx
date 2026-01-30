@@ -10,6 +10,8 @@ import { debugLogger } from './utils/debugLogger'
 import CourierLayout from './layouts/CourierLayout'
 
 // Pages
+import SimpleDashboard from './pages/SimpleDashboard'
+import SimpleJobDetail from './pages/SimpleJobDetail'
 import DashboardPage from './pages/dashboard/page'
 import LoginPage from './pages/Login'
 import SignupPage from './pages/Signup'
@@ -82,24 +84,29 @@ function App() {
             <Route path="/signup" element={<SignupPage />} />
             
             <Route element={<ProtectedRoute />}>
-            <Route element={<CourierLayout />}>
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/routes" element={<RoutesPage />} />
-              <Route path="/active-route" element={<ActiveRoutePage />} />
-              <Route path="/jobs/:jobId" element={<JobDetailPage />} />
-              <Route path="/jobs" element={<RoutesPage />} />
-              <Route path="/navigation/active" element={<ActiveNavigationPage />} />
-              <Route path="/earnings" element={<EarningsPage />} />
-              <Route path="/rate-cards" element={<RateCardsPage />} />
-              <Route path="/equipment" element={<EquipmentPage />} />
-              <Route path="/setup" element={<SetupPage />} />
-              <Route path="/settings" element={<SettingsPage />} />
-              <Route path="/support" element={<SupportPage />} />
-              <Route path="/onboarding" element={<OnboardingPage />} />
-              <Route path="/onboarding/stripe" element={<StripeOnboardingPage />} />
+              {/* Simple routes without layout */}
+              <Route path="/" element={<SimpleDashboard />} />
+              <Route path="/dashboard" element={<SimpleDashboard />} />
+              <Route path="/jobs/:jobId" element={<SimpleJobDetail />} />
+              
+              {/* Other routes with layout */}
+              <Route element={<CourierLayout />}>
+                <Route path="/routes" element={<RoutesPage />} />
+                <Route path="/active-route" element={<ActiveRoutePage />} />
+                <Route path="/jobs" element={<RoutesPage />} />
+                <Route path="/navigation/active" element={<ActiveNavigationPage />} />
+                <Route path="/earnings" element={<EarningsPage />} />
+                <Route path="/rate-cards" element={<RateCardsPage />} />
+                <Route path="/equipment" element={<EquipmentPage />} />
+                <Route path="/setup" element={<SetupPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/support" element={<SupportPage />} />
+                <Route path="/onboarding" element={<OnboardingPage />} />
+                <Route path="/onboarding/stripe" element={<StripeOnboardingPage />} />
+                <Route path="/old-dashboard" element={<DashboardPage />} />
+                <Route path="/old-job-detail/:jobId" element={<JobDetailPage />} />
+              </Route>
             </Route>
-          </Route>
         </Routes>
         </NavigationProvider>
       </AuthProvider>
