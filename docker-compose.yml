@@ -8,6 +8,7 @@ services:
     image: gosenderr/dev:local
     volumes:
       - .:/workspace:cached
+      - node_modules:/workspace/node_modules
     working_dir: /workspace
     environment:
       - NODE_ENV=development
@@ -22,6 +23,7 @@ services:
       - dev
     volumes:
       - .:/workspace:cached
+      - node_modules:/workspace/node_modules
     working_dir: /workspace
     command: sh -lc "./scripts/start-emulators.sh"
     ports:
@@ -41,6 +43,7 @@ services:
       - firebase-emulator
     volumes:
       - .:/workspace:cached
+      - node_modules:/workspace/node_modules
     working_dir: /workspace
     environment:
       - HOST=0.0.0.0
@@ -58,6 +61,7 @@ services:
       - firebase-emulator
     volumes:
       - .:/workspace:cached
+      - node_modules:/workspace/node_modules
     working_dir: /workspace
     environment:
       - HOST=0.0.0.0
@@ -75,6 +79,7 @@ services:
       - firebase-emulator
     volumes:
       - .:/workspace:cached
+      - node_modules:/workspace/node_modules
     working_dir: /workspace
     environment:
       - HOST=0.0.0.0
@@ -92,6 +97,7 @@ services:
       - firebase-emulator
     volumes:
       - .:/workspace:cached
+      - node_modules:/workspace/node_modules
     working_dir: /workspace
     environment:
       - HOST=0.0.0.0
@@ -109,6 +115,7 @@ services:
       - firebase-emulator
     volumes:
       - .:/workspace:cached
+      - node_modules:/workspace/node_modules
     working_dir: /workspace
     environment:
       - HOST=0.0.0.0
@@ -116,3 +123,6 @@ services:
     command: sh -lc "pnpm install --frozen-lockfile && pnpm --filter @gosenderr/web dev -- --host 0.0.0.0"
     ports:
       - "3003:3003"
+
+volumes:
+  node_modules:
