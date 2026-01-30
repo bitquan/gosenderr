@@ -1,5 +1,7 @@
 **DEPRECATION NOTICE:** This file has been moved to `.github/copilot-instructions.md` (root of `.github`). The new file adds a Governance section, a secrets policy, and PR guidance. Please update references; this legacy copy will be removed in a future cleanup.
 
+**Note:** The new project reorganization docs live in `docs/project-plan/`. When updating these docs, run the repository doc verification steps (`pnpm run verify:docs`, `cspell` and link checks) and add a short `CHANGELOG.md` entry and README link in the same PR so the docs remain discoverable and CI-friendly.
+
 
 Perfect! Let me update the plan to be **100% Copilot-driven** with proper workspace setup so GitHub Copilot can code everything.
 
