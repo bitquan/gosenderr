@@ -20,6 +20,7 @@ A modern on-demand delivery platform with web apps (Vite + React + TypeScript) t
 │   └── shared/           # Shared TypeScript types and utilities
 ├── firebase/             # Firebase security rules and Cloud Functions
 └── docs/                 # Project documentation
+    └── project-plan/      # Project reorganization plan (v2) — see `docs/project-plan/README.md`
 ```
 
 **Note**: All web apps can be packaged as native iOS and Android apps using Capacitor.

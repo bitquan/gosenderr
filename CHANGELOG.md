@@ -7,3 +7,4 @@
 
 ### Docs
 - docs/ROLE_SIMULATION_PLAN.md: Add testing guidance and reference to the `firestoreMock` helper.
+- docs/project-plan/: Add comprehensive GoSenderr v2 reorganization and implementation plans (PR #79)
