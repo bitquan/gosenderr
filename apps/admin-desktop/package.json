@@ -1,0 +1,22 @@
+{
+  "name": "@gosenderr/admin-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "main": "electron/out/main.js",
+  "scripts": {
+    "dev": "concurrently \"pnpm --filter @gosenderr/admin-desktop dev:vite\" \"pnpm --filter @gosenderr/admin-desktop dev:electron\"",
+    "dev:vite": "pnpm --filter @gosenderr/admin-app dev -- --port 5176",
+    "dev:electron": "tsc -p electron/tsconfig.json && electron electron/out/main.js",
+    "build:renderer": "pnpm --filter @gosenderr/admin-app build",
+    "build:electron": "tsc -p electron/tsconfig.json",
+    "build": "pnpm build:renderer && pnpm build:electron",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.0.0",
+    "concurrently": "^8.2.0",
+    "typescript": "^5.0.0"
+  }
+}
