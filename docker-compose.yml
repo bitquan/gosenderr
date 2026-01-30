@@ -26,6 +26,12 @@ services:
       - node_modules:/workspace/node_modules
     working_dir: /workspace
     command: sh -lc "./scripts/start-emulators.sh"
+    healthcheck:
+      test: ["CMD", "sh", "-c", "curl -sSf http://localhost:4000/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
     ports:
       - "9099:9099" # Auth
       - "8080:8080" # Firestore
@@ -48,7 +54,14 @@ services:
     environment:
       - HOST=0.0.0.0
       - PORT=3000
-    command: sh -lc "pnpm install --frozen-lockfile && pnpm --filter @gosenderr/admin-app dev"
+      - DEBUG=vite:server
+    command: sh -lc "pnpm install --frozen-lockfile && pnpm --filter @gosenderr/admin-app dev -- --host 0.0.0.0"
+    healthcheck:
+      test: ["CMD", "sh", "-c", "curl -sSf http://localhost:3000/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     ports:
       - "3000:3000"
 
@@ -66,7 +79,14 @@ services:
     environment:
       - HOST=0.0.0.0
       - PORT=5173
-    command: sh -lc "pnpm install --frozen-lockfile && pnpm --filter @gosenderr/customer-app dev -- --host 0.0.0.0"
+      - DEBUG=vite:server
+    command: sh -lc "pnpm install --frozen-lockfile && pnpm --filter @gosenderr/customer-app dev -- --host 0.0.0.0 --logLevel debug"
+    healthcheck:
+      test: ["CMD", "sh", "-c", "curl -sSf http://localhost:5173/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     ports:
       - "5173:5173"
 
@@ -84,7 +104,14 @@ services:
     environment:
       - HOST=0.0.0.0
       - PORT=5174
+      - DEBUG=vite:server
     command: sh -lc "pnpm install --frozen-lockfile && pnpm --filter @gosenderr/courier-app dev -- --host 0.0.0.0"
+    healthcheck:
+      test: ["CMD", "sh", "-c", "curl -sSf http://localhost:5174/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     ports:
       - "5174:5174"
 
@@ -102,7 +129,14 @@ services:
     environment:
       - HOST=0.0.0.0
       - PORT=5175
+      - DEBUG=vite:server
     command: sh -lc "pnpm install --frozen-lockfile && pnpm --filter @gosenderr/shifter-app dev -- --host 0.0.0.0"
+    healthcheck:
+      test: ["CMD", "sh", "-c", "curl -sSf http://localhost:5175/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     ports:
       - "5175:5175"
 
@@ -120,7 +154,14 @@ services:
     environment:
       - HOST=0.0.0.0
       - PORT=3003
+      - DEBUG=vite:server
     command: sh -lc "pnpm install --frozen-lockfile && pnpm --filter @gosenderr/web dev -- --host 0.0.0.0"
+    healthcheck:
+      test: ["CMD", "sh", "-c", "curl -sSf http://localhost:3003/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     ports:
       - "3003:3003"
 
