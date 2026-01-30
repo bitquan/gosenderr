@@ -1,0 +1,32 @@
+version: '3.8'
+services:
+  firebase-emulators:
+    image: node:20-bullseye
+    container_name: gosenderr_firebase_emulators
+    working_dir: /workspace
+    volumes:
+      - ./:/workspace
+      - ./firebase-emulator-data:/workspace/firebase-emulator-data
+    command: sh -c "npm i -g firebase-tools && npx firebase emulators:start --only auth,firestore,functions --host 0.0.0.0 --export-on-exit ./firebase-emulator-data"
+    ports:
+      - '4000:4000' # Emulator UI
+      - '8080:8080' # Firestore
+      - '9099:9099' # Auth
+      - '5001:5001' # Functions
+    environment:
+      - FIREBASE_PROJECT=gosenderr
+    restart: unless-stopped
+
+# Optional: add Postgres / Redis services if needed
+# postgres:
+#   image: postgres:15
+#   environment:
+#     POSTGRES_USER: gosenderr
+#     POSTGRES_PASSWORD: gosenderr
+#   volumes:
+#     - pgdata:/var/lib/postgresql/data
+#   ports:
+#     - '5432:5432'
+
+#volumes:
+#  pgdata: {}

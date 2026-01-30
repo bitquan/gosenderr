@@ -1,0 +1,32 @@
+{
+  "name": "GoSenderr Node Dev Container",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "..",
+    "args": {
+      "UID": "{{localEnv:UID}}",
+      "GID": "{{localEnv:GID}}"
+    }
+  },
+  "settings": {
+    "terminal.integrated.defaultProfile.linux": "bash"
+  },
+  "forwardPorts": [5173, 5174, 5175, 4000, 8080, 9099, 5001],
+  "postCreateCommand": "pnpm install --frozen-lockfile || true",
+  "remoteUser": "devuser",
+  "mounts": [
+    "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
+    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+  ],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint",
+        "ms-vscode-remote.remote-containers",
+        "GitHub.copilot",
+        "GitHub.copilot-chat"
+      ]
+    }
+  }
+}
