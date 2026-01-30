@@ -49,6 +49,42 @@ export default function SimpleJobDetail() {
     return () => unsubscribe()
   }, [jobId])
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'open':
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800'
+      case 'assigned':
+        return 'bg-blue-100 text-blue-800'
+      case 'in_progress':
+        return 'bg-green-100 text-green-800'
+      case 'completed':
+        return 'bg-gray-100 text-gray-800'
+      default:
+        return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const handleAcceptJobFromDetail = async () => {
+    if (!jobId || !user?.uid || updating) return
+
+    setUpdating(true)
+    try {
+      await updateDoc(doc(db, 'jobs', jobId), {
+        courierUid: user.uid,
+        status: 'assigned',
+        acceptedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      // Status will update via the snapshot listener
+    } catch (error) {
+      console.error('Error accepting job:', error)
+      alert('Failed to accept job. It may have been claimed by another courier.')
+    } finally {
+      setUpdating(false)
+    }
+  }
+
   const handleStartDelivery = async () => {
     if (!jobId || updating) return
 
@@ -62,6 +98,7 @@ export default function SimpleJobDetail() {
     } catch (error) {
       console.error('Error starting delivery:', error)
       alert('Failed to start delivery')
+    } finally {
       setUpdating(false)
     }
   }
@@ -76,13 +113,13 @@ export default function SimpleJobDetail() {
         completedAt: new Date(),
         updatedAt: new Date(),
       })
-      // Navigate back to dashboard after a short delay
-      setTimeout(() => {
-        navigate('/dashboard')
-      }, 1000)
+      // Wait a moment for the update to be reflected
+      await new Promise(resolve => setTimeout(resolve, 500))
+      navigate('/dashboard')
     } catch (error) {
       console.error('Error completing job:', error)
       alert('Failed to complete job')
+    } finally {
       setUpdating(false)
     }
   }
@@ -127,13 +164,16 @@ export default function SimpleJobDetail() {
     )
   }
 
-  // Check if this job belongs to the current courier
-  if (job.courierUid !== user?.uid) {
+  // Check if this job belongs to the current courier (only for assigned jobs)
+  const isAssignedToCurrentCourier = job.courierUid === user?.uid
+  const isUnassigned = !job.courierUid && (job.status === 'open' || job.status === 'pending')
+
+  if (!isAssignedToCurrentCourier && !isUnassigned) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <p className="text-2xl text-gray-700 mb-4">Access Denied</p>
-          <p className="text-gray-600 mb-4">This job is not assigned to you</p>
+          <p className="text-gray-600 mb-4">This job is assigned to another courier</p>
           <button
             onClick={() => navigate('/dashboard')}
             className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700"
@@ -164,7 +204,7 @@ export default function SimpleJobDetail() {
         <div className="bg-white rounded-lg shadow-lg p-6">
           {/* Status Badge */}
           <div className="mb-6">
-            <span className="inline-block px-4 py-2 bg-blue-100 text-blue-800 text-sm font-semibold rounded-full">
+            <span className={`inline-block px-4 py-2 text-sm font-semibold rounded-full ${getStatusColor(job.status)}`}>
               Status: {job.status.replace(/_/g, ' ').toUpperCase()}
             </span>
           </div>
@@ -206,7 +246,19 @@ export default function SimpleJobDetail() {
 
           {/* Action Buttons */}
           <div className="space-y-3">
-            {job.status === 'assigned' && (
+            {(job.status === 'open' || job.status === 'pending') && isUnassigned && (
+              <button
+                onClick={handleAcceptJobFromDetail}
+                disabled={updating}
+                className={`w-full bg-purple-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-purple-700 transition-colors ${
+                  updating ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                {updating ? 'Accepting...' : '✅ Accept Job'}
+              </button>
+            )}
+
+            {job.status === 'assigned' && isAssignedToCurrentCourier && (
               <button
                 onClick={handleStartDelivery}
                 disabled={updating}
@@ -218,7 +270,7 @@ export default function SimpleJobDetail() {
               </button>
             )}
 
-            {job.status === 'in_progress' && (
+            {job.status === 'in_progress' && isAssignedToCurrentCourier && (
               <button
                 onClick={handleMarkCompleted}
                 disabled={updating}

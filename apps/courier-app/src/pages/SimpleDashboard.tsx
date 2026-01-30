@@ -25,7 +25,7 @@ export default function SimpleDashboard() {
   const [loading, setLoading] = useState(true)
   const [updatingStatus, setUpdatingStatus] = useState(false)
 
-  // Listen to available jobs (open or pending status)
+  // Listen to available jobs (open or pending status, no courier assigned)
   useEffect(() => {
     if (!db) {
       console.error('Firebase not initialized')
@@ -43,7 +43,9 @@ export default function SimpleDashboard() {
         id: doc.id,
         ...doc.data(),
       })) as Job[]
-      setAvailableJobs(jobs)
+      // Filter out jobs that already have a courier assigned
+      const unassignedJobs = jobs.filter((job) => !job.courierUid)
+      setAvailableJobs(unassignedJobs)
       setLoading(false)
     })
 
@@ -80,7 +82,7 @@ export default function SimpleDashboard() {
 
     const unsubscribe = onSnapshot(doc(db, 'users', user.uid), (snapshot) => {
       const data = snapshot.data()
-      setIsOnline(data?.courierProfile?.isOnline || false)
+      setIsOnline(data?.courierProfile?.online || false)
     })
 
     return () => unsubscribe()
@@ -92,7 +94,7 @@ export default function SimpleDashboard() {
     setUpdatingStatus(true)
     try {
       await updateDoc(doc(db, 'users', user.uid), {
-        'courierProfile.isOnline': !isOnline,
+        'courierProfile.online': !isOnline,
       })
     } catch (error) {
       console.error('Error updating online status:', error)
@@ -109,12 +111,13 @@ export default function SimpleDashboard() {
       await updateDoc(doc(db, 'jobs', jobId), {
         courierUid: user.uid,
         status: 'assigned',
+        acceptedAt: new Date(),
         updatedAt: new Date(),
       })
       navigate(`/jobs/${jobId}`)
     } catch (error) {
       console.error('Error accepting job:', error)
-      alert('Failed to accept job')
+      alert('Failed to accept job. It may have been claimed by another courier.')
     }
   }
 
