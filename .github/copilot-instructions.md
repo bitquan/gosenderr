@@ -30,5 +30,23 @@ function createUser(data) {
 }
 ```
 
+## Project Reorganization (v2) — Documentation & Repo Actions
+
+When adding or updating high-level project-plan documentation (e.g. `docs/project-plan/*`), follow these steps to keep the repo and CI healthy:
+
+- Linkability & discoverability
+  - Add or update `docs/project-plan/README.md` and ensure it is linked from `README.md` and `docs/_sidebar.md` so teammates can find it easily.
+- Local verification
+  - Run `pnpm run verify:docs` and fix any missing canonical docs (the script checks for `ARCHITECTURE.md`, `DEVELOPMENT.md`, `DEPLOYMENT.md`, `API_REFERENCE.md`).
+  - Run `npx -y cspell "docs/**/*.md" --exclude "docs/archive/**"` and whitelist new technical words in `cspell.json` when appropriate.
+  - Run a link-checker (e.g., `markdown-link-check` or `lychee`) and fix broken links.
+- Changelog & PRs
+  - Add a short `CHANGELOG.md` entry summarizing the documentation addition or change in the same PR.
+  - Include a short PR checklist: docs links added, `verify:docs` passes locally, `cspell` updated if needed, and follow-up issues created for migration tasks.
+- Publishing
+  - If you host docs (VitePress/VuePress/DocSite), update the docs sidebar or site config and build the site to confirm rendering.
+- Governance
+  - Update `CODEOWNERS` for new docs areas if reviewer responsibilities change.
+
 ## Conclusion
-By following these guidelines, you can maximize the benefits of GitHub Copilot in the marketplace-app architecture. Adjust the instructions as needed based on specific project requirements and changes.
+By following these guidelines and the project-plan steps, Copilot and contributors will have a clear, discoverable source of truth for the v2 reorganization. Update this file when the plan evolves so Copilot always has the latest operational context.
