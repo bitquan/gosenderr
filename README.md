@@ -130,6 +130,48 @@ Firebase Hosting sites:
 - Admin: `gosenderr-admin`
 - Landing: `gosenderr-6773f` (default site)
 
+---
+
+## 🔁 Local Firebase Emulators (Docker)
+
+We provide a Docker Compose config and convenience targets to run the Firebase emulators locally (Auth, Firestore, Functions).
+
+Quick commands:
+
+- Start emulators (build image if needed and wait until ready):
+
+```bash
+# Start and wait for readiness
+make emu-up
+# or use docker-compose directly
+docker-compose -f docker-compose.dev.yml up -d --build
+./scripts/wait-for-emulators.sh 120
+```
+
+- Stop emulators:
+
+```bash
+make emu-stop
+```
+
+- Check status:
+
+```bash
+make emu-status
+# or run the quick endpoint checks
+./scripts/emu-local-check.sh
+```
+
+VS Code tasks:
+- Open Command Palette → Tasks: Run Task → Start Emulators / Stop Emulators / Restart Emulators
+
+Notes:
+- Emulator UI: http://127.0.0.1:4000
+- Functions: http://127.0.0.1:5001
+- Firestore: http://127.0.0.1:8080
+
+---
+
 ## 📱 Features
 
 ### Marketplace App (`apps/marketplace-app`)

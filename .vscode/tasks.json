@@ -42,6 +42,55 @@
         "focus": false
       }
     },
+    {
+      "label": "🔥 Firebase Emulators (Docker)",
+      "detail": "Start local Firebase emulators inside Docker (build + wait)",
+      "type": "shell",
+      "command": "make emu-up",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^.*$",
+          "file": 1,
+          "location": 2,
+          "message": 3
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*Starting.*Emulators.*|.*Building.*",
+          "endsPattern": ".*Emulator UI.*ready|.*Emulators are running.*"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": false,
+        "echo": true,
+        "focus": false
+      }
+    },
+    {
+      "label": "🛑 Stop Emulators (Docker)",
+      "detail": "Stop local Firebase emulators (Docker)",
+      "type": "shell",
+      "command": "make emu-stop",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": false
+      }
+    },
+    {
+      "label": "📋 Emulators Status",
+      "detail": "Show emulator container status and UI reachability",
+      "type": "shell",
+      "command": "make emu-status",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
     
     // ==================== DEV SERVERS (Run These) ====================
     {
