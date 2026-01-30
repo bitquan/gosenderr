@@ -2,7 +2,9 @@ version: "3.9"
 
 services:
   dev:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
     image: gosenderr/dev:local
     volumes:
       - .:/workspace:cached
@@ -12,6 +14,9 @@ services:
     command: tail -f /dev/null
 
   firebase-emulator:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
     image: gosenderr/dev:local
     depends_on:
       - dev
@@ -28,6 +33,9 @@ services:
       - FIREBASE_EMULATOR_HUB=localhost:4400
 
   admin-app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
     image: gosenderr/dev:local
     depends_on:
       - firebase-emulator
@@ -42,6 +50,9 @@ services:
       - "3000:3000"
 
   customer-app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
     image: gosenderr/dev:local
     depends_on:
       - firebase-emulator
@@ -56,6 +67,9 @@ services:
       - "5173:5173"
 
   courier-app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
     image: gosenderr/dev:local
     depends_on:
       - firebase-emulator
@@ -70,6 +84,9 @@ services:
       - "5174:5174"
 
   shifter-app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
     image: gosenderr/dev:local
     depends_on:
       - firebase-emulator
@@ -84,6 +101,9 @@ services:
       - "5175:5175"
 
   web-app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
     image: gosenderr/dev:local
     depends_on:
       - firebase-emulator
