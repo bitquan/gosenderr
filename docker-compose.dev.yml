@@ -1,20 +1,42 @@
-version: '3.8'
+version: "3.8"
 services:
   firebase-emulators:
-    image: node:20-bullseye
+    build:
+      context: .
+      dockerfile: .devcontainer/Dockerfile
+    image: gosenderr_firebase_emulators:local
     container_name: gosenderr_firebase_emulators
     working_dir: /workspace
     volumes:
       - ./:/workspace
       - ./firebase-emulator-data:/workspace/firebase-emulator-data
-    command: sh -c "npm i -g firebase-tools && npx firebase emulators:start --only auth,firestore,functions --host 0.0.0.0 --export-on-exit ./firebase-emulator-data"
+    command: sh -c "firebase emulators:start --only auth,firestore,functions --export-on-exit ./firebase-emulator-data"
     ports:
-      - '4000:4000' # Emulator UI
-      - '8080:8080' # Firestore
-      - '9099:9099' # Auth
-      - '5001:5001' # Functions
+      - "4000:4000" # Emulator UI
+      - "8080:8080" # Firestore
+      - "9099:9099" # Auth
+      - "5001:5001" # Functions
     environment:
       - FIREBASE_PROJECT=gosenderr
+    restart: unless-stopped
+
+  # Portable proxy to forward Functions emulator port when it binds to localhost
+  # This helps other containers (and devcontainer) reach the Functions emulator
+  functions-proxy:
+    image: alpine/socat
+    container_name: gosenderr_functions_proxy
+    depends_on:
+      - firebase-emulators
+    command:
+      [
+        "socat",
+        "-v",
+        "TCP-LISTEN:5001,fork,reuseaddr",
+        "TCP:firebase-emulators:5001",
+      ]
+    # Expose an alternate host port to avoid conflicts with the emulator's host mapping
+    ports:
+      - "5501:5001"
     restart: unless-stopped
 
 # Optional: add Postgres / Redis services if needed
