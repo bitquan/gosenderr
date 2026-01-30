@@ -1,0 +1,17 @@
+{
+  "name": "GoSenderr Web + Firebase Dev",
+  "dockerFile": "../Dockerfile.dev",
+  "context": "..",
+  "workspaceFolder": "/workspace",
+  "forwardPorts": [3000, 5173, 5174, 5175, 5180, 3003, 8080, 9099, 9199, 4000],
+  "postCreateCommand": "pnpm install --frozen-lockfile",
+  "extensions": [
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+    "GitHub.copilot",
+    "GitHub.copilot-chat"
+  ],
+  "settings": {
+    "terminal.integrated.shell.linux": "/bin/bash"
+  }
+}

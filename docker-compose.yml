@@ -1,0 +1,98 @@
+version: "3.9"
+
+services:
+  dev:
+    build: .
+    image: gosenderr/dev:local
+    volumes:
+      - .:/workspace:cached
+    working_dir: /workspace
+    environment:
+      - NODE_ENV=development
+    command: tail -f /dev/null
+
+  firebase-emulator:
+    image: gosenderr/dev:local
+    depends_on:
+      - dev
+    volumes:
+      - .:/workspace:cached
+    working_dir: /workspace
+    command: sh -lc "./scripts/start-emulators.sh"
+    ports:
+      - "9099:9099" # Auth
+      - "8080:8080" # Firestore
+      - "9199:9199" # Storage
+      - "4000:4000" # Emulator UI
+    environment:
+      - FIREBASE_EMULATOR_HUB=localhost:4400
+
+  admin-app:
+    image: gosenderr/dev:local
+    depends_on:
+      - firebase-emulator
+    volumes:
+      - .:/workspace:cached
+    working_dir: /workspace
+    environment:
+      - HOST=0.0.0.0
+      - PORT=3000
+    command: sh -lc "pnpm --filter @gosenderr/admin-app dev"
+    ports:
+      - "3000:3000"
+
+  customer-app:
+    image: gosenderr/dev:local
+    depends_on:
+      - firebase-emulator
+    volumes:
+      - .:/workspace:cached
+    working_dir: /workspace
+    environment:
+      - HOST=0.0.0.0
+      - PORT=5173
+    command: sh -lc "pnpm --filter @gosenderr/customer-app dev -- --host 0.0.0.0"
+    ports:
+      - "5173:5173"
+
+  courier-app:
+    image: gosenderr/dev:local
+    depends_on:
+      - firebase-emulator
+    volumes:
+      - .:/workspace:cached
+    working_dir: /workspace
+    environment:
+      - HOST=0.0.0.0
+      - PORT=5174
+    command: sh -lc "pnpm --filter @gosenderr/courier-app dev -- --host 0.0.0.0"
+    ports:
+      - "5174:5174"
+
+  shifter-app:
+    image: gosenderr/dev:local
+    depends_on:
+      - firebase-emulator
+    volumes:
+      - .:/workspace:cached
+    working_dir: /workspace
+    environment:
+      - HOST=0.0.0.0
+      - PORT=5175
+    command: sh -lc "pnpm --filter @gosenderr/shifter-app dev -- --host 0.0.0.0"
+    ports:
+      - "5175:5175"
+
+  web-app:
+    image: gosenderr/dev:local
+    depends_on:
+      - firebase-emulator
+    volumes:
+      - .:/workspace:cached
+    working_dir: /workspace
+    environment:
+      - HOST=0.0.0.0
+      - PORT=3003
+    command: sh -lc "pnpm --filter @gosenderr/web dev -- --host 0.0.0.0"
+    ports:
+      - "3003:3003"
