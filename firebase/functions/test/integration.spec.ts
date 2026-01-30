@@ -153,7 +153,11 @@ describe('Cloud Functions integration tests (emulator)', function () {
   it('simulateRule callable should exercise Firestore emulator with simulated auth', async function () {
     // Create an admin caller
     const adminUser = await admin.auth().createUser({ email: `rs-admin+${Date.now()}@example.com`, password: 'password123' })
-    await admin.firestore().doc(`users/${adminUser.uid}`).set({ role: 'admin' })
+    await admin.firestore().doc(`users/${adminUser.uid}`).set({
+      role: 'admin',
+      roles: ['admin'],
+      activeRole: 'admin',
+    })
 
     // create a test run log specifically for this test
     const runDocRef = admin.firestore().collection('adminFlowLogs').doc(`test-${Date.now()}-${Math.random().toString(36).slice(2,6)}`)

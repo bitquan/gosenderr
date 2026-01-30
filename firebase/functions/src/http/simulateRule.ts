@@ -50,7 +50,10 @@ export const simulateRule = functions.https.onCall(async (data: SimulateRuleRequ
 
   // Only admins allowed to run the simulation
   const callerDoc = await admin.firestore().doc(`users/${context.auth.uid}`).get()
-  if (!callerDoc.exists || callerDoc.data()?.role !== 'admin') {
+  const callerData = callerDoc.data()
+  const callerRoles = Array.isArray(callerData?.roles) ? callerData?.roles : []
+  const isAdmin = callerData?.role === 'admin' || callerRoles.includes('admin')
+  if (!callerDoc.exists || !isAdmin) {
     throw new functions.https.HttpsError('permission-denied', 'Admin privileges required')
   }
 
