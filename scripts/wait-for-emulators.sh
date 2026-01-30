@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Poll loop to wait for emulator UI and functions endpoint
 UI_URL="http://127.0.0.1:4000/"
-FUNCTIONS_PING="http://127.0.0.1:5001/gosenderr-6773f/us-central1/seedHubs"
+FUNCTIONS_PING="http://127.0.0.1:5501/gosenderr-6773f/us-central1/seedHubs"
 
 TIMEOUT=${1:-60}
 SLEEP=${2:-2}

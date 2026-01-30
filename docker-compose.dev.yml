@@ -27,13 +27,8 @@ services:
     container_name: gosenderr_functions_proxy
     depends_on:
       - firebase-emulators
-    command:
-      [
-        "socat",
-        "-v",
-        "TCP-LISTEN:5001,fork,reuseaddr",
-        "TCP:firebase-emulators:5001",
-      ]
+    entrypoint: ["sh", "-c"]
+    command: ["socat -v TCP-LISTEN:5001,fork,reuseaddr TCP:firebase-emulators:5001"]
     # Expose an alternate host port to avoid conflicts with the emulator's host mapping
     ports:
       - "5501:5001"
