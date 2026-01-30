@@ -48,5 +48,11 @@ When adding or updating high-level project-plan documentation (e.g. `docs/projec
 - Governance
   - Update `CODEOWNERS` for new docs areas if reviewer responsibilities change.
 
+- Phase 1 — Admin Desktop specific workflow
+  - Add a Phase 1 checklist to `docs/project-plan/03-PHASE-1-ADMIN-DESKTOP.md` (scaffold, migrate, native menus, offline storage, packaging, CI). This file should contain step-by-step dev & verification steps and explicit phase exit criteria.
+  - When scaffolding Electron, include secure defaults and a minimal CI job that builds macOS and Windows artifacts and runs packaging smoke tests.
+  - Keep admin-app PRs small and iterative; prefer multiple small PRs (scaffold, integration, packaging) and use draft PRs for larger work requiring coordination.
+  - Document Docker cross-arch caveats and smoke-test usage in `docs/DEVELOPMENT.md`.
+
 ## Conclusion
-By following these guidelines and the project-plan steps, Copilot and contributors will have a clear, discoverable source of truth for the v2 reorganization. Update this file when the plan evolves so Copilot always has the latest operational context.
+Follow the Phase 1 Admin Desktop checklist in `docs/project-plan/03-PHASE-1-ADMIN-DESKTOP.md` and keep `docs/project-plan/*` as the single source of truth. Use Copilot to scaffold, draft docs, and propose code changes, but always run the repository verification steps (`pnpm run verify:docs`, `npx -y cspell "docs/**/*.md" --exclude "docs/archive/**"`, `pnpm smoke:docker`) and test packaging on relevant platforms before merging.
