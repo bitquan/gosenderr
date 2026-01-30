@@ -48,6 +48,116 @@ GoSenderr is a delivery platform with **2 production apps**:
 
 ---
 
+## 🚀 COURIER APP V2 - ACTIVE DEVELOPMENT (Jan 30, 2026)
+
+⚠️ **IMPORTANT:** The courier app is undergoing a complete architectural redesign using **backend-first approach**.
+
+### Current Status:
+- **Branch:** `feature/courier-app-v2-backend` (NEW - DO NOT MERGE YET)
+- **Old Branch:** `feature/courier-app-working` (has mobile layout fixes, reference only)
+- **Phase:** 1 - Backend Cloud Functions Implementation
+
+### What You Need to Know:
+
+**Foundation Created (Jan 30, 2026):**
+- ✅ `COURIER_APP_V2_DEV_LOG.md` - Comprehensive development log (READ THIS FIRST)
+- ✅ `COURIER_APP_V2_PLAN.md` - 200+ line backend architecture plan
+- ✅ `COURIER_APP_V2_START.md` - Quick reference guide
+- ✅ `firebase/COURIER_SCHEMA_V2.ts` - Complete Firestore schema + types
+- ✅ `firebase/functions/src/courier/types.ts` - Cloud Functions API interfaces
+- ✅ `firebase/functions/src/courier/claimJob.ts` - First Cloud Function (DONE)
+
+**Why We Started Over:**
+Previous app had interconnected bugs (UI too large, GPS flaky, navigation buggy, massive components, no type safety). Instead of patching, we rebuilt with clean backend-first architecture.
+
+**Your Task:**
+Continue building Cloud Functions in `firebase/functions/src/courier/`:
+1. ✅ claimJob() - DONE (reference this pattern)
+2. [ ] startDelivery()
+3. [ ] completeDelivery()
+4. [ ] updateLocation()
+5. [ ] getAvailableJobs()
+6. [ ] getEarnings()
+
+**Before Starting:**
+1. Read: `COURIER_APP_V2_DEV_LOG.md` (has workflow, patterns, troubleshooting)
+2. Read: `firebase/COURIER_SCHEMA_V2.ts` (understand data structure)
+3. Read: `firebase/functions/src/courier/claimJob.ts` (see implementation pattern)
+
+**Development Workflow:**
+```bash
+# Clean start
+lsof -ti:3000,5173,5174,5175,5180 | xargs kill -9
+rm -rf apps/*/dist .firebase
+firebase emulators:start
+
+# In separate terminal - optional, for testing UI later
+cd apps/courier-app && pnpm dev
+
+# Test Cloud Functions in browser
+# http://127.0.0.1:4000/functions
+```
+
+**Code Pattern to Follow (from claimJob.ts):**
+```typescript
+import * as functions from "firebase-functions/v2/https";
+import * as admin from "firebase-admin";
+import { RequestType, ResponseType } from "./types";
+
+export const functionName = functions.https.onCall(
+  async (request: RequestType, context): Promise<ResponseType> => {
+    console.log("[functionName] Starting with:", request);
+    
+    try {
+      // 1. Validate auth
+      if (!context.auth) return { success: false, error: "Auth required" };
+      
+      // 2. Query data
+      const doc = await admin.firestore().collection("...").doc(...).get();
+      if (!doc.exists) return { success: false, error: "Not found" };
+      
+      // 3. Business logic
+      const data = doc.data();
+      if (invalidCondition) return { success: false, error: "Invalid state" };
+      
+      // 4. Update Firestore
+      await doc.ref.update({ ...updates });
+      
+      // 5. Return success
+      return { success: true, data: result };
+    } catch (error: any) {
+      console.error("[functionName] Error:", error.message);
+      return { success: false, error: error.message };
+    }
+  }
+);
+```
+
+**When Implementing New Functions:**
+- [ ] Check types in `firebase/functions/src/courier/types.ts` first
+- [ ] Follow claimJob.ts pattern (logging, error handling, return format)
+- [ ] Add inline documentation explaining workflow
+- [ ] Add HOW_TO_TEST section at bottom
+- [ ] Test in Firebase Emulator UI before committing
+- [ ] Use semantic commits: `feat(courier): implement [functionName]`
+- [ ] Update COURIER_APP_V2_DEV_LOG.md with notes
+
+**DO NOT:**
+- ❌ Merge to main until Phase 1 complete (all 6 functions working)
+- ❌ Use "any" types without documenting why
+- ❌ Skip error handling
+- ❌ Change branches without understanding context
+- ❌ Delete old feature/courier-app-working branch (keep for reference)
+
+**If Stuck:**
+1. Read COURIER_APP_V2_DEV_LOG.md "Common Issues & Solutions"
+2. Check Firebase Emulator logs in terminal
+3. Test in Firebase Emulator UI: http://127.0.0.1:4000
+4. Verify Firestore data structure in Firestore tab
+5. Check types match in firebase/functions/src/courier/types.ts
+
+---
+
 ## Tech Stack
 - **Frontend:** Vite + React 19 + TypeScript + Tailwind CSS
 - **Mobile:** Capacitor (iOS/Android from web apps)
