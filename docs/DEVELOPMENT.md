@@ -41,6 +41,25 @@ bash scripts/dev-docker-down.sh
 - If ports are already in use on your host, stop local dev servers or adjust ports in `docker-compose.yml`.
 - All services mount the repo to `/workspace` so code changes are picked up immediately.
 
+### Avoid mounting host `node_modules` (important)
+
+To avoid cross-architecture and platform-specific native binary conflicts (for example, when the host is macOS ARM but containers run Linux x86_64), the Compose setup uses a named Docker volume for `/workspace/node_modules` so dependencies are installed inside the container and not overwritten by a host `node_modules` folder.
+
+If you encounter native binary errors in containers (e.g., missing `@rollup/rollup-*-gnu` packages), run the following to install dependencies inside the container and restart the service:
+
+```bash
+# Start the compose stack (emulators + services)
+bash scripts/dev-docker-up.sh
+
+# Rebuild node modules inside a one-off container (example: admin-app)
+docker compose run --rm admin-app pnpm install --frozen-lockfile
+
+# Restart the service if needed
+docker compose up -d admin-app
+```
+
+This approach keeps host `node_modules` from clobbering container-installed native modules and prevents the cross-arch issues we encountered.
+
 ## VS Code Dev Container
 
 There is a Node-focused devcontainer available: `.devcontainer/devcontainer.node.json`.
