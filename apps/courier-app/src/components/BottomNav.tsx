@@ -96,14 +96,14 @@ export function BottomNav({ items }: BottomNavProps) {
       className="fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur border-t border-emerald-100"
       style={{
         pointerEvents: "auto",
-        paddingBottom: "calc(env(safe-area-inset-bottom) + 10px)",
-        paddingTop: "6px",
+        paddingBottom: "calc(env(safe-area-inset-bottom) + 6px)",
+        paddingTop: "4px",
         touchAction: "manipulation",
       }}
       onPointerDown={logNavTap}
     >
       <div className="max-w-lg mx-auto">
-        <div className="flex items-stretch justify-around px-2 py-2 min-h-[64px]">
+        <div className="flex items-stretch justify-around px-2 py-1.5 min-h-[56px]">
           {items.map((item, index) => {
             const isActive =
               pathname === item.href || pathname.startsWith(item.href + "/");
@@ -113,9 +113,9 @@ export function BottomNav({ items }: BottomNavProps) {
                 key={index}
                 to={item.href}
                 data-nav-item={item.href}
-                className={`flex flex-1 flex-col items-center justify-center gap-1 px-3 py-2 rounded-xl min-w-[70px] transition-colors duration-150 ${
+                className={`flex flex-1 flex-col items-center justify-center gap-1 px-3 py-1.5 rounded-xl min-w-[70px] transition-colors duration-150 ${
                   isActive
-                    ? "bg-emerald-50 text-emerald-600 -translate-y-0.5"
+                    ? "bg-emerald-50 text-emerald-600"
                     : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
                 }`}
                 style={{ WebkitTapHighlightColor: 'transparent' }}

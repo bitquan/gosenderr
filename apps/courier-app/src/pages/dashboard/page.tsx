@@ -8,6 +8,7 @@ import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { useOpenJobs } from "@/hooks/v2/useOpenJobs";
 import { MapboxMap, MapboxMapHandle } from "@/components/v2/MapboxMap";
 import MapShell from "@/components/v2/MapShell";
+import DebugSpacing from "@/components/dev/DebugSpacing";
 import { AcceptJobModal, PriceConfirmModal } from "@/components/v2/AcceptJobModal";
 import { useClaimJob } from '@/hooks/v2/useClaimJob';
 import { Job } from "@/lib/v2/types";
@@ -105,6 +106,12 @@ export default function CourierDashboardMobile() {
       setHasSavedNavigation(false);
     }
   }, [isNavigating]);
+
+  // Enable debug spacing overlay by adding ?debugSpacing=1 to the URL or set localStorage.debugSpacing = '1'
+  const showDebug = typeof window !== 'undefined' && (
+    new URLSearchParams(window.location.search).get('debugSpacing') === '1' ||
+    typeof localStorage !== 'undefined' && localStorage.getItem('debugSpacing') === '1'
+  );
 
   // We'll render a MapShell container to centralize the map + card UI
   const [mapShellReady, setMapShellReady] = useState(false);
@@ -487,8 +494,10 @@ export default function CourierDashboardMobile() {
 
   return (
     <div className="fixed inset-0 w-screen h-screen overflow-hidden bg-gray-100">
+      {showDebug && <DebugSpacing collapsedOffset={collapsedOffset} bottomNavOffset={bottomNavOffset} sheetRef={sheetRef} sheetContentRef={sheetContentRef} />}
       {/* Full-Screen Map */}
       <div className="absolute inset-0" style={{ touchAction: 'pan-x pan-y' }}>
+
         {(selectedJob || userDoc?.courierProfile?.currentLocation) ? (
           <>
             {/* Include active job (if any) along with filtered available jobs so MapShell can find assigned jobs */}
@@ -639,7 +648,9 @@ export default function CourierDashboardMobile() {
           )}px)`,
           transition: isDraggingSheet ? 'none' : 'transform 200ms ease',
           willChange: 'transform',
-          paddingBottom: `var(--bottom-nav-height, ${bottomNavOffset}px)`,
+          // Reduce reserved bottom padding so the sheet doesn't appear as a large "pad" under the nav.
+          // Use a CSS max() with calc to ensure at least 8px of padding but allow overlap with the nav visual.
+          paddingBottom: `max(8px, calc(var(--bottom-nav-height, ${bottomNavOffset}px) - 24px))`,
           maxHeight: sheetOpen ? '85vh' : `${collapsedOffset}px`
         }}
       >
