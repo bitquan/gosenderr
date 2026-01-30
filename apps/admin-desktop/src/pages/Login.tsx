@@ -27,109 +27,95 @@ export default function LoginPage() {
   }
 
   return (
-    <div 
-      className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8"
-      style={{
-        background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)'
-      }}
-    >
-      <div className="max-w-md w-full">
-        <div 
-          className="bg-white rounded-3xl shadow-2xl overflow-hidden"
-          style={{
-            boxShadow: '0 20px 60px rgba(0,0,0,0.5)'
-          }}
-        >
-          {/* Header */}
-          <div 
-            className="px-8 py-10 text-center text-white"
-            style={{
-              background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)'
-            }}
-          >
-            <div className="text-6xl mb-3">⚙️</div>
-            <h1 className="text-3xl font-bold mb-2">Admin Portal</h1>
-            <p className="text-slate-300 text-sm">Manage platform & operations</p>
+    <div className="min-h-screen flex flex-row">
+      {/* Left Sidebar - Branding (40%) */}
+      <div 
+        className="flex-none w-2/5 flex flex-col justify-between p-16"
+        style={{
+          background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)'
+        }}
+      >
+        <div>
+          <div className="text-8xl mb-6">⚙️</div>
+          <h1 className="text-5xl font-bold text-white mb-4">GoSenderr</h1>
+          <p className="text-2xl text-slate-300 font-semibold mb-2">Admin Panel</p>
+          <p className="text-slate-400 text-lg">Platform Management & Operations</p>
+        </div>
+        
+        <div className="space-y-4">
+          <div className="text-slate-300 text-sm">
+            <p className="opacity-75">💡 Manage users, orders, and platform settings</p>
           </div>
-
-          {/* Form */}
-          <div className="px-8 py-8">
-            {/* Back Button */}
-            <a 
-              href="https://gosenderr-6773f.web.app"
-              className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 transition-colors"
-            >
-              <span className="text-xl">←</span>
-              <span className="text-sm font-medium">Back to role selection</span>
-            </a>
-            
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Administrator Access</h2>
-            <p className="text-gray-600 mb-6 text-sm">Sign in to the admin dashboard</p>
-
-            <form onSubmit={handleSubmit} className="space-y-5">
-              {error && (
-                <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4">
-                  <p className="text-sm text-red-800 flex items-center gap-2">
-                    <span>⚠️</span>
-                    {error}
-                  </p>
-                </div>
-              )}
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Admin Email
-                </label>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-slate-700 transition text-base"
-                  placeholder="admin@gosenderr.com"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-slate-700 transition text-base"
-                  placeholder="••••••••"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3 px-4 text-white font-semibold rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{
-                  background: loading ? '#9ca3af' : 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
-                }}
-              >
-                {loading ? '🔄 Authenticating...' : '⚙️ Sign In as Admin'}
-              </button>
-            </form>
-
-            <div className="mt-6 text-center">
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
-                <p className="text-xs text-amber-800 flex items-center justify-center gap-2">
-                  <span>🔒</span>
-                  Authorized personnel only
-                </p>
-              </div>
-            </div>
+          <div className="text-slate-500 text-xs">
+            <p>© 2026 GoSenderr • All rights reserved</p>
           </div>
         </div>
+      </div>
 
-        {/* Footer */}
-        <div className="text-center mt-6 text-white text-sm">
-          <p className="opacity-90">© 2026 GoSenderr • Admin Portal</p>
+      {/* Right Side - Login Form (60%) */}
+      <div className="flex-1 flex items-center justify-center px-16 py-12 bg-white">
+        <div className="w-full max-w-md">
+          <div className="mb-10">
+            <h2 className="text-4xl font-bold text-gray-900 mb-2">Welcome Back</h2>
+            <p className="text-gray-600 text-lg">Sign in to your admin account</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {error && (
+              <div className="bg-red-50 border-l-4 border-red-500 rounded-lg p-4">
+                <p className="text-sm text-red-800 flex items-center gap-3">
+                  <span className="text-lg">⚠️</span>
+                  <span>{error}</span>
+                </p>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-3">
+                Email Address
+              </label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-5 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-slate-700 focus:ring-2 focus:ring-slate-200 transition text-base font-medium"
+                placeholder="admin@gosenderr.com"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-3">
+                Password
+              </label>
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-5 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-slate-700 focus:ring-2 focus:ring-slate-200 transition text-base font-medium"
+                placeholder="••••••••"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-4 px-6 text-white font-bold text-lg rounded-lg transition transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              style={{
+                background: loading ? '#9ca3af' : 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+              }}
+            >
+              {loading ? '🔄 Signing in...' : '⚙️ Sign In'}
+            </button>
+          </form>
+
+          <div className="mt-8 pt-8 border-t border-gray-200">
+            <div className="flex items-center gap-3 text-gray-600 text-sm">
+              <span className="text-lg">🔒</span>
+              <p>Authorized personnel only. All access logged.</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
