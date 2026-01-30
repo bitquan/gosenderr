@@ -269,7 +269,7 @@ cd apps/admin-desktop
 
 ### Documentation Links
 - [Electron Docs](https://www.electronjs.org/docs)
-- [React Native Docs](https://reactnative.dev/docs)
+- [React Native Docs](https://reactnative.dev)
 - [Capacitor Docs](https://capacitorjs.com/docs)
 - [Firebase Docs](https://firebase.google.com/docs)
 - [Mapbox Docs](https://docs.mapbox.com/)
