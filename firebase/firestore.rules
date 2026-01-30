@@ -14,9 +14,11 @@ service cloud.firestore {
     
     function isAdmin() {
       return signedIn() && (
-        request.auth.token.get('role', '') == 'admin' ||
+        // Check custom claims first (fastest)
         request.auth.token.get('admin', false) == true ||
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+        request.auth.token.get('role', '') == 'admin' ||
+        // Check adminProfiles collection (your setup)
+        exists(/databases/$(database)/documents/adminProfiles/$(request.auth.uid))
       );
     }
     
@@ -100,6 +102,15 @@ service cloud.firestore {
       allow read, write: if isAdmin();
       
       allow delete: if false;
+    }
+
+    // ========== ADMIN PROFILES ==========
+    match /adminProfiles/{uid} {
+      // Only admins can read admin profiles
+      allow read: if isAdmin();
+      
+      // Only super admins or cloud functions can write (creating new admins)
+      allow write: if false;  // Use cloud functions for admin creation
     }
 
     // ========== ADMIN FLOW LOGS (Test-only run logs) ==========
@@ -696,6 +707,15 @@ service cloud.firestore {
       
       // Only admins can create logs (system creates them)
       allow create: if isAdmin();
+    }
+
+    // ========== STATS (Dashboard Statistics) ==========
+    match /stats/{statsId} {
+      // Only admins can read stats
+      allow read: if isAdmin();
+      
+      // Only cloud functions/system can write stats
+      allow write: if false;
     }
 
     // ========== DISPUTES ==========

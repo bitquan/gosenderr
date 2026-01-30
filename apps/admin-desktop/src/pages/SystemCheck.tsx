@@ -117,12 +117,12 @@ export default function SystemCheckPage() {
         return
       }
 
-      const userDoc = await getDoc(doc(db, 'users', user.uid))
+      const adminDoc = await getDoc(doc(db, 'adminProfiles', user.uid))
       const duration = Date.now() - start
-      if (userDoc.exists() && userDoc.data().role === 'admin') {
+      if (adminDoc.exists()) {
         addResult('Admin Role Verification', 'success', `User is admin: ${user.email}`, duration)
       } else {
-        addResult('Admin Role Verification', 'failed', `User is not admin: ${user.email}`, duration)
+        addResult('Admin Role Verification', 'failed', `User is not admin (no adminProfiles doc): ${user.email}`, duration)
       }
     } catch (error) {
       const duration = Date.now() - start
@@ -257,7 +257,13 @@ export default function SystemCheckPage() {
       })
     } catch (error: any) {
       console.error('run system simulation failed', error)
-      setRunSummary({ error: error?.message || String(error) })
+      const errorMsg = error?.message || String(error)
+      const isCloudFunctionError = errorMsg.includes('403') || errorMsg.includes('Forbidden') || errorMsg.includes('Admin privileges')
+      setRunSummary({ 
+        error: isCloudFunctionError 
+          ? 'System Simulation requires Cloud Functions (not available on emulator). Please ensure you have admin privileges or deploy the Cloud Function.' 
+          : errorMsg 
+      })
       setSimRunning(false)
     }
   }

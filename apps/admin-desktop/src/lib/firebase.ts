@@ -41,9 +41,9 @@ if (isValidConfig) {
         connectAuthEmulator(authInstance, 'http://127.0.0.1:9099', { disableWarnings: true })
         connectStorageEmulator(storageInstance, '127.0.0.1', 9199)
         connectFunctionsEmulator(functionsInstance, '127.0.0.1', 5001)
-        console.log('Connected to Firebase Emulators')
+        console.log('✅ Connected to Firebase Emulators')
       } catch (e) {
-        console.log('Emulators already connected or not available')
+        console.log('⚠️ Emulators already connected or not available')
       }
     }
     

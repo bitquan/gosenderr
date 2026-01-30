@@ -92,6 +92,41 @@ cd ../..
 
 4. **Run development servers:**
 
+### 🎯 Phase 1: Admin Desktop App (Electron)
+
+**One-command startup** for Phase 1 Admin Desktop development:
+
+```bash
+# Native startup (recommended)
+pnpm dev:admin-desktop
+
+# Or using VS Code tasks (easier)
+# Press Cmd+Shift+P → "Tasks: Run Task" → "🎯 Phase 1: Admin Desktop Dev"
+
+# Using Docker Compose
+pnpm dev:admin-desktop:docker
+
+# Stop all services
+pnpm stop:admin-desktop
+```
+
+This automatically starts:
+1. Firebase Emulators (Auth, Firestore, Storage, Functions)
+2. Vite Dev Server (port 5176)
+3. Electron App
+
+**Service URLs:**
+- Admin Desktop: Electron native window
+- Vite Dev Server: http://localhost:5176
+- Firebase Emulator UI: http://localhost:4000
+- Firestore: http://localhost:8080
+- Auth: http://localhost:9099
+- Storage: http://localhost:9199
+
+---
+
+### 🌐 All Apps (Legacy Vite Web Apps)
+
 ```bash
 # Run all apps
 pnpm dev
@@ -99,8 +134,7 @@ pnpm dev
 # Or run individual apps
 cd apps/customer-app && pnpm dev   # Port 5173
 cd apps/courier-app && pnpm dev    # Port 5174
-cd apps/shifter-app && pnpm dev    # Port 5175
-cd apps/admin-app && pnpm dev      # Port 5176
+cd apps/admin-app && pnpm dev      # Port 3000
 ```
 
 **Docker-based development:** If you prefer a reproducible, containerized setup that includes the Firebase emulators and app dev servers, use:

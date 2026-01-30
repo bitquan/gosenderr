@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { collection, getDocs, doc, updateDoc, Timestamp } from 'firebase/firestore'
+import { collection, getDocs, doc, updateDoc, addDoc, Timestamp } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { useAuth } from '../hooks/useAuth'
 import { Card, CardHeader, CardTitle, CardContent } from '../components/Card'
@@ -19,6 +19,13 @@ export default function FeatureFlagsPage() {
   const [flags, setFlags] = useState<FeatureFlag[]>([])
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState<string | null>(null)
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [newFlag, setNewFlag] = useState({
+    name: '',
+    description: '',
+    category: 'system',
+    enabled: false
+  })
 
   useEffect(() => {
     loadFlags()
@@ -27,10 +34,13 @@ export default function FeatureFlagsPage() {
   const loadFlags = async () => {
     try {
       const snapshot = await getDocs(collection(db, 'featureFlags'))
-      const flagsData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      } as FeatureFlag))
+      const flagsData = snapshot.docs
+        .filter(doc => doc.id !== 'config') // Skip the config document
+        .map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        } as FeatureFlag))
+        .filter(flag => flag.name && flag.category) // Only include valid flags
       
       // Sort by category then name
       flagsData.sort((a, b) => {
@@ -70,8 +80,35 @@ export default function FeatureFlagsPage() {
     }
   }
 
+  const handleAddFlag = async () => {
+    if (!newFlag.name || !newFlag.description) {
+      alert('Please fill in all fields')
+      return
+    }
+
+    try {
+      await addDoc(collection(db, 'featureFlags'), {
+        ...newFlag,
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now()
+      })
+
+      // Reset form and close modal
+      setNewFlag({ name: '', description: '', category: 'system', enabled: false })
+      setShowAddModal(false)
+      
+      // Reload flags
+      await loadFlags()
+      
+      alert('✅ Feature flag added successfully!')
+    } catch (error) {
+      console.error('Error adding feature flag:', error)
+      alert('Failed to add feature flag')
+    }
+  }
+
   // Group flags by category
-  const flagsByCategory = flags.reduce((acc, flag) => {
+  const flagsByCategory = (flags || []).reduce((acc, flag) => {
     if (!acc[flag.category]) {
       acc[flag.category] = []
     }
@@ -90,9 +127,17 @@ export default function FeatureFlagsPage() {
   return (
     <div className="min-h-screen bg-[#F8F9FF] pb-8">
       <div className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] rounded-b-[32px] p-6 text-white shadow-lg">
-        <div className="max-w-6xl mx-auto">
-          <h1 className="text-3xl font-bold mb-2">🎚️ Feature Flags</h1>
-          <p className="text-purple-100">Enable or disable platform features</p>
+        <div className="max-w-6xl mx-auto flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">🎚️ Feature Flags</h1>
+            <p className="text-purple-100">Enable or disable platform features</p>
+          </div>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="px-6 py-3 bg-white text-purple-600 rounded-xl font-semibold hover:bg-purple-50 transition-all shadow-lg"
+          >
+            + Add New Flag
+          </button>
         </div>
       </div>
 
@@ -179,6 +224,98 @@ export default function FeatureFlagsPage() {
               <div className="text-2xl">⚠️</div>
               <div>
                 <h4 className="font-semibold mb-1">Caution</h4>
+
+      {/* Add Flag Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4">
+            <h2 className="text-2xl font-bold mb-6">Add New Feature Flag</h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Feature Name *
+                </label>
+                <input
+                  type="text"
+                  value={newFlag.name}
+                  onChange={(e) => setNewFlag({ ...newFlag, name: e.target.value })}
+                  className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none"
+                  placeholder="e.g., Advanced Analytics"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Description *
+                </label>
+                <textarea
+                  value={newFlag.description}
+                  onChange={(e) => setNewFlag({ ...newFlag, description: e.target.value })}
+                  className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none"
+                  placeholder="Describe what this flag controls..."
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Category
+                </label>
+                <select
+                  value={newFlag.category}
+                  onChange={(e) => setNewFlag({ ...newFlag, category: e.target.value })}
+                  className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none"
+                >
+                  <option value="marketplace">Marketplace</option>
+                  <option value="delivery">Delivery</option>
+                  <option value="payments">Payments</option>
+                  <option value="notifications">Notifications</option>
+                  <option value="system">System</option>
+                </select>
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Initial State
+                  </label>
+                  <p className="text-xs text-gray-500">Enable by default?</p>
+                </div>
+                <button
+                  onClick={() => setNewFlag({ ...newFlag, enabled: !newFlag.enabled })}
+                  className={`
+                    relative inline-flex h-8 w-16 items-center rounded-full transition-colors
+                    ${newFlag.enabled ? 'bg-green-500' : 'bg-gray-300'}
+                  `}
+                >
+                  <span
+                    className={`
+                      inline-block h-6 w-6 transform rounded-full bg-white transition-transform
+                      ${newFlag.enabled ? 'translate-x-9' : 'translate-x-1'}
+                    `}
+                  />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="flex-1 px-4 py-3 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddFlag}
+                className="flex-1 px-4 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-all"
+              >
+                Add Flag
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
                 <p className="text-sm">
                   Changing feature flags affects all users immediately. Be careful when disabling critical features like payments or marketplace functionality.
                 </p>

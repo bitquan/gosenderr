@@ -56,3 +56,109 @@ When adding or updating high-level project-plan documentation (e.g. `docs/projec
 
 ## Conclusion
 Follow the Phase 1 Admin Desktop checklist in `docs/project-plan/03-PHASE-1-ADMIN-DESKTOP.md` and keep `docs/project-plan/*` as the single source of truth. Use Copilot to scaffold, draft docs, and propose code changes, but always run the repository verification steps (`pnpm run verify:docs`, `npx -y cspell "docs/**/*.md" --exclude "docs/archive/**"`, `pnpm smoke:docker`) and test packaging on relevant platforms before merging.
+---
+
+## Feature Flags & Progressive Rollout Strategy
+
+### Overview
+All new features MUST be wrapped in feature flags to enable safe deployment, gradual rollouts, and instant rollbacks without code changes.
+
+### Feature Flag Architecture
+
+**Storage**: Firestore collection `featureFlags`
+- Individual flag documents for admin UI management
+- Single `config` document for app compatibility
+
+**Admin Interface**: `apps/admin-desktop` Feature Flags page
+- Toggle flags on/off globally
+- Add new flags via UI (no code deploy needed)
+- Real-time updates across all apps
+
+### Implementation Pattern
+
+```typescript
+// Always check flags before showing new features
+import { useFeatureFlags } from '../hooks/useFeatureFlags'
+
+export default function Dashboard() {
+  const { flags } = useFeatureFlags()
+  
+  // New version behind flag
+  if (flags?.['dashboard_v2']) {
+    return <DashboardV2 />  // New experimental version
+  }
+  
+  return <DashboardV1 />  // Stable fallback
+}
+```
+
+### Deployment Workflow
+
+1. **Build Feature** - Create new component/feature in code
+2. **Wrap in Flag** - Add flag check (default: disabled)
+3. **Deploy Code** - Push to production (feature hidden)
+4. **Add Flag** - Create flag in admin UI (keep disabled)
+5. **Test** - Enable flag only for admin/testing
+6. **Gradual Rollout** - Enable for percentage of users
+7. **Full Launch** - Enable for everyone
+8. **Rollback** - Toggle off instantly if issues arise
+
+### Best Practices
+
+- **New features start disabled** - Add flag before merging PR
+- **No direct rollouts** - Always use flags for risky changes
+- **Kill switches** - Major features need instant disable capability
+- **Document flags** - Add clear descriptions in flag creation
+- **Clean up old flags** - Remove flags after feature is stable (2-4 weeks post-launch)
+
+### Flag Categories
+
+- `marketplace` - Item listings, checkout, vendor features
+- `delivery` - Courier, routes, tracking, package shipping
+- `payments` - Stripe, refunds, payment methods
+- `notifications` - Push, email, SMS notifications
+- `system` - Admin tools, analytics, infrastructure
+
+### Advanced Patterns (Future)
+
+When needed, implement:
+- **Percentage Rollouts** - `rolloutPercent: 25` (25% of users)
+- **User Targeting** - `allowedUsers: ['uid1', 'uid2']` (beta testers only)
+- **Environment Flags** - `environments: ['staging']` (not in prod)
+- **Scheduled Flags** - `enableAt: timestamp` (auto-enable at time)
+- **Flag History** - Track who changed what and when
+
+### Why This Matters
+
+- ✅ Deploy risky changes safely
+- ✅ Test in production with real users
+- ✅ Rollback without code deployment
+- ✅ A/B test new features
+- ✅ Dark launch (code in prod, invisible to users)
+- ✅ Independent release schedules (code deploy ≠ feature launch)
+
+### Example Scenarios
+
+**New Payment Provider**
+```typescript
+if (flags?.['stripe_payment_v2']) {
+  // New Stripe integration
+} else {
+  // Old payment flow
+}
+```
+
+**Redesigned UI**
+```typescript
+if (flags?.['modern_dashboard']) {
+  return <ModernDashboard />  // New design
+}
+return <ClassicDashboard />  // Old design
+```
+
+**Experimental Algorithm**
+```typescript
+const results = flags?.['smart_matching_v2']
+  ? await newMatchingAlgorithm(params)
+  : await oldMatchingAlgorithm(params)
+```

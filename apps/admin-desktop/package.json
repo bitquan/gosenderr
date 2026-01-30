@@ -5,7 +5,12 @@
   "main": "electron/out/main.js",
   "scripts": {
     "dev": "vite",
-    "dev:electron": "tsc -p electron/tsconfig.json && electron electron/out/main.js",
+    "dev:electron": "tsc -p electron/tsconfig.json && NODE_ENV=development electron electron/out/main.js",
+    "electron": "tsc -p electron/tsconfig.json && NODE_ENV=development electron electron/out/main.js",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:debug": "playwright test --debug",
     "build:renderer": "vite build",
     "build:electron": "tsc -p electron/tsconfig.json",
     "build": "pnpm build:renderer && pnpm build:electron",
@@ -25,11 +30,15 @@
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.57.0",
     "@types/node": "^20.0.0",
     "@vitejs/plugin-react": "^4.2.1",
+    "autoprefixer": "^10.4.24",
     "concurrently": "^8.2.0",
     "electron": "^28.0.0",
     "electron-builder": "^24.0.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.17",
     "typescript": "^5.7.2",
     "vite": "^5.0.8"
   }

@@ -69,6 +69,10 @@ firestore-debug.log
 # Turbo
 .turbo/
 
+# Logs
+logs/
+*.log
+
 # Secrets / env files
 .env*
 !.env.example

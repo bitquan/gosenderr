@@ -19,11 +19,10 @@
     "build:courier": "pnpm --filter @gosenderr/courier-app build",
     "preview:courier": "pnpm --filter @gosenderr/courier-app preview",
     "deploy:courier": "pnpm build:courier && firebase deploy --only hosting:gosenderr-courier --project gosenderr-6773f --non-interactive",
-    "dev:shifter": "pnpm --filter @gosenderr/shifter-app dev",
-    "build:shifter": "pnpm --filter @gosenderr/shifter-app build",
-    "preview:shifter": "pnpm --filter @gosenderr/shifter-app preview",
-    "deploy:shifter": "pnpm build:shifter && firebase deploy --only hosting:gosenderr-shifter --project gosenderr-6773f --non-interactive",
     "dev:admin": "pnpm --filter @gosenderr/admin-app dev",
+    "dev:admin-desktop": "bash scripts/start-phase1.sh",
+    "dev:admin-desktop:docker": "bash scripts/start-phase1.sh --docker",
+    "stop:admin-desktop": "bash scripts/start-phase1.sh --stop",
     "build:admin": "pnpm --filter @gosenderr/admin-app build",
     "preview:admin": "pnpm --filter @gosenderr/admin-app preview",
     "deploy:admin": "pnpm build:admin && firebase deploy --only hosting:gosenderr-admin --project gosenderr-6773f --non-interactive",
@@ -38,7 +37,8 @@
     "verify:phase0": "bash scripts/verify-phase0.sh",
     "verify:docs": "bash scripts/verify-docs.sh",
     "dev:docker": "bash scripts/dev-docker-up.sh",
-    "dev:docker:down": "bash scripts/dev-docker-down.sh"
+    "dev:docker:down": "bash scripts/dev-docker-down.sh",
+    "smoke:docker": "sh ./scripts/smoke-tests.sh"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "2.0.7",
@@ -55,5 +55,8 @@
     "vite": "^7.3.1",
     "which": "^6.0.0"
   },
-  "packageManager": "pnpm@8.15.1"
+  "packageManager": "pnpm@8.15.1",
+  "dependencies": {
+    "@rollup/rollup-linux-x64-gnu": "^4.57.1"
+  }
 }

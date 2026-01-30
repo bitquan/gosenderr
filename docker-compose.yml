@@ -115,7 +115,7 @@ services:
     ports:
       - "5174:5174"
 
-  shifter-app:
+  admin-desktop:
     build:
       context: .
       dockerfile: Dockerfile.dev
@@ -128,17 +128,17 @@ services:
     working_dir: /workspace
     environment:
       - HOST=0.0.0.0
-      - PORT=5175
+      - PORT=5176
       - DEBUG=vite:server
-    command: sh -lc "pnpm install --frozen-lockfile && pnpm --filter @gosenderr/shifter-app dev -- --host 0.0.0.0"
+    command: sh -lc "pnpm install --frozen-lockfile && pnpm --filter @gosenderr/admin-desktop dev -- --host 0.0.0.0"
     healthcheck:
-      test: ["CMD", "sh", "-c", "curl -sSf http://localhost:5175/ || exit 1"]
+      test: ["CMD", "sh", "-c", "curl -sSf http://localhost:5176/ || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 10s
     ports:
-      - "5175:5175"
+      - "5176:5176"
 
   web-app:
     build:

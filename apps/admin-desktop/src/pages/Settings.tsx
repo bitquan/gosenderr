@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { collection, getDocs, doc, updateDoc, Timestamp, addDoc } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { Card, CardHeader, CardTitle, CardContent } from '../components/Card'
+import { seedFeatureFlags } from '../lib/seedData'
 
 interface Setting {
   id: string
@@ -89,6 +90,19 @@ export default function SettingsPage() {
       ...prev,
       [settingId]: parsedValue
     }))
+  }
+
+  const handleSeedFeatureFlags = async () => {
+    if (!confirm('This will create/overwrite the feature flags configuration. Continue?')) {
+      return;
+    }
+    
+    try {
+      await seedFeatureFlags();
+      alert('✅ Feature flags seeded successfully!');
+    } catch (error) {
+      alert('❌ Failed to seed feature flags: ' + (error as Error).message);
+    }
   }
 
   const renderValueInput = (setting: Setting) => {
@@ -194,7 +208,7 @@ export default function SettingsPage() {
           <CardTitle>Advanced Settings</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid md:grid-cols-3 gap-4">
+          <div className="grid md:grid-cols-3 gap-4 mb-6">
             <Link 
               to="/settings/payment" 
               className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 border-2 border-purple-200 rounded-xl hover:shadow-lg transition-all text-center"
@@ -221,6 +235,22 @@ export default function SettingsPage() {
               <h3 className="font-bold text-gray-900">Security</h3>
               <p className="text-sm text-gray-600 mt-1">Access control, admins</p>
             </Link>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="pt-4 border-t border-gray-200">
+            <h4 className="font-semibold text-gray-900 mb-3">🛠️ Quick Actions</h4>
+            <div className="flex gap-3">
+              <button
+                onClick={handleSeedFeatureFlags}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
+              >
+                🎚️ Seed Feature Flags
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              Initialize or reset feature flags configuration for all apps
+            </p>
           </div>
         </CardContent>
       </Card>

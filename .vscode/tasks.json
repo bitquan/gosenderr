@@ -157,9 +157,9 @@
       }
     },
     {
-      "label": "🚚 Shifter App (Port 5175)",
+      "label": "�️ Admin Desktop: Vite Dev Server (Port 5176)",
       "type": "shell",
-      "command": "pnpm --filter @gosenderr/shifter-app dev",
+      "command": "pnpm --filter @gosenderr/admin-desktop dev",
       "isBackground": true,
       "problemMatcher": {
         "pattern": {
@@ -181,6 +181,20 @@
         "panel": "dedicated",
         "focus": false,
         "clear": true
+      }
+    },
+    {
+      "label": "🖥️ Admin Desktop: Electron App",
+      "type": "shell",
+      "command": "sleep 3 && cd apps/admin-desktop && pnpm electron",
+      "isBackground": true,
+      "dependsOn": ["🖥️ Admin Desktop: Vite Dev Server (Port 5176)"],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true,
+        "clear": false
       }
     },
     {
@@ -214,10 +228,26 @@
       "dependsOn": [
         "🔧 Admin App (Port 3000)",
         "📦 Customer App (Port 5173)",
-        "⚡ Courier App (Port 5174)",
-        "🚚 Shifter App (Port 5175)"
+        "⚡ Courier App (Port 5174)"
       ],
       "problemMatcher": []
+    },
+    {
+      "label": "🎯 Phase 1: Admin Desktop Dev",
+      "dependsOn": [
+        "🔥 Firebase Emulators",
+        "🖥️ Admin Desktop: Vite Dev Server (Port 5176)",
+        "🖥️ Admin Desktop: Electron App"
+      ],
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
     },
     {
       "label": "🌐 All Apps (All Ports)",
@@ -246,7 +276,7 @@
     {
       "label": "🛑 Stop All Apps",
       "type": "shell",
-      "command": "lsof -ti:3000,5173,5174,5175,5180 | xargs kill -9 2>/dev/null || echo 'All ports cleared'",
+      "command": "lsof -ti:3000,4000,5173,5174,5176,5180,8080,9099,9199 | xargs kill -9 2>/dev/null; pkill -f 'electron|Electron' 2>/dev/null; echo 'All ports and Electron cleared'",
       "problemMatcher": [],
       "presentation": {
         "reveal": "always",

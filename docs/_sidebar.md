@@ -14,6 +14,9 @@
   - [08 - Deployment Guide](project-plan/08-DEPLOYMENT-GUIDE.md)
   - [09 - Daily Checklist](project-plan/09-DAILY-CHECKLIST.md)
 
+- **Quick Start**
+  - [🎯 Phase 1 Workflow](PHASE1_WORKFLOW.md)
+
 - [Architecture](ARCHITECTURE.md)
 - [Development](DEVELOPMENT.md)
 - [Deployment guide](DEPLOYMENT.md)
