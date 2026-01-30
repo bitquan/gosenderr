@@ -1695,7 +1695,7 @@ firebase functions:log
 ### Communities
 - React Discord: https://discord.gg/react
 - Firebase Discord: https://discord.gg/firebase
-- React Native Community: https://reactnative.dev/community
+- React Native: https://reactnative.dev
 
 ---
 
