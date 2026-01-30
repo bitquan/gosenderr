@@ -17,7 +17,7 @@ apps/courier-app/src/pages/dashboard/page-old.tsx
 ## 📦 Apps/Directories Status
 
 ### ✅ Keep - Active Projects
-- `apps/customer-app/` - ✅ **ACTIVE** - Vite React app with vendor marketplace
+- `apps/marketplace-app/` - ✅ **ACTIVE** - Vite React app with vendor marketplace
 - `apps/courier-app/` - ✅ **ACTIVE** - Vite React app with map shell
 - `apps/shifter-app/` - ✅ **ACTIVE** - Vite React app (runner/long-haul)
 - `apps/admin-app/` - ✅ **ACTIVE** - Vite React app
@@ -64,7 +64,7 @@ These docs reference `apps/web` and need updating:
 
 7. **docs/CAPACITOR_SETUP.md**
    - Line 144: References `/apps/web/src/app/customer/*`
-   - **Action:** Update to customer-app paths
+   - **Action:** Update to marketplace-app paths
 
 ### Medium Priority - Historical Reference
 These docs are historical but still reference old code:
@@ -94,7 +94,7 @@ These docs are historical but still reference old code:
 # App Architecture (2026)
 
 ## Applications
-- **Customer App** (`apps/customer-app`) - Port 5173
+- **Marketplace App** (`apps/marketplace-app`) - Port 5173
 - **Courier App** (`apps/courier-app`) - Port 5174  
 - **Shifter App** (`apps/shifter-app`) - Port 5175
 - **Admin App** (`apps/admin-app`) - Port 5176
@@ -262,7 +262,7 @@ All apps use mobile-first bottom navigation:
 ## ✅ Verification Checklist
 
 Before deleting `apps/web/`:
-- [ ] All customer features work in `apps/customer-app`
+- [ ] All marketplace features work in `apps/marketplace-app`
 - [ ] All courier features work in `apps/courier-app`
 - [ ] All runner features work in `apps/shifter-app`
 - [ ] All admin features work in `apps/admin-app`

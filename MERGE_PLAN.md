@@ -8,7 +8,7 @@ This document outlines a safe, staged plan to merge the `feature/courier-turn-by
 - New components and hooks in `apps/courier-app` (JobThumbnail, MapboxMap, useMapboxDirections, NavigationContext, etc).
 - Documentation: `docs/IN_APP_NAVIGATION_PLAN.md` and ISSUE_TEMPLATE additions.
 - Additions to iOS project files (TestFlight deployment metadata and Xcode project entries).
-- Several changed files under `apps/customer-app` related to map components and job details.
+- Several changed files under `apps/marketplace-app` related to map components and job details.
 - No `package.json` or dependency upgrades were detected in this diff.
 
 > Important: The dry-merge produced **no textual conflicts**, but this is a *functional/semantic* merge. Please review the testing checklist below and validate runtime behavior (map, navigation, auth, iOS builds) before merging.

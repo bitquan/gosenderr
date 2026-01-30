@@ -38,7 +38,7 @@ sleep 5
 
 # Start Customer App
 echo "🛍️ Starting Customer App (Marketplace)..."
-pnpm --filter @gosenderr/customer-app dev &
+pnpm --filter @gosenderr/marketplace-app dev &
 CUSTOMER_PID=$!
 
 echo ""

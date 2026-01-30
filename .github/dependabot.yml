@@ -39,7 +39,7 @@ updates:
   # CUSTOMER APP (Primary user-facing app)
   # ============================================
   - package-ecosystem: "npm"
-    directory: "/apps/customer-app"
+    directory: "/apps/marketplace-app"
     schedule:
       interval: "weekly"
       day: "tuesday"
@@ -49,11 +49,11 @@ updates:
       - "bitquan"
     labels:
       - "dependencies"
-      - "customer-app"
+      - "marketplace-app"
     commit-message:
-      prefix: "chore(customer-app)"
+      prefix: "chore(marketplace-app)"
     groups:
-      customer-app-minor-patch:
+      marketplace-app-minor-patch:
         patterns:
           - "*"
         update-types:

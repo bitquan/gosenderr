@@ -9,7 +9,7 @@ Press `Cmd+Shift+P` (Mac) or `Ctrl+Shift+P` (Windows/Linux), then type "Tasks: R
 #### Development Tasks
 - **🛍️ Marketplace: Dev Mode** - Runs Customer App + Firebase Emulators
 - **🔥 Start Firebase Emulators** - Run Firestore, Auth, Storage emulators
-- **📦 Customer App** - Start customer app on port 5173
+- **📦 Marketplace App** - Start marketplace app on port 5173
 - **🔧 Admin App** - Start admin app on port 3000
 - **⚡ Courier App** - Start courier app on port 5174
 
@@ -31,8 +31,8 @@ Press `Cmd+Shift+P` (Mac) or `Ctrl+Shift+P` (Windows/Linux), then type "Tasks: R
 # Start Firebase Emulators (Required for local dev)
 pnpm emulators
 
-# Start Customer App (Marketplace)
-pnpm --filter @gosenderr/customer-app dev
+# Start Marketplace App (Marketplace)
+pnpm --filter @gosenderr/marketplace-app dev
 
 # Start Admin App
 pnpm --filter @gosenderr/admin-app dev
@@ -48,7 +48,7 @@ pnpm dev
 
 ```bash
 # Build customer app
-pnpm --filter @gosenderr/customer-app build
+pnpm --filter @gosenderr/marketplace-app build
 
 # Build all apps
 pnpm build:all
@@ -57,8 +57,8 @@ pnpm build:all
 ### Testing
 
 ```bash
-# Run tests for customer app
-pnpm --filter @gosenderr/customer-app test
+# Run tests for marketplace app
+pnpm --filter @gosenderr/marketplace-app test
 
 # Type check all projects
 pnpm type-check
@@ -73,7 +73,7 @@ pnpm lint
 
 | App | Port | URL |
 |-----|------|-----|
-| Customer App | 5173 | http://localhost:5173 |
+| Marketplace App | 5173 | http://localhost:5173 |
 | Admin App | 3000 | http://localhost:3000 |
 | Courier App | 5174 | http://localhost:5174 |
 | Shifter App | 5175 | http://localhost:5175 |
@@ -161,7 +161,7 @@ Cmd+Shift+P → "Tasks: Run Task" → "🛍️ Marketplace: Dev Mode"
 
 # Option B: Manual
 pnpm emulators &
-pnpm --filter @gosenderr/customer-app dev
+pnpm --filter @gosenderr/marketplace-app dev
 ```
 
 ### 2. Open Browser
@@ -171,7 +171,7 @@ pnpm --filter @gosenderr/customer-app dev
 
 ### 3. Make Changes
 
-- Edit files in `apps/customer-app/src/`
+- Edit files in `apps/marketplace-app/src/`
 - Hot reload will update browser automatically
 - Check Firebase UI for data changes
 
@@ -185,7 +185,7 @@ pnpm type-check
 pnpm lint
 
 # Run tests
-pnpm --filter @gosenderr/customer-app test
+pnpm --filter @gosenderr/marketplace-app test
 ```
 
 ### 5. Commit & Push
@@ -202,7 +202,7 @@ git push origin feat/marketplace-foundation-issue-58
 
 Create `.env` files in each app:
 
-### apps/customer-app/.env
+### apps/marketplace-app/.env
 
 ```bash
 VITE_FIREBASE_API_KEY=your_api_key

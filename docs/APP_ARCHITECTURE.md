@@ -6,7 +6,7 @@ GoSenderr is a monorepo containing 5 role-based web applications built with Vite
 
 ## Application Structure
 
-### 1. Customer App (`apps/customer-app`)
+### 1. Marketplace App (`apps/marketplace-app`) 
 
 **Purpose**: Create and track delivery jobs
 
@@ -409,7 +409,7 @@ export const formatCurrency = (amount: number) => string
   "hosting": [
     {
       "site": "gosenderr-customer",
-      "public": "apps/customer-app/dist",
+      "public": "apps/marketplace-app/dist",
       "rewrites": [{ "source": "**", "destination": "/index.html" }]
     },
     {

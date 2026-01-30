@@ -12,7 +12,7 @@ import type { CourierLocation } from '@/lib/v2/types';
 export function useNavigation() {
   const navigate = useNavigate();
   const context = useNavigationContext();
-  const { route, fetchRoute, loading: routeLoading, error: routeError } = useMapboxDirections();
+  const { route, fetchRoute, fetchJobRoute, loading: routeLoading, error: routeError, clearRoute } = useMapboxDirections();
 
   /**
    * Start navigation for a job
@@ -30,15 +30,34 @@ export function useNavigation() {
     console.log('🚀 Starting navigation for job', { jobId: job.id, destination });
 
     try {
-      // Fetch route from Mapbox
-      const routeData = await fetchRoute(
-        [courierLocation.lng, courierLocation.lat],
-        [destination.lng, destination.lat]
-      );
+      // Determine if this is to pickup or dropoff, and fetch the appropriate route
+      const isToDropoff = ['picked_up', 'enroute_dropoff', 'arrived_dropoff'].includes(job.status);
+      let routeData;
+
+      if (isToDropoff) {
+        // Direct route to dropoff
+        routeData = await fetchRoute(
+          [courierLocation.lng, courierLocation.lat],
+          [destination.lng, destination.lat]
+        );
+      } else {
+        // Full job route (through pickup to dropoff)
+        routeData = await fetchJobRoute(
+          [courierLocation.lng, courierLocation.lat],
+          [job.pickup.lng, job.pickup.lat],
+          [destination.lng, destination.lat]
+        );
+      }
       
       if (!routeData) {
         throw new Error('Failed to fetch route');
       }
+
+      console.log('✅ Route fetched successfully:', { 
+        jobId: job.id, 
+        hasGeometry: !!routeData.geometry,
+        coordinates: routeData.geometry?.coordinates?.length || 0
+      });
 
       // Initialize navigation context with job and route
       context.startNavigation(job, routeData);
@@ -54,7 +73,7 @@ export function useNavigation() {
       console.error('Failed to start navigation:', error);
       throw error;
     }
-  }, [context, fetchRoute, navigate]);
+  }, [context, fetchRoute, fetchJobRoute, navigate]);
 
   /**
    * Stop navigation and return to job detail page
@@ -63,13 +82,14 @@ export function useNavigation() {
     const jobId = context.currentJob?.id;
     
     context.stopNavigation();
+    clearRoute(); // Clear the route from directions hook
     
     if (jobId) {
       navigate(`/jobs/${jobId}`);
     } else {
       navigate('/dashboard');
     }
-  }, [context, navigate]);
+  }, [context, navigate, clearRoute]);
 
   /**
    * Check if currently navigating

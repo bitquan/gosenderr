@@ -63,10 +63,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Ensure customer-app has required env for emulator tests
+      - name: Ensure marketplace-app has required env for emulator tests
         run: |
-          mkdir -p apps/customer-app
-          cat > apps/customer-app/.env <<'EOF'
+          mkdir -p apps/marketplace-app
+          cat > apps/marketplace-app/.env <<'EOF'
 VITE_FIREBASE_API_KEY=fake-api-key
 VITE_FIREBASE_AUTH_DOMAIN=127.0.0.1
 VITE_FIREBASE_PROJECT_ID=demo

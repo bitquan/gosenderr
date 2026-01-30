@@ -157,6 +157,8 @@ export function CreateJobModal({ isOpen, onClose, onJobCreated }: CreateJobModal
           lng: dropoffSelected.lng,
         },
         estimatedFee: parseFloat(estimatedFee),
+        agreedFee: parseFloat(estimatedFee),
+        courierUid: null,
         vehicleType: jobType === 'package' ? 'car' : 'scooter',
         description: description || '',
         createdAt: new Date(),

@@ -192,9 +192,9 @@ export default function CourierDashboardPage() {
   return (
     <div className="min-h-screen bg-[#F8F9FF] pb-24">
       {/* Purple Header */}
-      <div className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] rounded-b-[32px] p-6 text-white shadow-lg">
+      <div className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] rounded-b-2xl sm:rounded-b-[32px] px-3 py-4 sm:p-6 text-white shadow-lg">
         <div className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-between mb-6 gap-2">
+          <div className="flex items-center justify-between mb-3 sm:mb-6 gap-2">
             <div className="flex items-center gap-3 min-w-0 flex-1">
               <Avatar
                 fallback={user?.displayName || user?.email || 'Courier'}
@@ -202,10 +202,10 @@ export default function CourierDashboardPage() {
                 className="flex-shrink-0"
               />
               <div className="min-w-0 flex-1">
-                <h1 className="text-xl sm:text-2xl font-bold">
-                  {isAdmin ? 'Admin Dashboard' : 'Courier Dashboard'}
+                <h1 className="text-base sm:text-2xl font-bold">
+                  {isAdmin ? 'Admin' : 'Dashboard'}
                 </h1>
-                <p className="text-purple-100 text-xs sm:text-sm truncate">{user?.email}</p>
+                <p className="text-purple-100 text-xs truncate">{user?.email}</p>
               </div>
             </div>
             
@@ -214,7 +214,7 @@ export default function CourierDashboardPage() {
               <button
                 onClick={handleToggleOnline}
                 disabled={updatingStatus}
-                className={`px-6 py-3 rounded-full font-semibold text-lg transition-all duration-300 flex items-center gap-2 ${
+                className={`px-3 py-2 sm:px-6 sm:py-3 rounded-full font-semibold text-sm sm:text-lg transition-all duration-300 flex items-center gap-2 ${
                   isOnline
                     ? 'bg-green-500 hover:bg-green-600 shadow-lg hover:shadow-xl hover:scale-105'
                     : 'bg-gray-400 hover:bg-gray-500'
@@ -228,18 +228,18 @@ export default function CourierDashboardPage() {
 
           {/* Stats Grid - Only for couriers */}
           {!isAdmin && (
-            <div className="grid grid-cols-3 gap-2 sm:gap-3">
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-2 sm:p-3">
-                <p className="text-xs sm:text-sm text-purple-100 mb-1">Available</p>
-                <p className="text-xl sm:text-2xl font-bold">{availableJobs.length}</p>
+            <div className="grid grid-cols-3 gap-1.5 sm:gap-3">
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg sm:rounded-2xl p-1.5 sm:p-3">
+                <p className="text-xs text-purple-100 mb-0.5">Available</p>
+                <p className="text-lg sm:text-2xl font-bold">{availableJobs.length}</p>
               </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-2 sm:p-3">
-                <p className="text-xs sm:text-sm text-purple-100 mb-1">Active</p>
-                <p className="text-xl sm:text-2xl font-bold">{myActiveJobs.length}</p>
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg sm:rounded-2xl p-1.5 sm:p-3">
+                <p className="text-xs text-purple-100 mb-0.5">Active</p>
+                <p className="text-lg sm:text-2xl font-bold">{myActiveJobs.length}</p>
               </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-2 sm:p-3">
-                <p className="text-xs sm:text-sm text-purple-100 mb-1">Vehicle</p>
-                <p className="text-sm sm:text-base font-bold capitalize">{profile?.vehicleType || 'N/A'}</p>
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg sm:rounded-2xl p-1.5 sm:p-3">
+                <p className="text-xs text-purple-100 mb-0.5">Vehicle</p>
+                <p className="text-xs sm:text-base font-bold capitalize">{profile?.vehicleType || 'N/A'}</p>
               </div>
             </div>
           )}
@@ -247,12 +247,12 @@ export default function CourierDashboardPage() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 -mt-8 space-y-4">
+      <div className="max-w-6xl mx-auto px-2 sm:px-6 -mt-6 sm:-mt-8 space-y-2 sm:space-y-4">
         {/* Admin Section */}
         {isAdmin && (
           <>
             {/* Admin Stats Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 animate-fade-in">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4 animate-fade-in">
               <Card variant="elevated">
                 <CardContent className="p-6 text-center">
                   <div className="text-4xl mb-2">👥</div>
@@ -468,7 +468,7 @@ export default function CourierDashboardPage() {
                   <div
                     key={job.id}
                     onClick={() => navigate(`/jobs/${job.id}`)}
-                    className="p-4 bg-green-50 border border-green-200 rounded-xl hover:bg-green-100 cursor-pointer transition-all"
+                    className="p-2 sm:p-4 bg-green-50 border border-green-200 rounded-lg sm:rounded-xl hover:bg-green-100 cursor-pointer transition-all"
                   >
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1">
@@ -484,7 +484,7 @@ export default function CourierDashboardPage() {
                         </p>
                       )}
                     </div>
-                    <div className="space-y-2 text-sm">
+                    <div className="space-y-1 text-xs sm:text-sm">
                       <p>📍 <strong>Pickup:</strong> {job.pickupAddress}</p>
                       <p>🎯 <strong>Delivery:</strong> {job.deliveryAddress}</p>
                     </div>
@@ -520,7 +520,7 @@ export default function CourierDashboardPage() {
                     style={{ animationDelay: `${index * 50}ms` }}
                     onClick={() => navigate(`/jobs/${job.id}`)}
                   >
-                    <CardContent className="p-6">
+                    <CardContent className="p-2 sm:p-6">
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
@@ -544,8 +544,8 @@ export default function CourierDashboardPage() {
                             📍
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs text-gray-500 mb-1">Pickup</p>
-                            <p className="font-medium text-gray-900 text-sm break-words">
+                            <p className="text-xs text-gray-500 mb-0.5">Pickup</p>
+                            <p className="font-medium text-gray-900 text-xs sm:text-sm break-words">
                               {job.pickupAddress || 'Address not provided'}
                             </p>
                           </div>
@@ -557,8 +557,8 @@ export default function CourierDashboardPage() {
                             🎯
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs text-gray-500 mb-1">Delivery</p>
-                            <p className="font-medium text-gray-900 text-sm break-words">
+                            <p className="text-xs text-gray-500 mb-0.5">Delivery</p>
+                            <p className="font-medium text-gray-900 text-xs sm:text-sm break-words">
                               {job.deliveryAddress || 'Address not provided'}
                             </p>
                           </div>

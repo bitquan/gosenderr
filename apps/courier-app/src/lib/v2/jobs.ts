@@ -17,7 +17,7 @@ import {
   PackageInfo,
   JobPhoto,
 } from "./types";
-import { calcMiles } from "./pricing";
+import { calcMiles, calcFee } from "./pricing";
 import { getEligibilityReason } from "./eligibility";
 import { getNextStatus } from "./status";
 
@@ -97,13 +97,16 @@ export async function claimJob(
     const jobData = jobDoc.data();
     const courierData = courierDoc.data() as UserDoc;
 
-    if (jobData.status !== "open" || jobData.courierUid !== null) {
+    // If the job is not open, or has a courier assigned (non-null), reject.
+    // Use != null to treat both `null` and `undefined` as unassigned (falsey) so
+    // jobs created without an explicit `courierUid` don't get rejected.
+    if (jobData.status !== "open" || jobData.courierUid != null) {
       throw new Error("Job already claimed or not available");
     }
 
     // Server-side eligibility check - use courierProfile
     if (!courierData.courierProfile?.currentLocation) {
-      throw new Error("Senderr location not available");
+      throw new Error("Courier location not available");
     }
 
     // Determine appropriate rate card based on job type
@@ -114,7 +117,7 @@ export async function claimJob(
 
     if (!rateCard) {
       throw new Error(
-        `Senderr ${isFoodJob ? "food" : "package"} rate card not configured`,
+        `Courier ${isFoodJob ? "food" : "package"} rate card not configured`,
       );
     }
 
@@ -137,10 +140,18 @@ export async function claimJob(
       );
     }
 
+    // Server-side fee validation - recalculate and compare with client fee
+    const serverCalculatedFee = calcFee(rateCard, jobMiles, pickupMiles, courierData.courierProfile.vehicleType || "car");
+
+    // Allow for small rounding differences (within $0.01)
+    if (Math.abs(serverCalculatedFee - agreedFee) > 0.01) {
+      throw new Error(`price-mismatch: Server calculated fee $${serverCalculatedFee.toFixed(2)} but client sent $${agreedFee.toFixed(2)}`);
+    }
+
     // All checks passed - claim the job
     transaction.update(jobRef, {
       courierUid,
-      agreedFee,
+      agreedFee: serverCalculatedFee, // Use server-calculated fee for consistency
       status: "assigned" as JobStatus,
       updatedAt: serverTimestamp(),
     });

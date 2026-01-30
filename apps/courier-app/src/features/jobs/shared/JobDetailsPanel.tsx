@@ -3,17 +3,20 @@ import { Job, JobVisibility } from '../shared/types';
 import { AddressBlock } from './AddressBlock';
 import { PackageDetailsPanel } from './PackageDetailsPanel';
 import { JobStatusPills } from './JobStatusPills';
+import { formatCurrency, formatDate } from '@/lib/utils';
 
 interface JobDetailsPanelProps {
   job: Job;
   visibility: JobVisibility;
   showStatus?: boolean;
+  id?: string;
   children?: React.ReactNode; // For role-specific action buttons
 }
 
-export function JobDetailsPanel({ job, visibility, showStatus = true, children }: JobDetailsPanelProps) {
+export function JobDetailsPanel({ job, visibility, showStatus = true, id, children }: JobDetailsPanelProps) {
   return (
     <div
+      id={id}
       style={{
         background: 'white',
         padding: '20px',
@@ -28,6 +31,19 @@ export function JobDetailsPanel({ job, visibility, showStatus = true, children }
           <JobStatusPills status={job.status} />
         </div>
       )}
+
+      {/* Pricing */}
+      <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <div style={{ fontSize: '12px', color: '#666' }}>Price</div>
+          <div style={{ fontSize: '18px', fontWeight: 700, color: '#16a34a' }}>
+            {job.agreedFee ? formatCurrency(job.agreedFee) : (job as any).estimatedFee ? formatCurrency((job as any).estimatedFee) : '—'}
+          </div>
+        </div>
+        {job.agreedFee && (
+          <div style={{ fontSize: '12px', color: '#666' }}>Agreed Fee</div>
+        )}
+      </div>
 
       {/* Addresses */}
       <div style={{ marginBottom: '16px' }}>

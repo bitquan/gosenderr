@@ -8,28 +8,28 @@
 1. Collection mismatch (CRITICAL)
    - Vendor flows write to `marketplaceItems`, but marketplace browsing and helper functions use `items`.
    - Files:
-     - Vendor create: `apps/customer-app/src/pages/vendor/items/new/page.tsx` (addDoc -> `marketplaceItems`)
-     - Vendor dashboard: `apps/customer-app/src/pages/vendor/dashboard/page.tsx` (query -> `marketplaceItems`)
-     - Marketplace helpers: `apps/customer-app/src/lib/v2/items.ts` (queries -> `items`)
+     - Vendor create: `apps/marketplace-app/src/pages/vendor/items/new/page.tsx` (addDoc -> `marketplaceItems`)
+     - Vendor dashboard: `apps/marketplace-app/src/pages/vendor/dashboard/page.tsx` (query -> `marketplaceItems`)
+     - Marketplace helpers: `apps/marketplace-app/src/lib/v2/items.ts` (queries -> `items`) 
    - Impact: items created by vendors may not appear in public marketplace listings.
 
 2. Storage path vs rules mismatch (HIGH)
    - Vendor images uploaded to `marketplace/${uid}/...` (client code), but `firebase/storage.rules` only allows `items/{userId}/{photoFile}`.
    - Files:
-     - Client upload: `apps/customer-app/src/pages/vendor/items/new/page.tsx` (uploads to `marketplace/${uid}/...`)
+     - Client upload: `apps/marketplace-app/src/pages/vendor/items/new/page.tsx` (uploads to `marketplace/${uid}/...`) 
      - Storage rules: `firebase/storage.rules` (match `/items/{userId}/{photoFile}` only)
    - Impact: vendor image uploads will be blocked by security rules or operate outside intended protections.
 
 3. Missing/insufficient Firestore rules (CRITICAL)
    - No `match /vendorApplications/{id}` or `match /marketplaceItems/{id}` blocks in `firebase/firestore.rules`.
    - Files:
-     - Writes: `apps/customer-app/src/pages/vendor/apply/page.tsx` (writes `vendorApplications/${uid}`)
+     - Writes: `apps/marketplace-app/src/pages/vendor/apply/page.tsx` (writes `vendorApplications/${uid}`) 
      - Rules: `firebase/firestore.rules` (contains `match /items/{itemId}` but not `marketplaceItems` or `vendorApplications`)
    - Impact: client writes could fail in production or be ungoverned.
 
 4. Missing vendor edit page (MEDIUM)
    - Dashboard links to `/vendor/items/{id}/edit` but no edit page exists; only `new` exists.
-   - Files: `apps/customer-app/src/pages/vendor/dashboard/page.tsx` (link to edit) and pages tree lacking `edit` route.
+   - Files: `apps/marketplace-app/src/pages/vendor/dashboard/page.tsx` (link to edit) and pages tree lacking `edit` route.
 
 5. Admin approval & lifecycle gaps (HIGH)
    - Client submits vendor application and updates `users/{uid}.vendorApplication`, but there's no explicit admin workflow to approve and set `vendorProfile` or role automatically.

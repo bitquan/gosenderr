@@ -54,9 +54,9 @@ jobs:
           EMU_PID=$!
           echo "Emulators started in background (PID=$EMU_PID). Waiting for Auth and Firestore emulators to be ready..."
 
-          # Persist Vite env vars into apps/customer-app/.env so the dev server reads them
-          mkdir -p apps/customer-app
-          cat > apps/customer-app/.env <<'EOF'
+          # Persist Vite env vars into apps/marketplace-app/.env so the dev server reads them
+          mkdir -p apps/marketplace-app
+          cat > apps/marketplace-app/.env <<'EOF'
 VITE_FIREBASE_API_KEY=fake-api-key
 VITE_FIREBASE_AUTH_DOMAIN=127.0.0.1
 VITE_FIREBASE_PROJECT_ID=${FIREBASE_PROJECT}
@@ -91,17 +91,17 @@ EOF
           echo "Auth emulator is up; seeding vendor user..."
           curl -s -X POST 'http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts:signUp?key=fake-api-key' -H 'Content-Type: application/json' -d '{"email":"vender@sender.com","password":"admin123","returnSecureToken":true}' || true
 
-          echo "Starting customer-app dev server on port 5180"
-          pnpm --filter @gosenderr/customer-app exec -- vite --port 5180 --strictPort --host 127.0.0.1 > customer.log 2>&1 &
+          echo "Starting marketplace-app dev server on port 5180"
+          pnpm --filter @gosenderr/marketplace-app exec -- vite --port 5180 --strictPort --host 127.0.0.1 > marketplace.log 2>&1 &
           SERVER_PID=$!
           npx wait-on --timeout 60000 http://127.0.0.1:5180 || { echo "Customer app server did not become available. Dumping customer log:"; tail -n +1 customer.log; kill $SERVER_PID || true; tail -n +1 emulators.log; kill $EMU_PID || true; exit 1; }
 
           echo "Installing Playwright browsers in package context"
-          pnpm --filter @gosenderr/customer-app exec -- playwright install --with-deps || { echo "playwright install failed"; tail -n +1 customer.log; tail -n +1 emulators.log; kill $SERVER_PID || true; kill $EMU_PID || true; exit 1; }
+          pnpm --filter @gosenderr/marketplace-app exec -- playwright install --with-deps || { echo "playwright install failed"; tail -n +1 customer.log; tail -n +1 emulators.log; kill $SERVER_PID || true; kill $EMU_PID || true; exit 1; }
 
           echo "Running Playwright tests"
           # run Playwright from the package so the binary resolves correctly
-          pnpm --filter @gosenderr/customer-app exec -- playwright test tests/e2e --reporter=list || {
+          pnpm --filter @gosenderr/marketplace-app exec -- playwright test tests/e2e --reporter=list || {
             echo "Playwright failed — capturing customer and emulator logs"; tail -n +1 customer.log; tail -n +1 emulators.log; kill $SERVER_PID || true; kill $EMU_PID || true; exit 1
           }
 
@@ -122,8 +122,8 @@ EOF
         with:
           name: e2e-artifacts
           path: |
-            apps/customer-app/test-results/**
-            apps/customer-app/playwright-report/**
+            apps/marketplace-app/test-results/**
+            apps/marketplace-app/playwright-report/**
             test-results/**
 
   e2e-preview:
@@ -147,13 +147,13 @@ EOF
         run: pnpm install --frozen-lockfile
 
       - name: Build customer app
-        run: pnpm --filter @gosenderr/customer-app build
+        run: pnpm --filter @gosenderr/marketplace-app build
 
       - name: Start preview server
         run: |
           # ensure required env is present for the preview server
-          mkdir -p apps/customer-app
-          cat > apps/customer-app/.env <<'EOF'
+          mkdir -p apps/marketplace-app
+          cat > apps/marketplace-app/.env <<'EOF'
 VITE_FIREBASE_API_KEY=fake-api-key
 VITE_FIREBASE_AUTH_DOMAIN=127.0.0.1
 VITE_FIREBASE_PROJECT_ID=${FIREBASE_PROJECT}
@@ -162,7 +162,7 @@ NEXT_PUBLIC_MAPBOX_TOKEN=dummy_token
 EOF
 
           # serve the built app on the same base port as Playwright expects
-          pnpm --filter @gosenderr/customer-app exec -- vite preview --port 5180 --strictPort &
+          pnpm --filter @gosenderr/marketplace-app exec -- vite preview --port 5180 --strictPort --host 127.0.0.1 &
           npx wait-on http://localhost:5180
         env:
           CI: 'true'
@@ -171,8 +171,8 @@ EOF
         env:
           CI: 'true'
         run: |
-          pnpm --filter @gosenderr/customer-app exec -- playwright install --with-deps
-          pnpm --filter @gosenderr/customer-app exec -- playwright test tests/e2e --reporter=list --config=playwright.config.ts
+          pnpm --filter @gosenderr/marketplace-app exec -- playwright install --with-deps
+          pnpm --filter @gosenderr/marketplace-app exec -- playwright test tests/e2e --reporter=list --config=playwright.config.ts
 
       - name: Upload preview test artifacts on failure
         if: failure()
@@ -180,6 +180,6 @@ EOF
         with:
           name: e2e-preview-artifacts
           path: |
-            apps/customer-app/test-results/**
-            apps/customer-app/playwright-report/**
+            apps/marketplace-app/test-results/**
+            apps/marketplace-app/playwright-report/**
             test-results/**

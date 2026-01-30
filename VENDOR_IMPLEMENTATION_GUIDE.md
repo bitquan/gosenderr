@@ -5,7 +5,7 @@ This guide provides concrete changes and code/rule snippets to fix the vendor fe
 ## 1) Decision: canonical collection
 Option A (recommended for minimal change): Make `items` the canonical public marketplace collection and update vendor pages to create documents in `items`. Update vendor dashboard to query `items` where `vendorId == uid`.
 
-Option B: Keep `marketplaceItems` and update marketplace helpers in `apps/customer-app/src/lib/v2/items.ts` to read from `marketplaceItems` (plus add indexes).
+Option B: Keep `marketplaceItems` and update marketplace helpers in `apps/marketplace-app/src/lib/v2/items.ts` to read from `marketplaceItems` (plus add indexes).
 
 Migration strategy (if switching):
 - Add a small one-off script (Node/Firebase Admin) to copy docs from `marketplaceItems` → `items` preserving fields and timestamps, or vice-versa.
@@ -59,7 +59,7 @@ Or update client uploads to use `items/{uid}/{filename}` to match existing rules
   - Move/hide `vendorApplications/{uid}` or set status to `approved`.
 
 ## 5) UI changes
-- Vendor edit page: implement route `apps/customer-app/src/pages/vendor/items/[id]/edit/page.tsx` to fetch document and allow update/delete.
+- Vendor edit page: implement route `apps/marketplace-app/src/pages/vendor/items/[id]/edit/page.tsx` to fetch document and allow update/delete.
 - Marketplace purchase path: decide intended UX (direct checkout vs request-delivery). If direct purchase, call `marketplaceCheckout` callable and redirect to Stripe Checkout URL returned by function.
 
 ## 6) Tests

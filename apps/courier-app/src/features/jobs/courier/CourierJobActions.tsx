@@ -1,6 +1,7 @@
 
 import { Job } from '../shared/types';
 import { claimJob, updateJobStatus } from '@/lib/v2/jobs';
+import { useClaimJob } from '@/hooks/v2/useClaimJob';
 import type { JobStatus } from '../shared/types';
 
 interface CourierJobActionsProps {
@@ -35,31 +36,75 @@ export function CourierJobActions({ job, courierUid, estimatedFee, onJobUpdated 
 
   const nextStatus = isAssignedToCourier ? getNextStatus(job.status) : null;
 
+  const { claim, loading: claimLoading } = useClaimJob();
+
   const handleAccept = async () => {
     if (!estimatedFee) {
       alert('Cannot accept job: no fee calculated');
       return;
     }
 
-    try {
-      await claimJob(job.id, courierUid, estimatedFee);
+    // Try claiming with the provided fee
+    const result = await claim(job.id, courierUid, estimatedFee);
+
+    if (result.success) {
       alert('Job accepted successfully!');
       onJobUpdated?.();
-    } catch (error) {
-      console.error('Failed to accept job:', error);
-      alert('Failed to accept job. It may have been claimed by another courier.');
+      return;
+    }
+
+    // Handle structured errors
+    switch (result.type) {
+      case 'price-mismatch': {
+        const serverFee = result.serverFee;
+        if (serverFee !== undefined) {
+          const confirmMsg = `Server calculated fee is $${serverFee.toFixed(2)} (your price: $${estimatedFee.toFixed(2)}). Accept server price and claim job?`;
+          if (window.confirm(confirmMsg)) {
+            const retry = await claim(job.id, courierUid, serverFee);
+            if (retry.success) {
+              alert('Job accepted with server price.');
+              onJobUpdated?.();
+            } else {
+              console.error('Failed to claim job with server price:', retry.message || retry);
+              alert(retry.message || 'Failed to claim job with server price.');
+            }
+          }
+        } else {
+          alert('Price calculation error. Please refresh and try again.');
+        }
+        break;
+      }
+
+      case 'not-eligible':
+        alert('You are not eligible for this job. It may exceed your distance limits.');
+        break;
+
+      case 'already-claimed':
+        alert('This job was claimed by another courier.');
+        break;
+
+      case 'other':
+      default:
+        alert(result.message || 'Failed to accept job. It may have been claimed by another courier.');
+        break;
     }
   };
 
   const handleUpdateStatus = async () => {
     if (!nextStatus) return;
 
+    // Ensure job is assigned to this courier before attempting a status update
+    if (!isAssignedToCourier) {
+      alert('Cannot update status — job is not assigned to you.');
+      return;
+    }
+
     try {
-      await updateJobStatus(job.id, nextStatus);
+      await updateJobStatus(job.id, nextStatus, courierUid);
       onJobUpdated?.();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to update job status:', error);
-      alert('Failed to update job status. Please try again.');
+      alert(error?.message || 'Failed to update job status. Please try again.');
     }
   };
 

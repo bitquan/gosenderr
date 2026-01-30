@@ -4,7 +4,7 @@ Summary
 - Issue: In dev/hot-reload scenarios the vendor edit page could attempt an ownership check before Firebase Auth finished initializing, causing `uid` to be `undefined` and incorrectly showing "You are not authorized to edit this item" and redirecting vendors away from the form.
 
 Fix
-- Guard added in `apps/customer-app/src/pages/vendor/items/[itemId]/edit/page.tsx`:
+- Guard added in `apps/marketplace-app/src/pages/vendor/items/[itemId]/edit/page.tsx`:
   - Wait for auth to finish before loading the item or doing owner checks.
   - If auth initializes and there's no user, redirect to `/login`.
   - Added dev-only logging and a more informative alert in non-production to aid debugging.

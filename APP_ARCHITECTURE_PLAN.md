@@ -8,7 +8,7 @@ Simplified architecture with 3 main web apps focused on clear role separation.
 ## 🎯 Final Architecture (3 Apps)
 
 ### 1. **Main Marketplace App** 🛍️
-**Location:** `apps/customer-app/`  
+**Location:** `apps/marketplace-app/`  
 **Domain:** `gosenderr.com` (main domain)  
 **Port:** 5173 (dev)  
 **Firebase Hosting:** `gosenderr-customer`
@@ -142,7 +142,7 @@ Simplified architecture with 3 main web apps focused on clear role separation.
 ## 🚀 Deployment Strategy
 
 **Production Domains:**
-- `gosenderr.com` → customer-app (marketplace)
+- `gosenderr.com` → marketplace-app (marketplace)
 - `workers.gosenderr.com` → courier-app (delivery workers)
 - `admin.gosenderr.com` → admin-app (platform management)
 
@@ -155,7 +155,7 @@ Simplified architecture with 3 main web apps focused on clear role separation.
 
 ## 📝 Notes
 
-- **Vendor-app is merged into customer-app** - Vendors use `/vendor/*` routes in customer-app
+- **Vendor-app is merged into marketplace-app** - Vendors use `/vendor/*` routes in marketplace-app
 - **Shifter-app can be merged into courier-app** - Both are delivery workers
 - **Admin needs marketplace pages added** - Current admin only handles delivery business
 - **All apps share Firebase backend** - Same Firestore, Auth, Storage, Functions
@@ -163,14 +163,14 @@ Simplified architecture with 3 main web apps focused on clear role separation.
 ---
 
 ## ⚠️ DO NOT Build
-- ❌ Separate vendor-app (use customer-app with `/vendor/*` routes)
+- ❌ Separate vendor-app (use marketplace-app with `/vendor/*` routes)
 - ❌ Separate shifter-app (merge into courier-app when ready)
 - ❌ Multiple marketplace apps (one app, multiple roles)
 
 ---
 
 ## ✅ DO Build
-- ✅ Marketplace features in customer-app (customers + vendors)
+- ✅ Marketplace features in marketplace-app (customers + vendors)
 - ✅ Marketplace admin in admin-app (moderation + monitoring)
 - ✅ Shared components between customer/vendor views
 - ✅ Role-based routing and UI

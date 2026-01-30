@@ -86,5 +86,5 @@ apps/courier-app/
 
 ## 📱 Related Apps
 
-- **Customer App (Deployed)**: https://gosenderr-6773f.web.app
-- **Customer App (Local)**: Run \`pnpm dev\` in \`apps/customer-app\`
+- **Marketplace App (Deployed)**: https://gosenderr-6773f.web.app
+- **Marketplace App (Local)**: Run `pnpm dev` in `apps/marketplace-app`

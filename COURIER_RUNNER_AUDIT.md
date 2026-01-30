@@ -6,7 +6,7 @@
 
 ## 🎯 Executive Summary
 
-Both **courier-app** and **shifter-app** (runner) are functionally incomplete compared to the customer-app design pattern. They lack:
+Both **courier-app** and **shifter-app** (runner) are functionally incomplete compared to the marketplace-app design pattern. They lack:
 - ✅ Map shell layout with floating UI elements
 - ✅ Bottom navigation bar
 - ✅ Proper page routing and wiring
@@ -404,7 +404,7 @@ return (
 1. ✅ Add BottomNav to CourierLayout
 2. ✅ Add BottomNav to RunnerLayout
 3. ✅ Update both layouts to use `bg-[#F8F9FF]` and `pb-24`
-4. ✅ Copy BottomNav component from customer-app to both apps
+4. ✅ Copy BottomNav component from marketplace-app to both apps
 
 ### Short-term (Next)
 5. ✅ Create courierNavItems (4 tabs)
@@ -443,12 +443,12 @@ return (
 ## ✅ Success Criteria
 
 Both apps will be "complete" when:
-1. ✅ Bottom navigation works and matches customer-app style
+1. ✅ Bottom navigation works and matches marketplace-app style
 2. ✅ All pages accessible from navigation
 3. ✅ Dashboards use map shell layout
 4. ✅ Floating UI elements for key actions
 5. ✅ Mobile-optimized (test on phone)
-6. ✅ Purple theme consistent with customer-app
+6. ✅ Purple theme consistent with marketplace-app
 7. ✅ All flows tested end-to-end
 8. ✅ Sign out works in settings
 

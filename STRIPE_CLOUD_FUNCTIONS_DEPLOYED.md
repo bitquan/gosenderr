@@ -34,16 +34,16 @@ https://stripewebhook-ytpmu67rra-uc.a.run.app
 
 ---
 
-## ✅ Customer-App Integration Complete
+## ✅ Marketplace App Integration Complete
 
 **Updated Files:**
-- [apps/customer-app/src/components/v2/PaymentForm.tsx](apps/customer-app/src/components/v2/PaymentForm.tsx)
-- [apps/customer-app/src/pages/checkout/page.tsx](apps/customer-app/src/pages/checkout/page.tsx)
+- [apps/marketplace-app/src/components/v2/PaymentForm.tsx](apps/marketplace-app/src/components/v2/PaymentForm.tsx)
+- [apps/marketplace-app/src/pages/checkout/page.tsx](apps/marketplace-app/src/pages/checkout/page.tsx)
 
 **Changes:**
 - ❌ Removed: `fetch('/api/create-payment-intent', ...)`
 - ✅ Added: `createPaymentIntent({ jobId, courierRate, platformFee })`
-- Uses helper library: [apps/customer-app/src/lib/cloudFunctions.ts](apps/customer-app/src/lib/cloudFunctions.ts)
+- Uses helper library: [apps/marketplace-app/src/lib/cloudFunctions.ts](apps/marketplace-app/src/lib/cloudFunctions.ts)
 
 ---
 

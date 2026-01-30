@@ -25,8 +25,8 @@
 ## Files modified
 - .github/workflows/ci-and-deploy.yml (CI changes)
 - apps/courier-app/{many files} (Map UI, navigation hooks, pages)
-- apps/customer-app/src/pages/jobs/[jobId]/page.tsx (job UI updates)
-- apps/customer-app/src/components/v2/MapboxMap.tsx (map changes)
+- apps/marketplace-app/src/pages/jobs/[jobId]/page.tsx (job UI updates)
+- apps/marketplace-app/src/components/v2/MapboxMap.tsx (map changes)
 - apps/admin-app/tsconfig.node.json
 - many generated `dist/assets/*` files were renamed/updated
 

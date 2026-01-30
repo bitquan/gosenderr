@@ -113,7 +113,7 @@ interface User {
 
 ```
 apps/
-└── customer-app/
+└── marketplace-app/
     ├── public/
     │   ├── index.html
     │   └── manifest.json
@@ -697,7 +697,7 @@ VITE_MAPBOX_TOKEN=pk.eyJ1...
 {
   "hosting": [{
     "target": "customer",
-    "public": "apps/customer-app/dist",
+    "public": "apps/marketplace-app/dist",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [{
       "source": "**",

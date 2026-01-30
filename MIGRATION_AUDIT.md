@@ -26,7 +26,7 @@ The migration from Next.js to Vite for the customer portal is **production-ready
 
 **Key Directories:**
 - `src/app/` - Next.js App Router pages (61 routes)
-  - `src/app/customer/` ✅ Migrated to customer-app
+  - `src/app/customer/` ✅ Migrated to marketplace-app
   - `src/app/courier/` ⚠️ Still needed
   - `src/app/admin/` ⚠️ Still needed
   - `src/app/runner/` ⚠️ Still needed
@@ -38,7 +38,7 @@ The migration from Next.js to Vite for the customer portal is **production-ready
 - `.next/` 🗑️ Can delete (build output)
 - `node_modules/` 🗑️ Can delete (~2GB)
 
-### apps/customer-app/ (Vite - NEW)
+### apps/marketplace-app/ (Vite - NEW)
 **Status:** ✅ Production ready
 
 **Key Directories:**
@@ -59,7 +59,7 @@ The migration from Next.js to Vite for the customer portal is **production-ready
 
 ### ✅ All Customer Routes Migrated (29 routes)
 
-| Old Route (apps/web) | New Route (customer-app) | Status |
+| Old Route (apps/web) | New Route (marketplace-app) | Status |
 |----------------------|--------------------------|--------|
 | `/login` | `/login` | ✅ Migrated |
 | `/signup` | `/signup` | ✅ Migrated |
@@ -113,16 +113,16 @@ All customer-facing features have been successfully migrated with no loss of fun
 
 | Component | Old Location | New Location | Status |
 |-----------|--------------|--------------|--------|
-| `AuthGate` | `apps/web/src/components/` | `apps/customer-app/src/components/` | ✅ Migrated |
-| `GlassCard` | `apps/web/src/components/` | `apps/customer-app/src/components/` | ✅ Migrated |
-| `DisputeModal` | `apps/web/src/components/v2/` | `apps/customer-app/src/components/` | ✅ Migrated |
-| `RateDeliveryModal` | `apps/web/src/components/v2/` | `apps/customer-app/src/components/` | ✅ Migrated |
-| `PaymentForm` | `apps/web/src/components/v2/` | `apps/customer-app/src/components/` | ✅ Migrated |
-| `AddressAutocomplete` | `apps/web/src/components/v2/` | `apps/customer-app/src/components/` | ✅ Migrated |
-| `MapboxMap` | `apps/web/src/components/v2/` | `apps/customer-app/src/components/` | ✅ Migrated |
-| `BottomNav` | `apps/web/src/components/` | `apps/customer-app/src/components/` | ✅ Migrated |
-| `CustomerLayout` | `apps/web/src/layouts/` | `apps/customer-app/src/layouts/` | ✅ Migrated |
-| `RoleSwitcher` | N/A | `apps/customer-app/src/components/ui/` | ✅ New |
+| `AuthGate` | `apps/web/src/components/` | `apps/marketplace-app/src/components/` | ✅ Migrated |
+| `GlassCard` | `apps/web/src/components/` | `apps/marketplace-app/src/components/` | ✅ Migrated |
+| `DisputeModal` | `apps/web/src/components/v2/` | `apps/marketplace-app/src/components/` | ✅ Migrated |
+| `RateDeliveryModal` | `apps/web/src/components/v2/` | `apps/marketplace-app/src/components/` | ✅ Migrated |
+| `PaymentForm` | `apps/web/src/components/v2/` | `apps/marketplace-app/src/components/` | ✅ Migrated |
+| `AddressAutocomplete` | `apps/web/src/components/v2/` | `apps/marketplace-app/src/components/` | ✅ Migrated |
+| `MapboxMap` | `apps/web/src/components/v2/` | `apps/marketplace-app/src/components/` | ✅ Migrated |
+| `BottomNav` | `apps/web/src/components/` | `apps/marketplace-app/src/components/` | ✅ Migrated |
+| `CustomerLayout` | `apps/web/src/layouts/` | `apps/marketplace-app/src/layouts/` | ✅ Migrated |
+| `RoleSwitcher` | N/A | `apps/marketplace-app/src/components/ui/` | ✅ New |
 
 ### ⚠️ Components Not Migrated (Not Needed for Customer Portal)
 
@@ -141,10 +141,10 @@ All customer-facing features have been successfully migrated with no loss of fun
 
 | Component | Location | Purpose |
 |-----------|----------|---------|
-| `RoleSwitcher` | `apps/customer-app/src/components/ui/` | Toggle between Customer/Vendor roles |
-| `VendorDashboard` | `apps/customer-app/src/pages/vendor/dashboard/` | Vendor marketplace management |
-| `NewVendorItem` | `apps/customer-app/src/pages/vendor/items/new/` | Create marketplace items |
-| `VendorApplicationPage` | `apps/customer-app/src/pages/vendor/apply/` | Vendor onboarding |
+| `RoleSwitcher` | `apps/marketplace-app/src/components/ui/` | Toggle between Customer/Vendor roles |
+| `VendorDashboard` | `apps/marketplace-app/src/pages/vendor/dashboard/` | Vendor marketplace management |
+| `NewVendorItem` | `apps/marketplace-app/src/pages/vendor/items/new/` | Create marketplace items |
+| `VendorApplicationPage` | `apps/marketplace-app/src/pages/vendor/apply/` | Vendor onboarding |
 
 ---
 
@@ -154,7 +154,7 @@ All customer-facing features have been successfully migrated with no loss of fun
 
 | Integration | Old (Next.js) | New (Vite) | Status |
 |-------------|---------------|------------|--------|
-| Firebase Config | `apps/web/src/lib/firebase/client.ts` | `apps/customer-app/src/lib/firebase.ts` | ✅ Migrated |
+| Firebase Config | `apps/web/src/lib/firebase/client.ts` | `apps/marketplace-app/src/lib/firebase.ts` | ✅ Migrated |
 | Auth | `getAuth()` | `getAuth()` | ✅ Working |
 | Firestore | `getFirestore()` | `getFirestore()` | ✅ Working |
 | Storage | `getStorage()` | `getStorage()` | ✅ Working |
@@ -175,7 +175,7 @@ VITE_FIREBASE_PROJECT_ID=...
 
 | Integration | Old (Next.js) | New (Vite) | Status |
 |-------------|---------------|------------|--------|
-| Stripe Config | `apps/web/src/lib/stripe/client.ts` | `apps/customer-app/src/lib/stripe.ts` | ✅ Migrated |
+| Stripe Config | `apps/web/src/lib/stripe/client.ts` | `apps/marketplace-app/src/lib/stripe.ts` | ✅ Migrated |
 | Payment Elements | `@stripe/react-stripe-js` | `@stripe/react-stripe-js` | ✅ Working |
 | Publishable Key | `NEXT_PUBLIC_STRIPE_KEY` | `VITE_STRIPE_PUBLISHABLE_KEY` | ✅ Updated |
 
@@ -189,13 +189,13 @@ VITE_FIREBASE_PROJECT_ID=...
 | `/api/stripe/webhook` | `apps/web/src/app/api/` | 🔴 Payment confirmations broken | High |
 
 **⚠️ Current State:**
-- Customer-app makes API calls to Next.js app
+- Marketplace-app makes API calls to Next.js app
 - Must keep Next.js app running for payments
 - Cannot fully deprecate Next.js yet
 
 **Required Actions:**
 1. Create Firebase Cloud Functions for each API route
-2. Update customer-app API calls to new endpoints
+2. Update marketplace-app API calls to new endpoints
 3. Test payment flows thoroughly
 4. Migrate Stripe webhooks
 
@@ -221,7 +221,7 @@ export const createPaymentIntent = functions.https.onCall(async (data, context) 
   return { clientSecret: paymentIntent.client_secret };
 });
 
-// Customer-app update
+// Marketplace-app update
 // OLD: fetch('/api/create-payment-intent', {...})
 // NEW: httpsCallable(functions, 'createPaymentIntent')({...})
 ```
@@ -372,7 +372,7 @@ rm -rf .next node_modules .turbo tsconfig.tsbuildinfo
 - [ ] Create `stripeConnect` Cloud Function
 - [ ] Create `marketplaceCheckout` Cloud Function
 - [ ] Create `stripeWebhook` Cloud Function
-- [ ] Update customer-app to call Cloud Functions
+- [ ] Update marketplace-app to call Cloud Functions
 - [ ] Test payment flows end-to-end
 - [ ] Update webhook endpoints in Stripe Dashboard
 
@@ -413,7 +413,7 @@ rm -rf .next node_modules .turbo tsconfig.tsbuildinfo
 ### 🔴 Critical Issues
 
 **1. API Routes Dependency**
-- **Issue:** Customer-app depends on Next.js API routes for payments
+- **Issue:** Marketplace-app depends on Next.js API routes for payments
 - **Impact:** Cannot shut down Next.js app without breaking payments
 - **Risk:** High - Blocks full migration
 - **Solution:** Migrate to Cloud Functions (see section 4)
@@ -576,7 +576,7 @@ The customer portal migration from Next.js to Vite is **production-ready** with 
 ### Recommended Actions
 
 **Immediate:**
-1. ✅ Continue using customer-app in production
+1. ✅ Continue using marketplace-app in production
 2. ✅ Delete build artifacts from `apps/web/` (~2.6GB)
 3. 🔴 Migrate Stripe API routes to Cloud Functions (1 week)
 
@@ -605,7 +605,7 @@ The customer portal migration from Next.js to Vite is **production-ready** with 
 ## 12. 🔗 Quick Links
 
 **Repositories:**
-- New Customer App: `apps/customer-app/`
+- New Marketplace App: `apps/marketplace-app/`
 - Old Next.js App: `apps/web/`
 - Shared Packages: `packages/shared/`
 - Firebase Functions: `firebase/functions/`

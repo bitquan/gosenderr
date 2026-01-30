@@ -18,7 +18,7 @@ Per-app summary:
 - courier-app: FAILED
   - Errors: 59 TypeScript errors in 33 files (type mismatches, missing props, incorrect interfaces, mapbox types)
   - Sample errors: Type 'Promise<RouteData | undefined>' not assignable to 'Promise<RouteData>' in useMapboxDirections; mapbox types mismatch in MapboxMap
-- customer-app: FAILED
+- marketplace-app: FAILED
   - Errors: 1 TypeScript error blocking build: Cannot find module '@/components/GlassCard' (src/components/DeliveryTypeSelector.tsx)
 - shifter-app: FAILED
   - Errors: 40 TypeScript errors in 21 files (duplicate BottomNav declarations, missing modules, prop type mismatches)
@@ -72,7 +72,7 @@ Note: Full iOS build/Archive requires macOS Xcode environment and was not perfor
 3. Once builds pass locally, re-run the monorepo build and collect bundle sizes: `du -sh apps/*/dist` to compare.
 4. Run smoke tests (Playwright) after starting preview servers for the built apps:
    - Start servers: `npx serve -s apps/<app>/dist -l <port>`
-   - Run smoke tests (customer/vendor): `pnpm --filter @gosenderr/customer-app exec playwright test tests/e2e/customer/smoke --project=customer --config ../../playwright.ci.config.ts --grep-invert=@visual`
+   - Run smoke tests (customer/vendor): `pnpm --filter @gosenderr/marketplace-app exec playwright test tests/e2e/customer/smoke --project=customer --config ../../playwright.ci.config.ts --grep-invert=@visual`
 5. After fixes and successful builds/tests, create PR and run CI. Given current failures, hold merge until the TypeScript/build issues are resolved.
 
 ---

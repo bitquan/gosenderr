@@ -1,0 +1,33 @@
+<svg width="375" height="812" viewBox="0 0 375 812" xmlns="http://www.w3.org/2000/svg">
+  <rect width="375" height="812" fill="#E5E7EB" rx="20"/>
+  <!-- Map area -->
+  <rect x="12" y="12" width="351" height="520" fill="#FFFFFF" rx="12"/>
+  <g transform="translate(24,24)">
+    <rect x="0" y="0" width="327" height="496" fill="#F8FAFC" rx="10"/>
+    <path d="M20 120 C 80 100, 120 160, 180 140" stroke="#6E56CF" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <circle cx="20" cy="120" r="8" fill="#3b82f6" />
+    <circle cx="180" cy="140" r="8" fill="#10B981" />
+  </g>
+
+  <!-- Floating recenter FAB -->
+  <g transform="translate(300,36)">
+    <rect width="44" height="44" rx="22" fill="#FFFFFF" stroke="#E5E7EB"/>
+    <text x="22" y="30" text-anchor="middle" font-size="12" fill="#0F172A">⤾</text>
+  </g>
+
+  <!-- Bottom compact active card -->
+  <g transform="translate(16,560)">
+    <rect width="343" height="192" rx="14" fill="#FFFFFF" stroke="#E6E9F2"/>
+    <text x="18" y="30" font-size="12" fill="#6B7280">Active • Enroute to pickup</text>
+    <text x="18" y="56" font-size="16" font-weight="700" fill="#111827">13611 Legacy Circle</text>
+    <text x="18" y="78" font-size="13" fill="#6B7280">1520 Constellation Place</text>
+    <g transform="translate(18,104)">
+      <rect width="140" height="40" rx="10" fill="#10B981"/>
+      <text x="70" y="26" font-size="14" text-anchor="middle" fill="#fff">Picked Up</text>
+    </g>
+    <g transform="translate(178,104)">
+      <rect width="140" height="40" rx="10" fill="#3B82F6"/>
+      <text x="70" y="26" font-size="14" text-anchor="middle" fill="#fff">View</text>
+    </g>
+  </g>
+</svg>

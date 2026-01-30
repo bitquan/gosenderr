@@ -7,6 +7,8 @@ import { useAdmin } from '../hooks/useAdmin'
 import { Card, CardHeader, CardTitle, CardContent } from '../components/Card'
 import { StatusBadge } from '../components/Badge'
 import { formatCurrency, formatDate } from '../lib/utils'
+import { AcceptJobModal, PriceConfirmModal } from '@/components/v2/AcceptJobModal'
+import { useClaimJob } from '@/hooks/v2/useClaimJob'
 
 interface Job {
   id: string
@@ -75,29 +77,86 @@ export default function CourierJobDetailPage() {
     return () => unsubscribe()
   }, [jobId])
 
-  const handleAcceptJob = async () => {
-    if (!job || !jobId || !user) return
-    if (!window.confirm('Accept this delivery job?')) return
+  const { claim, loading: claimLoading } = useClaimJob();
+  const [acceptModalOpen, setAcceptModalOpen] = useState(false);
+  const [acceptFee, setAcceptFee] = useState<number | null>(null);
+  const [priceMismatch, setPriceMismatch] = useState<{ jobId: string; clientFee: number; serverFee: number } | null>(null);
 
-    setUpdating(true)
+  const handleAcceptJob = async () => {
+    if (!job || !jobId || !user) return;
+
+    // Use existing agreed fee if present, otherwise null
+    setAcceptFee(typeof job.agreedFee === 'number' ? job.agreedFee : null);
+    setAcceptModalOpen(true);
+  };
+
+  const handleConfirmAccept = async (jobIdParam: string, fee: number) => {
+    if (!user) return;
+
+    setUpdating(true);
     try {
-      await updateDoc(doc(db, 'jobs', jobId), {
-        status: 'assigned',
-        courierUid: user.uid,
-        acceptedAt: serverTimestamp()
-      })
-      alert('Job accepted! You can now proceed with the delivery.')
-    } catch (error) {
-      console.error('Error accepting job:', error)
-      alert('Failed to accept job. Please try again.')
+      const res = await claim(jobIdParam, user.uid, fee);
+      if (res.success) {
+        // Success — close modal and notify
+        setAcceptModalOpen(false);
+        alert('Job accepted! You can now proceed with the delivery.');
+        return;
+      }
+
+      if (res.type === 'price-mismatch') {
+        const serverFee = res.serverFee;
+        if (serverFee !== undefined) {
+          setPriceMismatch({ jobId: jobIdParam, clientFee: fee, serverFee });
+          return;
+        }
+        alert('Price calculation error. Please refresh and try again.');
+        setAcceptModalOpen(false);
+        return;
+      }
+
+      if (res.type === 'not-eligible') {
+        alert('You are not eligible for this job. It may exceed your distance limits.');
+        setAcceptModalOpen(false);
+        return;
+      }
+
+      if (res.type === 'already-claimed') {
+        alert('This job was claimed by another courier.');
+        setAcceptModalOpen(false);
+        return;
+      }
+
+      alert(res.message || 'Failed to accept job. Please try again.');
+      setAcceptModalOpen(false);
     } finally {
-      setUpdating(false)
+      setUpdating(false);
     }
-  }
+  };
+
+  const handleConfirmServerPrice = async (serverFee: number) => {
+    if (!job) return;
+    setUpdating(true);
+    try {
+      const res = await claim(job.id, user!.uid, serverFee);
+      if (res.success) {
+        setPriceMismatch(null);
+        setAcceptModalOpen(false);
+        alert('Job accepted with server price.');
+        return;
+      } else {
+        alert(res.message || 'Failed to claim job with server price.');
+        setPriceMismatch(null);
+        setAcceptModalOpen(false);
+        return;
+      }
+    } finally {
+      setUpdating(false);
+    }
+  };
 
   const handleUpdateStatus = async (newStatus: string) => {
     if (!job || !jobId || !user) return
-    
+
     const statusMessages: Record<string, string> = {
       'in_progress': 'Mark as picked up and in transit?',
       'completed': 'Mark this delivery as completed?'
@@ -107,21 +166,21 @@ export default function CourierJobDetailPage() {
 
     setUpdating(true)
     try {
-      const updateData: any = { status: newStatus }
-      
-      if (newStatus === 'completed') {
-        updateData.completedAt = serverTimestamp()
-      }
+      // Update job status via Firestore
+      await updateDoc(doc(db, 'jobs', jobId), {
+        status: newStatus,
+        updatedAt: serverTimestamp()
+      })
 
-      await updateDoc(doc(db, 'jobs', jobId), updateData)
-      
+      // If completed, also set completedAt timestamp for record keeping
       if (newStatus === 'completed') {
+        await updateDoc(doc(db, 'jobs', jobId), { completedAt: serverTimestamp() })
         alert('Delivery completed! 🎉')
         navigate('/dashboard')
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating status:', error)
-      alert('Failed to update status. Please try again.')
+      alert(error?.message || 'Failed to update status. Please try again.')
     } finally {
       setUpdating(false)
     }
@@ -481,6 +540,24 @@ export default function CourierJobDetailPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Accept/Price Confirm Modals */}
+      <AcceptJobModal
+        isOpen={acceptModalOpen}
+        job={job as any}
+        fee={acceptFee}
+        onClose={() => setAcceptModalOpen(false)}
+        onConfirm={async (jobId, fee) => await handleConfirmAccept(jobId, fee)}
+      />
+
+      <PriceConfirmModal
+        isOpen={!!priceMismatch}
+        clientFee={priceMismatch?.clientFee ?? 0}
+        serverFee={priceMismatch?.serverFee ?? 0}
+        onCancel={() => setPriceMismatch(null)}
+        onConfirmServerPrice={async (fee) => await handleConfirmServerPrice(fee)}
+      />
+
     </div>
   )
 }

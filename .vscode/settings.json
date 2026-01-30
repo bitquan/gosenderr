@@ -40,7 +40,7 @@
   
   // ESLint
   "eslint.workingDirectories": [
-    "./apps/customer-app",
+    "./apps/marketplace-app",
     "./apps/admin-app",
     "./apps/courier-app",
     "./apps/shifter-app",

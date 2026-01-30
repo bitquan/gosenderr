@@ -166,8 +166,8 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(({
           top: 50%;
           left: 50%;
           transform: translate(-50%, -50%);
-          box-shadow: 0 0 12px rgba(59, 130, 246, 0.8), 0 3px 6px rgba(0, 0, 0, 0.3);
-          z-index: 10000;
+          box-shadow: 0 0 12px rgba(59, 130, 246, 0.5), 0 3px 6px rgba(0, 0, 0, 0.15);
+          z-index: 10; /* keep marker under UI overlays */
         `;
         
         // Pulsing halo
@@ -175,13 +175,13 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(({
         halo.style.cssText = `
           width: 100%;
           height: 100%;
-          background: rgba(59, 130, 246, 0.4);
+          background: rgba(59, 130, 246, 0.25);
           border-radius: 50%;
           position: absolute;
           top: 0;
           left: 0;
           animation: pulse-halo 2s ease-out infinite;
-          z-index: 9999;
+          z-index: 5; /* keep halo behind marker and UI */
         `;
         
         // Add keyframe animation
@@ -286,12 +286,19 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(({
     const mapboxgl = window.mapboxgl;
     if (!mapboxgl) return;
 
-    // Remove all existing route layers and sources
+    // Get existing layers on the map
+    const existingLayers = new Set(map.getStyle().layers.map((l: any) => l.id));
+    
+    // Only remove route layers if we actually need to update them
     const routeLayerIds = ['route-to-pickup', 'route-pickup-to-dropoff', 'route-navigation'];
-    routeLayerIds.forEach(layerId => {
-      if (map.getLayer(layerId)) map.removeLayer(layerId);
-      if (map.getSource(layerId)) map.removeSource(layerId);
-    });
+    const needsUpdate = routeLayerIds.some(layerId => existingLayers.has(layerId));
+    
+    if (needsUpdate) {
+      routeLayerIds.forEach(layerId => {
+        if (map.getLayer(layerId)) map.removeLayer(layerId);
+        if (map.getSource(layerId)) map.removeSource(layerId);
+      });
+    }
 
     // Only add routes if we have segments
     if (routeSegments.length === 0) {

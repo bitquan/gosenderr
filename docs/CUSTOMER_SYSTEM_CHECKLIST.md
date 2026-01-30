@@ -16,7 +16,7 @@ The customer portal allows users to:
 - Rate and review service providers
 
 **Apps:**
-- `apps/customer-app` - Standalone Vite app (port 3002)
+- `apps/marketplace-app` - Standalone Vite app (port 5173)
 - `apps/web/src/app/customer/*` - Next.js web app (port 3003)
 
 ---
@@ -30,7 +30,7 @@ The customer portal allows users to:
 - [x] Recent activity timeline
 - [x] Quick action buttons (Request Delivery, View All Jobs)
 - [x] Donut chart for job status breakdown
-- **Location:** `/dashboard` (customer-app), `/customer/dashboard` (web)
+- **Location:** `/dashboard` (marketplace-app), `/customer/dashboard` (web)
 - **Files:** `Dashboard.tsx` in both apps
 - **Features:**
   - Real-time Firestore sync
@@ -47,7 +47,7 @@ The customer portal allows users to:
 - [x] Pricing calculation (distance-based)
 - [x] Courier selection with rate comparison
 - [x] Express delivery option
-- **Location:** `/request-delivery` (customer-app), `/customer/request-delivery` (web)
+- **Location:** `/request-delivery` (marketplace-app), `/customer/request-delivery` (web)
 - **Files:** `RequestDelivery.tsx`, `CustomerJobCreateForm.tsx`
 - **Components:**
   - `AddressAutocomplete.tsx` - Google Places integration
@@ -62,7 +62,7 @@ The customer portal allows users to:
 - [x] Job cards with key info (pickup/dropoff, status, price)
 - [x] Click to view job details
 - [x] Empty state when no jobs
-- **Location:** `/jobs` (customer-app), `/customer/jobs` (web)
+- **Location:** `/jobs` (marketplace-app), `/customer/jobs` (web)
 - **Files:** `Jobs.tsx` in both apps
 - **Features:**
   - Status filtering
@@ -79,7 +79,7 @@ The customer portal allows users to:
 - [x] Cancel job button (before pickup)
 - [x] Real-time updates
 - [x] Google Maps links for navigation
-- **Location:** `/jobs/:jobId` (customer-app), `/customer/jobs/[jobId]` (web)
+- **Location:** `/jobs/:jobId` (marketplace-app), `/customer/jobs/[jobId]` (web)
 - **Files:** `JobDetail.tsx`, `JobDetailsPanel.tsx`
 - **Components:**
   - `StatusTimeline.tsx` - Visual progress indicator
@@ -96,7 +96,7 @@ The customer portal allows users to:
 - [x] Payment processing
 - [x] Order confirmation
 - [x] Redirect to job tracking after payment
-- **Location:** `/checkout` (customer-app), `/customer/payment` (web)
+- **Location:** `/checkout` (marketplace-app), `/customer/payment` (web)
 - **Files:** `Checkout.tsx`, `PaymentForm.tsx`
 - **Integration:** Stripe.js v8.6.3
 
@@ -252,7 +252,7 @@ The customer portal allows users to:
 - [x] Shows after job completion
 - **Location:** Modal in JobDetail page after completion
 - **Files:**
-  - `apps/customer-app/src/components/RateDeliveryModal.tsx`
+  - `apps/marketplace-app/src/components/RateDeliveryModal.tsx`
   - `apps/web/src/components/v2/RateDeliveryModal.tsx`
 
 ### ✅ Rate Marketplace Order
@@ -290,7 +290,7 @@ The customer portal allows users to:
 - [ ] Upload supporting photos (placeholder added)
 - **Location:** Modal in JobDetail page
 - **Files:**
-  - `apps/customer-app/src/components/DisputeModal.tsx`
+  - `apps/marketplace-app/src/components/DisputeModal.tsx`
   - `apps/web/src/components/v2/DisputeModal.tsx`
 
 ### ✅ View Disputes

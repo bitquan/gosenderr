@@ -54,12 +54,12 @@ if [ "${RUN_E2E:-false}" = "true" ]; then
   sleep 5
 
   # start dev server for customer app
-  pnpm --filter @gosenderr/customer-app dev --silent -- --host 127.0.0.1 &
+  pnpm --filter @gosenderr/marketplace-app dev --silent -- --host 127.0.0.1 &
   DEV_PID=$!
   sleep 5
 
   echo "Running Playwright smoke test (single test)"
-  pnpm --filter @gosenderr/customer-app exec -- playwright test tests/e2e/customer-app.spec.ts -g "redirects unauthenticated users to login" --reporter=list || {
+  pnpm --filter @gosenderr/marketplace-app exec -- playwright test tests/e2e/marketplace-app.spec.ts -g "redirects unauthenticated users to login" --reporter=list || {
     echo "E2E smoke failed"; kill "$EMU_PID" "$DEV_PID" 2>/dev/null || true; exit 6;
   }
 

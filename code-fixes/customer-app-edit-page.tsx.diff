@@ -1,5 +1,5 @@
 *** Begin Patch
-*** Update File: apps/customer-app/src/pages/vendor/items/[itemId]/edit/page.tsx
+*** Update File: apps/marketplace-app/src/pages/vendor/items/[itemId]/edit/page.tsx
 @@
 -  const { uid, loading: authLoading } = useAuthUser();
 -  const { userDoc } = useUserDoc();

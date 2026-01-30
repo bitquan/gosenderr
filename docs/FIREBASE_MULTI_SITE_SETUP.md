@@ -41,7 +41,7 @@ This document explains how to configure Firebase Hosting to support multiple sit
     {
       "target": "customer",
       "site": "gosenderr-customer",
-      "public": "apps/customer-app/dist",
+      "public": "apps/marketplace-app/dist",
       "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
       "rewrites": [
         {
@@ -209,7 +209,7 @@ Add these scripts to root `package.json`:
 {
   "scripts": {
     "build": "turbo run build",
-    "build:customer": "pnpm --filter customer-app build",
+    "build:customer": "pnpm --filter marketplace-app build"
     "build:senderr": "pnpm --filter senderr-app build",
     "build:admin": "pnpm --filter admin-app build",
     "build:main": "pnpm --filter web build",
@@ -276,7 +276,7 @@ Load environment files in package.json:
 ```json
 {
   "scripts": {
-    "build:customer": "cp .env.customer apps/customer-app/.env && pnpm --filter customer-app build",
+    "build:customer": "cp .env.customer apps/marketplace-app/.env && pnpm --filter marketplace-app build"
     "build:senderr": "cp .env.senderr apps/senderr-app/.env && pnpm --filter senderr-app build"
   }
 }
@@ -304,7 +304,7 @@ Load environment files in package.json:
 ```bash
 # Build and preview customer app
 pnpm build:customer
-cd apps/customer-app
+cd apps/marketplace-app
 pnpm preview
 
 # Build and preview senderr app
@@ -352,7 +352,7 @@ firebase hosting:clone gosenderr-customer:preview gosenderr-customer:live
 All apps share same Firestore/Storage rules but can implement different auth logic:
 
 ```typescript
-// apps/customer-app/src/lib/firebase/client.ts
+// apps/marketplace-app/src/lib/firebase/client.ts
 export const requireCustomerRole = () => {
   const user = useUserRole();
   if (user.role !== 'customer') {
@@ -424,7 +424,7 @@ Each site counts toward total bandwidth:
     {
       "target": "customer",
       "site": "gosenderr-customer",
-      "public": "apps/customer-app/dist"
+      "public": "apps/marketplace-app/dist"
     }
   ]
 }
@@ -437,7 +437,7 @@ Each site counts toward total bandwidth:
     {
       "target": "customer",
       "site": "gosenderr-customer",
-      "public": "apps/customer-app/dist"
+      "public": "apps/marketplace-app/dist"
     },
     {
       "target": "senderr",

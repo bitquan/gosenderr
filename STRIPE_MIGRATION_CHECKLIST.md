@@ -22,7 +22,7 @@
 
 ### 2. Helper Functions Created
 
-- [x] Created `apps/customer-app/src/lib/cloudFunctions.ts`
+- [x] Created `apps/marketplace-app/src/lib/cloudFunctions.ts`
 - [x] Type definitions for all Cloud Functions
 - [x] Wrapper functions for easy consumption
 
@@ -91,15 +91,15 @@ firebase deploy --only functions:createPaymentIntent,functions:stripeConnect,fun
 
 **Files to Update:**
 
-1. **Payment Form** - `apps/customer-app/src/components/v2/PaymentForm.tsx`
-2. **Marketplace Checkout** - `apps/customer-app/src/pages/marketplace/[itemId]/page.tsx`
-3. **Vendor Onboarding** - `apps/customer-app/src/pages/vendor/apply/page.tsx` or similar
+1. **Payment Form** - `apps/marketplace-app/src/components/v2/PaymentForm.tsx`
+2. **Marketplace Checkout** - `apps/marketplace-app/src/pages/marketplace/[itemId]/page.tsx`
+3. **Vendor Onboarding** - `apps/marketplace-app/src/pages/vendor/apply/page.tsx` or similar
 
 #### Example Updates:
 
 **OLD CODE (Next.js API):**
 ```typescript
-// apps/customer-app/src/components/v2/PaymentForm.tsx
+// apps/marketplace-app/src/components/v2/PaymentForm.tsx
 const response = await fetch('/api/create-payment-intent', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
@@ -130,7 +130,7 @@ const data = await createPaymentIntent({
   firebase emulators:start --only functions
   ```
 
-- [ ] Update customer-app to point to emulator
+- [ ] Update marketplace-app to point to emulator
   ```typescript
   // In firebase.ts during development
   import { connectFunctionsEmulator } from 'firebase/functions';
@@ -212,13 +212,13 @@ If anything goes wrong:
 ### Quick Rollback (Revert Customer App)
 
 ```bash
-cd apps/customer-app
+cd apps/marketplace-app
 git revert HEAD
 pnpm build
 firebase deploy --only hosting:gosenderr-customer
 ```
 
-This reverts customer-app to use Next.js API routes. Old endpoints still work.
+This reverts marketplace-app to use Next.js API routes. Old endpoints still work.
 
 ### Full Rollback (Delete Cloud Functions)
 
@@ -254,11 +254,11 @@ firebase functions:delete stripeWebhook
 - [ ] Update Stripe webhook endpoint
 - [ ] Test with Stripe test mode
 
-### Day 2: Update Customer App
+### Day 2: Update Marketplace App
 - [ ] Update PaymentForm component
 - [ ] Update marketplace checkout
 - [ ] Update vendor onboarding
-- [ ] Deploy customer-app
+- [ ] Deploy marketplace-app
 - [ ] Test end-to-end flows
 
 ### Day 3: Monitor & Verify
@@ -281,7 +281,7 @@ firebase functions:delete stripeWebhook
 1. **Set environment variables** (see Step 1)
 2. **Deploy Cloud Functions** (see Step 1)
 3. **Update Stripe webhook** (see Step 2)
-4. **Update customer-app code** (see Step 3)
+4. **Update marketplace-app code** (see Step 3)
 5. **Test thoroughly** (see Testing Checklist)
 6. **Monitor for 48 hours**
 7. **Delete old API routes**

@@ -20,8 +20,8 @@
 
 ### Development Mode (Live Reload)
 ```bash
-# Customer App
-cd apps/customer-app
+# Marketplace App
+cd apps/marketplace-app
 pnpm dev                    # Start Vite dev server
 pnpm cap:open:ios           # Open in Xcode
 # Then click ▶️ Run in Xcode
@@ -34,8 +34,8 @@ pnpm cap:open:ios           # Open in Xcode
 
 ### Production Build
 ```bash
-# Customer App
-cd apps/customer-app
+# Marketplace App
+cd apps/marketplace-app
 pnpm cap:sync              # Build + sync to native projects
 pnpm cap:open:ios          # Open Xcode to build
 

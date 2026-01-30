@@ -44,7 +44,7 @@ export function Navbar({ children }: NavbarProps) {
         style={{
           background: "white",
           borderBottom: "1px solid #e5e7eb",
-          padding: "10px 12px",
+          padding: "4px 10px",
           position: "sticky",
           top: 0,
           zIndex: 1000,
@@ -57,21 +57,21 @@ export function Navbar({ children }: NavbarProps) {
             alignItems: "center",
             maxWidth: "1400px",
             margin: "0 auto",
-            gap: "20px",
+            gap: "12px",
           }}
         >
           {/* Logo */}
           <Link
             to="/marketplace"
             style={{
-              fontSize: "16px",
+              fontSize: "14px",
               fontWeight: "700",
               color: "#6E56CF",
               textDecoration: "none",
               flexShrink: 0,
             }}
           >
-            GoSenderr
+            Senderr
           </Link>
 
           {/* Role Badge */}

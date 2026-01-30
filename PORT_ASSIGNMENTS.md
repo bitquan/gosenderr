@@ -23,7 +23,7 @@ pnpm dev
 # Or run individually
 cd apps/admin-app && pnpm dev     # Port 3000
 cd apps/courier-app && pnpm dev   # Port 3001
-cd apps/customer-app && pnpm dev  # Port 3002
+cd apps/marketplace-app && pnpm dev  # Port 3002
 cd apps/web && pnpm dev           # Port 3003
 ```
 

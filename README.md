@@ -10,7 +10,7 @@ A modern on-demand delivery platform with web apps (Vite + React + TypeScript) t
 ```
 /
 ├── apps/
-│   ├── customer-app/     # Vite Customer Web App (Port 5173)
+│   ├── marketplace-app/     # Vite Marketplace Web App (Port 5173)
 │   ├── courier-app/      # Vite Courier Web App (Port 5174)
 │   ├── shifter-app/      # Vite Runner/Shifter Web App (Port 5175)
 │   ├── admin-app/        # Vite Admin Dashboard (Port 5176)
@@ -58,7 +58,7 @@ Each app needs its own `.env.local` file:
 
 ```bash
 # Customer App
-cp apps/customer-app/.env.example apps/customer-app/.env.local
+cp apps/marketplace-app/.env.example apps/marketplace-app/.env.local
 
 # Courier App
 cp apps/courier-app/.env.example apps/courier-app/.env.local
@@ -96,7 +96,7 @@ cd ../..
 pnpm dev
 
 # Or run individual apps
-cd apps/customer-app && pnpm dev   # Port 5173
+cd apps/marketplace-app && pnpm dev   # Port 5173
 cd apps/courier-app && pnpm dev    # Port 5174
 cd apps/shifter-app && pnpm dev    # Port 5175
 cd apps/admin-app && pnpm dev      # Port 5176
@@ -132,7 +132,7 @@ Firebase Hosting sites:
 
 ## 📱 Features
 
-### Customer App (`apps/customer-app`)
+### Marketplace App (`apps/marketplace-app`)
 
 - **Authentication**: Phone Auth with Firebase + Email fallback
 - **Job Creation**: Create delivery jobs with pickup/dropoff locations via map or address search

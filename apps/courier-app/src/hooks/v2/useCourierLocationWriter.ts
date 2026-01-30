@@ -38,13 +38,16 @@ export function useCourierLocationWriter() {
   const lastPositionRef = useRef<{ lat: number; lng: number } | null>(null);
 
   useEffect(() => {
-    // Only track if courier and online
-    const shouldTrack =
-      role === "courier" && uid && userDoc?.courierProfile?.isOnline === true;
+    // Only track if courier and uid exists
+    // Don't require isOnline to be true - we'll let location writing handle that logic
+    const shouldTrack = role === "courier" && uid;
+
+    console.log('📍 Location tracking check:', { role, uid, shouldTrack, isOnline: userDoc?.courierProfile?.isOnline });
 
     if (!shouldTrack) {
       // Stop tracking
       if (watchIdRef.current !== null) {
+        console.log('📍 Stopping geolocation watch');
         navigator.geolocation.clearWatch(watchIdRef.current);
         watchIdRef.current = null;
         setIsTracking(false);
@@ -54,6 +57,7 @@ export function useCourierLocationWriter() {
 
     // Start tracking
     if (watchIdRef.current === null) {
+      console.log('📍 Starting geolocation watch');
       setIsTracking(true);
       setPermissionDenied(false);
 
@@ -61,6 +65,8 @@ export function useCourierLocationWriter() {
         async (position) => {
           const { latitude: lat, longitude: lng, heading } = position.coords;
           const now = Date.now();
+
+          console.log('📍 Got position:', { lat, lng, heading });
 
           // Throttle: check time and distance
           const timeSinceLastWrite = now - lastWriteTimeRef.current;
@@ -74,11 +80,14 @@ export function useCourierLocationWriter() {
               lng,
             );
             shouldWrite = distance >= MOVE_THRESHOLD_METERS;
+            console.log('📍 Distance check:', { distance, threshold: MOVE_THRESHOLD_METERS, shouldWrite });
           }
 
           if (shouldWrite && uid) {
             try {
               const geoHash = geohash.encode(lat, lng, 6);
+
+              console.log('📍 Writing location to Firestore:', { lat, lng, uid });
 
               await updateDoc(doc(db, "users", uid), {
                 "courierProfile.currentLocation.lat": lat,
@@ -92,6 +101,7 @@ export function useCourierLocationWriter() {
 
               lastWriteTimeRef.current = now;
               lastPositionRef.current = { lat, lng };
+              console.log('✅ Location updated in Firestore');
             } catch (error) {
               console.error("Failed to update courier location:", error);
             }
@@ -100,6 +110,7 @@ export function useCourierLocationWriter() {
         (error) => {
           console.error("Geolocation error:", error);
           if (error.code === error.PERMISSION_DENIED) {
+            console.error('❌ Geolocation permission denied');
             setPermissionDenied(true);
           }
         },
@@ -113,12 +124,13 @@ export function useCourierLocationWriter() {
 
     return () => {
       if (watchIdRef.current !== null) {
+        console.log('📍 Cleanup: stopping geolocation watch');
         navigator.geolocation.clearWatch(watchIdRef.current);
         watchIdRef.current = null;
         setIsTracking(false);
       }
     };
-  }, [role, uid, userDoc?.courierProfile?.isOnline]);
+  }, [role, uid]);
 
   return {
     isTracking,

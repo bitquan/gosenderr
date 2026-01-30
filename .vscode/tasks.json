@@ -4,7 +4,7 @@
     // ==================== MARKETPLACE DEV (NEW) ====================
     {
       "label": "🛍️ Marketplace: Dev Mode",
-      "dependsOn": ["🔥 Firebase Emulators", "📦 Customer App (Port 5173)"],
+      "dependsOn": ["🔥 Firebase Emulators", "📦 Marketplace App (Dev: Port 5173)"],
       "problemMatcher": [],
       "group": {
         "kind": "build",
@@ -17,6 +17,7 @@
     },
     {
       "label": "🔥 Firebase Emulators",
+      "detail": "Start local Firebase emulators (Auth, Firestore, Functions, etc.)",
       "type": "shell",
       "command": "./scripts/start-emulators.sh",
       "isBackground": true,
@@ -44,9 +45,10 @@
     
     // ==================== DEV SERVERS (Run These) ====================
     {
-      "label": "🔧 Admin App (Port 3000)",
+      "label": "🔧 Admin App (Dev: Port 3000)",
+      "detail": "Run the Admin dev server (local development, bind to 127.0.0.1)",
       "type": "shell",
-      "command": "pnpm --filter @gosenderr/admin-app dev",
+      "command": "pnpm --filter @gosenderr/admin-app dev -- --host 127.0.0.1",
       "isBackground": true,
       "problemMatcher": {
         "pattern": {
@@ -76,9 +78,10 @@
     },
 
     {
-      "label": "📦 Customer App (Port 5173)",
+      "label": "📦 Marketplace App (Dev: Port 5173)",
+      "detail": "Run Marketplace dev server (hot-reload for development, bind to 127.0.0.1)",
       "type": "shell",
-      "command": "pnpm --filter @gosenderr/customer-app dev",
+      "command": "pnpm --filter @gosenderr/marketplace-app dev -- --host 127.0.0.1",
       "isBackground": true,
       "problemMatcher": {
         "pattern": {
@@ -103,9 +106,10 @@
       }
     },
     {
-      "label": "📦 Customer App (Port 5180)",
+      "label": "📦 Marketplace App (Dev: Port 5180)",
+      "detail": "Run Marketplace dev server on 5180 (alternate host 127.0.0.1)",
       "type": "shell",
-      "command": "PORT=5180 VITE_PORT=5180 pnpm --filter @gosenderr/customer-app dev -- --host 127.0.0.1",
+      "command": "PORT=5180 VITE_PORT=5180 pnpm --filter @gosenderr/marketplace-app dev -- --host 127.0.0.1",
       "isBackground": true,
       "problemMatcher": {
         "pattern": {
@@ -130,9 +134,36 @@
       }
     },
     {
-      "label": "⚡ Courier App (Port 5174)",
+      "label": "📦 Marketplace Preview (E2E: Port 5180)",
+      "detail": "Run production preview server used by Playwright E2E tests (bind to 127.0.0.1)",
       "type": "shell",
-      "command": "pnpm --filter @gosenderr/courier-app dev",
+      "command": "pnpm --filter @gosenderr/marketplace-app exec -- vite preview --port 5180 --strictPort --host 127.0.0.1",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^([^\\s].*).*",
+          "file": 1,
+          "location": 2,
+          "message": 3
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*Local:.*",
+          "endsPattern": ".*Local:.*"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": false,
+        "clear": true
+      }
+    },
+    {
+      "label": "⚡ Courier App (Dev: Port 5174)",
+      "detail": "Run Courier app dev server (mobile/map-first UI, bind to 127.0.0.1)",
+      "type": "shell",
+      "command": "pnpm --filter @gosenderr/courier-app dev -- --host 127.0.0.1",
       "isBackground": true,
       "problemMatcher": {
         "pattern": {
@@ -157,9 +188,10 @@
       }
     },
     {
-      "label": "🚚 Shifter App (Port 5175)",
+      "label": "🚚 Shifter App (Dev: Port 5175)",
+      "detail": "Run Shifter app dev server (delivery runner UI, bind to 127.0.0.1)",
       "type": "shell",
-      "command": "pnpm --filter @gosenderr/shifter-app dev",
+      "command": "pnpm --filter @gosenderr/shifter-app dev -- --host 127.0.0.1",
       "isBackground": true,
       "problemMatcher": {
         "pattern": {
@@ -184,9 +216,10 @@
       }
     },
     {
-      "label": "🌐 Web/Marketing App (Port 3003)",
+      "label": "🌐 Web/Marketing App (Dev: Port 3003)",
+      "detail": "Run marketing site dev server (public web, bind to 127.0.0.1)",
       "type": "shell",
-      "command": "pnpm --filter @gosenderr/web dev",
+      "command": "pnpm --filter @gosenderr/web dev -- --host 127.0.0.1",
       "isBackground": true,
       "problemMatcher": {
         "pattern": {
@@ -212,13 +245,73 @@
     {
       "label": "🚀 All Vite Apps",
       "dependsOn": [
-        "🔧 Admin App (Port 3000)",
-        "📦 Customer App (Port 5173)",
-        "⚡ Courier App (Port 5174)",
-        "🚚 Shifter App (Port 5175)"
+        "🔧 Admin App (Dev: Port 3000)",
+        "📦 Marketplace App (Dev: Port 5173)",
+        "⚡ Courier App (Dev: Port 5174)",
+        "🚚 Shifter App (Dev: Port 5175)"
       ],
       "problemMatcher": []
     },
+    {
+      "label": "🧭 Start E2E Environment",
+      "dependsOn": ["🔥 Firebase Emulators", "📦 Marketplace Preview (E2E: Port 5180)"],
+      "problemMatcher": []
+    },
+    {
+      "label": "🛠️ Dev: Start All (Emulator + All Apps)",
+      "dependsOn": ["🔥 Firebase Emulators", "🚀 All Vite Apps"],
+      "problemMatcher": []
+    },
+    // ==================== PLAYWRIGHT / E2E TASKS ====================
+    {
+      "label": "▶ Run Marketplace E2E: Smoke",
+      "detail": "Start E2E environment then run key smoke tests (marketplace + vendor)",
+      "dependsOn": ["🧭 Start E2E Environment"],
+      "type": "shell",
+      "command": "pnpm --filter @gosenderr/marketplace-app exec -- playwright test tests/e2e/marketplace-app.spec.ts tests/e2e/vendor-pages.spec.ts --reporter=list --config=playwright.config.ts",
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": [],
+      "group": "test"
+    },
+    {
+      "label": "▶ Run Marketplace E2E: Admin Smoke",
+      "detail": "Run admin smoke against local admin server (make sure admin dev server is running)",
+      "dependsOn": ["🧭 Start E2E Environment"],
+      "type": "shell",
+      "command": "pnpm --filter @gosenderr/marketplace-app exec -- playwright test tests/e2e/admin-smoke.spec.ts --reporter=list --config=playwright.config.ts",
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": [],
+      "group": "test"
+    },
+    {
+      "label": "▶ Run Marketplace E2E: Courier Smoke",
+      "detail": "Run courier smoke (ensure courier dev server is running)",
+      "dependsOn": ["🧭 Start E2E Environment"],
+      "type": "shell",
+      "command": "pnpm --filter @gosenderr/marketplace-app exec -- playwright test tests/e2e/courier-smoke.spec.ts --reporter=list --config=playwright.config.ts",
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": [],
+      "group": "test"
+    },
+    {
+      "label": "▶ Run Marketplace E2E: Full",
+      "detail": "Start E2E environment then run full E2E suite for marketplace app",
+      "dependsOn": ["🧭 Start E2E Environment"],
+      "type": "shell",
+      "command": "pnpm --filter @gosenderr/marketplace-app exec -- playwright test tests/e2e --reporter=list --config=playwright.config.ts",
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": [],
+      "group": "test"
+    },
+    {
+      "label": "▶ Run Marketplace E2E: Only Failed",
+      "detail": "Run only previously failed tests (useful for quick iterations)",
+      "type": "shell",
+      "command": "pnpm --filter @gosenderr/marketplace-app exec -- playwright test --only-failed --reporter=list --config=playwright.config.ts",
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": [],
+      "group": "test"
+    }
     {
       "label": "🌐 All Apps (All Ports)",
       "type": "shell",
@@ -278,19 +371,20 @@
       }
     },
     {
-      "label": "Build: Customer App",
+      "label": "Build: Marketplace App",
       "type": "shell",
-      "command": "pnpm --filter @gosenderr/customer-app build",
+      "command": "pnpm --filter @gosenderr/marketplace-app build",
       "problemMatcher": ["$tsc"],
       "presentation": {
         "reveal": "always",
         "panel": "shared"
       }
     },
+
     {
-      "label": "Build: Customer App",
+      "label": "Build: Marketplace App",
       "type": "shell",
-      "command": "pnpm --filter @gosenderr/customer-app build",
+      "command": "pnpm --filter @gosenderr/marketplace-app build",
       "problemMatcher": ["$tsc"],
       "presentation": {
         "reveal": "always",

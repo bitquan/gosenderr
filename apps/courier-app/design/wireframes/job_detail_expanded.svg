@@ -1,0 +1,31 @@
+<svg width="375" height="812" viewBox="0 0 375 812" xmlns="http://www.w3.org/2000/svg">
+  <rect width="375" height="812" fill="#E5E7EB" rx="20"/>
+  <!-- Map area small -->
+  <rect x="12" y="12" width="351" height="260" fill="#FFFFFF" rx="12"/>
+  <g transform="translate(16,292)">
+    <rect width="343" height="500" rx="16" fill="#FFFFFF" stroke="#E6E9F2"/>
+    <rect x="20" y="18" width="303" height="44" rx="8" fill="#F8FAFC" />
+    <text x="38" y="46" font-size="16" font-weight="700" fill="#111827">Active Send</text>
+
+    <g transform="translate(24,80)">
+      <text x="0" y="0" font-size="14" fill="#6B7280">Pickup</text>
+      <text x="0" y="20" font-size="18" font-weight="700" fill="#111827">13611 Legacy Circle</text>
+      <text x="0" y="44" font-size="14" fill="#6B7280">Jan 29, 2026 • 10:05 PM</text>
+    </g>
+
+    <g transform="translate(24,140)">
+      <text x="0" y="0" font-size="14" fill="#6B7280">Dropoff</text>
+      <text x="0" y="20" font-size="18" font-weight="700" fill="#111827">1520 Constellation Place</text>
+    </g>
+
+    <g transform="translate(24,220)">
+      <rect width="295" height="48" rx="12" fill="#3B82F6" />
+      <text x="148" y="32" font-size="16" text-anchor="middle" fill="#fff">Arrived Pickup</text>
+    </g>
+
+    <g transform="translate(24,280)">
+      <rect width="295" height="48" rx="12" fill="#10B981" />
+      <text x="148" y="32" font-size="16" text-anchor="middle" fill="#fff">Picked Up</text>
+    </g>
+  </g>
+</svg>

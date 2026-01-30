@@ -8,7 +8,7 @@ This checklist lists the tests and validations to perform on `feature/courier-tu
 - [ ] pnpm -w build (or build each app individually)
 - [ ] pnpm -w test (run unit tests)
 - [ ] Run `pnpm --filter @gosenderr/courier-app build` and verify the build completes without errors
-- [ ] Run `pnpm --filter @gosenderr/customer-app build` and verify
+- [ ] Run `pnpm --filter @gosenderr/marketplace-app build` and verify
 - [ ] Run `pnpm --filter @gosenderr/admin-app build` and verify
 
 ## TypeScript
@@ -17,7 +17,7 @@ This checklist lists the tests and validations to perform on `feature/courier-tu
 
 ## E2E & Smoke
 - [ ] Run Playwright smoke tests for `vendor`, `customer`, `courier` projects locally:
-  - pnpm --filter @gosenderr/customer-app exec playwright test tests/e2e/customer/smoke --project=customer
+  - pnpm --filter @gosenderr/marketplace-app exec playwright test tests/e2e/customer/smoke --project=customer
 - [ ] Run the full E2E suite in a preview environment (if available)
 
 ## Mobile (iOS)

@@ -29,14 +29,15 @@ export async function transferPayoutHandler(change: functions.Change<FirebaseFir
 
   const stripe = stripeClient || getStripe()
 
+  // compute amounts early so catch block can reference them
+  const courierEarnings = (afterData.pricing?.courierEarnings ?? afterData.agreedFee ?? 0) as number
+  const platformFee = (afterData.pricing?.platformFees ?? afterData.platformFee ?? 0) as number
+
   try {
     // Fetch courier profile
     const courierDoc = await admin.firestore().doc(`users/${courierUid}`).get()
     const courierData = courierDoc.data() || {}
     const courierAccountId = courierData?.courierProfile?.stripeAccountId
-
-    const courierEarnings = (afterData.pricing?.courierEarnings ?? afterData.agreedFee ?? 0) as number
-    const platformFee = (afterData.pricing?.platformFees ?? afterData.platformFee ?? 0) as number
 
     if (!courierAccountId) {
       functions.logger.warn(`Job ${jobId}: courier ${courierUid} missing stripe account id; marking payout pending_setup`)
@@ -58,6 +59,9 @@ export async function transferPayoutHandler(change: functions.Change<FirebaseFir
       // TODO: send notification to courier to complete Stripe onboarding
       return { success: false, reason: 'missing_stripe_account' }
     }
+
+    // Log platform fee for auditing
+    functions.logger.info(`Job ${jobId}: platform fee ${platformFee}`)
 
     // Create transfer
     const amountCents = Math.round(courierEarnings * 100)

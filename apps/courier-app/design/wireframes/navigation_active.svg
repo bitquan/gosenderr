@@ -1,0 +1,21 @@
+<svg width="375" height="812" viewBox="0 0 375 812" xmlns="http://www.w3.org/2000/svg">
+  <rect width="375" height="812" fill="#F3F4F6" rx="20"/>
+  <rect x="12" y="12" width="351" height="640" fill="#fff" rx="12"/>
+  <g transform="translate(24,24)">
+    <path d="M20 120 C 80 100, 120 160, 180 140 C 220 128, 260 160, 320 140" stroke="#6E56CF" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <circle cx="20" cy="120" r="8" fill="#3b82f6" />
+    <circle cx="320" cy="140" r="8" fill="#10B981" />
+  </g>
+
+  <!-- Navigation instruction card -->
+  <g transform="translate(16,560)">
+    <rect width="343" height="160" rx="14" fill="#ffffff" stroke="#E6E9F2"/>
+    <text x="22" y="32" font-size="14" fill="#6B7280">Next • Left turn</text>
+    <text x="22" y="62" font-size="22" font-weight="700" fill="#111827">50 ft • Turn left onto River Birch Rd</text>
+
+    <g transform="translate(22,92)">
+      <rect width="200" height="44" rx="10" fill="#3B82F6" />
+      <text x="100" y="30" font-size="14" text-anchor="middle" fill="#fff">Pause shift</text>
+    </g>
+  </g>
+</svg>

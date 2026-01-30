@@ -13,18 +13,13 @@ service cloud.firestore {
     }
     
     function isAdmin() {
-      return signedIn() && (
-        request.auth.token.get('role', '') == 'admin' ||
-        request.auth.token.get('admin', false) == true ||
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
-      );
+      return signedIn() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles.hasAny(['admin']);
     }
     
     function isCourier() {
-      return signedIn() && (
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'courier' ||
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('courierProfile', null) != null
-      );
+      return signedIn() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles.hasAny(['courier']);
     }
     
     function isPackageRunner() {
@@ -32,10 +27,8 @@ service cloud.firestore {
     }
     
     function isVendor() {
-      return signedIn() && (
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'vendor' ||
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('vendorProfile', null) != null
-      );
+      return signedIn() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles.hasAny(['vendor']);
     }
     
     function validRole(role) {
@@ -139,6 +132,15 @@ service cloud.firestore {
       
       // Admins can read/update/delete any item
       allow read, update, delete: if isAdmin();
+    }
+
+    // ========== PRODUCTS (Marketplace) ==========
+    match /products/{productId} {
+      // Public read access
+      allow read: if true;
+      
+      // Vendors and admins can create/update/delete products
+      allow create, update, delete: if isVendor() || isAdmin();
     }
 
     // ========== MARKETPLACE ORDERS ==========

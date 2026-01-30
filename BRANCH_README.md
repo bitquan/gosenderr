@@ -21,7 +21,7 @@ This branch is for migrating from Next.js to Vite as documented in `docs/VITE_MI
 ## Migration Strategy
 
 ### Phase 1: Customer Portal (Week 1) - ✅ STARTED
-- [x] Create `apps/customer-app` with Vite + React
+- [x] Create `apps/marketplace-app` with Vite + React
 - [x] Set up routing with react-router-dom
 - [ ] Copy customer pages from `apps/web/src/app/customer`
 - [ ] Test customer flows
@@ -39,7 +39,7 @@ This branch is for migrating from Next.js to Vite as documented in `docs/VITE_MI
 ### New Structure
 ```
 apps/
-  customer-app/          # NEW: Vite + React for customer portal
+  marketplace-app/          # NEW: Vite + React for marketplace portal
     src/
       pages/            # Customer pages (dashboard, request-delivery, jobs, checkout)
       components/       # Reusable UI components
@@ -53,13 +53,13 @@ apps/
 
 ```bash
 # Dev server (customer app)
-pnpm --filter @gosenderr/customer-app dev
+pnpm --filter @gosenderr/marketplace-app dev
 
 # Build
-pnpm --filter @gosenderr/customer-app build
+pnpm --filter @gosenderr/marketplace-app build
 
 # Preview production build
-pnpm --filter @gosenderr/customer-app preview
+pnpm --filter @gosenderr/marketplace-app preview
 ```
 
 ## Next Steps

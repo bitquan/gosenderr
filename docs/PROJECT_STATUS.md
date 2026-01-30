@@ -6,7 +6,7 @@
 
 - **Admin App**: Vite + React at `apps/admin-app` (Port 3000)
 - **Courier App**: Vite + React at `apps/courier-app` (Port 3001)
-- **Customer App**: Vite + React at `apps/customer-app` (Port 3002)
+- **Marketplace App**: Vite + React at `apps/marketplace-app` (Port 5173)
 - **Web App**: Next.js 15.5.9 at `apps/web` (Port 3003)
 - **Firebase**: Auth/Firestore/Storage/Functions in project `gosenderr-6773f`
 - **Hosting**: Firebase Hosting (custom domain) proxies to Cloud Run

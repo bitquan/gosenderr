@@ -203,7 +203,7 @@ match /orders/{orderId} {
 
 ### New Files:
 ```
-apps/customer-app/src/
+apps/marketplace-app/src/
 ├── pages/
 │   ├── home/page.tsx                    # Marketplace home
 │   ├── marketplace/

@@ -4,7 +4,7 @@
 - Install pnpm, Node >=18, pnpm install
 - Start emulators: `npx firebase emulators:start --only auth,firestore --project gosenderr-6773f`
 - Start app dev servers (examples):
-  - `pnpm --filter @gosenderr/customer-app dev -- --host 127.0.0.1 --port 5180`
+  - `pnpm --filter @gosenderr/marketplace-app dev -- --host 127.0.0.1 --port 5180`
   - `pnpm --filter @gosenderr/courier-app dev`
 
 ## Local checks

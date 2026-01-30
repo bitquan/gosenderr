@@ -6,17 +6,21 @@ import { UserRole } from "@/lib/v2/types";
 export function useUserRole() {
   const { userDoc, loading, uid } = useUserDoc();
 
+  // Extract role from userDoc
+  // UserDoc has a single 'role' field
+  const role = userDoc?.role as UserRole | null | undefined;
+
   useEffect(() => {
     console.log("🎭 [useUserRole] Hook state:", {
       uid,
-      role: userDoc?.role,
+      role,
       loading,
-      userDoc,
+      userDocRole: userDoc?.role,
     });
-  }, [uid, userDoc, loading]);
+  }, [uid, role, userDoc, loading]);
 
   return {
-    role: userDoc?.role as UserRole | null | undefined,
+    role,
     loading,
     uid,
     userDoc,

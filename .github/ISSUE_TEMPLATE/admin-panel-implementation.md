@@ -355,7 +355,7 @@ match /categories/{categoryId} {
 
 ### New Files:
 ```
-apps/admin-app/ (or customer-app/src/pages/admin/)
+apps/admin-app/ (or marketplace-app/src/pages/admin/)
 ├── pages/
 │   └── admin/
 │       ├── dashboard/

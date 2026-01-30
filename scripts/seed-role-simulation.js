@@ -1,7 +1,15 @@
 const admin = require("./firebase-admin-wrapper");
 
 const PROJECT_ID =
-  process.env.FIREBASE_PROJECT_ID || process.env.GCLOUD_PROJECT;
+  process.env.FIREBASE_PROJECT_ID || process.env.GCLOUD_PROJECT || "gosenderr-6773f";
+
+// Set emulator environment variables BEFORE initializing Firebase
+// This tells the Admin SDK to connect to local emulators instead of production
+if (process.env.USE_EMULATOR !== "false") {
+  process.env.FIREBASE_AUTH_EMULATOR_HOST = "127.0.0.1:9099";
+  process.env.FIRESTORE_EMULATOR_HOST = "127.0.0.1:8080";
+  console.log("✅ Environment configured to use Firebase Emulator");
+}
 
 if (PROJECT_ID && (!admin.apps || admin.apps.length === 0)) {
   admin.initializeApp({ projectId: PROJECT_ID });
@@ -11,9 +19,19 @@ const db = admin.firestore();
 const auth = admin.auth();
 const { FieldValue } = admin.firestore;
 
-const DEMO_PASSWORD = process.env.DEMO_PASSWORD || "DemoPass123!";
+const DEMO_PASSWORD = process.env.DEMO_PASSWORD || "admin123";
 
 const demoUsers = [
+  {
+    email: "admin@sender.com",
+    role: "admin",
+    displayName: "Admin User",
+  },
+  {
+    email: "courier@sender.com",
+    role: "courier",
+    displayName: "Courier User",
+  },
   {
     email: "customer@example.com",
     role: "customer",

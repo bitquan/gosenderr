@@ -28,7 +28,7 @@ Both workflows now support manual execution from the GitHub UI.
 
 **Test Job Features:**
 - **Status**: Currently disabled (requires dev server setup in CI)
-- Executes Playwright E2E tests from `apps/customer-app`
+- Executes Playwright E2E tests from `apps/marketplace-app`
 - Automatically installs browser dependencies
 - Uploads test results as artifacts (30-day retention)
 - Provides Firebase configuration via environment variables
@@ -68,7 +68,7 @@ E2E tests require a running dev server at `http://localhost:5180`. To enable:
 - Provides clear success/failure notifications
 
 **Packages Linted:**
-- customer-app
+- marketplace-app
 - courier-app
 - shifter-app
 - All packages with lint scripts defined
@@ -306,7 +306,7 @@ git push origin feature/new-feature
 3. Review failed tests and screenshots
 4. Fix issues locally:
    ```bash
-   cd apps/customer-app
+   cd apps/marketplace-app
    pnpm test:e2e
    ```
 5. Commit fixes and push

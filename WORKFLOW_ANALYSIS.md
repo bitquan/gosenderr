@@ -48,7 +48,7 @@
 3. E2E Job build failures (TypeScript errors)
    - Impact: High (E2E cannot run because customer app fails `tsc` during build)
    - Frequency: Present in multiple E2E runs
-   - Root cause: TypeScript errors (e.g., unused variable 'userDoc' in `apps/customer-app/src/pages/vendor/items/[itemId]/edit/page.tsx`) cause `pnpm --filter ... build` to exit with non-zero. Solutions: fix TS errors in codebase and/or relax `tsc` strictness only in CI for Playwright preview builds while we stabilize tests.
+   - Root cause: TypeScript errors (e.g., unused variable 'userDoc' in `apps/marketplace-app/src/pages/vendor/items/[itemId]/edit/page.tsx`) cause `pnpm --filter ... build` to exit with non-zero. Solutions: fix TS errors in codebase and/or relax `tsc` strictness only in CI for Playwright preview builds while we stabilize tests.
 
 ### HIGH
 1. pnpm not found in some jobs (smoke tests)
@@ -93,7 +93,7 @@
 **CRITICAL (Fix immediately):**
 1. Install `@typescript-eslint/eslint-plugin` and peers at repo root or adjust ESLint resolution so CI's `Lint` job can run successfully.
 2. Fix Trivy SARIF upload failure: enable Code Scanning in repository settings or make SARIF upload conditional (only when code scanning is enabled).
-3. Fix TypeScript build errors in `apps/customer-app` (e.g., remove/rename unused `userDoc` variable) so E2E builds can succeed.
+3. Fix TypeScript build errors in `apps/marketplace-app` (e.g., remove/rename unused `userDoc` variable) so E2E builds can succeed.
 
 **HIGH (Fix soon):**
 1. Ensure pnpm is available in all jobs that run `pnpm` (add `corepack enable && corepack prepare pnpm@latest --activate` to workflows or use `pnpm/action-setup`).

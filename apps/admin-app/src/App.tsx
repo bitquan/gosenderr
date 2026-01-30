@@ -29,6 +29,7 @@ import MessagingPage from './pages/Messaging'
 import SystemCheckPage from './pages/SystemCheck'
 import RateCardsComparison from './pages/RateCardsComparison'
 import AdminFlowLogsPage from './pages/AdminFlowLogs'
+import JobDetailPage from './pages/JobDetail'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
@@ -85,6 +86,7 @@ function App() {
                     <Route path="/settings/payment" element={<PaymentSettingsPage />} />
                     <Route path="/settings/email" element={<EmailSettingsPage />} />
                     <Route path="/settings/security" element={<SecuritySettingsPage />} />
+                    <Route path="/jobs/:jobId" element={<JobDetailPage />} />
                   </Routes>
                 </main>
               </div>

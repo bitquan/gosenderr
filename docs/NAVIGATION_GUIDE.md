@@ -67,7 +67,7 @@ All layouts include bottom padding to prevent content from being hidden behind t
 ### Implementation
 
 ```tsx
-// apps/customer-app/src/components/BottomNav.tsx
+// apps/marketplace-app/src/components/BottomNav.tsx
 const customerNavItems = [
   { icon: "🏠", label: "Home", href: "/dashboard" },
   { icon: "📦", label: "Jobs", href: "/jobs" },
@@ -92,7 +92,7 @@ export default function CustomerLayout({ children }) {
 ### Routes
 
 ```tsx
-// apps/customer-app/src/App.tsx
+// apps/marketplace-app/src/App.tsx
 <Routes>
   <Route path="/login" element={<Login />} />
   

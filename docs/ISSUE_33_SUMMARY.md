@@ -152,7 +152,7 @@ Documented setup for hosting multiple apps from single Firebase project:
     {
       "target": "customer",
       "site": "gosenderr-customer",
-      "public": "apps/customer-app/dist"
+      "public": "apps/marketplace-app/dist"
     },
     {
       "target": "senderr",
@@ -302,7 +302,7 @@ Deployment is currently running. Once complete, smoke tests should be performed 
 4. **Monitor Cloud Functions** performance and costs
 
 ### Short-term (Next Week)
-1. **Begin Vite migration** - Set up customer-app scaffold
+1. **Begin Vite migration** - Set up marketplace-app scaffold
 2. **Create shared UI package** - Port reusable components
 3. **Set up routing** - Implement React Router structure
 4. **Migrate authentication** - Login and role selection pages

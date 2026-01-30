@@ -51,7 +51,39 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
 
     // Get all steps from all legs
     const allSteps = route.legs.flatMap(leg => leg.steps);
-    
+
+    // If Mapbox returned no steps (rare), synthesize a single step from the
+    // overall route geometry so the navigation UI has something to render and
+    // the ETA/distance values are populated.
+    if (allSteps.length === 0) {
+      console.warn('NavigationContext: no route steps returned, synthesizing a fallback step')
+
+      const syntheticStep = {
+        distance: route.distance,
+        duration: route.duration,
+        instruction: 'Follow route to destination',
+        geometry: route.geometry,
+        maneuver: {
+          type: 'depart',
+          instruction: 'Start navigation',
+          location: route.geometry.coordinates[0],
+        },
+      } as any;
+
+      setState({
+        isNavigating: true,
+        currentJob: job,
+        currentRoute: route,
+        currentStep: syntheticStep,
+        remainingSteps: [],
+        distanceToNextTurn: syntheticStep.distance,
+        estimatedTimeRemaining: route.duration,
+        cameraMode: 'follow',
+      });
+
+      return
+    }
+
     setState({
       isNavigating: true,
       currentJob: job,

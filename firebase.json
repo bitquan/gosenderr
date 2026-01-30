@@ -27,7 +27,7 @@
     },
     {
       "site": "gosenderr-customer",
-      "public": "apps/customer-app/dist",
+      "public": "apps/marketplace-app/dist",
       "ignore": ["firebase.json", "**/node_modules/**"],
       "rewrites": [
         {
