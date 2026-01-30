@@ -18,6 +18,9 @@ export function CourierJobActions({ job, courierUid, estimatedFee, onJobUpdated 
   // Define valid status transitions for courier
   const getNextStatus = (currentStatus: JobStatus): JobStatus | null => {
     const transitions: Record<JobStatus, JobStatus | null> = {
+      pending: 'claimed',      // New v2: Job → Claimed
+      claimed: 'active',       // New v2: Claimed → Active
+      active: 'completed',     // New v2: Active → Complete
       open: null,
       assigned: 'enroute_pickup',
       enroute_pickup: 'arrived_pickup',
@@ -121,6 +124,9 @@ export function CourierJobActions({ job, courierUid, estimatedFee, onJobUpdated 
 
   if (nextStatus) {
     const statusLabels: Record<JobStatus, string> = {
+      pending: '🎯 Claim Job',
+      claimed: '▶️ Start Delivery',
+      active: '✅ Complete Delivery',
       open: 'Open',
       assigned: '▶️ Start Heading to Pickup',
       enroute_pickup: '📍 Mark Arrived at Pickup',
@@ -136,6 +142,9 @@ export function CourierJobActions({ job, courierUid, estimatedFee, onJobUpdated 
     };
 
     const buttonColors: Record<JobStatus, string> = {
+      pending: 'bg-green-600',
+      claimed: 'bg-blue-600',
+      active: 'bg-amber-600',
       open: 'bg-gray-500',
       assigned: 'bg-blue-600',
       enroute_pickup: 'bg-orange-600',

@@ -6,6 +6,9 @@ interface JobStatusPillsProps {
 }
 
 const STATUS_CONFIG: Record<JobStatus, { label: string; color: string; background: string }> = {
+  pending: { label: 'Available', color: '#10b981', background: '#d1fae5' },
+  claimed: { label: 'Claimed', color: '#3b82f6', background: '#dbeafe' },
+  active: { label: 'In Progress', color: '#f59e0b', background: '#fef3c7' },
   open: { label: 'Open', color: '#059669', background: '#d1fae5' },
   assigned: { label: 'Assigned', color: '#2563eb', background: '#dbeafe' },
   enroute_pickup: { label: 'En Route to Pickup', color: '#7c3aed', background: '#ede9fe' },

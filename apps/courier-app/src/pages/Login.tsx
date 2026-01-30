@@ -20,6 +20,7 @@ export default function LoginPage() {
       await signInWithEmailAndPassword(auth, email, password)
       navigate('/dashboard')
     } catch (err: any) {
+      console.error('🔐 Sign-in error', err);
       setError(err.message || 'Failed to sign in')
     } finally {
       setLoading(false)

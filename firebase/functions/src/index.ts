@@ -27,3 +27,11 @@ export { runSystemSimulation } from "./http/runSystemSimulation";
 
 // Stripe Functions
 export * from "./stripe";
+
+// Courier App V2 Functions
+export { claimJob } from "./courier/claimJob";
+export { startDelivery } from "./courier/startDelivery";
+export { completeDelivery } from "./courier/completeDelivery";
+export { updateLocation } from "./courier/updateLocation";
+export { getAvailableJobs } from "./courier/getAvailableJobs";
+export { getEarnings } from "./courier/getEarnings";

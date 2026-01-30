@@ -4,6 +4,9 @@ import { JobStatus, Job, JobDoc } from './types';
  * Ordered list of job statuses representing the delivery flow
  */
 export const JOB_STATUS_ORDER: JobStatus[] = [
+  'pending',  // New v2 backend status
+  'claimed',  // New v2 backend status
+  'active',   // New v2 backend status
   'open',
   'assigned',
   'enroute_pickup',
@@ -18,6 +21,9 @@ export const JOB_STATUS_ORDER: JobStatus[] = [
  * Status flow map - defines which status comes next
  */
 export const STATUS_FLOW: Record<JobStatus, JobStatus | null> = {
+  pending: 'claimed',      // New: Job created → Courier claims
+  claimed: 'active',       // New: Claimed → Start delivery
+  active: 'completed',     // New: Active → Complete (simplified flow)
   open: null, // Only customer creates, courier claims to 'assigned'
   assigned: 'enroute_pickup',
   enroute_pickup: 'arrived_pickup',
@@ -36,6 +42,9 @@ export const STATUS_FLOW: Record<JobStatus, JobStatus | null> = {
  * Button labels for each advanceable status
  */
 export const STATUS_BUTTON_LABELS: Record<JobStatus, string> = {
+  pending: 'Claim Job',
+  claimed: 'Start Delivery',
+  active: 'Complete Delivery',
   open: '',
   assigned: 'Start to Pickup',
   enroute_pickup: 'Arrived at Pickup',
@@ -54,6 +63,9 @@ export const STATUS_BUTTON_LABELS: Record<JobStatus, string> = {
  * Human-readable status labels
  */
 export const STATUS_LABELS: Record<JobStatus, string> = {
+  pending: 'Available',
+  claimed: 'Claimed',
+  active: 'In Progress',
   open: 'Open',
   assigned: 'Assigned',
   enroute_pickup: 'En Route to Pickup',
@@ -72,6 +84,9 @@ export const STATUS_LABELS: Record<JobStatus, string> = {
  * Status colors for UI
  */
 export const STATUS_COLORS: Record<JobStatus, string> = {
+  pending: '#10b981',      // Green - Available
+  claimed: '#3b82f6',      // Blue - Claimed
+  active: '#f59e0b',       // Amber - Active delivery
   open: '#808080',
   assigned: '#2563eb',
   enroute_pickup: '#7c3aed',

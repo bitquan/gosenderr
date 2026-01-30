@@ -59,6 +59,11 @@ export type UserRole =
 
 // Re-export JobStatus enum values as string union type for backward compatibility
 export type JobStatus =
+  // New backend v2 statuses
+  | "pending"        // Job created, not yet claimed
+  | "claimed"        // Courier claimed job
+  | "active"         // Delivery in progress
+  // Old statuses (keep for compatibility)
   | "open"
   | "assigned"
   | "enroute_pickup"

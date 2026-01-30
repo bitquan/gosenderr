@@ -25,7 +25,7 @@ export default function ActiveJobCard({ job, onStart, onView, loading, showNavCo
         </div>
         <div className="flex flex-col gap-2">
           {/* Show Start Trip only when job can be started */}
-          {(job.status === 'assigned' || job.status === 'open') ? (
+          {(job.status === 'assigned' || job.status === 'open' || job.status === 'claimed' || job.status === 'pending') ? (
             <button
               data-testid="start-trip-btn"
               aria-label={`Start trip for job ${job.id}`}
@@ -39,7 +39,7 @@ export default function ActiveJobCard({ job, onStart, onView, loading, showNavCo
             </button>
           ) : (
             // If job is already in-progress, show a Resume Navigation button
-            (['enroute_pickup', 'arrived_pickup', 'picked_up', 'enroute_dropoff', 'arrived_dropoff'].includes(job.status) && onResume) ? (
+            (['enroute_pickup', 'arrived_pickup', 'picked_up', 'enroute_dropoff', 'arrived_dropoff', 'active'].includes(job.status) && onResume) ? (
               <button
                 data-testid="resume-nav-btn"
                 aria-label={`Resume navigation for job ${job.id}`}

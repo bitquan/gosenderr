@@ -5,6 +5,11 @@ export type { TransportMode, UserRole } from '@/lib/v2/types';
 
 // Job statuses - full delivery loop
 export type JobStatus = 
+  // New v2 backend statuses
+  | 'pending'        // Job created, not yet claimed
+  | 'claimed'        // Courier claimed job
+  | 'active'         // Delivery in progress
+  // Old statuses (keep for compatibility)
   | 'open'
   | 'assigned'
   | 'enroute_pickup'

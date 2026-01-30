@@ -8,7 +8,8 @@ import StatusBanner from './StatusBanner'
 import { Job } from '@/lib/v2/types'
 import { calcMiles, calcFee } from '@/lib/v2/pricing'
 import { useMapboxDirections } from '@/hooks/useMapboxDirections'
-import { useCourierLocationWriter } from '@/hooks/v2/useCourierLocationWriter'
+import { useLocationUpdater } from '@/hooks/v2/useLocationUpdater'
+import { useStartDelivery } from '@/hooks/v2/useStartDelivery'
 import { updateJobStatus } from '@/lib/v2/jobs'
 import { useClaimJob } from '@/hooks/v2/useClaimJob'
 import { useAuthUser } from '@/hooks/v2/useAuthUser'
@@ -33,8 +34,11 @@ interface Props {
 export default function MapShell({ jobs, userDoc, onAcceptJob, claiming, externalStartJobId, onStartTriggered, detailOpen, onRequestView }: Props) {
   const mapRef = useRef<MapboxMapHandle | null>(null)
   const { route, routeSegments, fetchJobRoute, fetchRoute, loading: routeLoading, clearRoute } = useMapboxDirections()
-  const { isTracking } = useCourierLocationWriter()
   const { uid } = useAuthUser()
+  const { startDelivery: startDeliveryApi } = useStartDelivery()
+  const { isTracking } = useLocationUpdater({
+    enabled: !!uid,
+  })
   const { claim } = useClaimJob()
   const { startNavigation, isNavigating } = useNavigation()
   const navigate = useNavigate()
@@ -63,13 +67,25 @@ export default function MapShell({ jobs, userDoc, onAcceptJob, claiming, externa
     actionLoadingRef.current = actionLoading
   }, [actionLoading])
 
-  const openJobs = useMemo(() => jobs.filter(j => j.status === 'open' || j.courierUid === uid), [jobs, uid])
+  const openJobs = useMemo(
+    () =>
+      jobs.filter(
+        (j) =>
+          j.status === 'open' ||
+          j.status === 'pending' ||
+          j.status === 'assigned' ||
+          j.status === 'claimed' ||
+          j.status === 'active' ||
+          j.courierUid === uid,
+      ),
+    [jobs, uid],
+  )
 
   // Auto-select first available job (or assigned by me)
   useEffect(() => {
     if (!selectedJobId && openJobs.length > 0) {
       setSelectedJobId(openJobs[0].id)
-      setMode(openJobs[0].status === 'open' ? 'preview' : 'assigned')
+      setMode(openJobs[0].status === 'open' || openJobs[0].status === 'pending' ? 'preview' : 'assigned')
     }
   }, [openJobs, selectedJobId])
 
@@ -274,8 +290,13 @@ export default function MapShell({ jobs, userDoc, onAcceptJob, claiming, externa
       const goToDropoffStatuses = new Set(['picked_up', 'enroute_dropoff', 'arrived_dropoff'])
       const targetIsDropoff = job.status === 'arrived_pickup' || goToDropoffStatuses.has(job.status)
 
-      // If the job is assigned and not yet enroute to pickup, advance status
-      if (job.status === 'assigned' || job.status === 'open') {
+      // If the job is assigned/claimed and not yet active, start delivery in backend
+      if (job.status === 'assigned' || job.status === 'open' || job.status === 'claimed' || job.status === 'pending') {
+        const startResult = await startDeliveryApi(jobId)
+        if (!startResult.success) {
+          throw new Error(startResult.error || 'Failed to start delivery')
+        }
+        // Keep legacy status transitions for UI navigation flow
         await updateJobStatus(jobId, 'enroute_pickup', uid)
       }
 

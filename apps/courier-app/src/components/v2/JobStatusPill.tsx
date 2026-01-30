@@ -5,6 +5,9 @@ interface JobStatusPillProps {
 }
 
 const statusColors: Record<JobStatus, string> = {
+  pending: "#10b981",      // Green - Available
+  claimed: "#3b82f6",      // Blue - Claimed
+  active: "#f59e0b",       // Amber - Active
   open: "#808080",
   assigned: "#2563eb",
   enroute_pickup: "#7c3aed",
@@ -20,6 +23,9 @@ const statusColors: Record<JobStatus, string> = {
 };
 
 const statusLabels: Record<JobStatus, string> = {
+  pending: "Available",
+  claimed: "Claimed",
+  active: "In Progress",
   open: "Open",
   assigned: "Assigned",
   enroute_pickup: "Heading to Pickup",

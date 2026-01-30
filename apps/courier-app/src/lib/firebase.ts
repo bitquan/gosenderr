@@ -1,6 +1,6 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app'
 import { getFirestore, Firestore, connectFirestoreEmulator } from 'firebase/firestore'
-import { getAuth, Auth, indexedDBLocalPersistence, initializeAuth, connectAuthEmulator } from 'firebase/auth'
+import { getAuth, Auth, indexedDBLocalPersistence, browserLocalPersistence, initializeAuth, connectAuthEmulator } from 'firebase/auth'
 import { getStorage, FirebaseStorage, connectStorageEmulator } from 'firebase/storage'
 import { getFunctions, Functions, connectFunctionsEmulator } from 'firebase/functions'
 import { Capacitor } from '@capacitor/core'
@@ -29,10 +29,25 @@ if (isValidConfig) {
     
     // Initialize auth with proper persistence for Capacitor
     if (Capacitor.isNativePlatform()) {
-      console.log('🔐 Initializing auth for native platform with indexedDB persistence');
-      authInstance = initializeAuth(app, {
-        persistence: indexedDBLocalPersistence
-      });
+      // Some WKWebView environments have issues with IndexedDB; try it first and fall back
+      try {
+        console.log('🔐 Initializing auth for native platform with indexedDB persistence');
+        authInstance = initializeAuth(app, {
+          persistence: indexedDBLocalPersistence
+        });
+      } catch (err) {
+        console.warn('⚠️ IndexedDB persistence failed on this WebView, falling back to browserLocalPersistence', err);
+        try {
+          authInstance = initializeAuth(app, {
+            persistence: browserLocalPersistence
+          });
+          console.log('🔐 Auth initialized with browserLocalPersistence fallback');
+        } catch (err2) {
+          console.error('❌ Failed to initialize Auth with fallback persistence', err2);
+          // Final attempt: use getAuth as a last resort (web default)
+          authInstance = getAuth(app);
+        }
+      }
     } else {
       console.log('🔐 Initializing auth for web platform');
       authInstance = getAuth(app);
