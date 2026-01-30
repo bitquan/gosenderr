@@ -4,20 +4,33 @@
   "private": true,
   "main": "electron/out/main.js",
   "scripts": {
-    "dev": "concurrently \"pnpm --filter @gosenderr/admin-desktop dev:vite\" \"pnpm --filter @gosenderr/admin-desktop dev:electron\"",
-    "dev:vite": "pnpm --filter @gosenderr/admin-app dev -- --port 5176",
+    "dev": "vite",
     "dev:electron": "tsc -p electron/tsconfig.json && electron electron/out/main.js",
-    "build:renderer": "pnpm --filter @gosenderr/admin-app build",
+    "build:renderer": "vite build",
     "build:electron": "tsc -p electron/tsconfig.json",
     "build": "pnpm build:renderer && pnpm build:electron",
     "pack": "electron-builder --dir",
     "dist": "electron-builder"
   },
+  "dependencies": {
+    "@stripe/react-stripe-js": "^2.4.0",
+    "@stripe/stripe-js": "^2.2.0",
+    "clsx": "^2.1.1",
+    "firebase": "^10.7.1",
+    "mapbox-gl": "^3.0.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.20.0",
+    "recharts": "^3.7.0",
+    "tailwind-merge": "^3.4.0"
+  },
   "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@vitejs/plugin-react": "^4.2.1",
+    "concurrently": "^8.2.0",
     "electron": "^28.0.0",
     "electron-builder": "^24.0.0",
-    "concurrently": "^8.2.0",
     "typescript": "^5.7.2",
-    "@types/node": "^20.0.0"
+    "vite": "^5.0.8"
   }
 }
