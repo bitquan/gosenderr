@@ -103,6 +103,14 @@ cd apps/shifter-app && pnpm dev    # Port 5175
 cd apps/admin-app && pnpm dev      # Port 5176
 ```
 
+**Docker-based development:** If you prefer a reproducible, containerized setup that includes the Firebase emulators and app dev servers, use:
+
+```bash
+pnpm dev:docker   # or bash scripts/dev-docker-up.sh
+```
+
+See `docs/DEVELOPMENT.md` for details and troubleshooting.
+
 Apps will be available at:
 - Customer: http://localhost:5173
 - Courier: http://localhost:5174
