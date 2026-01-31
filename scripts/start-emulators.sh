@@ -25,8 +25,10 @@ trap cleanup EXIT INT TERM
 # Start emulators in background
 # Use docker-specific config when running inside the container (IN_DOCKER=1)
 if [ "${IN_DOCKER:-}" = "1" ] || [ -f "/.dockerenv" ]; then
-  echo "Using docker config: firebase.docker.json"
-  firebase emulators:start --config=firebase.docker.json --import=./firebase-emulator-data --export-on-exit &
+  echo "Using docker config: firebase.docker.json (starting without Storage emulator to avoid host rules issue)"
+  # Storage emulator inside Docker can require additional project credentials / rules.
+  # Start emulators without storage to avoid failures; storage is available when running locally.
+  firebase emulators:start --config=firebase.docker.json --only auth,firestore,functions,hosting,ui --import=./firebase-emulator-data --export-on-exit &
 else
   firebase emulators:start --import=./firebase-emulator-data --export-on-exit &
 fi
