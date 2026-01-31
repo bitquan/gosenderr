@@ -39,6 +39,7 @@ services:
       - FIREBASE_PROJECT_ID=gosenderr-6773f
       - PROJECT_ID=gosenderr-6773f
       - APP_ENV=development
+      - IN_DOCKER=1
     restart: on-failure
     healthcheck:
       test: ["CMD", "sh", "-c", "curl -sSf http://localhost:4000/ || exit 1"]
