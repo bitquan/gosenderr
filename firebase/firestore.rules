@@ -17,36 +17,24 @@ service cloud.firestore {
         // Check custom claims first (fastest)
         request.auth.token.get('admin', false) == true ||
         request.auth.token.get('role', '') == 'admin' ||
+        // Check users doc role (fallback for admin bootstrap)
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
         // Check adminProfiles collection (your setup)
         exists(/databases/$(database)/documents/adminProfiles/$(request.auth.uid))
       );
     }
     
     function isCourier() {
-      return signedIn()
-        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
-        && (
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'courier' ||
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('courierProfile', null) != null
-        );
+      return signedIn() && (
+        request.auth.token.get('role', '') == 'courier'
+        || request.auth.token.get('courier', false) == true
+      );
     }
     
     function isPackageRunner() {
       return signedIn() && request.auth.token.get('packageRunner', false) == true;
     }
     
-    function isSeller() {
-      return signedIn()
-        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
-        && (
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'seller' ||
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('sellerProfile', null) != null
-        );
-    }
-    
-    function validRole(role) {
-      return role in ['buyer', 'seller', 'courier', 'admin', 'customer', 'runner', 'package_runner'];
-    }
     
     function validNonAdminRole(role) {
       return role in ['buyer', 'seller', 'courier', 'customer', 'runner', 'package_runner'];
@@ -57,28 +45,6 @@ service cloud.firestore {
                    'enroute_dropoff', 'arrived_dropoff', 'completed', 'cancelled', 'disputed'];
     }
 
-    function validPackageSize(size) {
-      return size in ['small', 'medium', 'large', 'xl'];
-    }
-
-    function validPackageFlags(flags) {
-      return flags == null || (
-        flags is map
-        && (!('needsSuvVan' in flags) || flags.needsSuvVan is bool)
-        && (!('fragile' in flags) || flags.fragile is bool)
-        && (!('heavyTwoPerson' in flags) || flags.heavyTwoPerson is bool)
-        && (!('oversized' in flags) || flags.oversized is bool)
-        && (!('stairs' in flags) || flags.stairs is bool)
-      );
-    }
-
-    function validPackageInfo(pkg) {
-      return pkg is map
-        && validPackageSize(pkg.size)
-        && validPackageFlags(pkg.get('flags', null))
-        && (!('notes' in pkg) || (pkg.notes is string && pkg.notes.size() <= 300));
-    }
-    
     function validItemCategory(cat) {
       return cat in ['electronics', 'furniture', 'clothing', 'food', 'other'];
     }
@@ -105,6 +71,19 @@ service cloud.firestore {
       
       // Users can update their own document (but cannot change role to admin)
       allow update: if isSelf(uid) && (!('role' in request.resource.data) || validNonAdminRole(request.resource.data.role));
+
+      // Allow rating writers to update seller rating stats only
+      allow update: if signedIn()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['sellerProfile'])
+        && (
+          !('sellerProfile' in resource.data)
+          || request.resource.data.sellerProfile.diff(resource.data.sellerProfile).affectedKeys().hasOnly([
+            'ratingAvg',
+            'ratingCount',
+            'latestReview',
+            'latestReviewAt'
+          ])
+        );
       
       // Admins can read/create/update
       allow read, create, update: if isAdmin();
@@ -370,10 +349,24 @@ service cloud.firestore {
     // ========== RATINGS ==========
     match /ratings/{ratingId} {
       // Public read of visible ratings
-      allow read: if resource.data.isVisible == true;
+      allow read: if ('isVisible' in resource.data) && resource.data.isVisible == true;
+
+      // Public read of marketplace ratings (for seller averages)
+      allow read: if resource.data.type == 'marketplace'
+        && resource.data.sellerId != null;
 
       // Reviewee can read their own ratings
-      allow read: if signedIn() && request.auth.uid == resource.data.revieweeId;
+      allow read: if signedIn()
+        && ('revieweeId' in resource.data)
+        && request.auth.uid == resource.data.revieweeId;
+
+      // Marketplace ratings: customer or seller can read
+      allow read: if signedIn()
+        && resource.data.type == 'marketplace'
+        && (
+          request.auth.uid == resource.data.customerId
+          || request.auth.uid == resource.data.sellerId
+        );
 
       // Admins can read all ratings
       allow read: if isAdmin();
@@ -381,21 +374,52 @@ service cloud.firestore {
       // Create: support legacy and current rating schemas
       allow create: if signedIn() && (
         (
-          request.resource.data.fromUserId == request.auth.uid
+          ('fromUserId' in request.resource.data)
+          && request.resource.data.fromUserId == request.auth.uid
+          && ('stars' in request.resource.data)
           && request.resource.data.stars >= 1
           && request.resource.data.stars <= 5
+          && ('role' in request.resource.data)
           && request.resource.data.role in ['customer_to_courier', 'courier_to_customer']
         )
         ||
         (
-          request.resource.data.reviewerId == request.auth.uid
+          ('reviewerId' in request.resource.data)
+          && request.resource.data.reviewerId == request.auth.uid
+          && ('score' in request.resource.data)
           && request.resource.data.score >= 1
           && request.resource.data.score <= 5
+        )
+        ||
+        (
+          ('type' in request.resource.data)
+          && request.resource.data.type == 'marketplace'
+          && ('customerId' in request.resource.data)
+          && request.resource.data.customerId == request.auth.uid
+          && ('itemRating' in request.resource.data)
+          && ('sellerRating' in request.resource.data)
+          && request.resource.data.itemRating >= 1
+          && request.resource.data.itemRating <= 5
+          && request.resource.data.sellerRating >= 1
+          && request.resource.data.sellerRating <= 5
         )
       );
 
       // Reviewee can respond to ratings
-      allow update: if signedIn() && request.auth.uid == resource.data.revieweeId;
+      allow update: if signedIn()
+        && resource != null
+        && ('revieweeId' in resource.data)
+        && request.auth.uid == resource.data.revieweeId;
+
+      // Marketplace seller can respond to rating
+      allow update: if signedIn()
+        && resource != null
+        && resource.data.type == 'marketplace'
+        && request.auth.uid == resource.data.sellerId
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'sellerResponse',
+          'sellerResponseAt'
+        ]);
 
       // No deletes
       allow delete: if false;
@@ -530,10 +554,6 @@ service cloud.firestore {
         return signedIn() && resource.data.senderId == request.auth.uid;
       }
       
-      function isRunner() {
-        return signedIn() && resource.data.get('runnerId', null) == request.auth.uid;
-      }
-      
       function isPackageRunner() {
         return signedIn() && request.auth.token.get('packageRunner', false) == true;
       }
@@ -661,13 +681,15 @@ service cloud.firestore {
       // Buyers, sellers, couriers, and admins can read relevant orders
       allow read: if signedIn() && (
         isAdmin() ||
-        request.auth.uid == resource.data.buyerId ||
-        request.auth.uid == resource.data.sellerId ||
-        request.auth.uid == resource.data.courierId
+        (('buyerId' in resource.data) && request.auth.uid == resource.data.buyerId) ||
+        (('customerId' in resource.data) && request.auth.uid == resource.data.customerId) ||
+        (('sellerId' in resource.data) && request.auth.uid == resource.data.sellerId) ||
+        (('courierId' in resource.data) && request.auth.uid == resource.data.courierId)
       );
       
-      // Only Cloud Functions can create orders (payment processing)
-      allow create: if false;
+      // Allow buyer to create order (dev/mock flow)
+      allow create: if signedIn()
+        && request.resource.data.customerId == request.auth.uid;
       
       // Sellers can accept orders, buyers/sellers can cancel
       allow update: if signedIn() && (
@@ -705,6 +727,11 @@ service cloud.firestore {
       
       // Only admins can write categories
       allow write: if isAdmin();
+    }
+
+    // ========== SECRETS (Admin-only) ==========
+    match /secrets/{docId} {
+      allow read, write: if isAdmin();
     }
 
     // ========== REVIEWS ==========
@@ -766,10 +793,6 @@ service cloud.firestore {
 
     // ========== CONVERSATIONS ==========
     match /conversations/{conversationId} {
-      function resourceParticipants() {
-        return resource != null ? safeParticipants(resource.data) : [];
-      }
-
       // Participants can read conversations
       allow read: if signedIn();
       

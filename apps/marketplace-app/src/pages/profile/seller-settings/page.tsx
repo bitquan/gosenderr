@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../../hooks/useAuth'
-import { doc, getDoc, updateDoc } from 'firebase/firestore'
+import { doc, getDoc, updateDoc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '../../../lib/firebase/client'
 import { SellerBadge, SellerBadgeList } from '../../../components/marketplace/SellerBadge'
 import { SellerBadge as BadgeType } from '../../../types/marketplace'
@@ -9,6 +9,7 @@ import { SellerBadge as BadgeType } from '../../../types/marketplace'
 export default function SellerSettingsPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [settings, setSettings] = useState({
@@ -20,10 +21,32 @@ export default function SellerSettingsPage() {
   })
   const [badges, setBadges] = useState<BadgeType[]>([])
   const [sellerScore, setSellerScore] = useState(0)
+  const [sellerStripeComplete, setSellerStripeComplete] = useState(false)
+  const [sellerStripeAccountId, setSellerStripeAccountId] = useState<string | null>(null)
 
   useEffect(() => {
     loadSettings()
   }, [user])
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    if (params.get('mock_onboarding') === 'complete' && user) {
+      const userId = (user as any).uid ?? (user as any).id
+      if (!userId) return
+      const payload = {
+        'sellerProfile.stripeOnboardingComplete': true,
+        'sellerProfile.stripeAccountId': sellerStripeAccountId || (user as any)?.sellerProfile?.stripeAccountId || 'acct_mock_dev',
+        updatedAt: serverTimestamp()
+      }
+      updateDoc(doc(db, 'users', userId), payload)
+        .catch(() => setDoc(doc(db, 'users', userId), payload, { merge: true }))
+        .then(() => {
+          setSellerStripeComplete(true)
+          return loadSettings()
+        })
+        .catch((error) => console.error('Error completing mock onboarding:', error))
+    }
+  }, [location.search, user, sellerStripeAccountId])
 
   const loadSettings = async () => {
     if (!user) return
@@ -45,6 +68,8 @@ export default function SellerSettingsPage() {
           })
           setBadges(sellerProfile.badges || [])
           setSellerScore(sellerProfile.sellerScore || 0)
+          setSellerStripeComplete(Boolean(sellerProfile.stripeOnboardingComplete))
+          setSellerStripeAccountId(sellerProfile.stripeAccountId || null)
         }
       }
     } catch (error) {
@@ -120,7 +145,7 @@ export default function SellerSettingsPage() {
         </div>
 
         {/* Stripe Connect Setup Card */}
-        {!(user as any)?.sellerProfile?.stripeOnboardingComplete && (
+        {!sellerStripeComplete && (
           <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl shadow-lg p-6 mb-6 text-white">
             <div className="flex items-start gap-4">
               <div className="p-3 bg-white/20 rounded-lg">

@@ -1,5 +1,12 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import { User, onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth'
+import {
+  User,
+  onAuthStateChanged,
+  onIdTokenChanged,
+  signOut as firebaseSignOut,
+  setPersistence,
+  browserLocalPersistence
+} from 'firebase/auth'
 import { auth } from '../lib/firebase'
 
 interface AuthContextType {
@@ -20,12 +27,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return
     }
 
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user)
-      setLoading(false)
-    })
+    let unsubscribeAuth: (() => void) | null = null
+    let unsubscribeToken: (() => void) | null = null
 
-    return unsubscribe
+    const initAuth = async () => {
+      try {
+        await setPersistence(auth, browserLocalPersistence)
+      } catch (error) {
+        console.error('Failed to set auth persistence:', error)
+      }
+
+      unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+        setUser(user)
+        setLoading(false)
+      })
+
+      unsubscribeToken = onIdTokenChanged(auth, (user) => {
+        if (user) setUser(user)
+      })
+    }
+
+    initAuth()
+
+    const handleFocus = async () => {
+      try {
+        await auth.currentUser?.getIdToken(true)
+      } catch (error) {
+        console.warn('Failed to refresh auth token:', error)
+      }
+    }
+
+    window.addEventListener('focus', handleFocus)
+    document.addEventListener('visibilitychange', handleFocus)
+
+    return () => {
+      unsubscribeAuth?.()
+      unsubscribeToken?.()
+      window.removeEventListener('focus', handleFocus)
+      document.removeEventListener('visibilitychange', handleFocus)
+    }
   }, [])
 
   const signOut = async () => {

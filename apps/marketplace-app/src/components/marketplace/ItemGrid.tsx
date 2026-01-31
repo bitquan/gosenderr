@@ -5,12 +5,13 @@ interface ItemGridProps {
   items: MarketplaceItem[]
   loading?: boolean
   sellerBadgesMap?: Record<string, string[]>
+  sellerRatingsMap?: Record<string, { average: number; count: number }>
 }
 
 /**
  * ItemGrid - Display marketplace items in a responsive grid
  */
-export function ItemGrid({ items, loading, sellerBadgesMap = {} }: ItemGridProps) {
+export function ItemGrid({ items, loading, sellerBadgesMap = {}, sellerRatingsMap = {} }: ItemGridProps) {
   if (loading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -47,6 +48,7 @@ export function ItemGrid({ items, loading, sellerBadgesMap = {} }: ItemGridProps
           key={item.id} 
           item={item} 
           sellerBadges={sellerBadgesMap[item.sellerId] || []}
+          sellerRating={sellerRatingsMap[item.sellerId]}
         />
       ))}
     </div>

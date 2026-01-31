@@ -24,6 +24,10 @@ interface StripeConnectResult {
   url: string;
 }
 
+interface StripeLoginLinkResult {
+  url: string;
+}
+
 // Cloud Function references
 const createPaymentIntentFn = httpsCallable<CreatePaymentIntentData, CreatePaymentIntentResult>(
   functions,
@@ -33,6 +37,11 @@ const createPaymentIntentFn = httpsCallable<CreatePaymentIntentData, CreatePayme
 const stripeConnectFn = httpsCallable<StripeConnectData, StripeConnectResult>(
   functions,
   'stripeConnect'
+);
+
+const stripeLoginLinkFn = httpsCallable<{ userId: string }, StripeLoginLinkResult>(
+  functions,
+  'createStripeLoginLink'
 );
 
 /**
@@ -58,6 +67,16 @@ export async function createStripeConnectLink(data: StripeConnectData): Promise<
   } catch (error: any) {
     console.error('Error creating Stripe Connect link:', error);
     throw new Error(error.message || 'Failed to create Stripe Connect link');
+  }
+}
+
+export async function createStripeLoginLink(userId: string): Promise<string> {
+  try {
+    const result = await stripeLoginLinkFn({ userId });
+    return result.data.url;
+  } catch (error: any) {
+    console.error('Error creating Stripe login link:', error);
+    throw new Error(error.message || 'Failed to open Stripe dashboard');
   }
 }
 

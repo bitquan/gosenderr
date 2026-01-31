@@ -67,7 +67,10 @@ export default function AdminSidebar() {
       items: [
         { label: 'System Check', path: '/system-check', icon: '🔧' },
         { label: 'Audit Logs', path: '/audit-logs', icon: '📋' },
-        { label: 'Feature Flags', path: '/feature-flags', icon: '🎚️' },        { label: 'Admin Flow Logs', path: '/admin-flow-logs', icon: '🧪' },        { label: 'Settings', path: '/settings', icon: '⚙️' }
+        { label: 'Feature Flags', path: '/feature-flags', icon: '🎚️' },
+        { label: 'Secrets', path: '/settings/secrets', icon: '🔑' },
+        { label: 'Admin Flow Logs', path: '/admin-flow-logs', icon: '🧪' },
+        { label: 'Settings', path: '/settings', icon: '⚙️' }
       ]
     }
   ]

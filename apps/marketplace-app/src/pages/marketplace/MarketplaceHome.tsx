@@ -16,6 +16,7 @@ import { ItemGrid } from '../../components/marketplace/ItemGrid'
 export default function MarketplaceHome() {
   const [items, setItems] = useState<MarketplaceItem[]>([])
   const [sellerBadgesMap, setSellerBadgesMap] = useState<Record<string, string[]>>({})
+  const [sellerRatingsMap, setSellerRatingsMap] = useState<Record<string, { average: number; count: number }>>({})
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<ItemCategory | null>(null)
@@ -66,9 +67,10 @@ export default function MarketplaceHome() {
         })
       }
 
-      // Fetch seller badges for each item
+      // Fetch seller badges + ratings for each item
       const uniqueSellerIds = [...new Set(fetchedItems.map(item => item.sellerId))]
       const badgesMap: Record<string, string[]> = {}
+      const ratingsMap: Record<string, { average: number; count: number }> = {}
       
       await Promise.all(
         uniqueSellerIds.map(async (sellerId) => {
@@ -77,6 +79,12 @@ export default function MarketplaceHome() {
             if (userDoc.exists()) {
               const sellerProfile = userDoc.data().sellerProfile
               badgesMap[sellerId] = sellerProfile?.badges || []
+              if (typeof sellerProfile?.ratingAvg === 'number' && typeof sellerProfile?.ratingCount === 'number') {
+                ratingsMap[sellerId] = {
+                  average: sellerProfile.ratingAvg,
+                  count: sellerProfile.ratingCount
+                }
+              }
             }
           } catch (error) {
             console.error(`Error fetching badges for seller ${sellerId}:`, error)
@@ -86,6 +94,7 @@ export default function MarketplaceHome() {
       )
       
       setSellerBadgesMap(badgesMap)
+      setSellerRatingsMap(ratingsMap)
       
       // Apply badge filters
       let filteredItems = fetchedItems
@@ -215,6 +224,7 @@ export default function MarketplaceHome() {
               items={items} 
               loading={loading}
               sellerBadgesMap={sellerBadgesMap}
+              sellerRatingsMap={sellerRatingsMap}
             />
           </div>
         </div>

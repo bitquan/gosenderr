@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
+import { doc, getDoc } from 'firebase/firestore'
 import { marketplaceService } from '../../../services/marketplace.service'
 import type { MarketplaceItem } from '../../../types/marketplace'
 import { useCart } from '../../../contexts/CartContext'
 import { useAuth } from '../../../contexts/AuthContext'
+import { db } from '../../../lib/firebase/client'
 
 /**
  * ItemDetailPage - Detailed view of a marketplace item (Phase 2)
@@ -19,12 +21,39 @@ export default function ItemDetailPage() {
   const [loading, setLoading] = useState(true)
   const [selectedImage, setSelectedImage] = useState(0)
   const [quantity, setQuantity] = useState(1)
+  const [sellerRating, setSellerRating] = useState<{ average: number; count: number } | null>(null)
+  const [sellerLatestReview, setSellerLatestReview] = useState<string | null>(null)
 
   useEffect(() => {
     if (itemId) {
       fetchItem(itemId)
     }
   }, [itemId])
+
+  useEffect(() => {
+    const fetchSellerProfile = async () => {
+      if (!item?.sellerId) return
+      try {
+        const sellerDoc = await getDoc(doc(db, 'users', item.sellerId))
+        if (sellerDoc.exists()) {
+          const sellerProfile = sellerDoc.data().sellerProfile || {}
+          if (typeof sellerProfile.ratingAvg === 'number' && typeof sellerProfile.ratingCount === 'number') {
+            setSellerRating({
+              average: sellerProfile.ratingAvg,
+              count: sellerProfile.ratingCount,
+            })
+          }
+          if (typeof sellerProfile.latestReview === 'string') {
+            setSellerLatestReview(sellerProfile.latestReview)
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching seller profile:', error)
+      }
+    }
+
+    fetchSellerProfile()
+  }, [item?.sellerId])
 
   const fetchItem = async (id: string) => {
     setLoading(true)
@@ -50,6 +79,14 @@ export default function ItemDetailPage() {
       style: 'currency',
       currency: 'USD',
     }).format(price)
+  }
+
+  const normalizeUrl = (url?: string) => {
+    if (!url) return ''
+    if (typeof window !== 'undefined' && window.location.protocol === 'https:' && url.startsWith('http://')) {
+      return url.replace('http://', 'https://')
+    }
+    return url
   }
 
   const getConditionLabel = (condition: string) => {
@@ -107,7 +144,9 @@ export default function ItemDetailPage() {
     )
   }
 
-  const images = item.photos && item.photos.length > 0 ? item.photos : ['/placeholder-item.png']
+  const images = item.photos && item.photos.length > 0
+    ? item.photos.map((url) => normalizeUrl(url))
+    : ['/placeholder-item.png']
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -281,7 +320,7 @@ export default function ItemDetailPage() {
               {/* Seller Avatar */}
               {item.sellerPhotoURL ? (
                 <img
-                  src={item.sellerPhotoURL}
+                  src={normalizeUrl(item.sellerPhotoURL)}
                   alt={item.sellerName}
                   className="w-16 h-16 rounded-full"
                 />
@@ -300,12 +339,26 @@ export default function ItemDetailPage() {
                 <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
                   <div className="flex items-center gap-1">
                     <span>⭐</span>
-                    <span>4.8</span>
+                    <span>
+                      {sellerRating && sellerRating.count > 0
+                        ? sellerRating.average.toFixed(1)
+                        : 'New'}
+                    </span>
+                    {sellerRating && sellerRating.count > 0 && (
+                      <span className="text-gray-400">({sellerRating.count})</span>
+                    )}
                   </div>
                   <div>
                     {item.soldCount || 0} sales
                   </div>
                 </div>
+
+                {sellerLatestReview && (
+                  <div className="bg-white border border-gray-200 rounded-lg p-3 mb-3">
+                    <div className="text-xs text-gray-500 mb-1">Latest review</div>
+                    <p className="text-sm text-gray-700 line-clamp-3">“{sellerLatestReview}”</p>
+                  </div>
+                )}
 
                 <button
                   onClick={handleContactSeller}

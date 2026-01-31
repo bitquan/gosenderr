@@ -5,14 +5,26 @@ import { SellerBadgeList } from './SellerBadge'
 interface ItemCardProps {
   item: MarketplaceItem
   sellerBadges?: string[] // Array of badge types from seller profile
+  sellerRating?: {
+    average: number
+    count: number
+  }
 }
 
 /**
  * ItemCard - Display a marketplace item in card format
  * Phase 2: Shows seller info (unified user model)
  */
-export function ItemCard({ item, sellerBadges = [] }: ItemCardProps) {
-  const primaryImage = item.photos?.[0] || '/placeholder-item.png'
+export function ItemCard({ item, sellerBadges = [], sellerRating }: ItemCardProps) {
+  const normalizeUrl = (url?: string) => {
+    if (!url) return ''
+    if (typeof window !== 'undefined' && window.location.protocol === 'https:' && url.startsWith('http://')) {
+      return url.replace('http://', 'https://')
+    }
+    return url
+  }
+
+  const primaryImage = normalizeUrl(item.photos?.[0]) || '/placeholder-item.png'
   const isOutOfStock = item.quantity === 0
 
   const formatPrice = (price: number) => {
@@ -99,7 +111,7 @@ export function ItemCard({ item, sellerBadges = [] }: ItemCardProps) {
             <div className="flex items-center space-x-2">
               {item.sellerPhotoURL ? (
                 <img
-                  src={item.sellerPhotoURL}
+                  src={normalizeUrl(item.sellerPhotoURL)}
                   alt={item.sellerName}
                   className="w-6 h-6 rounded-full"
                 />
@@ -109,6 +121,13 @@ export function ItemCard({ item, sellerBadges = [] }: ItemCardProps) {
                 </div>
               )}
               <span className="text-sm text-gray-600">{item.sellerName || 'Seller'}</span>
+            </div>
+            <div className="text-xs text-gray-500">
+              {sellerRating && sellerRating.count > 0 ? (
+                <span>⭐ {sellerRating.average.toFixed(1)} ({sellerRating.count})</span>
+              ) : (
+                <span>New</span>
+              )}
             </div>
           </div>
           {sellerBadges.length > 0 && (

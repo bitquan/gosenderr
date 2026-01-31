@@ -5,15 +5,17 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { getStripePromise } from '@/lib/stripeConfig';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { marketplaceService } from '@/services/marketplace.service';
 import { stripeService } from '@/services/stripe.service';
 import { useAuth } from '@/hooks/useAuth';
 import { DeliveryOption } from '@/types/marketplace';
 import type { MarketplaceItem, Address } from '@/types/marketplace';
+import { db } from '@/lib/firebase/client';
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
+const stripePromise = getStripePromise();
 
 export default function CheckoutPage() {
   const [searchParams] = useSearchParams();
@@ -152,6 +154,7 @@ function CheckoutForm({ item }: { item: MarketplaceItem }) {
   const [clientSecret, setClientSecret] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isMockClientSecret = clientSecret.startsWith('pi_mock_');
 
   const handleDeliverySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -373,14 +376,93 @@ function CheckoutForm({ item }: { item: MarketplaceItem }) {
         </button>
       </div>
 
-      <Elements stripe={stripePromise} options={{ clientSecret }}>
-        <PaymentForm
+      {isMockClientSecret ? (
+        <MockPaymentForm
           item={item}
           deliveryOption={deliveryOption}
-          deliveryAddress={deliveryAddress as Address}
-          deliveryInstructions={deliveryInstructions}
+          deliveryAddress={deliveryAddress}
         />
-      </Elements>
+      ) : (
+        <Elements stripe={stripePromise} options={{ clientSecret }}>
+          <PaymentForm
+            item={item}
+            deliveryOption={deliveryOption}
+            deliveryAddress={deliveryAddress as Address}
+            deliveryInstructions={deliveryInstructions}
+          />
+        </Elements>
+      )}
+    </div>
+  );
+}
+
+function MockPaymentForm({
+  item,
+  deliveryOption,
+  deliveryAddress
+}: {
+  item: MarketplaceItem;
+  deliveryOption: DeliveryOption;
+  deliveryAddress: Partial<Address>;
+}) {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+
+  const handleMockPay = async () => {
+    if (!user) return;
+    setLoading(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    const orderRef = await addDoc(collection(db, 'orders'), {
+      customerId: (user as any).uid ?? (user as any).id,
+      customerEmail: (user as any).email ?? 'customer@example.com',
+      items: [
+        {
+          itemId: item.id,
+          title: item.title,
+          quantity: 1,
+          price: item.price,
+          sellerId: item.sellerId,
+        },
+      ],
+      subtotal: item.price,
+      shipping: deliveryOption === 'pickup' ? 0 : 5.99,
+      tax: 0,
+      total: item.price + (deliveryOption === 'pickup' ? 0 : 5.99),
+      status: 'delivered',
+      paymentStatus: 'paid',
+      createdAt: serverTimestamp(),
+      shippingInfo: {
+        fullName: (deliveryAddress as any)?.fullName || (user as any).displayName || 'Customer',
+        email: (user as any).email || 'customer@example.com',
+        phone: (deliveryAddress as any)?.phone || '',
+        address: (deliveryAddress as any)?.street || '',
+        city: (deliveryAddress as any)?.city || '',
+        state: (deliveryAddress as any)?.state || '',
+        zipCode: (deliveryAddress as any)?.zipCode || '',
+        country: 'United States',
+      },
+    });
+
+    navigate(`/orders/${orderRef.id}`);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+        <p className="text-yellow-800 text-sm">
+          Dev mode: using mock payment intent. No real payment will be processed.
+        </p>
+      </div>
+
+      <button
+        onClick={handleMockPay}
+        disabled={loading}
+        className="w-full bg-purple-600 text-white py-4 rounded-lg hover:bg-purple-700 font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {loading ? 'Processing Payment...' : `Pay $${(item.price + (deliveryOption === 'pickup' ? 0 : 5.99)).toFixed(2)}`}
+      </button>
     </div>
   );
 }

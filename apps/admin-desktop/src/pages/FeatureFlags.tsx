@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { collection, getDocs, doc, updateDoc, addDoc, Timestamp } from 'firebase/firestore'
+import { collection, getDocs, doc, updateDoc, addDoc, setDoc, Timestamp } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { useAuth } from '../hooks/useAuth'
 import { Card, CardHeader, CardTitle, CardContent } from '../components/Card'
+import { useFeatureFlags } from '../hooks/useFeatureFlags'
 
 interface FeatureFlag {
   id: string
@@ -16,6 +17,7 @@ interface FeatureFlag {
 
 export default function FeatureFlagsPage() {
   const { user } = useAuth()
+  const { flags: configFlags, loading: configLoading } = useFeatureFlags()
   const [flags, setFlags] = useState<FeatureFlag[]>([])
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState<string | null>(null)
@@ -124,6 +126,19 @@ export default function FeatureFlagsPage() {
     system: '⚙️'
   }
 
+  const handleToggleWebPortal = async (currentValue: boolean) => {
+    try {
+      await setDoc(
+        doc(db, 'featureFlags', 'config'),
+        { admin: { webPortalEnabled: !currentValue } },
+        { merge: true }
+      )
+    } catch (error) {
+      console.error('Error updating admin web portal flag:', error)
+      alert('Failed to update admin web portal access')
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[#F8F9FF] pb-8">
       <div className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] rounded-b-[32px] p-6 text-white shadow-lg">
@@ -142,6 +157,31 @@ export default function FeatureFlagsPage() {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 -mt-8 space-y-6">
+        <Card variant="elevated">
+          <CardHeader>
+            <CardTitle>Admin Web Portal Access</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium text-gray-900">Enable Web Admin Portal</p>
+                <p className="text-xs text-gray-500">Turn on to allow access to the web admin portal.</p>
+              </div>
+              <button
+                type="button"
+                disabled={configLoading}
+                onClick={() => handleToggleWebPortal(Boolean(configFlags?.admin?.webPortalEnabled))}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                  configFlags?.admin?.webPortalEnabled
+                    ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {configFlags?.admin?.webPortalEnabled ? 'Enabled' : 'Disabled'}
+              </button>
+            </div>
+          </CardContent>
+        </Card>
         {loading ? (
           <Card variant="elevated">
             <CardContent className="p-8 text-center">
