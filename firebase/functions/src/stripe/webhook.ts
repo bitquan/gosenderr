@@ -19,7 +19,14 @@ export const stripeWebhook = functions.https.onRequest(
       return;
     }
 
-    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    const stripeDoc = await db.doc('secrets/stripe').get();
+    const stripeData = stripeDoc.exists ? stripeDoc.data() : {};
+    const configuredMode = stripeData?.mode || 'test';
+    const liveWebhookSecret = stripeData?.liveWebhookSecret || '';
+    const testWebhookSecret = stripeData?.webhookSecret || '';
+    const webhookSecret = configuredMode === 'live' && liveWebhookSecret
+      ? liveWebhookSecret
+      : testWebhookSecret || process.env.STRIPE_WEBHOOK_SECRET;
 
     if (!webhookSecret) {
       console.error('STRIPE_WEBHOOK_SECRET not configured');
@@ -45,6 +52,11 @@ export const stripeWebhook = functions.https.onRequest(
     // Handle the event
     try {
       switch (event.type) {
+        case 'account.updated': {
+          const account = event.data.object as Stripe.Account;
+          await handleAccountUpdated(account);
+          break;
+        }
         case 'checkout.session.completed': {
           const session = event.data.object as Stripe.Checkout.Session;
           await handleCheckoutComplete(session);
@@ -211,4 +223,49 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
   } catch (error: any) {
     console.error('❌ Failed to transfer to courier:', error);
   }
+}
+
+async function handleAccountUpdated(account: Stripe.Account) {
+  const accountId = account.id;
+  const chargesEnabled = Boolean(account.charges_enabled);
+  const payoutsEnabled = Boolean(account.payouts_enabled);
+  const requirements = account.requirements;
+  const requirementsDue = requirements?.currently_due || [];
+  const requirementsPastDue = requirements?.past_due || [];
+  const status = chargesEnabled && payoutsEnabled ? 'verified' : 'pending';
+
+  const updates = {
+    'courierProfile.stripeConnectAccountId': accountId,
+    'courierProfile.stripeChargesEnabled': chargesEnabled,
+    'courierProfile.stripePayoutsEnabled': payoutsEnabled,
+    'courierProfile.stripeRequirementsDue': requirementsDue,
+    'courierProfile.stripeRequirementsPastDue': requirementsPastDue,
+    'courierProfile.stripeAccountStatus': status,
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  };
+
+  const usersRef = db.collection('users');
+
+  const byConnect = await usersRef
+    .where('courierProfile.stripeConnectAccountId', '==', accountId)
+    .get();
+
+  const byLegacy = byConnect.empty
+    ? await usersRef
+        .where('courierProfile.stripeAccountId', '==', accountId)
+        .get()
+    : null;
+
+  const snapshots = byConnect.empty ? byLegacy : byConnect;
+
+  if (!snapshots || snapshots.empty) {
+    console.warn(`No courier user found for Stripe account ${accountId}`);
+    return;
+  }
+
+  const batch = db.batch();
+  snapshots.docs.forEach((docSnap) => {
+    batch.update(docSnap.ref, updates);
+  });
+  await batch.commit();
 }

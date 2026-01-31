@@ -79,7 +79,7 @@ export default function CourierJobsPage() {
   const activeCount = jobs.filter(job => ['assigned', 'in_progress'].includes(job.status)).length
 
   return (
-    <div className="min-h-screen bg-[#F8F9FF] pb-24">
+    <div className="min-h-screen bg-[#F8F9FF]">
       {/* Header */}
       <div className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] rounded-b-[32px] p-6 text-white shadow-lg">
         <div className="max-w-4xl mx-auto">

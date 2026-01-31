@@ -139,6 +139,19 @@ export default function FeatureFlagsPage() {
     }
   }
 
+  const handleToggleCourierOffers = async (currentValue: boolean) => {
+    try {
+      await setDoc(
+        doc(db, 'featureFlags', 'config'),
+        { marketplace: { courierOffers: !currentValue } },
+        { merge: true }
+      )
+    } catch (error) {
+      console.error('Error updating courier offers flag:', error)
+      alert('Failed to update courier offers')
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[#F8F9FF] pb-8">
       <div className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] rounded-b-[32px] p-6 text-white shadow-lg">
@@ -178,6 +191,31 @@ export default function FeatureFlagsPage() {
                 }`}
               >
                 {configFlags?.admin?.webPortalEnabled ? 'Enabled' : 'Disabled'}
+              </button>
+            </div>
+          </CardContent>
+        </Card>
+        <Card variant="elevated">
+          <CardHeader>
+            <CardTitle>Marketplace Courier Offers</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium text-gray-900">Enable Courier Offers</p>
+                <p className="text-xs text-gray-500">Show courier offer cards during checkout.</p>
+              </div>
+              <button
+                type="button"
+                disabled={configLoading}
+                onClick={() => handleToggleCourierOffers(Boolean(configFlags?.marketplace?.courierOffers))}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                  configFlags?.marketplace?.courierOffers
+                    ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {configFlags?.marketplace?.courierOffers ? 'Enabled' : 'Disabled'}
               </button>
             </div>
           </CardContent>

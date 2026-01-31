@@ -7,15 +7,50 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { getStripePromise } from '@/lib/stripeConfig';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { addDoc, collection, getDocs, query, serverTimestamp, where } from 'firebase/firestore';
 import { marketplaceService } from '@/services/marketplace.service';
 import { stripeService } from '@/services/stripe.service';
 import { useAuth } from '@/hooks/useAuth';
+import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 import { DeliveryOption } from '@/types/marketplace';
 import type { MarketplaceItem, Address } from '@/types/marketplace';
 import { db } from '@/lib/firebase/client';
+import { calcMiles } from '@/lib/v2/pricing';
+import { calculateCourierRate, JobInfo } from '@/lib/pricing/calculateCourierRate';
+import { AddressAutocomplete } from '@/components/v2/AddressAutocomplete';
+import { CourierSelector, CourierWithRate } from '@/components/v2/CourierSelector';
+import { UserDoc } from '@gosenderr/shared';
 
 const stripePromise = getStripePromise();
+
+interface CourierDropoffAddress {
+  address: string;
+  lat: number;
+  lng: number;
+}
+
+interface CheckoutSummary {
+  deliveryFee: number;
+  deliveryOption: DeliveryOption;
+  selectedCourier: CourierWithRate | null;
+  courierEtaMinutes: number | null;
+  courierDistance: number | null;
+}
+
+function parseAddressParts(address: string) {
+  const parts = address.split(',').map((part) => part.trim());
+  const [street, city, stateZip] = parts;
+  const stateZipParts = (stateZip || '').split(' ').filter(Boolean);
+  const state = stateZipParts[0] || '';
+  const zipCode = stateZipParts.slice(1).join(' ');
+
+  return {
+    street: street || address,
+    city: city || '',
+    state,
+    zipCode,
+  };
+}
 
 export default function CheckoutPage() {
   const [searchParams] = useSearchParams();
@@ -23,6 +58,13 @@ export default function CheckoutPage() {
   const [item, setItem] = useState<MarketplaceItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [summary, setSummary] = useState<CheckoutSummary>({
+    deliveryFee: 5.99,
+    deliveryOption: DeliveryOption.SHIPPING,
+    selectedCourier: null,
+    courierEtaMinutes: null,
+    courierDistance: null,
+  });
 
   useEffect(() => {
     if (itemId) {
@@ -32,6 +74,17 @@ export default function CheckoutPage() {
       setLoading(false);
     }
   }, [itemId]);
+
+  useEffect(() => {
+    if (!item) return;
+
+    const initialOption = item.deliveryOptions[0] || DeliveryOption.SHIPPING;
+    setSummary((prev) => ({
+      ...prev,
+      deliveryOption: initialOption,
+      deliveryFee: initialOption === 'pickup' ? 0 : 5.99,
+    }));
+  }, [item]);
 
   const loadItem = async () => {
     try {
@@ -71,21 +124,43 @@ export default function CheckoutPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left: Checkout Form */}
         <div className="lg:col-span-2">
-          <CheckoutForm item={item} />
+          <CheckoutForm item={item} onSummaryChange={setSummary} />
         </div>
 
         {/* Right: Order Summary */}
         <div className="lg:col-span-1">
-          <OrderSummary item={item} />
+          <OrderSummary
+            item={item}
+            deliveryFee={summary.deliveryFee}
+            deliveryOption={summary.deliveryOption}
+            selectedCourier={summary.selectedCourier}
+            courierEtaMinutes={summary.courierEtaMinutes}
+            courierDistance={summary.courierDistance}
+          />
         </div>
       </div>
     </div>
   );
 }
 
-function OrderSummary({ item }: { item: MarketplaceItem }) {
-  const deliveryFee = 5.99;
-  const total = item.price + deliveryFee;
+function OrderSummary({
+  item,
+  deliveryFee,
+  deliveryOption,
+  selectedCourier,
+  courierEtaMinutes,
+  courierDistance,
+}: {
+  item: MarketplaceItem;
+  deliveryFee: number;
+  deliveryOption: DeliveryOption;
+  selectedCourier: CourierWithRate | null;
+  courierEtaMinutes: number | null;
+  courierDistance: number | null;
+}) {
+  const resolvedDeliveryFee =
+    deliveryOption === 'courier' && !selectedCourier ? 0 : deliveryFee;
+  const total = item.price + resolvedDeliveryFee;
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6 sticky top-6">
@@ -113,13 +188,45 @@ function OrderSummary({ item }: { item: MarketplaceItem }) {
         </div>
         <div className="flex justify-between text-gray-700">
           <span>Delivery fee</span>
-          <span className="font-medium">${deliveryFee.toFixed(2)}</span>
+          <span className="font-medium">
+            {deliveryOption === 'pickup'
+              ? 'Free'
+              : deliveryOption === 'courier' && !selectedCourier
+                ? 'Select a courier'
+                : `$${resolvedDeliveryFee.toFixed(2)}`}
+          </span>
         </div>
         <div className="border-t pt-3 flex justify-between text-lg font-bold">
           <span>Total</span>
           <span>${total.toFixed(2)}</span>
         </div>
       </div>
+
+      {deliveryOption === 'courier' && selectedCourier && (
+        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-purple-800 font-semibold">Courier</p>
+              <p className="text-sm text-purple-700">
+                {selectedCourier.displayName || 'Selected Senderr'}
+              </p>
+              {(courierEtaMinutes || courierDistance) && (
+                <p className="text-xs text-purple-600 mt-1">
+                  {courierEtaMinutes ? `${courierEtaMinutes} min ETA` : ''}
+                  {courierEtaMinutes && courierDistance ? ' • ' : ''}
+                  {courierDistance ? `${courierDistance.toFixed(1)} mi` : ''}
+                </p>
+              )}
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-purple-600">Delivery</p>
+              <p className="text-lg font-bold text-purple-900">
+                ${resolvedDeliveryFee.toFixed(2)}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Trust Badges */}
       <div className="bg-green-50 border border-green-200 rounded-lg p-4">
@@ -137,9 +244,16 @@ function OrderSummary({ item }: { item: MarketplaceItem }) {
   );
 }
 
-function CheckoutForm({ item }: { item: MarketplaceItem }) {
+function CheckoutForm({
+  item,
+  onSummaryChange,
+}: {
+  item: MarketplaceItem;
+  onSummaryChange: (summary: CheckoutSummary) => void;
+}) {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { flags } = useFeatureFlags();
   const [step, setStep] = useState<'delivery' | 'payment'>('delivery');
   const [deliveryOption, setDeliveryOption] = useState<DeliveryOption>(
     item.deliveryOptions[0] || DeliveryOption.SHIPPING
@@ -154,7 +268,183 @@ function CheckoutForm({ item }: { item: MarketplaceItem }) {
   const [clientSecret, setClientSecret] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [courierDropoff, setCourierDropoff] = useState<CourierDropoffAddress | null>(null);
+  const [courierDistance, setCourierDistance] = useState<number>(0);
+  const [courierEtaMinutes, setCourierEtaMinutes] = useState<number>(0);
+  const [availableCouriers, setAvailableCouriers] = useState<CourierWithRate[]>([]);
+  const [selectedCourier, setSelectedCourier] = useState<CourierWithRate | null>(null);
+  const [searchingCouriers, setSearchingCouriers] = useState(false);
+  const [courierError, setCourierError] = useState<string | null>(null);
   const isMockClientSecret = clientSecret.startsWith('pi_mock_');
+  const courierOffersEnabled = !!flags?.marketplace?.courierOffers;
+  const pickupLocation = item.pickupLocation?.location as any;
+  const pickupLat = pickupLocation?.latitude ?? pickupLocation?.lat;
+  const pickupLng = pickupLocation?.longitude ?? pickupLocation?.lng;
+  const isFoodItem = (item as any).isFoodItem || (item as any).category === 'food';
+
+  const resolvedDeliveryFee =
+    deliveryOption === 'pickup'
+      ? 0
+      : deliveryOption === 'courier' && courierOffersEnabled
+        ? selectedCourier?.rateBreakdown?.totalCustomerCharge ?? 0
+        : 5.99;
+
+  useEffect(() => {
+    onSummaryChange({
+      deliveryFee: resolvedDeliveryFee,
+      deliveryOption,
+      selectedCourier,
+      courierEtaMinutes: courierEtaMinutes || null,
+      courierDistance: courierDistance || null,
+    });
+  }, [
+    onSummaryChange,
+    resolvedDeliveryFee,
+    deliveryOption,
+    selectedCourier,
+    courierEtaMinutes,
+    courierDistance,
+  ]);
+
+  useEffect(() => {
+    if (deliveryOption !== 'courier') {
+      setCourierDropoff(null);
+      setCourierDistance(0);
+      setCourierEtaMinutes(0);
+      setAvailableCouriers([]);
+      setSelectedCourier(null);
+      setCourierError(null);
+    }
+  }, [deliveryOption]);
+
+  useEffect(() => {
+    if (!courierDropoff || pickupLat == null || pickupLng == null) return;
+
+    const dist = calcMiles(
+      { lat: pickupLat, lng: pickupLng },
+      { lat: courierDropoff.lat, lng: courierDropoff.lng },
+    );
+    setCourierDistance(dist);
+    setCourierEtaMinutes(Math.round((dist / 30) * 60));
+  }, [courierDropoff, pickupLat, pickupLng]);
+
+  useEffect(() => {
+    if (!courierOffersEnabled || deliveryOption !== 'courier') return;
+    if (!courierDropoff || courierDistance === 0) return;
+    if (pickupLat == null || pickupLng == null) {
+      setCourierError('Pickup location is missing for courier delivery.');
+      return;
+    }
+
+    async function findCouriers() {
+      setSearchingCouriers(true);
+      setAvailableCouriers([]);
+      setSelectedCourier(null);
+      setCourierError(null);
+
+      try {
+        const usersRef = collection(db, 'users');
+        const courierQuery = query(
+          usersRef,
+          where('courierProfile.status', '==', 'approved'),
+          where('courierProfile.isOnline', '==', true),
+        );
+
+        const snapshot = await getDocs(courierQuery);
+        const couriers: CourierWithRate[] = [];
+
+        for (const docSnap of snapshot.docs) {
+          const courierData = docSnap.data() as UserDoc;
+          const courier: CourierWithRate = {
+            ...courierData,
+            id: docSnap.id,
+            distance: 0,
+            rateBreakdown: {} as any,
+          };
+
+          if (!courier.courierProfile) continue;
+
+          const workModeEnabled = isFoodItem
+            ? courier.courierProfile.workModes.foodEnabled
+            : courier.courierProfile.workModes.packagesEnabled;
+
+          if (!workModeEnabled) continue;
+          if (!courier.courierProfile.currentLocation) continue;
+
+          const courierToPickup = calcMiles(
+            {
+              lat: courier.courierProfile.currentLocation.lat,
+              lng: courier.courierProfile.currentLocation.lng,
+            },
+            { lat: pickupLat, lng: pickupLng },
+          );
+
+          if (courierToPickup > courier.courierProfile.serviceRadius) continue;
+
+          courier.distance = courierToPickup;
+
+          if (isFoodItem && (item as any).foodDetails) {
+            const equipment = courier.courierProfile.equipment;
+            const foodDetails = (item as any).foodDetails;
+
+            if (foodDetails.requiresCooler && !equipment.cooler?.approved)
+              continue;
+            if (
+              foodDetails.requiresHotBag &&
+              !equipment.hot_bag?.approved &&
+              !equipment.insulated_bag?.approved
+            )
+              continue;
+            if (
+              foodDetails.requiresDrinkCarrier &&
+              !equipment.drink_carrier?.approved
+            )
+              continue;
+          }
+
+          const rateCard = isFoodItem
+            ? courier.courierProfile.foodRateCard
+            : courier.courierProfile.packageRateCard;
+
+          if (!rateCard) continue;
+
+          const jobInfo: JobInfo = {
+            distance: courierDistance,
+            estimatedMinutes: courierEtaMinutes,
+            isFoodItem,
+          };
+
+          courier.rateBreakdown = calculateCourierRate(rateCard, jobInfo);
+          couriers.push(courier);
+        }
+
+        couriers.sort(
+          (a, b) =>
+            a.rateBreakdown.totalCustomerCharge -
+            b.rateBreakdown.totalCustomerCharge,
+        );
+
+        setAvailableCouriers(couriers);
+      } catch (err) {
+        console.error('Error finding couriers:', err);
+        setCourierError('Failed to find available couriers');
+      } finally {
+        setSearchingCouriers(false);
+      }
+    }
+
+    findCouriers();
+  }, [
+    courierOffersEnabled,
+    deliveryOption,
+    courierDropoff,
+    courierDistance,
+    courierEtaMinutes,
+    pickupLat,
+    pickupLng,
+    isFoodItem,
+    item,
+  ]);
 
   const handleDeliverySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -162,12 +452,26 @@ function CheckoutForm({ item }: { item: MarketplaceItem }) {
     setLoading(true);
 
     try {
+      if (deliveryOption === 'courier' && courierOffersEnabled) {
+        if (!courierDropoff) {
+          setError('Please select a dropoff address for courier delivery.');
+          setLoading(false);
+          return;
+        }
+
+        if (!selectedCourier) {
+          setError('Please select a courier offer to continue.');
+          setLoading(false);
+          return;
+        }
+      }
+
       // Create payment intent
       const result = await stripeService.createPaymentIntent({
         itemId: item.id,
         quantity: 1,
         deliveryOption: deliveryOption as any,
-        deliveryFee: deliveryOption === 'pickup' ? 0 : 5.99,
+        deliveryFee: resolvedDeliveryFee,
         deliveryAddressId: undefined
       });
 
@@ -247,63 +551,99 @@ function CheckoutForm({ item }: { item: MarketplaceItem }) {
           {deliveryOption !== 'pickup' && (
             <div className="space-y-4">
               <h3 className="font-semibold text-gray-900">Delivery Address</h3>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Street Address
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={deliveryAddress.street}
-                  onChange={(e) => setDeliveryAddress({ ...deliveryAddress, street: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="123 Main St"
-                />
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    City
-                  </label>
-                  <input
-                    type="text"
+              {deliveryOption === 'courier' && courierOffersEnabled ? (
+                <>
+                  <AddressAutocomplete
+                    label="Dropoff Address"
+                    placeholder="Enter dropoff address..."
                     required
-                    value={deliveryAddress.city}
-                    onChange={(e) => setDeliveryAddress({ ...deliveryAddress, city: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    placeholder="San Francisco"
+                    onSelect={(result) => {
+                      setCourierDropoff(result);
+                      const parsed = parseAddressParts(result.address);
+                      setDeliveryAddress({
+                        ...deliveryAddress,
+                        street: parsed.street,
+                        city: parsed.city,
+                        state: parsed.state,
+                        zipCode: parsed.zipCode,
+                      });
+                    }}
                   />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    State
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={deliveryAddress.state}
-                    onChange={(e) => setDeliveryAddress({ ...deliveryAddress, state: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    placeholder="CA"
-                  />
-                </div>
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  ZIP Code
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={deliveryAddress.zipCode}
-                  onChange={(e) => setDeliveryAddress({ ...deliveryAddress, zipCode: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="94102"
-                />
-              </div>
+                  {courierDropoff && (
+                    <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800">
+                      <div>
+                        <span className="font-semibold">Distance:</span>{' '}
+                        {courierDistance.toFixed(2)} miles
+                      </div>
+                      <div>
+                        <span className="font-semibold">Estimated time:</span>{' '}
+                        {courierEtaMinutes} minutes
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Street Address
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={deliveryAddress.street}
+                      onChange={(e) => setDeliveryAddress({ ...deliveryAddress, street: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      placeholder="123 Main St"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        City
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={deliveryAddress.city}
+                        onChange={(e) => setDeliveryAddress({ ...deliveryAddress, city: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        placeholder="San Francisco"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        State
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={deliveryAddress.state}
+                        onChange={(e) => setDeliveryAddress({ ...deliveryAddress, state: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        placeholder="CA"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      ZIP Code
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={deliveryAddress.zipCode}
+                      onChange={(e) => setDeliveryAddress({ ...deliveryAddress, zipCode: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      placeholder="94102"
+                    />
+                  </div>
+                </>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -317,6 +657,31 @@ function CheckoutForm({ item }: { item: MarketplaceItem }) {
                   placeholder="Leave at front door, apartment buzzer code, etc."
                 />
               </div>
+            </div>
+          )}
+
+          {deliveryOption === 'courier' && courierOffersEnabled && (
+            <div className="space-y-4">
+              <h3 className="font-semibold text-gray-900">Courier Offers</h3>
+
+              {courierError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-800">
+                  {courierError}
+                </div>
+              )}
+
+              {searchingCouriers ? (
+                <div className="py-6 text-center text-sm text-gray-600">
+                  Finding available Sendrs...
+                </div>
+              ) : (
+                <CourierSelector
+                  couriers={availableCouriers}
+                  selectedCourierId={selectedCourier?.id || null}
+                  onSelect={setSelectedCourier}
+                  isFoodItem={isFoodItem}
+                />
+              )}
             </div>
           )}
 
@@ -381,6 +746,7 @@ function CheckoutForm({ item }: { item: MarketplaceItem }) {
           item={item}
           deliveryOption={deliveryOption}
           deliveryAddress={deliveryAddress}
+          deliveryFee={resolvedDeliveryFee}
         />
       ) : (
         <Elements stripe={stripePromise} options={{ clientSecret }}>
@@ -389,6 +755,7 @@ function CheckoutForm({ item }: { item: MarketplaceItem }) {
             deliveryOption={deliveryOption}
             deliveryAddress={deliveryAddress as Address}
             deliveryInstructions={deliveryInstructions}
+            deliveryFee={resolvedDeliveryFee}
           />
         </Elements>
       )}
@@ -399,11 +766,13 @@ function CheckoutForm({ item }: { item: MarketplaceItem }) {
 function MockPaymentForm({
   item,
   deliveryOption,
-  deliveryAddress
+  deliveryAddress,
+  deliveryFee,
 }: {
   item: MarketplaceItem;
   deliveryOption: DeliveryOption;
   deliveryAddress: Partial<Address>;
+  deliveryFee: number;
 }) {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -427,9 +796,10 @@ function MockPaymentForm({
         },
       ],
       subtotal: item.price,
-      shipping: deliveryOption === 'pickup' ? 0 : 5.99,
+      shipping: deliveryFee,
       tax: 0,
-      total: item.price + (deliveryOption === 'pickup' ? 0 : 5.99),
+      total: item.price + deliveryFee,
+      deliveryOption,
       status: 'delivered',
       paymentStatus: 'paid',
       createdAt: serverTimestamp(),
@@ -461,7 +831,7 @@ function MockPaymentForm({
         disabled={loading}
         className="w-full bg-purple-600 text-white py-4 rounded-lg hover:bg-purple-700 font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {loading ? 'Processing Payment...' : `Pay $${(item.price + (deliveryOption === 'pickup' ? 0 : 5.99)).toFixed(2)}`}
+        {loading ? 'Processing Payment...' : `Pay $${(item.price + deliveryFee).toFixed(2)}`}
       </button>
     </div>
   );
@@ -471,12 +841,14 @@ function PaymentForm({
   item,
   deliveryOption,
   deliveryAddress,
-  deliveryInstructions
+  deliveryInstructions,
+  deliveryFee,
 }: {
   item: MarketplaceItem;
   deliveryOption: DeliveryOption;
   deliveryAddress: Address;
   deliveryInstructions: string;
+  deliveryFee: number;
 }) {
   const stripe = useStripe();
   const elements = useElements();
@@ -539,7 +911,7 @@ function PaymentForm({
         disabled={!stripe || loading}
         className="w-full bg-purple-600 text-white py-4 rounded-lg hover:bg-purple-700 font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {loading ? 'Processing Payment...' : `Pay $${(item.price + (deliveryOption === 'pickup' ? 0 : 5.99)).toFixed(2)}`}
+        {loading ? 'Processing Payment...' : `Pay $${(item.price + deliveryFee).toFixed(2)}`}
       </button>
     </form>
   );

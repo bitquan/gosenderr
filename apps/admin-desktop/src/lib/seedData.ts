@@ -7,6 +7,7 @@ const FEATURE_FLAGS = [
   { name: 'Marketplace', description: 'Enable marketplace item listings and purchases', enabled: true, category: 'marketplace' },
   { name: 'Item Listings', description: 'Allow vendors to list items for sale', enabled: true, category: 'marketplace' },
   { name: 'Combined Payments', description: 'Combine marketplace and delivery payments', enabled: true, category: 'marketplace' },
+  { name: 'Courier Offers', description: 'Enable courier offers in checkout', enabled: false, category: 'marketplace' },
   
   // Delivery
   { name: 'On-Demand Delivery', description: 'Enable on-demand courier deliveries', enabled: true, category: 'delivery' },
@@ -56,7 +57,8 @@ export const FEATURE_FLAGS_CONFIG = {
   marketplace: {
     enabled: true,
     itemListings: true,
-    combinedPayments: true
+    combinedPayments: true,
+    courierOffers: false
   },
   delivery: {
     onDemand: true,

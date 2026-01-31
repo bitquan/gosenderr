@@ -1,5 +1,5 @@
 import { ReactNode, useEffect, useRef } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 export interface NavItem {
   icon: ReactNode;
@@ -14,6 +14,7 @@ interface BottomNavProps {
 
 export function BottomNav({ items }: BottomNavProps) {
   const location = useLocation();
+  const navigate = useNavigate();
   const pathname = location.pathname;
   const navRef = useRef<HTMLElement | null>(null);
 
@@ -37,31 +38,41 @@ export function BottomNav({ items }: BottomNavProps) {
     <nav
       data-bottom-nav="true"
       ref={navRef}
-      className="fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur border-t border-emerald-100"
+      className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200"
       style={{
         pointerEvents: "auto",
-        paddingBottom: "calc(env(safe-area-inset-bottom) + 10px)",
-        paddingTop: "6px",
+        paddingBottom: "0px",
+        paddingTop: "10px",
+        height: "calc(80px + env(safe-area-inset-bottom))",
         touchAction: "manipulation",
+        transform: "translateZ(0)",
       }}
     >
-      <div className="max-w-lg mx-auto">
-        <div className="flex items-stretch justify-around px-2 py-2 min-h-[64px]">
+      <div
+        className="max-w-lg mx-auto"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
+        <div className="flex items-stretch justify-around px-2 py-2 min-h-[72px]">
           {items.map((item, index) => {
             const isActive =
               pathname === item.href || pathname.startsWith(item.href + "/");
 
             return (
-              <Link
+              <button
                 key={index}
-                to={item.href}
+                type="button"
+                onClick={() => navigate(item.href)}
+                onTouchStart={(event) => {
+                  event.preventDefault();
+                  navigate(item.href);
+                }}
                 data-nav-item={item.href}
-                className={`flex flex-1 flex-col items-center justify-center gap-1 px-3 py-2 rounded-xl min-w-[70px] transition-colors duration-150 ${
+                className={`flex flex-1 flex-col items-center justify-center gap-1.5 px-4 py-3.5 rounded-2xl min-w-[76px] min-h-[64px] transition-colors duration-150 ${
                   isActive
-                    ? "bg-emerald-50 text-emerald-600 -translate-y-0.5"
+                    ? "bg-emerald-50 text-emerald-600"
                     : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
                 }`}
-                style={{ WebkitTapHighlightColor: 'transparent' }}
+                style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
               >
                 <div className="relative">
                   <span className="text-2xl">{item.icon}</span>
@@ -72,11 +83,11 @@ export function BottomNav({ items }: BottomNavProps) {
                   )}
                 </div>
                 <span
-                  className={`text-xs font-medium ${isActive ? "font-semibold" : ""}`}
+                  className={`text-[13px] font-medium ${isActive ? "font-semibold" : ""}`}
                 >
                   {item.label}
                 </span>
-              </Link>
+              </button>
             );
           })}
         </div>

@@ -2,7 +2,7 @@
 import { ReactNode } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { signOut } from "firebase/auth";
-import { getAuthSafe } from "@/lib/firebase/auth";
+import { getAuthSafe } from "@/lib/firebase";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { useUserRole } from "@/hooks/v2/useUserRole";
 import { Link } from "react-router-dom";

@@ -27,6 +27,7 @@ interface CourierJobPreviewProps {
   loading?: boolean;
   showAcceptButton?: boolean;
   footer?: React.ReactNode;
+  enableRoute?: boolean;
 }
 
 // Convert lib Job to features Job (they're compatible)
@@ -44,6 +45,7 @@ export function CourierJobPreview({
   loading = false,
   showAcceptButton = true,
   footer,
+  enableRoute = true,
 }: CourierJobPreviewProps) {
   const job = convertJob(libJob);
   const jobMiles = calcMiles(job.pickup, job.dropoff);
@@ -54,9 +56,10 @@ export function CourierJobPreview({
   const { routeSegments, fetchRoute } = useMapboxDirections();
 
   useEffect(() => {
+    if (!enableRoute) return;
     if (!job.pickup || !job.dropoff) return;
     fetchRoute([job.pickup.lng, job.pickup.lat], [job.dropoff.lng, job.dropoff.lat]);
-  }, [job.pickup, job.dropoff, fetchRoute]);
+  }, [job.pickup, job.dropoff, fetchRoute, enableRoute]);
 
   const hasRateCard = !!rateCard;
 
@@ -76,13 +79,13 @@ export function CourierJobPreview({
   const isAssignedToViewer = viewerUid && job.courierUid === viewerUid;
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-      <div className="p-4 border-b border-gray-100 flex items-start justify-between gap-4">
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="p-3 border-b border-gray-100 flex items-start justify-between gap-3">
         <div>
           <p className="text-xs text-gray-500">
             {isAssignedToViewer ? "Active Job" : "Job Preview"}
           </p>
-          <h3 className="text-lg font-semibold text-gray-900">
+          <h3 className="text-base font-semibold text-gray-900">
             {isAssignedToViewer ? "Accepted Delivery" : "Available Delivery"}
           </h3>
           <p className="text-xs text-gray-500">
@@ -94,19 +97,20 @@ export function CourierJobPreview({
           <p className="text-xs text-gray-500">
             {isAssignedToViewer ? "Agreed Earnings" : "Est. Earnings"}
           </p>
-          <p className="text-xl font-bold text-emerald-600">${displayFee.toFixed(2)}</p>
+          <p className="text-lg font-bold text-emerald-600">${displayFee.toFixed(2)}</p>
         </div>
       </div>
 
-      <div className="p-4 space-y-4">
+      <div className="p-3 space-y-3">
         <div className="rounded-xl overflow-hidden border border-gray-200">
           <MapboxMap
             pickup={job.pickup}
             dropoff={job.dropoff}
-            height="160px"
+            height="120px"
             routeSegments={routeSegments}
             showLabels={visibility.canSeeExactAddresses}
             showPopups={visibility.canSeeExactAddresses}
+            interactive={false}
           />
         </div>
 
@@ -119,7 +123,7 @@ export function CourierJobPreview({
             icon="🎯"
           />
           {!visibility.canSeeExactAddresses && (
-            <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+            <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5">
               Exact addresses appear after you accept the job.
             </div>
           )}
@@ -132,7 +136,7 @@ export function CourierJobPreview({
         />
 
         {hasRateCard ? (
-          <div className="text-xs text-gray-500">
+          <div className="text-[11px] text-gray-500">
             Rate: $
             {("baseFee" in rateCard
               ? rateCard.baseFee
@@ -150,7 +154,7 @@ export function CourierJobPreview({
             )}
           </div>
         ) : (
-          <div className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+          <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5">
             Set your rate card to accept jobs.
           </div>
         )}
@@ -161,16 +165,16 @@ export function CourierJobPreview({
       </div>
 
       {footer ? (
-        <div className="p-4 border-t border-gray-100">{footer}</div>
+        <div className="p-3 border-t border-gray-100">{footer}</div>
       ) : (
         showAcceptButton &&
         onAccept && (
-          <div className="p-4 border-t border-gray-100">
+          <div className="p-3 border-t border-gray-100">
             <button
               onClick={() => onAccept(job.id, fee)}
               disabled={loading || !eligible || !hasRateCard}
               title={!eligible ? "You are not eligible for this job" : ""}
-              className={`w-full py-3 rounded-xl text-white font-semibold transition-colors ${
+              className={`w-full py-2.5 rounded-xl text-white font-semibold transition-colors ${
                 loading || !eligible || !hasRateCard
                   ? "bg-gray-300 cursor-not-allowed"
                   : "bg-emerald-600 hover:bg-emerald-700"

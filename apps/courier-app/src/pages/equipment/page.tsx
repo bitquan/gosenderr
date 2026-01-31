@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { LoadingState } from "@gosenderr/ui";
 import { db, storage } from "@/lib/firebase";
-import { getAuthSafe } from "@/lib/firebase/auth";
+import { getAuthSafe } from "@/lib/firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useNavigate } from "react-router-dom";
@@ -228,7 +228,7 @@ export default function EquipmentPage() {
   ];
 
   return (
-    <div className="fixed inset-0 w-screen h-screen overflow-y-auto pb-24 safe-top bg-[#F8F9FF]">
+    <div className="min-h-screen bg-[#F8F9FF]">
       <div style={{ maxWidth: "1000px", margin: "0 auto", padding: "20px" }}>
       <h1 style={{ marginBottom: "16px", fontSize: "28px", fontWeight: "600" }}>
         Equipment & Badges

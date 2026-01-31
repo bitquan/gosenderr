@@ -8,7 +8,10 @@ import { useToast } from '../components/ToastProvider'
 interface StripeSecrets {
   publishableKey: string
   secretKey: string
+  livePublishableKey?: string
+  liveSecretKey?: string
   webhookSecret: string
+  liveWebhookSecret?: string
   mode: 'test' | 'live'
   updatedAt?: any
   updatedByEmail?: string
@@ -30,7 +33,10 @@ export default function SecretsPage() {
   const [secrets, setSecrets] = useState<StripeSecrets>({
     publishableKey: '',
     secretKey: '',
+    livePublishableKey: '',
+    liveSecretKey: '',
     webhookSecret: '',
+    liveWebhookSecret: '',
     mode: 'test',
   })
   const [mapbox, setMapbox] = useState<MapboxSecrets>({
@@ -50,7 +56,10 @@ export default function SecretsPage() {
         setSecrets({
           publishableKey: data.publishableKey || '',
           secretKey: data.secretKey || '',
+          livePublishableKey: data.livePublishableKey || '',
+          liveSecretKey: data.liveSecretKey || '',
           webhookSecret: data.webhookSecret || '',
+          liveWebhookSecret: data.liveWebhookSecret || '',
           mode: data.mode || 'test',
           updatedAt: data.updatedAt,
           updatedByEmail: data.updatedByEmail,
@@ -83,7 +92,10 @@ export default function SecretsPage() {
         {
           publishableKey: secrets.publishableKey,
           secretKey: secrets.secretKey,
+          livePublishableKey: secrets.livePublishableKey || '',
+          liveSecretKey: secrets.liveSecretKey || '',
           webhookSecret: secrets.webhookSecret,
+          liveWebhookSecret: secrets.liveWebhookSecret || '',
           mode: secrets.mode,
           updatedAt: serverTimestamp(),
           updatedBy: user.uid,
@@ -114,6 +126,30 @@ export default function SecretsPage() {
 
   const lastUpdated = secrets.updatedAt?.toDate ? secrets.updatedAt.toDate() : null
   const mapboxUpdated = mapbox.updatedAt?.toDate ? mapbox.updatedAt.toDate() : null
+  const hasTestPublishable = !!secrets.publishableKey?.trim()
+  const hasTestSecret = !!secrets.secretKey?.trim()
+  const hasTestWebhook = !!secrets.webhookSecret?.trim()
+  const hasLivePublishable = !!secrets.livePublishableKey?.trim()
+  const hasLiveSecret = !!secrets.liveSecretKey?.trim()
+  const hasLiveWebhook = !!secrets.liveWebhookSecret?.trim()
+  const hasTestKeys = hasTestPublishable && hasTestSecret && hasTestWebhook
+  const hasLiveKeys = hasLivePublishable && hasLiveSecret && hasLiveWebhook
+  const configuredMode = secrets.mode || 'test'
+  const effectiveMode = configuredMode === 'live' && hasLiveKeys ? 'live' : 'test'
+  const isFallback = configuredMode === 'live' && !hasLiveKeys && hasTestKeys
+  const isError = effectiveMode === 'live' ? !hasLiveKeys : !hasTestKeys
+  const statusLabel = isError
+    ? 'Missing keys'
+    : effectiveMode === 'live'
+      ? 'Live active'
+      : isFallback
+        ? 'Test active (fallback)'
+        : 'Test active'
+  const statusClass = isError
+    ? 'bg-red-100 text-red-700 border-red-200'
+    : effectiveMode === 'live'
+      ? 'bg-green-100 text-green-700 border-green-200'
+      : 'bg-blue-100 text-blue-700 border-blue-200'
 
   if (loading) {
     return (
@@ -156,6 +192,12 @@ export default function SecretsPage() {
                   Use Test keys for development and Live keys for production.
                 </p>
               </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${statusClass}`}>
+                  {statusLabel}
+                </span>
+                <span className="text-xs text-gray-500">Configured: {configuredMode}</span>
+              </div>
               {lastUpdated && (
                 <div className="text-xs text-gray-500">
                   Last updated {lastUpdated.toLocaleString()} {secrets.updatedByEmail ? `by ${secrets.updatedByEmail}` : ''}
@@ -171,58 +213,118 @@ export default function SecretsPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Publishable Key</label>
-                <input
-                  type="text"
-                  value={secrets.publishableKey}
-                  onChange={(e) => setSecrets({ ...secrets, publishableKey: e.target.value })}
-                  placeholder="pk_..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
-                <p className="text-xs text-gray-500 mt-1">Used by clients to initialize Stripe.</p>
+              <div className="rounded-lg border border-gray-200 bg-white p-4 space-y-4">
+                <div className="text-sm font-semibold text-gray-700">Test Keys</div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Publishable Key</label>
+                  <input
+                    type="text"
+                    value={secrets.publishableKey}
+                    onChange={(e) => setSecrets({ ...secrets, publishableKey: e.target.value })}
+                    placeholder="pk_test_..."
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Used by clients to initialize Stripe in test mode.</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Secret Key</label>
+                  <div className="flex gap-2">
+                    <input
+                      type={showSecret ? 'text' : 'password'}
+                      value={secrets.secretKey}
+                      onChange={(e) => setSecrets({ ...secrets, secretKey: e.target.value })}
+                      placeholder="sk_test_..."
+                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowSecret(!showSecret)}
+                      className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                      {showSecret ? 'Hide' : 'Show'}
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">Never share this key publicly.</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Webhook Secret</label>
+                  <div className="flex gap-2">
+                    <input
+                      type={showWebhook ? 'text' : 'password'}
+                      value={secrets.webhookSecret}
+                      onChange={(e) => setSecrets({ ...secrets, webhookSecret: e.target.value })}
+                      placeholder="whsec_..."
+                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowWebhook(!showWebhook)}
+                      className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                      {showWebhook ? 'Hide' : 'Show'}
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">Used to verify test webhook signatures.</p>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Secret Key</label>
-                <div className="flex gap-2">
+              <div className="rounded-lg border border-gray-200 bg-white p-4 space-y-4">
+                <div className="text-sm font-semibold text-gray-700">Live Keys</div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Publishable Key</label>
                   <input
-                    type={showSecret ? 'text' : 'password'}
-                    value={secrets.secretKey}
-                    onChange={(e) => setSecrets({ ...secrets, secretKey: e.target.value })}
-                    placeholder="sk_..."
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    type="text"
+                    value={secrets.livePublishableKey}
+                    onChange={(e) => setSecrets({ ...secrets, livePublishableKey: e.target.value })}
+                    placeholder="pk_live_..."
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowSecret(!showSecret)}
-                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
-                  >
-                    {showSecret ? 'Hide' : 'Show'}
-                  </button>
+                  <p className="text-xs text-gray-500 mt-1">Used by clients to initialize Stripe in live mode.</p>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">Never share this key publicly.</p>
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Webhook Secret</label>
-                <div className="flex gap-2">
-                  <input
-                    type={showWebhook ? 'text' : 'password'}
-                    value={secrets.webhookSecret}
-                    onChange={(e) => setSecrets({ ...secrets, webhookSecret: e.target.value })}
-                    placeholder="whsec_..."
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowWebhook(!showWebhook)}
-                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
-                  >
-                    {showWebhook ? 'Hide' : 'Show'}
-                  </button>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Secret Key</label>
+                  <div className="flex gap-2">
+                    <input
+                      type={showSecret ? 'text' : 'password'}
+                      value={secrets.liveSecretKey}
+                      onChange={(e) => setSecrets({ ...secrets, liveSecretKey: e.target.value })}
+                      placeholder="sk_live_..."
+                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowSecret(!showSecret)}
+                      className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                      {showSecret ? 'Hide' : 'Show'}
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">Never share this key publicly.</p>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">Used to verify Stripe webhook signatures.</p>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Webhook Secret</label>
+                  <div className="flex gap-2">
+                    <input
+                      type={showWebhook ? 'text' : 'password'}
+                      value={secrets.liveWebhookSecret}
+                      onChange={(e) => setSecrets({ ...secrets, liveWebhookSecret: e.target.value })}
+                      placeholder="whsec_..."
+                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowWebhook(!showWebhook)}
+                      className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                      {showWebhook ? 'Hide' : 'Show'}
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">Used to verify live webhook signatures.</p>
+                </div>
               </div>
             </div>
           </CardContent>

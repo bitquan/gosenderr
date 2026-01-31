@@ -20,10 +20,7 @@ export default function CourierDashboardMobile() {
   const [togglingOnline, setTogglingOnline] = useState(false);
 
   const courierLocation = userDoc?.courierProfile?.currentLocation || null;
-  const transportMode =
-    userDoc?.courierProfile?.transportMode ||
-    userDoc?.courierProfile?.vehicleDetails?.type ||
-    "car";
+  const transportMode = userDoc?.courierProfile?.vehicleType || "car";
 
   const activeJobs = useMemo(() => {
     return jobs.filter(
@@ -88,7 +85,7 @@ export default function CourierDashboardMobile() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8F9FF] pb-24 safe-top">
+    <div className="min-h-screen bg-[#F8F9FF]">
       <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -144,6 +141,7 @@ export default function CourierDashboardMobile() {
                 courierLocation={courierLocation}
                 transportMode={transportMode}
                 viewerUid={uid || undefined}
+                enableRoute={true}
                 showAcceptButton={false}
                 footer={
                   <button
@@ -176,6 +174,7 @@ export default function CourierDashboardMobile() {
                   viewerUid={uid || undefined}
                   onAccept={handleAccept}
                   loading={acceptingJobId === job.id}
+                  enableRoute={false}
                 />
               ))}
             </div>

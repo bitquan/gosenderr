@@ -14,7 +14,14 @@ export async function getStripeSecretKey(): Promise<string> {
   const doc = await admin.firestore().doc("secrets/stripe").get();
   const data = doc.exists ? doc.data() : {};
 
-  const secretKey = data?.secretKey || process.env.STRIPE_SECRET_KEY;
+  const mode = data?.mode || "test";
+  const liveSecretKey = data?.liveSecretKey;
+  const testSecretKey = data?.secretKey || data?.testSecretKey;
+
+  const secretKey =
+    mode === "live" && liveSecretKey
+      ? liveSecretKey
+      : testSecretKey || process.env.STRIPE_SECRET_KEY;
   if (!secretKey) {
     throw new Error("STRIPE_SECRET_KEY not configured");
   }

@@ -94,7 +94,7 @@ export default function CourierSupportPage() {
   });
 
   return (
-    <div className="fixed inset-0 w-screen h-screen overflow-y-auto pb-24 safe-top bg-[#F8F9FF]">
+    <div className="min-h-screen bg-[#F8F9FF]">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-6 sm:space-y-8">
         {/* Header */}
         <div className="text-center space-y-4">

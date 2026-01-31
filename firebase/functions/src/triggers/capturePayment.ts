@@ -1,17 +1,6 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
-import Stripe from "stripe";
-
-function getStripe() {
-  const config = functions.config();
-  const apiKey = config.stripe?.secret_key || process.env.STRIPE_SECRET_KEY;
-  if (!apiKey) {
-    throw new Error('STRIPE_SECRET_KEY not configured');
-  }
-  return new Stripe(apiKey, {
-    apiVersion: "2025-02-24.acacia",
-  });
-}
+import { getStripeClient } from "../stripe/stripeSecrets";
 
 export const capturePayment = functions.firestore
   .document("deliveryJobs/{jobId}")
@@ -45,7 +34,7 @@ export const capturePayment = functions.firestore
       );
 
       // Capture the payment
-      const stripe = getStripe();
+      const stripe = await getStripeClient();
       const paymentIntent = await stripe.paymentIntents.capture(
         paymentIntentId
       );
