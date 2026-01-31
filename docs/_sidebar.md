@@ -1,6 +1,5 @@
 # Docs
 
-- [Project overview](00-PROJECT-OVERVIEW.md)
 - Project Reorganization Plan
   - [GoSenderr v2 - Project Plan](project-plan/README.md)
   - [00 - Project Overview](project-plan/00-PROJECT-OVERVIEW.md)
@@ -14,9 +13,8 @@
   - [08 - Deployment Guide](project-plan/08-DEPLOYMENT-GUIDE.md)
   - [09 - Daily Checklist](project-plan/09-DAILY-CHECKLIST.md)
 
-- **Quick Start**
-  - [🎯 Phase 1 Workflow](PHASE1_WORKFLOW.md)
-
-- [Architecture](ARCHITECTURE.md)
-- [Development](DEVELOPMENT.md)
-- [Deployment guide](DEPLOYMENT.md)
+- Core Docs
+  - [Architecture](ARCHITECTURE.md)
+  - [Development](DEVELOPMENT.md)
+  - [Deployment guide](DEPLOYMENT.md)
+  - [API Reference](API_REFERENCE.md)

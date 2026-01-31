@@ -107,10 +107,10 @@ A native iOS app built with React Native featuring a full-screen map interface w
 
 ### What's Working
 ✅ **Existing Apps:**
-- Customer app (Vite + React) - deployed
+- Marketplace app (Vite + React) - deployed
 - Courier app (Vite + React) - deployed
-- Runner/Shifter app (Vite + React) - deployed
 - Admin app (Vite + React) - deployed
+- Admin Desktop (Electron) - in progress
 - Landing page - deployed
 
 ✅ **Backend Infrastructure:**
@@ -136,7 +136,7 @@ A native iOS app built with React Native featuring a full-screen map interface w
 - Build for macOS and Windows
 
 **Phase 2: Marketplace**
-- Transform customer app to marketplace app
+- Build on `apps/marketplace-app` for unified buyer/seller flows
 - Implement unified user model (buyer + seller)
 - Add selling/listing capabilities
 - Wrap with Capacitor for iOS
