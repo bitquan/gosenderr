@@ -262,6 +262,16 @@ export default function MarketplaceOrdersPage() {
                       </div>
 
                       <div className="flex flex-col gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            window.open(`#/marketplace-orders/${order.id}`, '_blank', 'noopener,noreferrer')
+                          }}
+                          className="px-3 py-2 border border-gray-200 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                        >
+                          Open
+                        </button>
                         <select
                           value={order.status}
                           onChange={(e) => handleStatusChange(order.id, e.target.value)}

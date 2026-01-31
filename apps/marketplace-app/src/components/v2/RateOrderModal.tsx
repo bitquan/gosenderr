@@ -1,11 +1,12 @@
 
 import { useState } from "react";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, serverTimestamp, runTransaction } from "firebase/firestore";
 import { db } from "@/lib/firebase/firestore";
 
 interface RateOrderModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSubmitted?: () => void;
   orderId: string;
   itemId: string;
   itemName: string;
@@ -17,6 +18,7 @@ interface RateOrderModalProps {
 export function RateOrderModal({
   isOpen,
   onClose,
+  onSubmitted,
   orderId,
   itemId,
   itemName,
@@ -61,10 +63,46 @@ export function RateOrderModal({
       });
 
       alert("Thank you for your feedback!");
+      onSubmitted?.();
       onClose();
     } catch (error) {
       console.error("Error submitting rating:", error);
       alert("Failed to submit rating. Please try again.");
+      return;
+    }
+
+    // Update seller profile rating stats (best-effort)
+    try {
+      const sellerRef = doc(db, "users", sellerId);
+      await runTransaction(db, async (transaction) => {
+        const sellerSnap = await transaction.get(sellerRef);
+        const sellerData = sellerSnap.exists() ? sellerSnap.data() : {};
+        const sellerProfile = (sellerData?.sellerProfile ?? {}) as {
+          ratingAvg?: number;
+          ratingCount?: number;
+          latestReview?: string | null;
+          latestReviewAt?: any;
+        };
+
+        const prevCount = typeof sellerProfile.ratingCount === "number" ? sellerProfile.ratingCount : 0;
+        const prevAvg = typeof sellerProfile.ratingAvg === "number" ? sellerProfile.ratingAvg : 0;
+        const nextCount = prevCount + 1;
+        const nextAvg = ((prevAvg * prevCount) + sellerRating) / nextCount;
+
+        const updatePayload: Record<string, unknown> = {
+          "sellerProfile.ratingCount": nextCount,
+          "sellerProfile.ratingAvg": nextAvg,
+        };
+
+        if (review.trim()) {
+          updatePayload["sellerProfile.latestReview"] = review.trim();
+          updatePayload["sellerProfile.latestReviewAt"] = serverTimestamp();
+        }
+
+        transaction.set(sellerRef, updatePayload, { merge: true });
+      });
+    } catch (error) {
+      console.warn("Rating saved, but seller stats update failed:", error);
     } finally {
       setIsSubmitting(false);
     }

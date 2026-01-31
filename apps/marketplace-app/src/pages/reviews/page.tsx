@@ -30,6 +30,8 @@ interface Rating {
   sellerRating?: number;
   averageRating?: number;
   review: string | null;
+  sellerResponse?: string | null;
+  sellerResponseAt?: any;
   type: "delivery" | "marketplace";
   createdAt: any;
 }
@@ -46,7 +48,7 @@ export default function MyReviewsPage() {
 
     const q = query(
       collection(db, "ratings"),
-      where("customerUid", "==", user.uid),
+      where("customerId", "==", user.uid),
       orderBy("createdAt", "desc")
     );
 
@@ -314,6 +316,14 @@ export default function MyReviewsPage() {
                   {review.review && (
                     <div className="bg-gray-50 rounded-lg p-3 mb-3">
                       <p className="text-sm text-gray-700">{review.review}</p>
+                    </div>
+                  )}
+
+                  {review.sellerResponse && (
+                    <div className="bg-purple-50 border border-purple-100 rounded-lg p-3 mb-3">
+                      <p className="text-sm text-purple-900">
+                        <span className="font-semibold">Seller response:</span> {review.sellerResponse}
+                      </p>
                     </div>
                   )}
 

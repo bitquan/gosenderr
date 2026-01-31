@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { stripeService } from '@/services/stripe.service';
 import { useAuth } from '@/hooks/useAuth';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, setDoc, getDoc, collection, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 export default function StripeOnboardingPage() {
@@ -20,12 +20,66 @@ export default function StripeOnboardingPage() {
     detailsSubmitted: boolean;
     chargesEnabled: boolean;
   } | null>(null);
+  const [sellerProfileReady, setSellerProfileReady] = useState(false);
+  const [activatingProfile, setActivatingProfile] = useState(false);
 
   useEffect(() => {
     checkAccountStatus();
   }, []);
 
   const checkAccountStatus = async () => {
+    const userId = (user as any)?.uid ?? (user as any)?.id;
+    if (!userId) return;
+
+    // Ensure sellerProfile exists if user already has listings
+    try {
+      const userRef = doc(db, 'users', userId);
+      const userSnap = await getDoc(userRef);
+      const userData = userSnap.exists() ? (userSnap.data() as any) : {};
+
+      if (userData?.sellerProfile) {
+        setSellerProfileReady(true);
+      }
+
+      if (!userData?.sellerProfile) {
+        const listingsQuery = query(
+          collection(db, 'marketplaceItems'),
+          where('sellerId', '==', userId)
+        );
+        const listingsSnap = await getDocs(listingsQuery);
+        if (!listingsSnap.empty) {
+          console.info('Auto-creating sellerProfile from existing listings', {
+            userId,
+            listings: listingsSnap.size,
+            emulator: Boolean(import.meta.env.DEV)
+          });
+          const payload = {
+            sellerProfile: {
+              isActive: true,
+              activeListings: listingsSnap.size,
+              joinedAsSellerAt: serverTimestamp(),
+              ratingAvg: 0,
+              ratingCount: 0,
+            },
+            updatedAt: serverTimestamp(),
+          };
+          if (userSnap.exists()) {
+            await updateDoc(userRef, payload);
+          } else {
+            await setDoc(userRef, payload, { merge: true });
+          }
+          setSellerProfileReady(true);
+        } else {
+          console.warn('No listings found for seller profile activation', {
+            userId,
+            emulator: Boolean(import.meta.env.DEV)
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Error ensuring seller profile:', err);
+    }
+
     if (!(user as any)?.sellerProfile?.stripeAccountId) {
       setAccountStatus({
         hasAccount: false,
@@ -64,11 +118,16 @@ export default function StripeOnboardingPage() {
         // Save account ID to user profile
         if (user) {
           const userRef = doc(db, 'users', (user as any).uid ?? (user as any).id);
-          await updateDoc(userRef, {
+          const payload = {
             'sellerProfile.stripeAccountId': result.accountId,
             'sellerProfile.stripeOnboardingComplete': false,
-            updatedAt: new Date()
-          });
+            updatedAt: serverTimestamp()
+          };
+          try {
+            await updateDoc(userRef, payload);
+          } catch (error) {
+            await setDoc(userRef, payload, { merge: true });
+          }
         }
         
         // Redirect to Stripe onboarding
@@ -89,7 +148,32 @@ export default function StripeOnboardingPage() {
     navigate('/profile/seller-settings');
   };
 
-  if (!(user as any)?.sellerProfile) {
+  const handleActivateSellerProfile = async () => {
+    const userId = (user as any)?.uid ?? (user as any)?.id;
+    if (!userId) return;
+
+    setActivatingProfile(true);
+    try {
+      const userRef = doc(db, 'users', userId);
+      await setDoc(userRef, {
+        sellerProfile: {
+          isActive: true,
+          activeListings: 0,
+          joinedAsSellerAt: serverTimestamp(),
+          ratingAvg: 0,
+          ratingCount: 0,
+        },
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+      setSellerProfileReady(true);
+    } catch (err) {
+      console.error('Error activating seller profile:', err);
+    } finally {
+      setActivatingProfile(false);
+    }
+  };
+
+  if (!(user as any)?.sellerProfile && !sellerProfileReady) {
     return (
       <div className="max-w-2xl mx-auto p-6">
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
@@ -99,12 +183,21 @@ export default function StripeOnboardingPage() {
           <p className="text-yellow-800 mb-4">
             You need to create your first listing to activate your seller profile.
           </p>
-          <button
-            onClick={() => navigate('/sell')}
-            className="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700"
-          >
-            Create First Listing
-          </button>
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={() => navigate('/sell')}
+              className="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700"
+            >
+              Create First Listing
+            </button>
+            <button
+              onClick={handleActivateSellerProfile}
+              disabled={activatingProfile}
+              className="bg-white border border-yellow-300 text-yellow-800 px-4 py-2 rounded-lg hover:bg-yellow-100 disabled:opacity-50"
+            >
+              {activatingProfile ? 'Activating...' : 'Activate Seller Profile'}
+            </button>
+          </div>
         </div>
       </div>
     );

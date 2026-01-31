@@ -149,17 +149,25 @@ export class MarketplaceService {
     const userData = userSnap.data();
     
     // Create listing
+    const normalizeUrl = (url: string) => {
+      if (!url) return url;
+      if (url.startsWith('http://')) {
+        return url.replace('http://', 'https://');
+      }
+      return url;
+    };
+
     const listing: Omit<MarketplaceItem, 'id'> = {
       sellerId: currentUser.uid,
       sellerName: userData.displayName || 'Anonymous',
-      sellerPhotoURL: userData.profilePhotoUrl || '',
+      sellerPhotoURL: normalizeUrl(userData.profilePhotoUrl || ''),
       title: input.title,
       description: input.description,
       category: input.category,
       condition: input.condition,
       price: input.price,
       quantity: input.quantity,
-      photos: input.photos,
+      photos: input.photos.map(normalizeUrl),
       deliveryOptions: input.deliveryOptions,
       ...(input.pickupLocation && { pickupLocation: input.pickupLocation }),
       status: 'active' as ListingStatus,

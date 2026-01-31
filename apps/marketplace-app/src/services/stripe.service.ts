@@ -15,6 +15,31 @@ import { functions, auth } from '@/lib/firebase';
 
 // Development mode flag
 const USE_MOCK_FUNCTIONS = import.meta.env.DEV && !import.meta.env.VITE_USE_REAL_FUNCTIONS;
+const USING_EMULATORS = Boolean(
+  import.meta.env.VITE_FIREBASE_AUTH_EMULATOR_HOST ||
+  import.meta.env.VITE_FIRESTORE_EMULATOR_HOST ||
+  import.meta.env.VITE_FUNCTIONS_EMULATOR_HOST
+);
+
+const buildMockPaymentIntent = (request: CreatePaymentIntentRequest): CreatePaymentIntentResponse => {
+  const mockItemPrice = 29.99;
+  const amount = (mockItemPrice * request.quantity) + request.deliveryFee;
+  const platformFee = amount * 0.029;
+  const sellerAmount = amount - platformFee;
+
+  return {
+    clientSecret: `pi_mock_secret_${Date.now()}`,
+    paymentIntentId: `pi_mock_${Date.now()}`,
+    amount,
+    platformFee,
+    sellerAmount
+  };
+};
+
+const buildMockConnectAccount = (): CreateConnectAccountResponse => ({
+  accountId: `acct_mock_${Date.now()}`,
+  onboardingUrl: window.location.origin + '/profile/seller-settings?mock_onboarding=complete'
+});
 
 export interface CreateConnectAccountResponse {
   accountId: string;
@@ -64,10 +89,7 @@ export class StripeService {
     if (USE_MOCK_FUNCTIONS) {
       console.log('🧪 DEV MODE: Using mock Stripe Connect account creation');
       await new Promise(resolve => setTimeout(resolve, 500));
-      return {
-        accountId: `acct_mock_${Date.now()}`,
-        onboardingUrl: window.location.origin + '/profile/seller-settings?mock_onboarding=complete'
-      };
+      return buildMockConnectAccount();
     }
     
     try {
@@ -79,6 +101,11 @@ export class StripeService {
       return result.data;
     } catch (error: any) {
       console.error('Error creating Connect account:', error);
+      if (import.meta.env.DEV) {
+        console.warn('🧪 Falling back to mock connect account in dev');
+        await new Promise(resolve => setTimeout(resolve, 300));
+        return buildMockConnectAccount();
+      }
       throw new Error(error.message || 'Failed to create Stripe account');
     }
   }
@@ -109,6 +136,13 @@ export class StripeService {
       return result.data;
     } catch (error: any) {
       console.error('Error getting onboarding link:', error);
+      if (import.meta.env.DEV) {
+        console.warn('🧪 Falling back to mock onboarding link in dev');
+        await new Promise(resolve => setTimeout(resolve, 200));
+        return {
+          url: window.location.origin + '/profile/seller-settings?mock_onboarding=complete'
+        };
+      }
       throw new Error(error.message || 'Failed to get onboarding link');
     }
   }
@@ -147,6 +181,20 @@ export class StripeService {
       return result.data;
     } catch (error: any) {
       console.error('Error getting Connect status:', error);
+      if (import.meta.env.DEV) {
+        console.warn('🧪 Falling back to mock connect status in dev');
+        return {
+          accountId: 'acct_mock_dev',
+          detailsSubmitted: true,
+          chargesEnabled: true,
+          payoutsEnabled: true,
+          requirements: {
+            currently_due: [],
+            eventually_due: [],
+            past_due: []
+          }
+        };
+      }
       throw new Error(error.message || 'Failed to get account status');
     }
   }
@@ -163,21 +211,11 @@ export class StripeService {
       throw new Error('Must be logged in');
     }
     
-    if (USE_MOCK_FUNCTIONS) {
+    if (USE_MOCK_FUNCTIONS || USING_EMULATORS) {
       console.log('🧪 DEV MODE: Mock payment intent (checkout will not process real payment)');
       console.warn('⚠️ To enable real Stripe checkout, deploy Cloud Functions and set VITE_USE_REAL_FUNCTIONS=true');
       await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // Mock calculation
-      const mockItemPrice = 29.99;
-      const amount = mockItemPrice + request.deliveryFee;
-      const platformFee = mockItemPrice * 0.029;
-      
-      throw new Error(
-        'Development mode: Cloud Functions not deployed. ' +
-        'Deploy Stripe functions to test real checkout. ' +
-        'See CHECKOUT_IMPLEMENTATION.md for details.'
-      );
+      return buildMockPaymentIntent(request);
     }
     
     try {
@@ -192,6 +230,11 @@ export class StripeService {
       return result.data;
     } catch (error: any) {
       console.error('Error creating payment intent:', error);
+      if (import.meta.env.DEV && String(error?.message || '').includes('No such destination')) {
+        console.warn('🧪 Falling back to mock payment intent in dev');
+        await new Promise(resolve => setTimeout(resolve, 400));
+        return buildMockPaymentIntent(request);
+      }
       throw new Error(error.message || 'Failed to create payment intent');
     }
   }

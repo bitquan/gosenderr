@@ -2,12 +2,12 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCart } from '../../../contexts/CartContext'
 import { useAuth } from '../../../hooks/useAuth'
-import { loadStripe } from '@stripe/stripe-js'
 import { Elements } from '@stripe/react-stripe-js'
 import { PaymentForm } from '../../../components/checkout/PaymentForm'
+import { getStripePromise } from '@/lib/stripeConfig'
 
 // Initialize Stripe
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '')
+const stripePromise = getStripePromise()
 
 interface ShippingFormData {
   fullName: string

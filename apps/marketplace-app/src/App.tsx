@@ -44,6 +44,7 @@ import StripeOnboardingPage from './pages/profile/stripe-onboarding/page'
 import OrderDetailPage from './pages/orders/[orderId]/page'
 import MessagesPage from './pages/messages/page'
 import ConversationPage from './pages/messages/[conversationId]/page'
+import { useFeatureFlags } from './hooks/useFeatureFlags'
 
 // Seller pages
 import SellerApplicationPage from './pages/seller/apply/page'
@@ -51,6 +52,7 @@ import SellerDashboard from './pages/seller/dashboard/page'
 import NewSellerItem from './pages/seller/items/new/page'
 import EditSellerItem from './pages/seller/items/[itemId]/edit/page'
 import SellerOrders from './pages/seller/orders/page'
+import SellerReviews from './pages/seller/reviews/page'
 
 // Auth pages
 import LoginPage from './pages/Login'
@@ -58,11 +60,30 @@ import SignupPage from './pages/Signup'
 
 function App() {
   console.log('App component rendering')
+  const { flags, loading: flagsLoading } = useFeatureFlags()
+  const marketplaceEnabled = flags?.marketplace?.enabled ?? true
+  const messagingEnabled = (flags?.marketplace?.enabled && (flags as any)?.marketplace?.messaging) ?? true
+  const ratingsEnabled = (flags?.marketplace?.enabled && (flags as any)?.marketplace?.ratings) ?? true
+
+  const MarketplaceDisabled = () => (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Marketplace Disabled</h1>
+        <p className="text-gray-600">This feature is temporarily unavailable.</p>
+      </div>
+    </div>
+  )
+
   return (
     <ErrorBoundary>
       <AuthProvider>
         <CartProvider>
           <CartSidebar />
+          {flagsLoading ? (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+              <div className="text-gray-600">Loading...</div>
+            </div>
+          ) : (
           <Routes>
           {/* Public routes */}
           <Route path="/login" element={
@@ -78,9 +99,9 @@ function App() {
           
           {/* Public marketplace route */}
           <Route path="/" element={<CustomerLayout />}>
-            <Route index element={<MarketplaceHome />} />
-            <Route path="/marketplace" element={<MarketplaceHome />} />
-            <Route path="/marketplace/:itemId" element={<MarketplaceItemPage />} />
+            <Route index element={marketplaceEnabled ? <MarketplaceHome /> : <MarketplaceDisabled />} />
+            <Route path="/marketplace" element={marketplaceEnabled ? <MarketplaceHome /> : <MarketplaceDisabled />} />
+            <Route path="/marketplace/:itemId" element={marketplaceEnabled ? <MarketplaceItemPage /> : <MarketplaceDisabled />} />
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/orders" element={<OrdersPage />} />
             <Route path="/orders/:orderId" element={<OrderDetailPage />} />
@@ -89,7 +110,8 @@ function App() {
           
           {/* Protected marketplace sell route */}
           <Route element={<ProtectedRoute><CustomerLayout /></ProtectedRoute>}>
-            <Route path="/marketplace/sell" element={<MarketplaceSellPage />} />
+            <Route path="/sell" element={<Navigate to="/marketplace/sell" replace />} />
+            <Route path="/marketplace/sell" element={marketplaceEnabled ? <MarketplaceSellPage /> : <MarketplaceDisabled />} />
             <Route path="/profile/listings" element={<MyListingsPage />} />
             <Route path="/profile/seller-settings" element={<SellerSettingsPage />} />
             <Route path="/profile/stripe-onboarding" element={<StripeOnboardingPage />} />
@@ -108,8 +130,8 @@ function App() {
               </RoleGuard>
             } />
 
-            <Route path="/marketplace" element={<MarketplaceHome />} />
-            <Route path="/marketplace/:itemId" element={<MarketplaceItemPage />} />
+            <Route path="/marketplace" element={marketplaceEnabled ? <MarketplaceHome /> : <MarketplaceDisabled />} />
+            <Route path="/marketplace/:itemId" element={marketplaceEnabled ? <MarketplaceItemPage /> : <MarketplaceDisabled />} />
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/orders" element={<OrdersPage />} />
             <Route path="/orders/:orderId" element={<OrderDetailPage />} />
@@ -118,16 +140,16 @@ function App() {
             <Route path="/addresses" element={<AddressesPage />} />
             <Route path="/payment-methods" element={<PaymentMethodsPage />} />
             <Route path="/notifications" element={<NotificationsPage />} />
-            <Route path="/reviews" element={<ReviewsPage />} />
+            <Route path="/reviews" element={ratingsEnabled ? <ReviewsPage /> : <MarketplaceDisabled />} />
             <Route path="/support" element={<SupportPage />} />
             <Route path="/messages" element={
               <RoleGuard allowedRoles={['customer', 'buyer', 'seller']}>
-                <MessagesPage />
+                {messagingEnabled ? <MessagesPage /> : <MarketplaceDisabled />}
               </RoleGuard>
             } />
             <Route path="/messages/:conversationId" element={
               <RoleGuard allowedRoles={['customer', 'buyer', 'seller']}>
-                <ConversationPage />
+                {messagingEnabled ? <ConversationPage /> : <MarketplaceDisabled />}
               </RoleGuard>
             } />
             
@@ -189,8 +211,14 @@ function App() {
                 <SellerOrders />
               </RoleGuard>
             } />
+            <Route path="/seller/reviews" element={
+              <RoleGuard allowedRoles={['admin', 'seller']}>
+                {ratingsEnabled ? <SellerReviews /> : <MarketplaceDisabled />}
+              </RoleGuard>
+            } />
           </Route>
         </Routes>
+          )}
         </CartProvider>
       </AuthProvider>
     </ErrorBoundary>

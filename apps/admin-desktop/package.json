@@ -15,7 +15,7 @@
     "build:electron": "tsc -p electron/tsconfig.json",
     "build": "pnpm build:renderer && pnpm build:electron",
     "pack": "electron-builder --dir",
-    "dist": "electron-builder"
+    "dist": "pnpm build && electron-builder && open dist-electron/*.dmg"
   },
   "dependencies": {
     "@stripe/react-stripe-js": "^2.4.0",
@@ -31,6 +31,8 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.57.0",
+    "@types/react": "^18.3.1",
+    "@types/react-dom": "^18.3.1",
     "@types/node": "^20.0.0",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.24",

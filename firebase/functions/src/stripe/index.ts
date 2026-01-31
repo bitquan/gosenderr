@@ -14,3 +14,5 @@ export {
   stripeWebhooks as marketplaceStripeWebhooks,
 } from './marketplace';
 
+export { createStripeLoginLink } from './adminLoginLink';
+

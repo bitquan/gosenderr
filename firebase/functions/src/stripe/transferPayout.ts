@@ -1,12 +1,6 @@
 import * as functions from 'firebase-functions'
 import * as admin from 'firebase-admin'
-import Stripe from 'stripe'
-
-function getStripe() {
-  const apiKey = process.env.STRIPE_SECRET_KEY
-  if (!apiKey) throw new Error('STRIPE_SECRET_KEY not configured')
-  return new Stripe(apiKey, { apiVersion: '2025-02-24.acacia' })
-}
+import { getStripeClient } from './stripeSecrets'
 
 /**
  * Handler that can be called directly in tests: accepts a Change snapshot and optional stripe client
@@ -27,7 +21,7 @@ export async function transferPayoutHandler(change: functions.Change<FirebaseFir
     return null
   }
 
-  const stripe = stripeClient || getStripe()
+  const stripe = stripeClient || await getStripeClient()
 
   let courierEarnings = 0 as number
   try {

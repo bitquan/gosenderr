@@ -5,8 +5,6 @@ import { useAuth } from '../hooks/useAuth'
 import { Card, CardHeader, CardTitle, CardContent } from '../components/Card'
 
 interface PaymentSettings {
-  stripePublishableKey: string
-  stripeSecretKey: string
   platformCommissionRate: number
   sellerPayoutSchedule: 'daily' | 'weekly' | 'monthly'
   minimumPayoutAmount: number
@@ -24,8 +22,6 @@ interface PaymentSettings {
 export default function PaymentSettingsPage() {
   const { user } = useAuth()
   const [settings, setSettings] = useState<PaymentSettings>({
-    stripePublishableKey: '',
-    stripeSecretKey: '',
     platformCommissionRate: 10,
     sellerPayoutSchedule: 'weekly',
     minimumPayoutAmount: 50,
@@ -54,8 +50,14 @@ export default function PaymentSettingsPage() {
       if (docSnap.exists()) {
         const raw = docSnap.data() as any
         setSettings({
-          ...raw,
-          sellerPayoutSchedule: raw.sellerPayoutSchedule ?? raw.vendorPayoutSchedule ?? 'weekly'
+          platformCommissionRate: raw.platformCommissionRate ?? 10,
+          sellerPayoutSchedule: raw.sellerPayoutSchedule ?? raw.vendorPayoutSchedule ?? 'weekly',
+          minimumPayoutAmount: raw.minimumPayoutAmount ?? 50,
+          autoPayouts: raw.autoPayouts ?? true,
+          paymentMethods: raw.paymentMethods ?? { card: true, applePay: true, googlePay: true },
+          currency: raw.currency ?? 'USD',
+          taxRate: raw.taxRate ?? 0,
+          collectTax: raw.collectTax ?? false
         })
       }
     } catch (error) {
@@ -101,38 +103,14 @@ export default function PaymentSettingsPage() {
       </div>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 -mt-8 space-y-6">
-        {/* Stripe Configuration */}
         <Card variant="elevated">
           <CardHeader>
-            <CardTitle>Stripe Configuration</CardTitle>
+            <CardTitle>Stripe Keys</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Publishable Key
-                </label>
-                <input
-                  type="text"
-                  value={settings.stripePublishableKey}
-                  onChange={(e) => setSettings({...settings, stripePublishableKey: e.target.value})}
-                  placeholder="pk_..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Secret Key
-                </label>
-                <input
-                  type="password"
-                  value={settings.stripeSecretKey}
-                  onChange={(e) => setSettings({...settings, stripeSecretKey: e.target.value})}
-                  placeholder="sk_..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
-                <p className="text-xs text-gray-500 mt-1">Keep this secret and secure</p>
-              </div>
+            <div className="text-sm text-gray-600">
+              Stripe keys are managed in the Secrets Manager. Go to Settings → Secrets to update
+              publishable keys, secret keys, and webhook secrets.
             </div>
           </CardContent>
         </Card>

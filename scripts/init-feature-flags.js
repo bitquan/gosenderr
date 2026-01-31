@@ -20,7 +20,8 @@ async function initializeFeatureFlags() {
         longHaul: false, // NEW: Interstate logistics
       },
       courier: {
-        rateCards: true, // Already in production
+       featureFlagsControl: true,
+       webPortalEnabled: false,
         equipmentBadges: true,
         workModes: true,
       },

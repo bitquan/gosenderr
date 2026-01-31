@@ -16,7 +16,7 @@
   "hosting": [
     {
       "site": "gosenderr-6773f",
-      "public": "apps/landing",
+      "public": "apps/marketplace-app/dist",
       "ignore": ["firebase.json", "**/node_modules/**"],
       "rewrites": [
         {

@@ -16,7 +16,7 @@ interface NavGroup {
 
 export default function AdminSidebar() {
   const location = useLocation()
-  const { user } = useAuth()
+  const { user, signOut } = useAuth()
   const [isMobileOpen, setIsMobileOpen] = useState(false)
 
   const navGroups: NavGroup[] = [
@@ -59,7 +59,8 @@ export default function AdminSidebar() {
     {
       title: 'Finance',
       items: [
-        { label: 'Revenue', path: '/revenue', icon: '💰' }
+        { label: 'Revenue', path: '/revenue', icon: '💰' },
+        { label: 'Payment Settings', path: '/settings/payment', icon: '💳' }
       ]
     },
     {
@@ -67,7 +68,10 @@ export default function AdminSidebar() {
       items: [
         { label: 'System Check', path: '/system-check', icon: '🔧' },
         { label: 'Audit Logs', path: '/audit-logs', icon: '📋' },
-        { label: 'Feature Flags', path: '/feature-flags', icon: '🎚️' },        { label: 'Admin Flow Logs', path: '/admin-flow-logs', icon: '🧪' },        { label: 'Settings', path: '/settings', icon: '⚙️' }
+        { label: 'Feature Flags', path: '/feature-flags', icon: '🎚️' },
+        { label: 'Secrets', path: '/settings/secrets', icon: '🔑' },
+        { label: 'Admin Flow Logs', path: '/admin-flow-logs', icon: '🧪' },
+        { label: 'Settings', path: '/settings', icon: '⚙️' }
       ]
     }
   ]
@@ -109,6 +113,12 @@ export default function AdminSidebar() {
               <p className="text-xs text-gray-500">Admin Portal</p>
             </div>
           </Link>
+          <button
+            onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))}
+            className="mt-4 w-full px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50"
+          >
+            🔎 Search (⌘K)
+          </button>
         </div>
 
         {/* User Info */}
@@ -159,6 +169,12 @@ export default function AdminSidebar() {
 
         {/* Footer */}
         <div className="p-4 border-t border-gray-200 bg-gray-50">
+          <button
+            onClick={signOut}
+            className="w-full mb-3 px-4 py-2 rounded-lg bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800"
+          >
+            Sign Out
+          </button>
           <div className="text-xs text-gray-500 text-center">
             <p>GoSenderr Admin v1.0</p>
             <p className="mt-1">© 2026</p>

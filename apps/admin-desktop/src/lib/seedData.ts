@@ -90,7 +90,8 @@ export const FEATURE_FLAGS_CONFIG = {
     equipmentReview: true,
     disputeManagement: true,
     analytics: true,
-    featureFlagsControl: true
+    featureFlagsControl: true,
+    webPortalEnabled: false
   },
   advanced: {
     pushNotifications: false,

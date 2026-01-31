@@ -43,6 +43,21 @@ export interface CreatePaymentIntentResponse {
 // Development mode flag
 const USE_MOCK_FUNCTIONS = import.meta.env.DEV && !import.meta.env.VITE_USE_REAL_FUNCTIONS;
 
+const buildMockPaymentIntent = (request: CreatePaymentIntentRequest): CreatePaymentIntentResponse => {
+  const mockItemPrice = 29.99;
+  const amount = (mockItemPrice * request.quantity) + request.deliveryFee;
+  const platformFee = amount * 0.029;
+  const sellerAmount = amount - platformFee;
+
+  return {
+    clientSecret: `pi_mock_secret_${Date.now()}`,
+    paymentIntentId: `pi_mock_${Date.now()}`,
+    amount,
+    platformFee,
+    sellerAmount
+  };
+};
+
 export class StripeService {
   
   /**
@@ -161,20 +176,7 @@ export class StripeService {
     if (USE_MOCK_FUNCTIONS) {
       console.log('🧪 Using mock payment intent');
       await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // Calculate mock amounts
-      const mockItemPrice = 29.99; // Mock item price
-      const amount = mockItemPrice + request.deliveryFee;
-      const platformFee = mockItemPrice * 0.029;
-      const sellerAmount = amount - platformFee;
-      
-      return {
-        clientSecret: `pi_mock_secret_${Date.now()}`,
-        paymentIntentId: `pi_mock_${Date.now()}`,
-        amount,
-        platformFee,
-        sellerAmount
-      };
+      return buildMockPaymentIntent(request);
     }
     
     try {
@@ -189,6 +191,11 @@ export class StripeService {
       return result.data;
     } catch (error: any) {
       console.error('Error creating payment intent:', error);
+      if (import.meta.env.DEV && String(error?.message || '').includes('Seller has not set up payments')) {
+        console.warn('🧪 Falling back to mock payment intent in dev');
+        await new Promise(resolve => setTimeout(resolve, 400));
+        return buildMockPaymentIntent(request);
+      }
       throw new Error(error.message || 'Failed to create payment intent');
     }
   }

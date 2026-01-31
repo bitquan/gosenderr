@@ -6,6 +6,8 @@ import { Card, CardHeader, CardTitle, CardContent } from '../components/Card'
 import EditRoleModal from '../components/EditRoleModal'
 import BanUserModal from '../components/BanUserModal'
 import RunTestFlowModal from '../components/RunTestFlowModal'
+import { createStripeLoginLink } from '../lib/cloudFunctions'
+import { useToast } from '../components/ToastProvider'
 
 interface AdminLog {
   id: string
@@ -44,6 +46,8 @@ interface User {
     verified?: boolean
     rating?: number
     totalSales?: number
+    stripeAccountId?: string
+    stripeOnboardingComplete?: boolean
     verifiedAt?: any
   }
   profilePicture?: string
@@ -81,6 +85,7 @@ export default function UserDetailPage() {
   const [runFlowOpen, setRunFlowOpen] = useState(false)
   const [activityLogs, setActivityLogs] = useState<AdminLog[]>([])
   const [logsLoading, setLogsLoading] = useState(true)
+  const { showToast } = useToast()
 
   useEffect(() => {
     if (userId) {
@@ -131,6 +136,21 @@ export default function UserDetailPage() {
       setActivityLogs([])
     } finally {
       setLogsLoading(false)
+    }
+  }
+
+  const handleOpenStripeDashboard = async () => {
+    if (!user?.id) return
+    try {
+      const url = await createStripeLoginLink(user.id)
+      const electron = (window as any).electron
+      if (electron?.openExternal) {
+        await electron.openExternal(url)
+      } else {
+        window.open(url, '_blank', 'noopener,noreferrer')
+      }
+    } catch (error: any) {
+      showToast(error?.message || 'Failed to open Stripe dashboard', 'error')
     }
   }
 
@@ -595,6 +615,20 @@ export default function UserDetailPage() {
                     </p>
                   </div>
                 )}
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={handleOpenStripeDashboard}
+                    disabled={!user.sellerProfile?.stripeAccountId}
+                    className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 disabled:opacity-50"
+                  >
+                    Open Stripe Dashboard
+                  </button>
+                  {!user.sellerProfile?.stripeAccountId && (
+                    <span className="text-sm text-gray-500">
+                      No Stripe account connected
+                    </span>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>

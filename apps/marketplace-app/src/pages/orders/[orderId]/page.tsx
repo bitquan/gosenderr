@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useLocation } from 'react-router-dom'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '../../../lib/firebase'
 import { useAuth } from '../../../hooks/useAuth'
+import { RateOrderModal } from '../../../components/v2/RateOrderModal'
 
 interface OrderItem {
   itemId: string
@@ -39,10 +40,14 @@ interface Order {
 
 export default function OrderDetailPage() {
   const { orderId } = useParams<{ orderId: string }>()
+  const location = useLocation() as { state?: { openRating?: boolean } }
   const { user } = useAuth()
   const [order, setOrder] = useState<Order | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [sellerName, setSellerName] = useState<string>('Seller')
+  const [ratingOpen, setRatingOpen] = useState(false)
+  const [ratingExists, setRatingExists] = useState(false)
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -68,6 +73,27 @@ export default function OrderDetailPage() {
           ...orderData,
           id: orderDoc.id,
         })
+
+        const firstItem = orderData.items?.[0]
+        if (firstItem?.sellerId) {
+          try {
+            const sellerDoc = await getDoc(doc(db, 'users', firstItem.sellerId))
+            if (sellerDoc.exists()) {
+              const sellerData = sellerDoc.data() as { displayName?: string }
+              setSellerName(sellerData.displayName || 'Seller')
+            }
+          } catch (err) {
+            console.warn('Unable to load seller profile:', err)
+          }
+        }
+
+        try {
+          const ratingId = `${orderDoc.id}_${user.uid}`
+          const ratingDoc = await getDoc(doc(db, 'ratings', ratingId))
+          setRatingExists(ratingDoc.exists())
+        } catch (err) {
+          console.warn('Unable to load rating status:', err)
+        }
       } catch (err) {
         console.error('Error fetching order:', err)
         setError('Failed to load order details')
@@ -78,6 +104,12 @@ export default function OrderDetailPage() {
 
     fetchOrder()
   }, [orderId, user])
+
+  useEffect(() => {
+    if (location.state?.openRating && order && !ratingExists) {
+      setRatingOpen(true)
+    }
+  }, [location.state, order, ratingExists])
 
   if (loading) {
     return (
@@ -230,6 +262,22 @@ export default function OrderDetailPage() {
           </div>
         </div>
 
+        {order.status === 'delivered' && order.items?.[0] && (
+          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <h2 className="text-xl font-bold mb-2">Rate Your Order</h2>
+            <p className="text-sm text-gray-600 mb-4">
+              Share your feedback to help other shoppers.
+            </p>
+            <button
+              onClick={() => setRatingOpen(true)}
+              disabled={ratingExists}
+              className="px-5 py-3 rounded-lg font-semibold text-white bg-purple-600 hover:bg-purple-700 disabled:opacity-50"
+            >
+              {ratingExists ? 'Rating Submitted' : 'Rate Order'}
+            </button>
+          </div>
+        )}
+
         {/* Action Buttons */}
         <div className="flex gap-4">
           <Link
@@ -245,6 +293,20 @@ export default function OrderDetailPage() {
             Continue Shopping
           </Link>
         </div>
+
+        {order.items?.[0] && user && (
+          <RateOrderModal
+            isOpen={ratingOpen}
+            onClose={() => setRatingOpen(false)}
+            onSubmitted={() => setRatingExists(true)}
+            orderId={order.id}
+            itemId={order.items[0].itemId}
+            itemName={order.items[0].title}
+            sellerId={order.items[0].sellerId}
+            sellerName={sellerName}
+            customerId={user.uid}
+          />
+        )}
       </div>
     </div>
   )

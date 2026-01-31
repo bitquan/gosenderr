@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { collection, getDocs } from 'firebase/firestore'
+import { collection, getDocs, limit, orderBy, query } from 'firebase/firestore'
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { db } from '../lib/firebase'
 import { useAuth } from '../hooks/useAuth'
@@ -51,6 +51,9 @@ export default function AdminDashboardPage() {
     topCategories: []
   })
   const [loading, setLoading] = useState(true)
+  const [recentOrders, setRecentOrders] = useState<any[]>([])
+  const [recentJobs, setRecentJobs] = useState<any[]>([])
+  const [recentDisputes, setRecentDisputes] = useState<any[]>([])
 
   useEffect(() => {
     const loadStats = async () => {
@@ -215,6 +218,15 @@ export default function AdminDashboardPage() {
             revenue: dayRevenue
           })
         }
+
+        // Recent activity (top 5 each)
+        const recentOrdersSnap = await getDocs(query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(5)))
+        const recentJobsSnap = await getDocs(query(collection(db, 'jobs'), orderBy('createdAt', 'desc'), limit(5)))
+        const recentDisputesSnap = await getDocs(query(collection(db, 'disputes'), orderBy('createdAt', 'desc'), limit(5)))
+
+        setRecentOrders(recentOrdersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any })))
+        setRecentJobs(recentJobsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any })))
+        setRecentDisputes(recentDisputesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any })))
 
         // Top categories by items and sales
         const categoriesSnap = await getDocs(collection(db, 'categories'))
@@ -414,6 +426,74 @@ export default function AdminDashboardPage() {
             </div>
           </CardContent>
         </Card>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <Card variant="elevated">
+            <CardHeader>
+              <CardTitle>Recent Orders</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {recentOrders.map(order => (
+                  <Link key={order.id} to={`/marketplace-orders/${order.id}`} className="block p-2 rounded-lg hover:bg-gray-50">
+                    <div className="flex justify-between">
+                      <span className="text-sm font-semibold">{order.id.slice(0, 6)}</span>
+                      <span className="text-xs text-gray-500">{order.status}</span>
+                    </div>
+                    <p className="text-xs text-gray-500">{order.customerEmail || order.customerId || 'Order'}</p>
+                  </Link>
+                ))}
+                {!loading && recentOrders.length === 0 && (
+                  <p className="text-sm text-gray-500">No recent orders</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card variant="elevated">
+            <CardHeader>
+              <CardTitle>Recent Jobs</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {recentJobs.map(job => (
+                  <Link key={job.id} to={`/jobs?jobId=${job.id}`} className="block p-2 rounded-lg hover:bg-gray-50">
+                    <div className="flex justify-between">
+                      <span className="text-sm font-semibold">{job.id.slice(0, 6)}</span>
+                      <span className="text-xs text-gray-500">{job.status}</span>
+                    </div>
+                    <p className="text-xs text-gray-500">{job.createdByEmail || job.createdByUid || 'Job'}</p>
+                  </Link>
+                ))}
+                {!loading && recentJobs.length === 0 && (
+                  <p className="text-sm text-gray-500">No recent jobs</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card variant="elevated">
+            <CardHeader>
+              <CardTitle>Recent Disputes</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {recentDisputes.map(dispute => (
+                  <Link key={dispute.id} to="/disputes" className="block p-2 rounded-lg hover:bg-gray-50">
+                    <div className="flex justify-between">
+                      <span className="text-sm font-semibold">{dispute.id.slice(0, 6)}</span>
+                      <span className="text-xs text-gray-500">{dispute.status}</span>
+                    </div>
+                    <p className="text-xs text-gray-500">{dispute.reason || 'Dispute'}</p>
+                  </Link>
+                ))}
+                {!loading && recentDisputes.length === 0 && (
+                  <p className="text-sm text-gray-500">No recent disputes</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Analytics Charts */}
         {!loading && (

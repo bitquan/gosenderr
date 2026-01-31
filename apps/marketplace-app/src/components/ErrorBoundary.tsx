@@ -1,4 +1,5 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
+import { logFirebaseError } from '../lib/firebase/error';
 
 interface Props {
   children: ReactNode;
@@ -21,6 +22,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    logFirebaseError(error, 'ErrorBoundary');
     console.error('ErrorBoundary caught an error:', error, errorInfo);
   }
 

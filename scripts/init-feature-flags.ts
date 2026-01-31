@@ -84,6 +84,7 @@ async function initFeatureFlags() {
       disputeManagement: true,
       analytics: true,
       featureFlagsControl: true,
+      webPortalEnabled: false,
     },
     advanced: {
       pushNotifications: true,

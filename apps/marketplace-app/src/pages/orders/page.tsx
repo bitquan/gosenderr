@@ -9,6 +9,7 @@ interface OrderItem {
   title: string
   quantity: number
   price: number
+  sellerId?: string
 }
 
 interface Order {
@@ -183,6 +184,15 @@ export default function OrdersPage() {
                   >
                     View Details
                   </Link>
+                  {order.status === 'delivered' && (
+                    <Link
+                      to={`/orders/${order.id}`}
+                      state={{ openRating: true }}
+                      className="px-4 py-2 border-2 border-purple-600 text-purple-600 rounded-lg hover:bg-purple-50 transition font-semibold text-sm"
+                    >
+                      Rate Order
+                    </Link>
+                  )}
                   <button
                     className="px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-semibold text-sm"
                     onClick={() => {

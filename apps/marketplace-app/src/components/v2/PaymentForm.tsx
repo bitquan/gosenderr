@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from 'react';
-import { loadStripe } from '@stripe/stripe-js';
 import {
   Elements,
   PaymentElement,
@@ -8,10 +7,9 @@ import {
   useElements,
 } from '@stripe/react-stripe-js';
 import { createPaymentIntent } from '@/lib/cloudFunctions';
+import { getStripePromise } from '@/lib/stripeConfig';
 
-const stripePromise = loadStripe(
-  import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY!
-);
+const stripePromise = getStripePromise();
 
 interface PaymentFormProps {
   jobId: string;

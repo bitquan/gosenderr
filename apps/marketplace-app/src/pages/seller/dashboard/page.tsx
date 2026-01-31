@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { collection, query, where, getDocs, deleteDoc, doc } from "firebase/firestore";
+import { collection, query, where, getDocs, deleteDoc, doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { Card, CardContent } from "@/components/ui/Card";
@@ -40,6 +40,8 @@ export default function SellerDashboard() {
     totalRevenue: 0,
     totalOrders: 0,
     avgOrderValue: 0,
+    ratingAvg: 0,
+    ratingCount: 0,
   });
 
   useEffect(() => {
@@ -81,6 +83,23 @@ export default function SellerDashboard() {
         const orderData = doc.data();
         return orderData.items?.some((item: any) => item.sellerId === uid);
       });
+
+      let ratingAvg = 0;
+      let ratingCount = 0;
+      try {
+        const sellerDoc = await getDoc(doc(db, "users", uid));
+        if (sellerDoc.exists()) {
+          const sellerProfile = sellerDoc.data().sellerProfile || {};
+          if (typeof sellerProfile.ratingAvg === "number") {
+            ratingAvg = sellerProfile.ratingAvg;
+          }
+          if (typeof sellerProfile.ratingCount === "number") {
+            ratingCount = sellerProfile.ratingCount;
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load seller rating stats:", error);
+      }
 
       const totalRevenue = sellerOrders.reduce((sum, doc) => {
         const orderData = doc.data();
@@ -126,6 +145,8 @@ export default function SellerDashboard() {
         totalRevenue,
         totalOrders: sellerOrders.length,
         avgOrderValue,
+        ratingAvg,
+        ratingCount,
       });
     } catch (error) {
       console.error("Failed to load seller items:", error);
@@ -172,6 +193,12 @@ export default function SellerDashboard() {
                 View Orders
               </Link>
               <Link
+                to="/seller/reviews"
+                className="px-6 py-3 bg-white/20 text-white rounded-xl font-semibold hover:bg-white/30 transition-all"
+              >
+                Reviews
+              </Link>
+              <Link
                 to="/seller/items/new"
                 className="px-6 py-3 bg-white text-purple-600 rounded-xl font-semibold hover:shadow-lg transition-all"
               >
@@ -205,6 +232,16 @@ export default function SellerDashboard() {
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
               <div className="text-2xl font-bold">${stats.avgOrderValue.toFixed(2)}</div>
               <div className="text-blue-100 text-sm">Avg Order</div>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
+              <div className="text-2xl font-bold">
+                {stats.ratingCount > 0 ? stats.ratingAvg.toFixed(1) : "—"}
+              </div>
+              <div className="text-blue-100 text-sm">Seller Rating</div>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
+              <div className="text-2xl font-bold">{stats.ratingCount}</div>
+              <div className="text-blue-100 text-sm">Rating Count</div>
             </div>
           </div>
         </div>

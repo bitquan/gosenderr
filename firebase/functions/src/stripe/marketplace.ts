@@ -5,17 +5,7 @@
 
 import * as functions from 'firebase-functions/v2';
 import * as admin from 'firebase-admin';
-import Stripe from 'stripe';
-
-function getStripe() {
-  const apiKey = process.env.STRIPE_SECRET_KEY;
-  if (!apiKey) {
-    throw new Error('STRIPE_SECRET_KEY not configured');
-  }
-  return new Stripe(apiKey, {
-    apiVersion: '2025-02-24.acacia',
-  });
-}
+import { getStripeClient } from './stripeSecrets';
 
 // ============================================================================
 // CREATE CONNECT ACCOUNT
@@ -38,7 +28,7 @@ export const createConnectAccount = functions.https.onCall(
         throw new functions.https.HttpsError('not-found', 'User not found');
       }
 
-      const stripe = getStripe();
+      const stripe = await getStripeClient();
 
       // Create Connect account
       const account = await stripe.accounts.create({
@@ -107,7 +97,7 @@ export const getConnectOnboardingLink = functions.https.onCall(
         throw new functions.https.HttpsError('failed-precondition', 'No Stripe account found');
       }
 
-      const stripe = getStripe();
+      const stripe = await getStripeClient();
       const accountLink = await stripe.accountLinks.create({
         account: stripeAccountId,
         refresh_url: `${process.env.APP_URL || 'http://localhost:5173'}/profile/stripe-onboarding`,
@@ -146,7 +136,7 @@ export const getConnectAccountStatus = functions.https.onCall(
         throw new functions.https.HttpsError('failed-precondition', 'No Stripe account found');
       }
 
-      const stripe = getStripe();
+      const stripe = await getStripeClient();
       const account = await stripe.accounts.retrieve(stripeAccountId);
 
       // Update onboarding status in Firestore
@@ -238,7 +228,7 @@ export const createPaymentIntent = functions.https.onCall<CreateMarketplacePayme
       const total = subtotal;
       const sellerAmount = subtotal - platformFee;
 
-      const stripe = getStripe();
+      const stripe = await getStripeClient();
 
       // Create PaymentIntent with destination charges
       const paymentIntent = await stripe.paymentIntents.create({
@@ -323,7 +313,7 @@ export const stripeWebhooks = functions.https.onRequest(async (req, res) => {
   }
 
   try {
-    const stripe = getStripe();
+    const stripe = await getStripeClient();
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
     if (!webhookSecret) {

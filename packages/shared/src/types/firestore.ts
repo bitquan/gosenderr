@@ -531,6 +531,7 @@ export interface FeatureFlags {
     disputeManagement: boolean;
     analytics: boolean;
     featureFlagsControl: boolean;
+    webPortalEnabled: boolean;
   };
 
   advanced: {

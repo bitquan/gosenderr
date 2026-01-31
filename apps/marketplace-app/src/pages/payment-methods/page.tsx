@@ -14,7 +14,7 @@ import {
 import { db } from "@/lib/firebase/client";
 import { getAuthSafe } from "@/lib/firebase/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { loadStripe } from "@stripe/stripe-js";
+import { getStripePromise } from "@/lib/stripeConfig";
 import {
   Elements,
   CardElement,
@@ -22,9 +22,7 @@ import {
   useElements,
 } from "@stripe/react-stripe-js";
 
-const stripePromise = loadStripe(
-  import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY!,
-);
+const stripePromise = getStripePromise();
 
 interface PaymentMethod {
   id: string;
