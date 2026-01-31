@@ -9,7 +9,7 @@ interface ItemCardProps {
 
 /**
  * ItemCard - Display a marketplace item in card format
- * Phase 2: Shows seller info (unified user model, not vendor)
+ * Phase 2: Shows seller info (unified user model)
  */
 export function ItemCard({ item, sellerBadges = [] }: ItemCardProps) {
   const primaryImage = item.photos?.[0] || '/placeholder-item.png'

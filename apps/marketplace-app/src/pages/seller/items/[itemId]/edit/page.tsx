@@ -7,7 +7,7 @@ import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { useUserDoc } from "@/hooks/v2/useUserDoc";
 import { Card, CardContent } from "@/components/ui/Card";
 
-export default function EditVendorItem() {
+export default function EditSellerItem() {
   const { itemId } = useParams();
   const navigate = useNavigate();
   const { uid, loading: authLoading } = useAuthUser();

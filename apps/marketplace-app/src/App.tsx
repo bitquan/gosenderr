@@ -44,11 +44,11 @@ import StripeOnboardingPage from './pages/profile/stripe-onboarding/page'
 import OrderDetailPage from './pages/orders/[orderId]/page'
 
 // Seller pages
-import SellerApplicationPage from './pages/vendor/apply/page'
-import SellerDashboard from './pages/vendor/dashboard/page'
-import NewSellerItem from './pages/vendor/items/new/page'
-import EditSellerItem from './pages/vendor/items/[itemId]/edit/page'
-import SellerOrders from './pages/vendor/orders/page'
+import SellerApplicationPage from './pages/seller/apply/page'
+import SellerDashboard from './pages/seller/dashboard/page'
+import NewSellerItem from './pages/seller/items/new/page'
+import EditSellerItem from './pages/seller/items/[itemId]/edit/page'
+import SellerOrders from './pages/seller/orders/page'
 
 // Auth pages
 import LoginPage from './pages/Login'

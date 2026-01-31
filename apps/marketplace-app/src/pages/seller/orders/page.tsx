@@ -40,7 +40,7 @@ const STATUS_COLORS: Record<string, string> = {
   cancelled: 'bg-red-100 text-red-800',
 };
 
-export default function VendorOrders() {
+export default function SellerOrders() {
   const { uid } = useAuthUser();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,14 +50,14 @@ export default function VendorOrders() {
 
   useEffect(() => {
     if (!uid) return;
-    fetchVendorOrders();
+    fetchSellerOrders();
   }, [uid]);
 
-  const fetchVendorOrders = async () => {
+  const fetchSellerOrders = async () => {
     try {
-      // Fetch all orders and filter for vendor's items
+      // Fetch all orders and filter for seller's items
       const ordersSnapshot = await getDocs(collection(db, 'orders'));
-      const vendorOrders = ordersSnapshot.docs
+      const sellerOrders = ordersSnapshot.docs
         .map((doc) => ({
           id: doc.id,
           ...doc.data(),
@@ -67,15 +67,15 @@ export default function VendorOrders() {
         }) as Order[];
 
       // Sort by date (newest first)
-      vendorOrders.sort((a, b) => {
+      sellerOrders.sort((a, b) => {
         const aTime = a.createdAt?.toMillis?.() || 0;
         const bTime = b.createdAt?.toMillis?.() || 0;
         return bTime - aTime;
       });
 
-      setOrders(vendorOrders);
+      setOrders(sellerOrders);
     } catch (error) {
-      console.error('Error fetching vendor orders:', error);
+      console.error('Error fetching seller orders:', error);
     } finally {
       setLoading(false);
     }
@@ -245,9 +245,9 @@ export default function VendorOrders() {
         ) : (
           <div className="space-y-4">
             {finalOrders.map((order) => {
-              // Filter items to show only vendor's items
+              // Filter items to show only seller's items
               const sellerItems = order.items.filter((item) => item.sellerId === uid);
-              const vendorTotal = vendorItems.reduce(
+              const sellerTotal = sellerItems.reduce(
                 (sum, item) => sum + item.price * item.quantity,
                 0
               );
@@ -279,7 +279,7 @@ export default function VendorOrders() {
                     <div className="text-right">
                       <p className="text-sm text-gray-600">Your Earnings</p>
                       <p className="text-2xl font-bold text-gray-900">
-                        ${vendorTotal.toFixed(2)}
+                        ${sellerTotal.toFixed(2)}
                       </p>
                     </div>
                   </div>
@@ -303,7 +303,7 @@ export default function VendorOrders() {
                       <div>
                         <p className="text-gray-600">Address</p>
                         <p className="font-medium">
-                          {order.shippingInfo.address}, {order.shippingInfo.city},{' '}
+                          {order.shippingInfo.address}, {order.shippingInfo.city}{' '}
                           {order.shippingInfo.state} {order.shippingInfo.zipCode}
                         </p>
                       </div>
@@ -314,7 +314,7 @@ export default function VendorOrders() {
                   <div className="mb-4">
                     <h4 className="text-sm font-medium text-gray-900 mb-2">Your Items</h4>
                     <div className="space-y-2">
-                      {vendorItems.map((item, index) => (
+                      {sellerItems.map((item, index) => (
                         <div key={index} className="flex justify-between text-sm">
                           <span className="text-gray-900">
                             {item.title} x {item.quantity}

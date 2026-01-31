@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { collection, query, where, getDocs, deleteDoc, doc, orderBy } from "firebase/firestore";
+import { collection, query, where, getDocs, deleteDoc, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { SalesChart } from "@/components/vendor/SalesChart";
+import { SalesChart } from "@/components/seller/SalesChart";
 
 interface Item {
   id: string;
@@ -27,7 +27,7 @@ interface SalesData {
   orders: number;
 }
 
-export default function VendorDashboard() {
+export default function SellerDashboard() {
   const { uid } = useAuthUser();
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,15 +44,22 @@ export default function VendorDashboard() {
 
   useEffect(() => {
     if (!uid) return;
-    loadVendorItems();
+    loadSellerItems();
   }, [uid]);
 
-  const loadVendorItems = async () => {
+  const getSellerItemsTotal = (orderData: any) => {
+    return (
+      orderData.items
+        ?.filter((item: any) => item.sellerId === uid)
+        .reduce((itemSum: number, item: any) => itemSum + item.price * item.quantity, 0) || 0
+    );
+  };
+
+  const loadSellerItems = async () => {
     try {
       const itemsQuery = query(
         collection(db, "marketplaceItems"),
-        where("sellerId", "==", uid),
-        orderBy("createdAt", "desc")
+        where("sellerId", "==", uid)
       );
       const snapshot = await getDocs(itemsQuery);
       const itemsList = snapshot.docs.map((doc) => ({
@@ -62,33 +69,26 @@ export default function VendorDashboard() {
 
       setItems(itemsList);
 
-      // Calculate stats
       const activeListings = itemsList.filter((item) => item.status === "active").length;
       const soldItems = itemsList.filter((item) => item.status === "sold").length;
-      
-      // Fetch vendor's orders for revenue calculation
+      const lowStock = itemsList.filter(
+        (item) => item.status === "active" && item.stock <= 5
+      );
+      setLowStockItems(lowStock);
+
       const ordersSnapshot = await getDocs(collection(db, "orders"));
-      const vendorOrders = ordersSnapshot.docs.filter((doc) => {
+      const sellerOrders = ordersSnapshot.docs.filter((doc) => {
         const orderData = doc.data();
         return orderData.items?.some((item: any) => item.sellerId === uid);
       });
 
-      const totalRevenue = vendorOrders.reduce((sum, doc) => {
+      const totalRevenue = sellerOrders.reduce((sum, doc) => {
         const orderData = doc.data();
-        const vendorItemsTotal = orderData.items
-            ?.filter((item: any) => item.sellerId === uid)
-          .reduce((itemSum: number, item: any) => itemSum + (item.price * item.quantity), 0) || 0;
-        return sum + vendorItemsTotal;
+        return sum + getSellerItemsTotal(orderData);
       }, 0);
 
-      // Calculate average order value
-      const avgOrderValue = vendorOrders.length > 0 ? totalRevenue / vendorOrders.length : 0;
+      const avgOrderValue = sellerOrders.length > 0 ? totalRevenue / sellerOrders.length : 0;
 
-      // Identify low stock items (stock <= 5)
-      const lowStock = itemsList.filter((item) => item.status === "active" && item.stock <= 5);
-      setLowStockItems(lowStock);
-
-      // Generate sales data for last 7 days
       const last7Days = Array.from({ length: 7 }, (_, i) => {
         const date = new Date();
         date.setDate(date.getDate() - (6 - i));
@@ -96,19 +96,18 @@ export default function VendorDashboard() {
       });
 
       const salesByDay = last7Days.map((date) => {
-        const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        const dayOrders = vendorOrders.filter((doc) => {
+        const dateStr = date.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        });
+        const dayOrders = sellerOrders.filter((doc) => {
           const orderData = doc.data();
           const orderDate = orderData.createdAt?.toDate?.();
           return orderDate && orderDate.toDateString() === date.toDateString();
         });
-
         const dayRevenue = dayOrders.reduce((sum, doc) => {
           const orderData = doc.data();
-          const vendorItemsTotal = orderData.items
-            ?.filter((item: any) => item.sellerId === uid)
-            .reduce((itemSum: number, item: any) => itemSum + (item.price * item.quantity), 0) || 0;
-          return sum + vendorItemsTotal;
+          return sum + getSellerItemsTotal(orderData);
         }, 0);
 
         return {
@@ -125,11 +124,11 @@ export default function VendorDashboard() {
         activeListings,
         soldItems,
         totalRevenue,
-        totalOrders: vendorOrders.length,
+        totalOrders: sellerOrders.length,
         avgOrderValue,
       });
     } catch (error) {
-      console.error("Failed to load vendor items:", error);
+      console.error("Failed to load seller items:", error);
     } finally {
       setLoading(false);
     }
@@ -297,9 +296,7 @@ export default function VendorDashboard() {
                     {item.description}
                   </p>
                   <div className="flex items-center justify-between">
-                    <span className="text-xl font-bold text-purple-600">
-                      ${item.price}
-                    </span>
+                    <span className="text-xl font-bold text-purple-600">${item.price}</span>
                     <div className="flex gap-2">
                       <Link
                         to={`/seller/items/${item.id}/edit`}
