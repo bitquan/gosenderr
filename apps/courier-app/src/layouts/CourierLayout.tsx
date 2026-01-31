@@ -12,7 +12,9 @@ export default function CourierLayout() {
   
   return (
     <>
-      <Outlet />
+      <main className="app-shell">
+        <Outlet />
+      </main>
       <BottomNav items={courierNavItems} />
     </>
   )

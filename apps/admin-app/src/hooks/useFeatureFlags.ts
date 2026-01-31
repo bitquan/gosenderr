@@ -22,6 +22,7 @@ export function useFeatureFlags() {
               enabled: true,
               itemListings: true,
               combinedPayments: true,
+              courierOffers: false,
             },
             delivery: {
               onDemand: true,

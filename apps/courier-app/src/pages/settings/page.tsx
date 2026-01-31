@@ -3,7 +3,7 @@ import { LoadingState } from "@gosenderr/ui";
 import { useNavigate } from "react-router-dom";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { Link } from "react-router-dom";
-import { getAuthSafe } from "@/lib/firebase/auth";
+import { getAuthSafe } from "@/lib/firebase";
 import { useEffect, useState } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -58,7 +58,7 @@ export default function CourierSettingsPage() {
   }
 
   return (
-    <div className="fixed inset-0 w-screen h-screen overflow-y-auto pb-24 safe-top bg-[#F8F9FF]">
+    <div className="min-h-screen bg-[#F8F9FF]">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-6">
         {/* Header */}
         <div className="space-y-2">

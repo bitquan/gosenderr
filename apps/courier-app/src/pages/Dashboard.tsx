@@ -190,7 +190,7 @@ export default function CourierDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8F9FF] pb-24">
+    <div className="min-h-screen bg-[#F8F9FF]">
       {/* Purple Header */}
       <div className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] rounded-b-[32px] p-6 text-white shadow-lg">
         <div className="max-w-6xl mx-auto">

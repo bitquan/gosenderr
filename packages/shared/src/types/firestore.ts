@@ -491,6 +491,7 @@ export interface FeatureFlags {
     enabled: boolean;
     itemListings: boolean;
     combinedPayments: boolean;
+    courierOffers: boolean;
   };
 
   delivery: {

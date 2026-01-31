@@ -393,6 +393,7 @@ export interface FeatureFlags {
         enabled: boolean;
         itemListings: boolean;
         combinedPayments: boolean;
+        courierOffers: boolean;
     };
     delivery: {
         onDemand: boolean;
@@ -427,6 +428,7 @@ export interface FeatureFlags {
         disputeManagement: boolean;
         analytics: boolean;
         featureFlagsControl: boolean;
+        webPortalEnabled: boolean;
     };
     advanced: {
         pushNotifications: boolean;

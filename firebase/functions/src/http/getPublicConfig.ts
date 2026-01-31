@@ -8,9 +8,17 @@ export const getPublicConfig = functions.https.onCall({ cors: true }, async () =
   const mapboxDoc = await admin.firestore().doc("secrets/mapbox").get();
   const mapboxData = mapboxDoc.exists ? mapboxDoc.data() : {};
 
+  const configuredMode = stripeData?.mode || "test";
+  const livePublishableKey = stripeData?.livePublishableKey || "";
+  const testPublishableKey = stripeData?.publishableKey || stripeData?.testPublishableKey || "";
+
+  const useLive = configuredMode === "live" && !!livePublishableKey;
+  const stripePublishableKey = useLive ? livePublishableKey : testPublishableKey;
+  const effectiveMode = useLive ? "live" : "test";
+
   return {
-    stripePublishableKey: stripeData?.publishableKey || "",
-    stripeMode: stripeData?.mode || "test",
+    stripePublishableKey,
+    stripeMode: effectiveMode,
     mapboxPublicToken: mapboxData?.publicToken || "",
   };
 });

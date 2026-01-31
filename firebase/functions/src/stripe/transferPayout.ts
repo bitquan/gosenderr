@@ -28,7 +28,9 @@ export async function transferPayoutHandler(change: functions.Change<FirebaseFir
     // Fetch courier profile
     const courierDoc = await admin.firestore().doc(`users/${courierUid}`).get()
     const courierData = courierDoc.data() || {}
-    const courierAccountId = courierData?.courierProfile?.stripeAccountId
+    const courierAccountId =
+      courierData?.courierProfile?.stripeConnectAccountId ||
+      courierData?.courierProfile?.stripeAccountId
 
     courierEarnings = (afterData.pricing?.courierEarnings ?? afterData.agreedFee ?? 0) as number
 
