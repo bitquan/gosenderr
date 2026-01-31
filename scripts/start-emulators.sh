@@ -23,7 +23,7 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 # Start emulators in background
-firebase emulators:start --import=./firebase-emulator-data --export-on-exit &
+firebase emulators:start --host 0.0.0.0 --import=./firebase-emulator-data --export-on-exit &
 EMULATOR_PID=$!
 
 # Wait for emulators to be ready (check if Firestore port is open)
