@@ -496,10 +496,10 @@ Each route shows:
 
 ---
 
-### 👉 Runner → Vendor
+### 👉 Runner → Seller
 **No Direct Interaction:**
-- Packages picked up from hubs, not vendor locations
-- Hubs aggregate packages from multiple vendors
+- Packages picked up from hubs, not seller locations
+- Hubs aggregate packages from multiple sellers
 
 ---
 

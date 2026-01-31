@@ -4,7 +4,7 @@
 
 **STATUS:** ❌ **INCORRECT SETTINGS - MUST FIX BEFORE PRODUCTION**
 
-Your Stripe Platform Profile makes **YOU liable for all vendor disputes and chargebacks**. This is extremely risky and expensive.
+Your Stripe Platform Profile makes **YOU liable for all seller disputes and chargebacks**. This is extremely risky and expensive.
 
 ### What's Wrong (Based on Your Screenshot)
 
@@ -14,7 +14,7 @@ Your Stripe Platform Profile makes **YOU liable for all vendor disputes and char
 ❌ Monetization: "Your platform pays all Stripe fees"
 ```
 
-**Impact:** Every vendor chargeback costs YOU $15-$1000+. A single fraudulent vendor could bankrupt the platform.
+**Impact:** Every seller chargeback costs YOU $15-$1000+. A single fraudulent seller could bankrupt the platform.
 
 ### Required Changes
 
@@ -23,39 +23,39 @@ Navigate to: `https://dashboard.stripe.com/settings/connect/platform-profile`
 **1. Business Model** → Change to:
 
 - ✅ **"Buyers will purchase from your users"**
-- Makes vendors the merchant of record
+- Makes sellers the merchant of record
 
 **2. Negative Balance Liability** → Change to:
 
 - ✅ **"Connected accounts are responsible"**
-- Vendors pay their own chargebacks
+- Sellers pay their own chargebacks
 - Platform protected from losses
 
 **3. Monetization Strategy** → Recommended:
 
 - ✅ **"Stripe fees are deducted from connected account payouts"**
-- Vendors pay their own processing fees
+- Sellers pay their own processing fees
 - OR keep current if you want to subsidize fees
 
 ---
 
 ## Overview
 
-GoSenderr uses **Stripe Connect Express** accounts for marketplace vendors with `destination` charges.
+GoSenderr uses **Stripe Connect Express** accounts for marketplace sellers with `destination` charges.
 
 ## Loss Liability Model
 
 ### Current Configuration
 
 - **Type:** Destination charges
-- **Liability:** Connected account (vendor) bears dispute/chargeback costs
+- **Liability:** Connected account (seller) bears dispute/chargeback costs
 - **Platform Protection:** Platform only loses application fee portion
 
 ### Payment Flow
 
 ```
 Customer pays $25 total
-├─ $15.00 → Vendor (Stripe Connect account)
+├─ $15.00 → Seller (Stripe Connect account)
 ├─ $ 7.50 → Platform (delivery fee - application_fee)
 └─ $ 2.50 → Platform (platform fee - application_fee)
 ```
@@ -64,7 +64,7 @@ Customer pays $25 total
 
 ```
 Chargeback for $25
-├─ $15.00 → Debited from vendor's Stripe balance
+├─ $15.00 → Debited from seller's Stripe balance
 ├─ $ 7.50 → Debited from platform
 └─ $ 2.50 → Debited from platform
 ```
@@ -86,18 +86,18 @@ Navigate to: `https://dashboard.stripe.com/settings/connect/platform-profile`
 
 - ✅ **Connected account** (recommended for marketplaces)
 - Platform assumes minimal risk
-- Vendors manage their own disputes
+- Sellers manage their own disputes
 
 **3. Payout Schedule**
 
 - **Recommendation:** Daily automatic payouts
-- Vendors receive funds 2 business days after sale
+- Sellers receive funds 2 business days after sale
 - Can customize per account if needed
 
 **4. Refund Policy**
 
-- Define vendor responsibility for refunds
-- Add to vendor terms of service
+- Define seller responsibility for refunds
+- Add to seller terms of service
 
 ## Implementation Checklist
 
@@ -112,17 +112,17 @@ Navigate to: `https://dashboard.stripe.com/settings/connect/platform-profile`
 
 ### Frontend Setup
 
-- [x] Vendor onboarding flow (`/vendor/onboarding/stripe`)
+- [x] Seller onboarding flow (`/seller/onboarding/stripe`)
 - [x] Save `stripeConnectAccountId` to user doc
 - [x] Check for Stripe account before checkout
-- [ ] Vendor dashboard showing payout history
+- [ ] Seller dashboard showing payout history
 - [ ] Dispute management UI
 
 ### Legal/Compliance
 
-- [ ] Vendor terms of service (chargeback responsibility)
+- [ ] Seller terms of service (chargeback responsibility)
 - [ ] Customer refund policy
-- [ ] Marketplace agreement with vendors
+- [ ] Marketplace agreement with sellers
 - [ ] Privacy policy update (Stripe data handling)
 
 ## Webhook Events to Monitor
@@ -132,11 +132,11 @@ Add these endpoints to Stripe Dashboard:
 ### Critical Events
 
 ```
-account.updated              - Track vendor account status
+account.updated              - Track seller account status
 payment_intent.succeeded     - Confirm payment completion
-charge.dispute.created       - Alert vendor of dispute
+charge.dispute.created       - Alert seller of dispute
 charge.refunded              - Track refunds
-payout.paid                  - Confirm vendor payout
+payout.paid                  - Confirm seller payout
 payout.failed                - Handle payout failures
 ```
 
@@ -150,19 +150,19 @@ export async function POST(request: NextRequest) {
 
   switch (event.type) {
     case "charge.dispute.created":
-      // Notify vendor via email
+      // Notify seller via email
       // Update order status to 'disputed'
       break;
     case "payout.paid":
-      // Record payout in vendor dashboard
+      // Record payout in seller dashboard
       break;
   }
 }
 ```
 
-## Vendor Requirements
+## Seller Requirements
 
-Before vendors can receive payments:
+Before sellers can receive payments:
 
 1. **Complete Express Onboarding**
    - Business/individual details
@@ -188,7 +188,7 @@ Before vendors can receive payments:
 ### Test Mode Connected Accounts
 
 ```bash
-# Create test vendor account
+# Create test seller account
 curl https://www.gosenderr.com/api/stripe/connect \\
   -d '{"refreshUrl": "...", "returnUrl": "..."}'
 ```
@@ -210,13 +210,13 @@ Before going live:
   - [ ] Negative balance liability → "Connected accounts are responsible"
   - [ ] Monetization → "Fees deducted from connected account" (recommended)
 - [ ] **Verify changes saved** - Check dashboard shows correct `losses.payments: stripe`
-- [ ] **Test with chargeback test card** - Confirm vendor account debited, not platform
+- [ ] **Test with chargeback test card** - Confirm seller account debited, not platform
 
 ### Standard Checklist
 
 - [ ] Add webhook endpoints (live mode)
 - [ ] Test full payment flow end-to-end
-- [ ] Document vendor chargeback process (in terms of service)
+- [ ] Document seller chargeback process (in terms of service)
 - [ ] Set up dispute notification emails
 - [ ] Configure payout schedule
 - [ ] Add Stripe dashboard access for support team

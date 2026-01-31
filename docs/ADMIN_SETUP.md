@@ -15,7 +15,7 @@ Admin access is now completely separate from regular user roles to maintain secu
 ### 2. Regular Login (No Admin Tab)
 
 - Removed Admin from role tabs
-- Role tabs: Customer, Driver, Runner, Vendor
+- Role tabs: Customer, Driver, Runner, Seller
 - Clean separation between regular users and admin access
 
 ### 3. Admin Dashboard Access

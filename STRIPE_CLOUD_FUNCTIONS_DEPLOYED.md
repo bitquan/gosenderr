@@ -84,7 +84,7 @@ Ensure these events are enabled:
 - [ ] Test payment refund on cancellation
 
 ### Stripe Connect Tests
-- [ ] Vendor onboarding flow
+- [ ] Seller onboarding flow
 - [ ] Courier onboarding flow
 - [ ] Verify Express accounts created
 - [ ] Complete onboarding process

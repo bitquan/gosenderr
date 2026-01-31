@@ -8,7 +8,7 @@ interface PaymentSettings {
   stripePublishableKey: string
   stripeSecretKey: string
   platformCommissionRate: number
-  vendorPayoutSchedule: 'daily' | 'weekly' | 'monthly'
+  sellerPayoutSchedule: 'daily' | 'weekly' | 'monthly'
   minimumPayoutAmount: number
   autoPayouts: boolean
   paymentMethods: {
@@ -27,7 +27,7 @@ export default function PaymentSettingsPage() {
     stripePublishableKey: '',
     stripeSecretKey: '',
     platformCommissionRate: 10,
-    vendorPayoutSchedule: 'weekly',
+    sellerPayoutSchedule: 'weekly',
     minimumPayoutAmount: 50,
     autoPayouts: true,
     paymentMethods: {
@@ -52,7 +52,11 @@ export default function PaymentSettingsPage() {
       const docSnap = await getDoc(docRef)
       
       if (docSnap.exists()) {
-        setSettings(docSnap.data() as PaymentSettings)
+        const raw = docSnap.data() as any
+        setSettings({
+          ...raw,
+          sellerPayoutSchedule: raw.sellerPayoutSchedule ?? raw.vendorPayoutSchedule ?? 'weekly'
+        })
       }
     } catch (error) {
       console.error('Error loading payment settings:', error)
@@ -190,10 +194,10 @@ export default function PaymentSettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Vendor Payouts */}
+        {/* Seller Payouts */}
         <Card variant="elevated">
           <CardHeader>
-            <CardTitle>Vendor Payouts</CardTitle>
+            <CardTitle>Seller Payouts</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -202,8 +206,8 @@ export default function PaymentSettingsPage() {
                   Payout Schedule
                 </label>
                 <select
-                  value={settings.vendorPayoutSchedule}
-                  onChange={(e) => setSettings({...settings, vendorPayoutSchedule: e.target.value as any})}
+                  value={settings.sellerPayoutSchedule}
+                  onChange={(e) => setSettings({...settings, sellerPayoutSchedule: e.target.value as any})}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                 >
                   <option value="daily">Daily</option>
@@ -225,7 +229,7 @@ export default function PaymentSettingsPage() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Vendors must have at least ${settings.minimumPayoutAmount} to receive a payout
+                  Sellers must have at least ${settings.minimumPayoutAmount} to receive a payout
                 </p>
               </div>
 

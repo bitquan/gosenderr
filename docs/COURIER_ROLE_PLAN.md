@@ -461,15 +461,15 @@ Based on current status, shows ONE action button:
 
 ---
 
-### 🔁 Courier ↔ Vendor
+### 🔁 Courier ↔ Seller
 **Indirect Interaction:**
-1. **Pickup:** Courier picks up item from vendor's location
-2. **Vendor Ready Status:** Vendor marks order ready → Courier notified
-3. **Vendor Rating:** Vendor can rate courier (future)
+1. **Pickup:** Courier picks up item from seller's location
+2. **Seller Ready Status:** Seller marks order ready → Courier notified
+3. **Seller Rating:** Seller can rate courier (future)
 
 **Data Flow:**
-- Courier picks up → `job.status: 'picked_up'` → Vendor notified
-- Courier completes → Vendor receives payout via Stripe
+- Courier picks up → `job.status: 'picked_up'` → Seller notified
+- Courier completes → Seller receives payout via Stripe
 
 ---
 
@@ -572,7 +572,7 @@ match /users/{userId} {
 8. Redirects to job detail page
 9. Clicks "Start Heading to Pickup" → Status: 'enroute_pickup'
 10. Arrives at pickup → Clicks "Arrived at Pickup"
-11. Vendor hands over item → Clicks "Package Picked Up"
+11. Seller hands over item → Clicks "Package Picked Up"
 12. Starts driving to delivery → Clicks "Start Heading to Delivery"
 13. Arrives at delivery → Clicks "Arrived at Delivery"
 14. Hands item to customer → Clicks "Mark Completed"

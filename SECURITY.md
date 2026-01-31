@@ -84,7 +84,7 @@ Please provide as much information as possible:
 - Line: ~45
 
 **Steps to Reproduce:**
-1. Create vendor account
+1. Create seller account
 2. Create marketplace item
 3. In description field, insert: <script>alert('XSS')</script>
 4. Save item

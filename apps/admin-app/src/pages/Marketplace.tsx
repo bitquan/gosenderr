@@ -163,7 +163,7 @@ export default function AdminMarketplacePage() {
         <div className="bg-white rounded-2xl shadow-lg p-4 flex gap-4 flex-wrap">
           <input
             type="text"
-            placeholder="Search by title or vendor..."
+            placeholder="Search by title or seller..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="flex-1 min-w-[250px] px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"

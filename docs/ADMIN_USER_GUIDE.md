@@ -90,7 +90,7 @@ The sidebar is:
 - Customers (📦)
 - Couriers (⚡)
 - Package Runners (🚛)
-- Vendors (🏪)
+- Sellers (🏪)
 - Admins (👑)
 
 **Search:**
@@ -108,7 +108,7 @@ The sidebar is:
    - Customer - Can create delivery jobs
    - Courier - Can accept and deliver jobs
    - Package Runner - Long-distance package delivery
-   - Vendor - Can sell items in marketplace
+   - Seller - Can sell items in marketplace
    - Admin - Full platform access
 3. Click "Save Changes"
 
@@ -387,10 +387,10 @@ Each log entry shows:
 
 ### Categories
 
-1. **Marketplace** - Vendor features
+1. **Marketplace** - Seller features
 2. **Delivery** - Core delivery features
 3. **Courier** - Courier-specific features
-4. **Seller** - Vendor seller features
+4. **Seller** - Seller portal features
 5. **Customer** - Customer app features
 6. **Package Runner** - Long-distance delivery
 7. **Admin** - Admin portal features

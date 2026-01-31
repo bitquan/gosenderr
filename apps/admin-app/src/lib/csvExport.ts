@@ -100,7 +100,7 @@ export function formatItemsForExport(items: any[]) {
     'Featured': item.featured ? 'Yes' : 'No',
     'Seller ID': item.sellerId,
     'Seller Name': item.sellerName || 'N/A',
-    'Vendor Email': item.vendorEmail || 'N/A',
+    'Seller Email': item.sellerEmail || item.vendorEmail || 'N/A',
     'Views': item.views || 0,
     'Sales': item.sales || 0,
     'Images Count': item.images?.length || 0,

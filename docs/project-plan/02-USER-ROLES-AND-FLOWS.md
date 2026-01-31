@@ -74,7 +74,7 @@ GoSenderr v2 uses a **unified user model** where one account can have multiple r
 
 ---
 
-### 2. Seller (Marketplace Vendor)
+### 2. Seller (Marketplace Seller)
 **Activation:** Becomes seller when listing first item
 
 **Permissions:**

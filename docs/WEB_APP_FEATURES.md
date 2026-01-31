@@ -8,7 +8,7 @@ Complete list of all screens, features, and functionality in the Next.js web app
 ## 🔐 Authentication & Onboarding
 
 ### `/login` - Universal Login Page
-- **Purpose**: Entry point for all user types (customer, courier, runner, vendor, admin)
+- **Purpose**: Entry point for all user types (customer, courier, runner, seller, admin)
 - **Features**:
   - Email/password authentication
   - Phone authentication (with reCAPTCHA)
@@ -20,7 +20,7 @@ Complete list of all screens, features, and functionality in the Next.js web app
 ### `/select-role` - Role Selection
 - **Purpose**: First-time users select their platform role
 - **Features**:
-  - Visual role cards (Customer, Senderr/Courier, Runner, Vendor)
+  - Visual role cards (Customer, Senderr/Courier, Runner, Seller)
   - Role descriptions and icons
   - Creates initial user document in Firestore
 - **Reusable for Vite**: ✅ Yes - Pure React component
@@ -247,16 +247,16 @@ Complete list of all screens, features, and functionality in the Next.js web app
 
 ---
 
-## 🏪 Vendor/Seller Portal (`/vendor/*`)
+## 🏪 Seller Portal (`/seller/*`)
 
-### `/vendor/items` - Manage Listings
+### `/seller/items` - Manage Listings
 - **Features**:
   - List of seller's items
   - Edit/delete items
   - Status indicators (available, sold)
 - **Reusable for Vite**: ✅ Yes
 
-### `/vendor/items/new` - Create Listing
+### `/seller/items/new` - Create Listing
 - **Features**:
   - Item details form (title, description, price)
   - Category selection (electronics, furniture, clothing, food, other)
@@ -267,17 +267,17 @@ Complete list of all screens, features, and functionality in the Next.js web app
 - **Key Components**: Image upload, `AddressAutocomplete`
 - **Reusable for Vite**: ✅ Yes
 
-### `/vendor/orders` - Order Management
+### `/seller/orders` - Order Management
 - **Features**:
   - Orders received
   - Fulfillment status
 - **Reusable for Vite**: ✅ Yes
 
-### `/vendor/onboarding/stripe` - Stripe Connect for Vendors
+### `/seller/onboarding/stripe` - Stripe Connect for Sellers
 - **Features**: Stripe account linking for payments
 - **Reusable for Vite**: ✅ Yes
 
-### `/vendor/settings` - Vendor Settings
+### `/seller/settings` - Seller Settings
 - **Features**: Business preferences
 - **Reusable for Vite**: ✅ Yes
 
@@ -302,8 +302,8 @@ Complete list of all screens, features, and functionality in the Next.js web app
   - Equipment required icons
 - **Reusable for Vite**: ✅ Yes
 
-### `/marketplace/create` - Create Listing (redirects to vendor flow)
-- **Features**: Prompts vendor role if not vendor
+### `/marketplace/create` - Create Listing (redirects to seller flow)
+- **Features**: Prompts seller role if not seller
 - **Reusable for Vite**: ✅ Yes
 
 ---
@@ -479,7 +479,7 @@ Complete list of all screens, features, and functionality in the Next.js web app
 - `hubs` - Distribution centers
 - `featureFlags` - Platform feature toggles
 - `ratings` - User ratings and reviews
-- `vendorListings` - Vendor-specific items
+- `sellerListings` - Seller-specific items
 
 ### Secondary Collections
 - `courierLocations` - Real-time courier positions

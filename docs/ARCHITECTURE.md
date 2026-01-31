@@ -7,7 +7,7 @@
 - Maps: Mapbox for courier routing/UI.
 
 ## App responsibilities
-- `customer-app`: marketplace UI, ordering flow, vendor/courier interactions.
+- `customer-app`: marketplace UI, ordering flow, seller/courier interactions.
 - `courier-app`: map-first UI and navigation for couriers.
 - `admin-app`: administrative dashboards, user management.
 

@@ -1,10 +1,10 @@
-# Role Simulation Plan (Customer + Courier + Vendor + Admin)
+# Role Simulation Plan (Customer + Courier + Seller + Admin)
 
 ## Goal
 
 Create a repeatable local demo that shows a full marketplace delivery flow:
 
-1. Vendor lists an item
+1. Seller lists an item
 2. Customer orders the item and requests delivery
 3. Courier claims and completes the job
 4. Admin observes key artifacts
@@ -13,7 +13,7 @@ Create a repeatable local demo that shows a full marketplace delivery flow:
 
 - Local app runs at http://localhost:3001
 - Firebase project is connected and Firestore rules are deployed
-- Test users exist for each role (customer, courier, vendor, admin)
+- Test users exist for each role (customer, courier, seller, admin)
 
 ## Required Test Users
 
@@ -21,14 +21,14 @@ Create or verify these accounts in Firebase Auth + Firestore `users` collection:
 
 - customer@example.com → role: customer
 - courier@example.com → role: courier
-- vendor@example.com → role: vendor (or seller)
+- seller@example.com → role: seller
 - admin@example.com → role: admin
 
 ## One-Time Data Setup
 
-### 1) Vendor onboarding
+### 1) Seller onboarding
 
-- Sign in as vendor
+- Sign in as seller
 - Complete Stripe Connect setup (or use feature flag to bypass if needed)
 
 ### 2) Courier setup
@@ -39,10 +39,10 @@ Create or verify these accounts in Firebase Auth + Firestore `users` collection:
 
 ## Simulation Script (Manual)
 
-### A) Vendor lists an item
+### A) Seller lists an item
 
-1. Sign in as vendor
-2. Go to Vendor Items → + New Item
+1. Sign in as seller
+2. Go to Seller Items → + New Item
 3. Create item with:
    - Title: "Demo Item"
    - Price: $15
@@ -100,13 +100,13 @@ The script:
 
 - Creates demo users in Firebase Auth
 - Upserts their Firestore `users` docs
-- Creates a vendor item
+- Creates a seller item
 - Creates a marketplace order
 - Creates an open courier job
 
 ## Success Criteria
 
-- Order visible in vendor orders
+- Order visible in seller orders
 - Job visible in customer jobs
 - Job visible and claimable by courier
 - Admin sees updated counts

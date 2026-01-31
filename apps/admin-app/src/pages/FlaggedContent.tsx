@@ -14,7 +14,8 @@ interface FlaggedItem {
   images: string[]
   sellerId: string
   sellerName: string
-  vendorEmail: string
+  sellerEmail?: string
+  vendorEmail?: string
   status: 'flagged'
   flagReason: string
   flaggedAt: any

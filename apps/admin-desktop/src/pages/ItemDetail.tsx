@@ -15,7 +15,8 @@ interface MarketplaceItem {
   images: string[]
   sellerId: string
   sellerName: string
-  vendorEmail: string
+  sellerEmail?: string
+  vendorEmail?: string
   stock: number
   status: 'draft' | 'pending' | 'active' | 'flagged' | 'removed'
   featured: boolean
