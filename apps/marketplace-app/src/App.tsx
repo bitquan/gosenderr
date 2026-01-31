@@ -43,12 +43,12 @@ import SellerSettingsPage from './pages/profile/seller-settings/page'
 import StripeOnboardingPage from './pages/profile/stripe-onboarding/page'
 import OrderDetailPage from './pages/orders/[orderId]/page'
 
-// Vendor pages
+// Seller pages
 import SellerApplicationPage from './pages/vendor/apply/page'
-import VendorDashboard from './pages/vendor/dashboard/page'
-import NewVendorItem from './pages/vendor/items/new/page'
-import EditVendorItem from './pages/vendor/items/[itemId]/edit/page'
-import VendorOrders from './pages/vendor/orders/page'
+import SellerDashboard from './pages/vendor/dashboard/page'
+import NewSellerItem from './pages/vendor/items/new/page'
+import EditSellerItem from './pages/vendor/items/[itemId]/edit/page'
+import SellerOrders from './pages/vendor/orders/page'
 
 // Auth pages
 import LoginPage from './pages/Login'
@@ -101,7 +101,7 @@ function App() {
 
             {/* Customer dashboard */}
             <Route path="/dashboard" element={
-              <RoleGuard allowedRoles={["customer", "vendor", "buyer", "seller"]}>
+              <RoleGuard allowedRoles={["customer", "buyer", "seller"]}>
                 <DashboardPage />
               </RoleGuard>
             } />
@@ -130,41 +130,6 @@ function App() {
                 <ShipPage />
               </RoleGuard>
             } />
-            <Route path="/jobs" element={
-              <RoleGuard allowedRoles={['customer', 'buyer']}>
-                <JobsPage />
-              </RoleGuard>
-            } />
-            <Route path="/jobs/new" element={
-              <RoleGuard allowedRoles={['customer', 'buyer']}>
-                <NewJobPage />
-              </RoleGuard>
-            } />
-            <Route path="/jobs/:jobId" element={
-              <RoleGuard allowedRoles={['customer', 'buyer']}>
-                <JobDetailPage />
-              </RoleGuard>
-            } />
-            <Route path="/packages" element={
-              <RoleGuard allowedRoles={['customer', 'buyer']}>
-                <PackagesPage />
-              </RoleGuard>
-            } />
-            <Route path="/packages/new" element={
-              <RoleGuard allowedRoles={['customer', 'buyer']}>
-                <NewPackagePage />
-              </RoleGuard>
-            } />
-            <Route path="/packages/:packageId" element={
-              <RoleGuard allowedRoles={['customer', 'buyer']}>
-                <PackageDetailPage />
-              </RoleGuard>
-            } />
-            <Route path="/payment" element={
-              <RoleGuard allowedRoles={['customer', 'buyer']}>
-                <PaymentPage />
-              </RoleGuard>
-            } />
             <Route path="/disputes" element={
               <RoleGuard allowedRoles={['customer', 'buyer']}>
                 <DisputesPage />
@@ -186,30 +151,30 @@ function App() {
               </RoleGuard>
             } />
             
-            {/* Vendor Routes */}
-            <Route path="/vendor/apply" element={
-              <RoleGuard allowedRoles={['customer', 'buyer', 'vendor', 'seller']}>
+            {/* Seller Routes */}
+            <Route path="/seller/apply" element={
+              <RoleGuard allowedRoles={['customer', 'buyer', 'seller']}>
                 <SellerApplicationPage />
               </RoleGuard>
             } />
-            <Route path="/vendor/dashboard" element={
-              <RoleGuard allowedRoles={['vendor', 'seller']}>
-                <VendorDashboard />
+            <Route path="/seller/dashboard" element={
+              <RoleGuard allowedRoles={['admin', 'seller']}>
+                <SellerDashboard />
               </RoleGuard>
             } />
-            <Route path="/vendor/items/new" element={
-              <RoleGuard allowedRoles={['vendor', 'seller']}>
-                <NewVendorItem />
+            <Route path="/seller/items/new" element={
+              <RoleGuard allowedRoles={['admin', 'seller']}>
+                <NewSellerItem />
               </RoleGuard>
             } />
-            <Route path="/vendor/items/:itemId/edit" element={
-              <RoleGuard allowedRoles={['vendor', 'seller']}>
-                <EditVendorItem />
+            <Route path="/seller/items/:itemId/edit" element={
+              <RoleGuard allowedRoles={['admin', 'seller']}>
+                <EditSellerItem />
               </RoleGuard>
             } />
-            <Route path="/vendor/orders" element={
-              <RoleGuard allowedRoles={['vendor', 'seller']}>
-                <VendorOrders />
+            <Route path="/seller/orders" element={
+              <RoleGuard allowedRoles={['admin', 'seller']}>
+                <SellerOrders />
               </RoleGuard>
             } />
           </Route>

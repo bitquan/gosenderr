@@ -17,7 +17,7 @@ Let me create a comprehensive blueprint for your **web domain** and **app archit
 ├──────────────────────┤      ├──────────────────────┤
 │ • Marketplace (Home) │      │ • Courier App        │
 │ • Customer Portal    │      │ • Shifter App        │
-│ • Vendor Portal      │      │ • Customer App       │
+│ • Seller Portal      │      │ • Customer App       │
 │ • Admin Dashboard    │      │ • Admin App          │
 └──────────────────────┘      └──────────────────────┘
           │                              │
@@ -50,13 +50,13 @@ Let me create a comprehensive blueprint for your **web domain** and **app archit
 ```
 Primary Domain: gosenderr.com
 ├── / (Home/Marketplace) ← MAIN ENTRY POINT
-├── /marketplace (Browse all vendor items)
+├── /marketplace (Browse all seller items)
 ├── /marketplace/:itemId (Item details)
 ├── /login (Authentication)
 ├── /signup (Registration with role selection)
 ├── /dashboard (Role-based redirect)
 │   ├── /customer/* (Customer features)
-│   ├── /vendor/* (Vendor features)
+│   ├── /seller/* (Seller features)
 │   ├── /courier/* (Courier features)
 │   └── /admin/* (Admin features)
 └── /settings (User settings)
@@ -71,7 +71,7 @@ Primary Domain: gosenderr.com
 ```typescript
 enum UserRole {
   CUSTOMER = 'customer',    // Can browse, purchase, request delivery
-  VENDOR = 'vendor',        // Can sell items in marketplace
+  SELLER = 'seller',        // Can sell items in marketplace
   COURIER = 'courier',      // Can deliver packages
   ADMIN = 'admin'           // Can manage everything
 }
@@ -87,9 +87,9 @@ interface User {
   deliveryAddresses?: Address[];
   paymentMethods?: PaymentMethod[];
   
-  // Vendor-specific
-  isVendor?: boolean;
-  vendorProfile?: VendorProfile;
+  // Seller-specific
+  isSeller?: boolean;
+  sellerProfile?: SellerProfile;
   stripeConnectId?: string;
   
   // Courier-specific
@@ -160,11 +160,11 @@ apps/
     │   │   │   └── purchases/
     │   │   │       └── page.tsx        # Marketplace purchases
     │   │   │
-    │   │   ├── vendor/                 # VENDOR PORTAL
+    │   │   ├── seller/                 # SELLER PORTAL
     │   │   │   ├── dashboard/
-    │   │   │   │   └── page.tsx        # Vendor dashboard
+    │   │   │   │   └── page.tsx        # Seller dashboard
     │   │   │   ├── apply/
-    │   │   │   │   └── page.tsx        # Vendor application
+    │   │   │   │   └── page.tsx        # Seller application
     │   │   │   ├── items/
     │   │   │   │   ├── page.tsx        # Item list
     │   │   │   │   ├── new/
@@ -174,7 +174,7 @@ apps/
     │   │   │   │       └── edit/
     │   │   │   │           └── page.tsx # Edit item
     │   │   │   ├── orders/
-    │   │   │   │   └── page.tsx        # Vendor orders
+    │   │   │   │   └── page.tsx        # Seller orders
     │   │   │   └── analytics/
     │   │   │       └── page.tsx        # Sales analytics
     │   │   │
@@ -183,9 +183,9 @@ apps/
     │   │   │   │   └── page.tsx
     │   │   │   ├── users/
     │   │   │   │   └── page.tsx
-    │   │   │   ├── vendors/
+    │   │   │   ├── sellers/
     │   │   │   │   ├── pending/
-    │   │   │   │   │   └── page.tsx    # Approve vendors
+    │   │   │   │   │   └── page.tsx    # Approve sellers
     │   │   │   │   └── active/
     │   │   │   │       └── page.tsx
     │   │   │   ├── couriers/
@@ -229,7 +229,7 @@ apps/
     │   │   │   ├── marketplace.ts      # Marketplace API
     │   │   │   ├── orders.ts
     │   │   │   ├── deliveries.ts
-    │   │   │   └── vendors.ts
+    │   │   │   └── sellers.ts
     │   │   │
     │   │   └── utils/
     │   │       ├── permissions.ts
@@ -325,10 +325,10 @@ export default function LoginPage() {
           👤 Customer
         </button>
         <button 
-          onClick={() => setSelectedRole('vendor')}
-          className={selectedRole === 'vendor' ? 'active' : ''}
+          onClick={() => setSelectedRole('seller')}
+          className={selectedRole === 'seller' ? 'active' : ''}
         >
-          🏪 Vendor
+          🏪 Seller
         </button>
         <button 
           onClick={() => setSelectedRole('courier')}
@@ -387,10 +387,10 @@ function App() {
           </RoleGuard>
         } />
         
-        {/* Vendor Routes */}
-        <Route path="/vendor/*" element={
-          <RoleGuard requiredRole="vendor">
-            <VendorPortal />
+        {/* Seller Routes */}
+        <Route path="/seller/*" element={
+          <RoleGuard requiredRole="seller">
+            <SellerPortal />
           </RoleGuard>
         } />
         
@@ -462,9 +462,9 @@ interface User {
   deliveryAddresses?: Address[];
   paymentMethods?: string[];  // Stripe payment method IDs
   
-  // Vendor data
-  isVendor?: boolean;
-  vendorProfile?: {
+  // Seller data
+  isSeller?: boolean;
+  sellerProfile?: {
     businessName: string;
     description: string;
     logo?: string;
@@ -495,8 +495,8 @@ interface User {
 // Collection: marketplaceItems/{itemId}
 interface MarketplaceItem {
   id: string;
-  vendorId: string;
-  vendorName: string;
+  sellerId: string;
+  sellerName: string;
   
   title: string;
   description: string;
@@ -534,9 +534,9 @@ interface Order {
   customerName: string;
   customerEmail: string;
   
-  // Vendor (if marketplace order)
-  vendorId?: string;
-  vendorName?: string;
+  // Seller (if marketplace order)
+  sellerId?: string;
+  sellerName?: string;
   
   // Order items
   items: Array<{
@@ -622,8 +622,8 @@ interface Delivery {
   updatedAt: Timestamp;
 }
 
-// Collection: vendorApplications/{userId}
-interface VendorApplication {
+// Collection: sellerApplications/{userId}
+interface SellerApplication {
   userId: string;
   
   businessName: string;
@@ -734,7 +734,7 @@ VITE_MAPBOX_TOKEN=pk.eyJ1...
 **Deliverables:**
 - Users can sign up
 - Users can select role at login
-- Marketplace displays vendor items
+- Marketplace displays seller items
 - Basic navigation works
 
 ---
@@ -754,29 +754,29 @@ VITE_MAPBOX_TOKEN=pk.eyJ1...
 **Deliverables:**
 - Customers can browse items
 - Customers can purchase items
-- Vendors can list items
+- Sellers can list items
 - Orders are created in Firestore
 
 ---
 
-### **Phase 3: Vendor Portal (Week 5-6)**
+### **Phase 3: Seller Portal (Week 5-6)**
 
-**Goal:** Full vendor management
+**Goal:** Full seller management
 
 ✅ **Tasks:**
-1. Vendor application form
+1. Seller application form
 2. Admin approval workflow
-3. Vendor dashboard
+3. Seller dashboard
 4. Item creation/editing
 5. Order management
 6. Stripe Connect integration
 7. Analytics dashboard
 
 **Deliverables:**
-- Vendors can apply
-- Admins can approve vendors
-- Vendors can manage inventory
-- Vendors receive payouts
+- Sellers can apply
+- Admins can approve sellers
+- Sellers can manage inventory
+- Sellers receive payouts
 
 ---
 

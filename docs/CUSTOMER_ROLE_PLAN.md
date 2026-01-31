@@ -293,18 +293,18 @@
 
 ---
 
-### 👉 Customer → Vendor
+### 👉 Customer → Seller
 **Direct Interactions:**
-1. **Browse Marketplace:** Customer views vendor's items
-2. **Purchase:** Customer orders item → vendor sees order
-3. **Delivery Request:** Customer requests delivery → vendor marks ready
-4. **Rating:** Customer can rate vendor (future feature)
+1. **Browse Marketplace:** Customer views seller's items
+2. **Purchase:** Customer orders item → seller sees order
+3. **Delivery Request:** Customer requests delivery → seller marks ready
+4. **Rating:** Customer can rate seller (future feature)
 
 **Data Flow:**
 - Customer orders item → creates `marketplaceOrders` doc
-- Vendor marks ready → `order.status: 'ready_for_pickup'`
-- Delivery completes → vendor receives payout via Stripe Connect
-- Customer rating → creates rating doc for vendor
+- Seller marks ready → `order.status: 'ready_for_pickup'`
+- Delivery completes → seller receives payout via Stripe Connect
+- Customer rating → creates rating doc for seller
 
 ---
 
@@ -332,7 +332,7 @@
 - Request deliveries for marketplace items
 - Ship packages (long-distance)
 - Browse and search marketplace
-- Purchase items from vendors
+- Purchase items from sellers
 - Track deliveries in real-time
 - Cancel jobs (before picked up)
 - Confirm delivery receipt
@@ -340,7 +340,7 @@
 - Manage payment methods
 - Save delivery addresses
 - View order history
-- **Also:** Become vendor (upgrade role)
+- **Also:** Become seller (upgrade role)
 - **Also:** Become courier (set up courier profile)
 
 ### ❌ Customer CANNOT:
@@ -395,7 +395,7 @@ match /packages/{packageId} {
 8. Courier claims job → Customer sees courier assigned
 9. Courier picks up → Customer sees status updates
 10. Courier delivers → Customer confirms receipt
-11. Payment captured → Vendor receives payout
+11. Payment captured → Seller receives payout
 12. Customer rates courier
 
 ### Workflow 2: Direct Delivery Request
@@ -447,7 +447,7 @@ match /packages/{packageId} {
 - Spending analytics
 - Delivery frequency charts
 - Most ordered items
-- Favorite vendors
+- Favorite sellers
 - Carbon footprint tracker
 
 ### Phase 4 - Social Features
@@ -490,7 +490,7 @@ match /packages/{packageId} {
 ### Order Status
 - `pending_payment` - Awaiting payment
 - `paid` - Payment completed
-- `ready_for_pickup` - Vendor marked ready
+- `ready_for_pickup` - Seller marked ready
 - `in_transit` - Courier has package
 - `delivered` - Completed
 - `cancelled` - Order cancelled

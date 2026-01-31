@@ -14,7 +14,7 @@ firestore/
 ├── marketplaceItems/{itemId}
 ├── orders/{orderId}
 ├── deliveries/{deliveryId}
-├── vendorApplications/{userId}
+├── sellerApplications/{userId}
 ├── categories/{categoryId}
 ├── reviews/{reviewId}
 ├── notifications/{notificationId}
@@ -47,9 +47,9 @@ interface User {
   paymentMethods?: string[];      // Stripe payment method IDs
   favoriteItems?: string[];       // Favorited item IDs
   
-  // Vendor Data (if isVendor = true)
-  isVendor?: boolean;
-  vendorProfile?: {
+  // Seller Data (if isSeller = true)
+  isSeller?: boolean;
+  sellerProfile?: {
     businessName: string;
     businessDescription: string;
     businessType: string;
@@ -127,7 +127,7 @@ interface Address {
 
 enum UserRole {
   CUSTOMER = 'customer',
-  VENDOR = 'vendor',
+  SELLER = 'seller',
   COURIER = 'courier',
   ADMIN = 'admin'
 }
@@ -156,7 +156,7 @@ match /users/{userId} {
 users:
   - email (ASC)
   - roles (ARRAY)
-  - isVendor (ASC), vendorProfile.isActive (ASC)
+  - isSeller (ASC), sellerProfile.isActive (ASC)
   - isCourier (ASC), courierProfile.isOnline (ASC)
 ```
 
@@ -173,10 +173,10 @@ interface MarketplaceItem {
   // Core Identity
   id: string;                     // Document ID
   
-  // Vendor Info
-  vendorId: string;               // Vendor user ID
-  vendorName: string;             // Display name
-  vendorLogo?: string;            // Vendor logo URL
+  // Seller Info
+  sellerId: string;               // Seller user ID
+  sellerName: string;             // Display name
+  sellerLogo?: string;            // Seller logo URL
   
   // Item Details
   title: string;
@@ -238,13 +238,13 @@ match /marketplaceItems/{itemId} {
   // Anyone can read active items
   allow read: if resource.data.status == 'active';
   
-  // Vendors can create items
+  // Sellers can create items
   allow create: if request.auth != null 
-    && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isVendor == true
-    && request.resource.data.vendorId == request.auth.uid;
+    && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isSeller == true
+    && request.resource.data.sellerId == request.auth.uid;
   
-  // Vendors can update/delete their own items
-  allow update, delete: if request.auth.uid == resource.data.vendorId;
+  // Sellers can update/delete their own items
+  allow update, delete: if request.auth.uid == resource.data.sellerId;
   
   // Admins can do anything
   allow read, write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
@@ -257,7 +257,7 @@ match /marketplaceItems/{itemId} {
 marketplaceItems:
   - status (ASC), createdAt (DESC)
   - category (ASC), status (ASC), createdAt (DESC)
-  - vendorId (ASC), status (ASC)
+  - sellerId (ASC), status (ASC)
   - status (ASC), price (ASC)
   - tags (ARRAY), status (ASC)
 ```

@@ -16,9 +16,9 @@ This document describes the user-facing terminology used throughout the GoSender
 
 Users who request delivery services and purchase items from the marketplace.
 
-### Vendor → **Market Senderr**
+### Seller → **Market Senderr**
 
-**Database field:** `vendor`  
+**Database field:** `seller`  
 **Display name:** "Market Senderr"  
 **Icon:** 🏪  
 **Color:** Purple (#8B5CF6)  
@@ -75,7 +75,7 @@ All role display logic is centralized in the shared package:
 // packages/shared/src/utils/roleDisplay.ts
 export const ROLE_DISPLAY = {
   customer: { name: 'Order Up', ... },
-  vendor: { name: 'Market Senderr', ... },
+  seller: { name: 'Market Senderr', ... },
   courier: { name: 'Senderr', ... },
   package_runner: { name: 'Shifter', ... },
   runner: { name: 'Shifter', ... },
@@ -105,8 +105,8 @@ const roleName = getRoleName('courier');
 
 **IMPORTANT:** Database field names remain unchanged for backwards compatibility:
 
-- Firestore documents still use: `customer`, `vendor`, `courier`, `package_runner`, `runner`, `admin`
-- TypeScript types still use: `UserRole = 'customer' | 'vendor' | 'courier' | 'package_runner' | 'runner' | 'admin'`
+- Firestore documents use: `customer`, `seller`, `courier`, `package_runner`, `runner`, `admin`
+- TypeScript types use: `UserRole = 'customer' | 'seller' | 'courier' | 'package_runner' | 'runner' | 'admin'`
 - Variable names in code can remain unchanged (e.g., `courierId`, `deliveryJob`)
 
 Only **UI-facing text** uses the new terminology.
@@ -130,10 +130,10 @@ Only **UI-facing text** uses the new terminology.
 - `/runner/dashboard` - "Total Shifts", "Active Shifter", "Recent Shifts"
 - `/runner/available-routes` - Routes referred to as "shifts"
 
-### Vendor (Market Senderr) Pages
+### Seller (Market Senderr) Pages
 
-- `/vendor/orders` - "Market Senderr Orders"
-- `/vendor/settings` - "Market Senderr Settings"
+- `/seller/orders` - "Market Senderr Orders"
+- `/seller/settings` - "Market Senderr Settings"
 
 ### Admin Pages
 

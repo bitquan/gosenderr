@@ -97,7 +97,7 @@ test.describe('Admin Desktop Pages', () => {
     expect(errors.length).toBe(0);
   });
 
-  test('Vendors page loads without errors', async ({ page }) => {
+  test('Sellers page loads without errors', async ({ page }) => {
     const errors: string[] = [];
     page.on('console', msg => {
       if (msg.type() === 'error') {
@@ -112,7 +112,7 @@ test.describe('Admin Desktop Pages', () => {
     await expect(heading).toBeVisible({ timeout: 5000 });
 
     if (errors.length > 0) {
-      console.log('Vendors page errors:', errors);
+      console.log('Sellers page errors:', errors);
     }
     
     expect(errors.length).toBe(0);

@@ -35,9 +35,9 @@
   
 - **Firestore Rules**: Custom claim validation (`isAdmin()`, `isPackageRunner()`)
 - **Admin User Management**: 
-  - 6 filter tabs: All, Customers, Couriers, Runners, Vendors, Admins
+  - 6 filter tabs: All, Customers, Couriers, Runners, Sellers, Admins
   - Count badges for each role type
-  - Role badges: Admin (red), Package Runner (orange), Vendor (indigo), Courier (purple), Customer (gray)
+  - Role badges: Admin (red), Package Runner (orange), Seller (indigo), Courier (purple), Customer (gray)
   - Available in both admin-app and courier-app
 
 - **Custom Claims**: 
@@ -48,8 +48,8 @@
 
 - **Browse Page** (`/marketplace`): Public marketplace with category filtering, compact mobile-first design
 - **Item Detail** (`/marketplace/[itemId]`): Compact item view with photo gallery, description, pricing
-- **Vendor Dashboard** (`/vendor/items`): Manage listings (mark sold, delete)
-- **Create Listing** (`/vendor/items/new`): Form with photo uploads, categories, conditions
+- **Seller Dashboard** (`/seller/items`): Manage listings (mark sold, delete)
+- **Create Listing** (`/seller/items/new`): Form with photo uploads, categories, conditions
 - **Item Cards**: Compact grid layout (150px min, 2-3 columns on mobile)
 - **Firestore Rules**: Public read access, authenticated write
 - **Storage Rules**: Public read for item photos, owner-only write
@@ -113,7 +113,7 @@ pnpm dev
 2. **Mobile Optimization**: Compact layouts, smaller fonts (13-15px), tighter padding (8-12px)
 3. **Universal Navbar**: Added navbar to root layout for consistent navigation
 4. **Public Marketplace**: Updated Firestore/Storage rules for public read access
-5. **Vendor Pages**: Styled items list and creation form with consistent design
+5. **Seller Pages**: Styled items list and creation form with consistent design
 
 ## Firebase Rules Summary
 

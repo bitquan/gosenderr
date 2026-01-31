@@ -10,7 +10,7 @@
 ### ✅ Edit User Roles
 - [x] Created `EditRoleModal.tsx` component (admin-app)
 - [x] Created `EditRoleModal.tsx` component (courier-app)
-- [x] 5 role options: customer, courier, package_runner, vendor, admin
+- [x] 5 role options: customer, courier, package_runner, seller, admin
 - [x] Integrated into `apps/admin-app/src/pages/Users.tsx`
 - [x] Integrated into `apps/courier-app/src/pages/AdminUsers.tsx`
 - [x] Calls `setAdminClaim` Cloud Function for admin role

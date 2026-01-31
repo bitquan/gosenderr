@@ -1,12 +1,12 @@
 # Marketplace / Customer App (Draft)
 
 ## Purpose
-Customer/Marketplace app: browse vendors, create delivery requests, track delivery.
+Customer/Marketplace app: browse sellers, create delivery requests, track delivery.
 
 ## Key flows
 - Browse marketplace → add to cart → checkout
 - Delivery tracking and courier communication
-- Vendor management
+- Seller management
 
 ## Implementation notes
 - Firebase-based authentication

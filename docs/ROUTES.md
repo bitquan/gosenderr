@@ -103,10 +103,10 @@ http://localhost:3000
 - `/marketplace/create` - Create marketplace listing
 - `/marketplace/[itemId]` - View marketplace item
 
-## 🏪 Vendor Routes
+## 🏪 Seller Routes
 
-- `/vendor/items` - View vendor items
-- `/vendor/items/new` - Create new vendor item
+- `/seller/items` - View seller items
+- `/seller/items/new` - Create new seller item
 
 ## 👨‍💼 Admin Routes
 
@@ -220,7 +220,7 @@ Previously missing routes that now exist:
 - **Customer Only:** `/customer/*`, `/ship/*`
 - **Courier Only:** `/courier/*`
 - **Runner Only:** `/runner/*`
-- **Vendor Only:** `/vendor/*`
+- **Seller Only:** `/seller/*`
 - **Admin Only:** `/admin/*`
 
 ## 📝 Notes

@@ -167,7 +167,7 @@ export default function MarketplaceOrdersPage() {
               <div className="flex-1">
                 <input
                   type="text"
-                  placeholder="Search by order ID, customer, or vendor..."
+                  placeholder="Search by order ID, customer, or seller..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-purple-500"

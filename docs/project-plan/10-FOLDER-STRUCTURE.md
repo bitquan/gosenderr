@@ -73,7 +73,7 @@ gosenderr/
 ├── scripts/
 │   ├── deploy-cloudrun-web.sh
 │   ├── verify-phase0.sh
-│   └── predeploy-vendor-shared.js
+│   └── predeploy-seller-shared.js
 │
 ├── .env.example
 ├── .firebaserc
@@ -538,7 +538,7 @@ gosenderr/
 │   ├── deploy-courier.sh            # NEW: Deploy courier
 │   ├── verify-phase0.sh
 │   ├── verify-docs.sh
-│   ├── predeploy-vendor-shared.js
+│   ├── predeploy-seller-shared.js
 │   ├── build-all.sh                 # Build all apps
 │   ├── test-all.sh                  # Test all apps
 │   └── README.md

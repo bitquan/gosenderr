@@ -33,7 +33,7 @@
   - `adminActionLogs` collection secured (admin read-only)
   
 - ✅ **User Management**
-  - 6 filter tabs (All, Customers, Couriers, Runners, Vendors, Admins)
+  - 6 filter tabs (All, Customers, Couriers, Runners, Sellers, Admins)
   - Role badges with proper colors and icons
   - Count badges for each filter
   - Available in both admin-app and courier-app

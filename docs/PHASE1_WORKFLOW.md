@@ -272,7 +272,7 @@ lsof -ti:4000,8080,9099,9199 | xargs kill -9
 
 ### Upcoming 📅
 - [ ] Real-time data updates (onSnapshot subscriptions)
-- [ ] CRUD workflows (user edit/delete, vendor approval)
+- [ ] CRUD workflows (user edit/delete, seller approval)
 - [ ] Bulk operations (batch user updates, export data)
 - [ ] Search and filtering (global search, advanced filters)
 - [ ] Performance optimization (lazy loading, code splitting)

@@ -105,13 +105,13 @@ GoSenderr uses Firebase Authentication custom claims for role-based access contr
 2. **Customers** - Users with `role: 'customer'` or no role
 3. **Couriers** - Users with `role: 'courier'` or `courierProfile`
 4. **Runners** - Users with `role: 'package_runner'`
-5. **Vendors** - Users with `role: 'vendor'`
+5. **Sellers** - Users with `role: 'seller'`
 6. **Admins** - Users with `role: 'admin'`
 
 ### Role Badges
 - **Admin**: Red badge (`bg-red-100 text-red-700`)
 - **Package Runner**: Orange badge with 🚛 icon (`bg-orange-100 text-orange-700`)
-- **Vendor**: Indigo badge with 🏪 icon (`bg-indigo-100 text-indigo-700`)
+- **Seller**: Indigo badge with 🏪 icon (`bg-indigo-100 text-indigo-700`)
 - **Courier**: Purple badge (`bg-purple-100 text-purple-700`)
 - **Customer**: Gray badge (`bg-gray-100 text-gray-700`)
 

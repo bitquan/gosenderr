@@ -119,7 +119,7 @@ In Firebase Console (https://console.firebase.google.com/project/gosenderr-6773f
    - `gosenderr-customer` (Customer app)
    - `gosenderr-senderr` (Senderr app)
    - `gosenderr-admin` (Admin app)
-   - `gosenderr-vendor` (Vendor app - optional)
+  - `gosenderr-seller` (Seller app - optional)
 
 ### 2. Configure Hosting Targets
 
