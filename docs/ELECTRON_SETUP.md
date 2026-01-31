@@ -10,33 +10,38 @@ This document describes the basic Electron development setup for the Phase 1 Adm
    pnpm install
    ```
 
-2. Create the Electron scaffold (if not present):
+2. Start the renderer dev server (Vite) in one terminal:
 
    ```bash
-   mkdir -p apps/admin-desktop/electron
-   cp -R apps/admin-app/src apps/admin-desktop/src
+   pnpm --filter @gosenderr/admin-desktop dev
    ```
 
-3. Install Electron tooling in the workspace `apps/admin-desktop`:
+3. Start Electron in a second terminal:
 
    ```bash
-   cd apps/admin-desktop
-   pnpm add -D electron electron-builder concurrently
+   pnpm --filter @gosenderr/admin-desktop electron
    ```
 
-4. Run dev mode (renderer + electron):
+   In development, `electron/main.ts` loads `http://localhost:5176`.
+
+4. (Optional) Use Firebase emulators for Admin Desktop:
 
    ```bash
-   pnpm dev
+   VITE_ADMIN_DESKTOP_USE_EMULATORS=true pnpm --filter @gosenderr/admin-desktop dev
    ```
 
-   In development, configure `electron/main.ts` to load `http://localhost:<renderer-port>`.
+   Admin Desktop defaults to production Firebase unless this flag is set.
 
 ## Security defaults and recommendations
 
 - `contextIsolation: true` and `nodeIntegration: false` in BrowserWindow webPreferences.
 - Expose a minimal IPC surface using a `preload.ts` with `contextBridge`.
 - Avoid enabling remote module access; never pass user input into OS-level commands without strict validation.
+
+## Routing in production
+
+- The renderer uses HashRouter so that file:// routes work after packaging.
+- The Vite base is set to `./` so assets resolve correctly from the `dist/` folder.
 
 ## Packaging & signing (macOS)
 

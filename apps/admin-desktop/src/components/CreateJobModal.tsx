@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { addDoc, collection } from 'firebase/firestore'
 import { db } from '../lib/firebase'
+import { geocodeAddress } from '../lib/mapbox/geocode'
 
 interface LocationSuggestion {
   name: string
@@ -15,8 +16,6 @@ interface CreateJobModalProps {
   onClose: () => void
   onJobCreated: () => void
 }
-
-const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || ''
 
 export function CreateJobModal({ isOpen, onClose, onJobCreated }: CreateJobModalProps) {
   const [loading, setLoading] = useState(false)
@@ -41,20 +40,15 @@ export function CreateJobModal({ isOpen, onClose, onJobCreated }: CreateJobModal
 
   // Search Mapbox for locations
   const searchMapbox = async (query: string): Promise<LocationSuggestion[]> => {
-    if (!query.trim() || !MAPBOX_TOKEN) return []
-
     try {
-      const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_TOKEN}&limit=5`
-      )
-      const data = await response.json()
-
-      return data.features.map((feature: any) => ({
+      if (!query.trim()) return []
+      const results = await geocodeAddress(query)
+      return results.map((feature) => ({
         name: feature.place_name.split(',')[0],
         address: feature.place_name,
-        lat: feature.center[1],
-        lng: feature.center[0],
-        placeId: feature.id,
+        lat: feature.lat,
+        lng: feature.lng,
+        placeId: `${feature.lat},${feature.lng}`,
       }))
     } catch (err) {
       console.error('Mapbox search error:', err)

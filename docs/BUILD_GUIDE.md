@@ -8,12 +8,20 @@ Build and CI guidance for the Admin Desktop (Phase 1) Electron packaging.
 
 ## Local build commands
 
-From `apps/admin-desktop`:
+From repo root (recommended):
 
 ```bash
-pnpm build            # builds renderer + electron main
-pnpm build:mac        # mac-specific packaging
-pnpm build:win        # windows-specific packaging (use CI or VM to build Windows artifacts)
+pnpm --filter @gosenderr/admin-desktop build      # builds renderer + electron main
+pnpm --filter @gosenderr/admin-desktop pack       # packaging output to dist-electron/ (no installer)
+pnpm --filter @gosenderr/admin-desktop dist       # macOS: builds and opens the .dmg
+```
+
+Windows builds (use CI or a Windows VM):
+
+```bash
+cd apps/admin-desktop
+pnpm build
+pnpm exec electron-builder --win
 ```
 
 ## CI recommendations
@@ -22,7 +30,11 @@ pnpm build:win        # windows-specific packaging (use CI or VM to build Window
 - Upload artifacts to GitHub Releases / internal artifact store.
 
 ## Smoke tests
-- Run a minimal CLI smoke test that launches the built app and verifies it can reach a small `status` route (renderer should expose an internal health route when run with `--smoke-test` flag).
+- After packaging, launch the built app and verify:
+	- App opens without a white screen.
+	- Login works and dashboard renders.
+	- Global search opens with Cmd/Ctrl+K.
+	- Open-in-new-window routes render correctly.
 
 ## Notes
 - Cross-signing and notarization required for macOS distribution: plan to integrate codesign and notarization steps in CI after the first successful unsigned build.

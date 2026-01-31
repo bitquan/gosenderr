@@ -2,11 +2,15 @@ import * as functions from "firebase-functions/v2";
 import * as admin from "firebase-admin";
 
 export const getPublicConfig = functions.https.onCall({ cors: true }, async () => {
-  const doc = await admin.firestore().doc("secrets/stripe").get();
-  const data = doc.exists ? doc.data() : {};
+  const stripeDoc = await admin.firestore().doc("secrets/stripe").get();
+  const stripeData = stripeDoc.exists ? stripeDoc.data() : {};
+
+  const mapboxDoc = await admin.firestore().doc("secrets/mapbox").get();
+  const mapboxData = mapboxDoc.exists ? mapboxDoc.data() : {};
 
   return {
-    stripePublishableKey: data?.publishableKey || "",
-    stripeMode: data?.mode || "test",
+    stripePublishableKey: stripeData?.publishableKey || "",
+    stripeMode: stripeData?.mode || "test",
+    mapboxPublicToken: mapboxData?.publicToken || "",
   };
 });
