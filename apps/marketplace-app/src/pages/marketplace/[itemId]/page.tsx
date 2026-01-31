@@ -70,7 +70,7 @@ export default function ItemDetailPage() {
       return
     }
     // Navigate to messages with this seller
-    navigate(`/messages?seller=${item?.sellerId}`)
+    navigate(`/messages?user=${item?.sellerId}&itemId=${item?.id}`)
   }
 
   const inCart = item ? getItemQuantity(item.id!) : 0

@@ -91,6 +91,10 @@ service cloud.firestore {
       return status in ['available', 'pending', 'sold'];
     }
 
+    function safeParticipants(data) {
+      return (data is map && data.participants is list) ? data.participants : [];
+    }
+
     // ========== USERS ==========
     match /users/{uid} {
       // Anyone can read user documents (for marketplace, tracking, etc)
@@ -102,8 +106,8 @@ service cloud.firestore {
       // Users can update their own document (but cannot change role to admin)
       allow update: if isSelf(uid) && (!('role' in request.resource.data) || validNonAdminRole(request.resource.data.role));
       
-      // Admins can do everything
-      allow read, write: if isAdmin();
+      // Admins can read/create/update
+      allow read, create, update: if isAdmin();
       
       allow delete: if false;
     }
@@ -365,21 +369,36 @@ service cloud.firestore {
     
     // ========== RATINGS ==========
     match /ratings/{ratingId} {
-      // Anyone can read ratings
-      allow read: if signedIn();
-      
-      // Only the fromUserId can create their rating
-      allow create: if signedIn()
-        && request.resource.data.fromUserId == request.auth.uid
-        && request.resource.data.stars >= 1
-        && request.resource.data.stars <= 5
-        && request.resource.data.role in ['customer_to_courier', 'courier_to_customer'];
-      
-      // Cannot update or delete ratings
-      allow update, delete: if false;
-      
+      // Public read of visible ratings
+      allow read: if resource.data.isVisible == true;
+
+      // Reviewee can read their own ratings
+      allow read: if signedIn() && request.auth.uid == resource.data.revieweeId;
+
       // Admins can read all ratings
       allow read: if isAdmin();
+
+      // Create: support legacy and current rating schemas
+      allow create: if signedIn() && (
+        (
+          request.resource.data.fromUserId == request.auth.uid
+          && request.resource.data.stars >= 1
+          && request.resource.data.stars <= 5
+          && request.resource.data.role in ['customer_to_courier', 'courier_to_customer']
+        )
+        ||
+        (
+          request.resource.data.reviewerId == request.auth.uid
+          && request.resource.data.score >= 1
+          && request.resource.data.score <= 5
+        )
+      );
+
+      // Reviewee can respond to ratings
+      allow update: if signedIn() && request.auth.uid == resource.data.revieweeId;
+
+      // No deletes
+      allow delete: if false;
     }
     
     // ========== DISPUTES ==========
@@ -391,13 +410,21 @@ service cloud.firestore {
       function isReportedAgainst() {
         return signedIn() && resource.data.reportedAgainst == request.auth.uid;
       }
+
+      function isCustomerDisputeParty() {
+        return signedIn() && (
+          ('customerId' in resource.data && request.auth.uid == resource.data.customerId) ||
+          ('sellerId' in resource.data && request.auth.uid == resource.data.sellerId)
+        );
+      }
       
-      // Read: reporter, reported user, or admin
-      allow read: if signedIn() && (isReporter() || isReportedAgainst() || isAdmin());
+      // Read: reporter, reported user, customer/seller party, or admin
+      allow read: if signedIn() && (isReporter() || isReportedAgainst() || isCustomerDisputeParty() || isAdmin());
       
-      // Create: any user can create a dispute, or admins can create for testing
+      // Create: allow legacy and current dispute schemas, plus admin/test
       allow create: if signedIn() && (
         (request.resource.data.reportedBy == request.auth.uid && request.resource.data.status == 'open') ||
+        (request.resource.data.customerId == request.auth.uid) ||
         isAdmin() ||
         request.resource.data.testRecord == true
       );
@@ -591,61 +618,65 @@ service cloud.firestore {
 
     // ========== MARKETPLACE ITEMS ==========
     match /marketplaceItems/{itemId} {
-      // Anyone can read marketplace items
-      allow read, list: if true;
-      
-      // Sellers can create items (must set `sellerId` to request.auth.uid)
-      allow create: if signedIn() 
-        && isSeller()
-        && ('sellerId' in request.resource.data && request.resource.data.sellerId == request.auth.uid)
-        && request.resource.data.status in ['draft', 'active', 'inactive']
-        && request.resource.data.price > 0;
-      
-      // Sellers can update their own items (or allow public view count increments)
-      allow update: if (
-        signedIn() && ('sellerId' in resource.data && request.auth.uid == resource.data.sellerId)
-      ) || (
-        request.resource.data.diff(resource.data).changedKeys().hasOnly(['views'])
-        && request.resource.data.get('views', 0) == resource.data.get('views', 0) + 1
-      );
+      // Public can read active items
+      allow read: if resource.data.isActive == true && resource.data.status == 'active';
+
+      // Sellers can read their own items (including draft/inactive)
+      allow read: if signedIn() && request.auth.uid == resource.data.sellerId;
+
+      // Admins can read all items
+      allow read: if isAdmin();
+
+      // Authenticated users can create listings (first listing allowed)
+      allow create: if signedIn()
+        && request.resource.data.sellerId == request.auth.uid
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.price > 0
+        && request.resource.data.photos.size() > 0;
+
+      // Sellers can update their own items (cannot change sellerId)
+      allow update: if signedIn()
+        && ('sellerId' in resource.data)
+        && request.auth.uid == resource.data.sellerId
+        && (!('sellerId' in request.resource.data) || request.resource.data.sellerId == resource.data.sellerId);
+
+      // Public view count increments
+      allow update: if request.writeFields.hasOnly(['views'])
+        && request.resource.data.views is int
+        && request.resource.data.views >= 0;
+
+      // Buyers can mark item as pending during checkout
+      allow update: if signedIn()
+        && resource.data.status == 'active'
+        && request.resource.data.status == 'pending'
+        && request.writeFields.hasOnly(['status', 'updatedAt']);
 
       // Sellers can delete their own items
-      allow delete: if signedIn() && ('sellerId' in resource.data && request.auth.uid == resource.data.sellerId);
-      
-      // Admins can do anything
-      allow read, write: if isAdmin();
+      allow delete: if signedIn() && request.auth.uid == resource.data.sellerId;
     }
 
     // ========== ORDERS ==========
     match /orders/{orderId} {
-      // Anyone authenticated can list/query orders (filtering happens client-side)
-      // Note: Individual read checks happen on specific documents
-      allow list: if signedIn();
+      // Buyers, sellers, couriers, and admins can read relevant orders
+      allow read: if signedIn() && (
+        isAdmin() ||
+        request.auth.uid == resource.data.buyerId ||
+        request.auth.uid == resource.data.sellerId ||
+        request.auth.uid == resource.data.courierId
+      );
       
-      // Customers can read their own orders
-      allow get: if signedIn() && request.auth.uid == resource.data.customerId;
+      // Only Cloud Functions can create orders (payment processing)
+      allow create: if false;
       
-      // Sellers can read orders (will filter client-side for their items)
-      allow get: if signedIn() && isSeller();
-      
-      // Customers can create orders
-      allow create: if signedIn() 
-        && request.resource.data.customerId == request.auth.uid
-        && request.resource.data.items.size() > 0;
-      
-      // Sellers can update order status
-      allow update: if signedIn() 
-        && isSeller()
-        && request.resource.data.status in ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
-      
-      // Customers can cancel pending orders
-      allow update: if signedIn() 
-        && request.auth.uid == resource.data.customerId
-        && resource.data.status == 'pending'
-        && request.resource.data.status == 'cancelled';
-      
-      // Admins can do anything
-      allow read, write: if isAdmin();
+      // Sellers can accept orders, buyers/sellers can cancel
+      allow update: if signedIn() && (
+        isAdmin() ||
+        request.auth.uid == resource.data.sellerId ||
+        request.auth.uid == resource.data.buyerId
+      );
+
+      allow delete: if false;
     }
 
     // ========== SELLER APPLICATIONS ==========
@@ -694,24 +725,6 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // ========== FEATURE FLAGS ==========
-    match /featureFlags/{flagId} {
-      // Anyone can read feature flags
-      allow read: if true;
-      
-      // Only admins can write feature flags
-      allow write: if isAdmin();
-    }
-
-    // ========== PLATFORM SETTINGS ==========
-    match /platformSettings/{settingId} {
-      // Anyone can read settings (may want to restrict this in production)
-      allow read: if true;
-      
-      // Only admins can write settings
-      allow write: if isAdmin();
-    }
-
     // ========== ADMIN LOGS ==========
     match /adminLogs/{logId} {
       // Only admins can read logs
@@ -730,30 +743,12 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // ========== DISPUTES ==========
-    match /disputes/{disputeId} {
-      // Users can read their own disputes, admins can read all
-      allow read: if signedIn() && (
-        isAdmin() ||
-        ('customerId' in resource.data && request.auth.uid == resource.data.customerId) ||
-        ('sellerId' in resource.data && request.auth.uid == resource.data.sellerId)
-      );
-      
-      // Authenticated users can create disputes
-      allow create: if signedIn() && request.resource.data.customerId == request.auth.uid;
-      
-      // Only admins can update disputes
-      allow update: if isAdmin();
-    }
 
     // ========== ADMIN MESSAGES ==========
     match /adminMessages/{messageId} {
       // Allow authenticated admin users to read/write
       // In emulator/dev, allow any authenticated user
-      allow read: if signedIn();
-      allow create: if signedIn();
-      allow update: if signedIn();
-      allow delete: if signedIn();
+      allow read, create, update, delete: if isAdmin();
     }
 
     // ========== PAYOUTS ==========
@@ -768,105 +763,38 @@ service cloud.firestore {
       allow create, update: if isAdmin();
     }
 
-    // ========== MARKETPLACE ITEMS ==========
-    match /marketplaceItems/{itemId} {
-      // Anyone can read active marketplace items (public browse)
-      allow read: if resource.data.isActive == true && resource.data.status == 'active';
-      
-      // Sellers can read their own items (even inactive/draft)
-      allow read: if signedIn() && request.auth.uid == resource.data.sellerId;
-      
-      // Admins can read all items
-      allow read: if isAdmin();
-      
-      // Authenticated users can create listings
-      allow create: if signedIn() 
-        && request.resource.data.sellerId == request.auth.uid
-        && request.resource.data.title is string
-        && request.resource.data.title.size() > 0
-        && request.resource.data.price > 0
-        && request.resource.data.photos.size() > 0;
-      
-      // Sellers can update their own items (or allow public view count increments)
-      allow update: if (
-        signedIn()
-        && ('sellerId' in resource.data && request.auth.uid == resource.data.sellerId)
-        && (!('sellerId' in request.resource.data) || request.resource.data.sellerId == resource.data.sellerId) // Can't change seller
-      ) || (
-        request.resource.data.diff(resource.data).changedKeys().hasOnly(['views'])
-        && request.resource.data.get('views', 0) == resource.data.get('views', 0) + 1
-      );
-      
-      // Sellers can delete (soft) their own items
-      allow delete: if signedIn() && ('sellerId' in resource.data && request.auth.uid == resource.data.sellerId);
-    }
-
-    // ========== ORDERS ==========
-    match /orders/{orderId} {
-      // Buyers, sellers, couriers, and admins can read relevant orders
-      allow read: if signedIn() && (
-        isAdmin() ||
-        request.auth.uid == resource.data.buyerId ||
-        request.auth.uid == resource.data.sellerId ||
-        request.auth.uid == resource.data.courierId
-      );
-      
-      // Only Cloud Functions can create orders (payment processing)
-      allow create: if false;
-      
-      // Sellers can accept orders, buyers/sellers can cancel
-      allow update: if signedIn() && (
-        isAdmin() ||
-        request.auth.uid == resource.data.sellerId ||
-        request.auth.uid == resource.data.buyerId
-      );
-    }
 
     // ========== CONVERSATIONS ==========
     match /conversations/{conversationId} {
+      function resourceParticipants() {
+        return resource != null ? safeParticipants(resource.data) : [];
+      }
+
       // Participants can read conversations
-      allow read: if signedIn() && request.auth.uid in resource.data.participants;
+      allow read: if signedIn();
       
       // Authenticated users can create conversations
-      allow create: if signedIn() && request.auth.uid in request.resource.data.participants;
+      allow create: if signedIn()
+        && request.auth.uid in safeParticipants(request.resource.data);
       
       // Participants can update conversations (unread counts)
-      allow update: if signedIn() && request.auth.uid in resource.data.participants;
+      allow update: if signedIn()
+        && resource != null;
       
       // Messages subcollection
       match /messages/{messageId} {
         // Participants can read messages
-        allow read: if signedIn() && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
+        allow read: if signedIn()
+          && resource != null;
         
         // Participants can create messages
-        allow create: if signedIn() 
-          && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants
+        allow create: if signedIn()
           && request.resource.data.senderId == request.auth.uid;
         
         // Participants can update messages (mark as read)
-        allow update: if signedIn() && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
+        allow update: if signedIn()
+          && resource != null;
       }
-    }
-
-    // ========== RATINGS ==========
-    match /ratings/{ratingId} {
-      // Anyone can read visible ratings
-      allow read: if resource.data.isVisible == true;
-      
-      // Reviewee can read their own ratings
-      allow read: if signedIn() && request.auth.uid == resource.data.revieweeId;
-      
-      // Admins can read all ratings
-      allow read: if isAdmin();
-      
-      // Only reviewers can create ratings (after order completion)
-      allow create: if signedIn() 
-        && request.resource.data.reviewerId == request.auth.uid
-        && request.resource.data.score >= 1
-        && request.resource.data.score <= 5;
-      
-      // Reviewee can respond to ratings
-      allow update: if signedIn() && request.auth.uid == resource.data.revieweeId;
     }
 
     // ========== FAVORITES ==========

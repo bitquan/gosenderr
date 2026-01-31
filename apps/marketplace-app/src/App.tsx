@@ -42,6 +42,8 @@ import MyListingsPage from './pages/profile/listings/page'
 import SellerSettingsPage from './pages/profile/seller-settings/page'
 import StripeOnboardingPage from './pages/profile/stripe-onboarding/page'
 import OrderDetailPage from './pages/orders/[orderId]/page'
+import MessagesPage from './pages/messages/page'
+import ConversationPage from './pages/messages/[conversationId]/page'
 
 // Seller pages
 import SellerApplicationPage from './pages/seller/apply/page'
@@ -118,6 +120,16 @@ function App() {
             <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/reviews" element={<ReviewsPage />} />
             <Route path="/support" element={<SupportPage />} />
+            <Route path="/messages" element={
+              <RoleGuard allowedRoles={['customer', 'buyer', 'seller']}>
+                <MessagesPage />
+              </RoleGuard>
+            } />
+            <Route path="/messages/:conversationId" element={
+              <RoleGuard allowedRoles={['customer', 'buyer', 'seller']}>
+                <ConversationPage />
+              </RoleGuard>
+            } />
             
             {/* Customer-only routes */}
             <Route path="/request-delivery" element={
