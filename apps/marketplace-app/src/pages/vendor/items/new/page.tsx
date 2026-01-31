@@ -1,33 +1,52 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { db, storage } from "@/lib/firebase/client";
+import { storage } from "@/lib/firebase/client";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
-import { useUserDoc } from "@/hooks/v2/useUserDoc";
+import { marketplaceService } from "@/services/marketplace.service";
+import { DeliveryOption, ItemCategory, ItemCondition } from "@/types/marketplace";
 import { Card, CardContent } from "@/components/ui/Card";
 
 export default function NewVendorItem() {
   const navigate = useNavigate();
   const { uid } = useAuthUser();
-  const { userDoc } = useUserDoc();
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState<File[]>([]);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     price: "",
-    category: "package",
+    category: "other" as ItemCategory,
+    condition: "new" as ItemCondition,
+    quantity: "1",
     weight: "",
     dimensions: "",
-    status: "active" as "active" | "draft",
+    deliveryOptions: ["courier"] as DeliveryOption[],
   });
 
   const categories = [
-    { value: "package", label: "📦 Package" },
-    { value: "food", label: "🍔 Food" },
-    { value: "document", label: "📄 Document" },
+    { value: "electronics", label: "📱 Electronics" },
+    { value: "clothing", label: "👕 Clothing" },
+    { value: "home", label: "🏠 Home" },
+    { value: "books", label: "📚 Books" },
+    { value: "toys", label: "🧸 Toys" },
+    { value: "sports", label: "🏈 Sports" },
+    { value: "automotive", label: "🚗 Automotive" },
     { value: "other", label: "📌 Other" },
+  ];
+
+  const conditions = [
+    { value: "new", label: "New" },
+    { value: "like_new", label: "Like New" },
+    { value: "good", label: "Good" },
+    { value: "fair", label: "Fair" },
+    { value: "poor", label: "Poor" },
+  ];
+
+  const deliveryOptions = [
+    { value: "courier" as DeliveryOption, label: "Courier Delivery" },
+    { value: "pickup" as DeliveryOption, label: "Pickup" },
+    { value: "shipping" as DeliveryOption, label: "Shipping" },
   ];
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -41,6 +60,7 @@ export default function NewVendorItem() {
     const imageUrls: string[] = [];
 
     for (const image of images) {
+      if (!uid) throw new Error("Missing user ID");
       const storageRef = ref(
         storage,
         `items/${uid}/${Date.now()}_${image.name}`
@@ -62,33 +82,22 @@ export default function NewVendorItem() {
       // Upload images
       const imageUrls = await uploadImages();
 
-      // Create item
-      // Ensure Firestore item fields satisfy security rules
-      const itemPayload = {
+      const deliveryOptions = formData.deliveryOptions.length > 0
+        ? formData.deliveryOptions
+        : ["courier" as DeliveryOption];
+
+      await marketplaceService.createListing({
         title: formData.title,
         description: formData.description,
+        category: formData.category,
+        condition: formData.condition,
         price: parseFloat(formData.price),
-        weight: formData.weight ? parseFloat(formData.weight) : null,
-        // Keep images for UI but mirror to 'photos' which rules validate
-        images: imageUrls,
+        quantity: Math.max(1, parseInt(formData.quantity || "1", 10)),
         photos: imageUrls,
-        // Map local category to allowed values (fallback to 'other')
-        category: ['electronics','furniture','clothing','food','other'].includes(formData.category)
-          ? formData.category
-          : 'other',
-        condition: 'new',
-        status: 'available', // must be one of ['available','pending','sold'] per rules
-        sellerId: uid,
-        sellerName: userDoc?.displayName || 'Seller',
-        sellerId: uid,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      };
+        deliveryOptions,
+      });
 
-      const docRef = await addDoc(collection(db, 'items'), itemPayload);
-      console.log('Created item doc:', docRef.id);
-
-      navigate('/vendor/dashboard');
+      navigate('/seller/dashboard');
     } catch (error) {
       console.error("Failed to create item:", error);
       alert("Failed to create item. Please try again.");
@@ -103,13 +112,13 @@ export default function NewVendorItem() {
       <div className="bg-gradient-to-br from-blue-600 to-purple-600 text-white p-6">
         <div className="max-w-3xl mx-auto">
           <button
-            onClick={() => navigate("/vendor/dashboard")}
+            onClick={() => navigate("/seller/dashboard")}
             className="flex items-center gap-2 text-white/90 hover:text-white mb-4 transition-colors"
           >
             <span className="text-xl">←</span>
             <span>Back to Dashboard</span>
           </button>
-          <h1 className="text-3xl font-bold mb-2">Create New Item</h1>
+          <h1 className="text-3xl font-bold mb-2">Create New Listing</h1>
           <p className="text-blue-100">List a new item on the marketplace</p>
         </div>
       </div>
@@ -188,7 +197,7 @@ export default function NewVendorItem() {
                   required
                   value={formData.category}
                   onChange={(e) =>
-                    setFormData({ ...formData, category: e.target.value })
+                    setFormData({ ...formData, category: e.target.value as ItemCategory })
                   }
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                 >
@@ -198,6 +207,45 @@ export default function NewVendorItem() {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              {/* Condition */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Condition *
+                </label>
+                <select
+                  required
+                  value={formData.condition}
+                  onChange={(e) =>
+                    setFormData({ ...formData, condition: e.target.value as ItemCondition })
+                  }
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                >
+                  {conditions.map((cond) => (
+                    <option key={cond.value} value={cond.value}>
+                      {cond.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Quantity */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Quantity *
+                </label>
+                <input
+                  type="number"
+                  required
+                  min="1"
+                  value={formData.quantity}
+                  onChange={(e) =>
+                    setFormData({ ...formData, quantity: e.target.value })
+                  }
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                  placeholder="1"
+                />
               </div>
 
               {/* Price */}
@@ -253,34 +301,28 @@ export default function NewVendorItem() {
                 />
               </div>
 
-              {/* Status */}
+              {/* Delivery Options */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Status
+                  Delivery Options *
                 </label>
-                <div className="flex gap-4">
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      checked={formData.status === "active"}
-                      onChange={() =>
-                        setFormData({ ...formData, status: "active" })
-                      }
-                      className="text-purple-600 focus:ring-purple-600"
-                    />
-                    <span>Active (Visible on marketplace)</span>
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      checked={formData.status === "draft"}
-                      onChange={() =>
-                        setFormData({ ...formData, status: "draft" })
-                      }
-                      className="text-purple-600 focus:ring-purple-600"
-                    />
-                    <span>Draft (Hidden)</span>
-                  </label>
+                <div className="space-y-2">
+                  {deliveryOptions.map((option) => (
+                    <label key={option.value} className="flex items-center gap-2 text-sm text-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={formData.deliveryOptions.includes(option.value)}
+                        onChange={(e) => {
+                          const next = e.target.checked
+                            ? [...formData.deliveryOptions, option.value]
+                            : formData.deliveryOptions.filter((value) => value !== option.value);
+                          setFormData({ ...formData, deliveryOptions: next });
+                        }}
+                        className="h-4 w-4 text-purple-600 border-gray-300 rounded"
+                      />
+                      {option.label}
+                    </label>
+                  ))}
                 </div>
               </div>
 
@@ -288,7 +330,7 @@ export default function NewVendorItem() {
               <div className="flex gap-4">
                 <button
                   type="button"
-                  onClick={() => navigate("/vendor/dashboard")}
+                  onClick={() => navigate("/seller/dashboard")}
                   className="flex-1 px-6 py-3 border border-gray-300 rounded-xl font-semibold hover:bg-gray-50 transition-colors"
                 >
                   Cancel
@@ -298,7 +340,7 @@ export default function NewVendorItem() {
                   disabled={loading}
                   className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50"
                 >
-                  {loading ? "Creating..." : "Create Item"}
+                  {loading ? "Creating..." : "Create Listing"}
                 </button>
               </div>
             </form>

@@ -86,8 +86,8 @@ export function Navbar({ children }: NavbarProps) {
                       ? "/courier/dashboard"
                       : role === "runner"
                         ? "/runner/dashboard"
-                        : role === "vendor"
-                          ? "/vendor/items"
+                        : role === "seller"
+                          ? "/seller/items"
                           : "/dashboard"
               }
               style={{
@@ -104,7 +104,7 @@ export function Navbar({ children }: NavbarProps) {
                         ? "linear-gradient(135deg, #10b981 0%, #059669 100%)"
                         : role === "runner"
                           ? "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)"
-                          : role === "vendor"
+                          : role === "seller"
                             ? "linear-gradient(135deg, #ec4899 0%, #db2777 100%)"
                             : "#6b7280",
                 color: "white",
@@ -134,7 +134,7 @@ export function Navbar({ children }: NavbarProps) {
                     ? "🚗 Senderr"
                     : role === "runner"
                       ? "🚚 Shifter"
-                      : role === "vendor"
+                      : role === "seller"
                         ? "🏪 Market Senderr"
                         : role}
             </Link>
@@ -163,15 +163,15 @@ export function Navbar({ children }: NavbarProps) {
               Marketplace
             </Link>
 
-            {user && role === "vendor" && (
+            {user && role === "seller" && (
               <Link
-                to="/marketplace/create"
+                to="/marketplace/sell"
                 style={{
                   fontSize: "13px",
                   fontWeight:
-                    pathname === "/marketplace/create" ? "600" : "400",
+                    pathname === "/marketplace/sell" ? "600" : "400",
                   color:
-                    pathname === "/marketplace/create" ? "#6E56CF" : "#666",
+                    pathname === "/marketplace/sell" ? "#6E56CF" : "#666",
                   textDecoration: "none",
                   whiteSpace: "nowrap",
                 }}
@@ -180,20 +180,20 @@ export function Navbar({ children }: NavbarProps) {
               </Link>
             )}
 
-            {user && role && role !== "vendor" && (
+            {user && role && role !== "seller" && (
               <Link
-                to="/marketplace/create"
+                to="/marketplace/sell"
                 style={{
                   fontSize: "13px",
                   fontWeight:
-                    pathname === "/marketplace/create" ? "600" : "400",
+                    pathname === "/marketplace/sell" ? "600" : "400",
                   color:
-                    pathname === "/marketplace/create" ? "#6E56CF" : "#666",
+                    pathname === "/marketplace/sell" ? "#6E56CF" : "#666",
                   textDecoration: "none",
                   whiteSpace: "nowrap",
                 }}
               >
-                🏪 Become a Vendor
+                🏪 Start Selling
               </Link>
             )}
 
@@ -227,13 +227,13 @@ export function Navbar({ children }: NavbarProps) {
               </Link>
             )}
 
-            {user && role === "vendor" && (
+            {user && role === "seller" && (
               <Link
-                to="/vendor/items"
+                to="/seller/items"
                 style={{
                   fontSize: "13px",
-                  fontWeight: pathname.startsWith("/vendor") ? "600" : "400",
-                  color: pathname.startsWith("/vendor") ? "#6E56CF" : "#666",
+                  fontWeight: pathname.startsWith("/seller") ? "600" : "400",
+                  color: pathname.startsWith("/seller") ? "#6E56CF" : "#666",
                   textDecoration: "none",
                   whiteSpace: "nowrap",
                 }}

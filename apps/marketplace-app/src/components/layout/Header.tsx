@@ -37,7 +37,7 @@ export function Header() {
     switch (role) {
       case 'customer':
         return 'bg-purple-100 text-purple-800'
-      case 'vendor':
+      case 'seller':
         return 'bg-blue-100 text-blue-800'
       case 'courier':
         return 'bg-green-100 text-green-800'

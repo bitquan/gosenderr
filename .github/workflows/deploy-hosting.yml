@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - "apps/customer-app/**"
+      - "apps/marketplace-app/**"
       - "apps/courier-app/**"
       - "apps/shifter-app/**"
       - "apps/admin-app/**"
@@ -74,8 +74,8 @@ jobs:
       - name: Build shared package
         run: pnpm --filter @gosenderr/shared build
 
-      - name: Build customer app
-        run: pnpm --filter @gosenderr/customer-app build
+      - name: Build marketplace app
+        run: pnpm --filter @gosenderr/marketplace-app build
 
       - name: Build courier app
         run: pnpm --filter @gosenderr/courier-app build

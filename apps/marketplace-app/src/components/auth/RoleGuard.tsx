@@ -47,7 +47,7 @@ export function RoleGuard({ children, allowedRoles, redirectTo }: RoleGuardProps
     if (roles.includes('customer') || roles.includes('buyer')) {
       return <Navigate to="/dashboard" replace />
     } else if (roles.includes('vendor') || roles.includes('seller')) {
-      return <Navigate to="/vendor/dashboard" replace />
+      return <Navigate to="/seller/dashboard" replace />
     } else if (roles.includes('courier')) {
       return <Navigate to="/courier/dashboard" replace />
     } else if (roles.includes('admin')) {

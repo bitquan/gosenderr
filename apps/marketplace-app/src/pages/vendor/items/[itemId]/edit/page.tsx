@@ -23,7 +23,15 @@ export default function EditVendorItem() {
     category: "other",
     condition: "new",
     status: "available",
+    quantity: "1",
+    deliveryOptions: ["courier"],
   });
+
+  const deliveryOptions = [
+    { value: "courier", label: "Courier Delivery" },
+    { value: "pickup", label: "Pickup" },
+    { value: "shipping", label: "Shipping" },
+  ];
 
   useEffect(() => {
     if (!itemId) return;
@@ -49,7 +57,7 @@ export default function EditVendorItem() {
 
       setLoading(true);
       try {
-        const docRef = doc(db, "items", itemId as string);
+        const docRef = doc(db, "marketplaceItems", itemId as string);
         const snap = await getDoc(docRef);
         if (!snap.exists()) throw new Error("Item not found");
         const data: any = snap.data();
@@ -64,7 +72,7 @@ export default function EditVendorItem() {
           } else {
             alert("You are not authorized to edit this item");
           }
-          navigate("/vendor/dashboard");
+          navigate("/seller/dashboard");
           return;
         }
 
@@ -75,13 +83,15 @@ export default function EditVendorItem() {
           category: data.category || "other",
           condition: data.condition || "new",
           status: data.status || "available",
+          quantity: data.quantity?.toString() || "1",
+          deliveryOptions: data.deliveryOptions || ["courier"],
         });
         setImages(data.images || data.photos || []);
         console.log('EditPage loaded item data:', data);
       } catch (err) {
         console.error("Failed to load item:", err);
         alert("Failed to load item");
-        navigate("/vendor/dashboard");
+        navigate("/seller/dashboard");
       } finally {
         setLoading(false);
       }
@@ -146,21 +156,26 @@ export default function EditVendorItem() {
     try {
       const uploaded = await uploadNewFiles();
       const newImages = [...images, ...uploaded];
+      const deliveryOptions = formData.deliveryOptions.length > 0
+        ? formData.deliveryOptions
+        : ["courier"];
 
       const updatePayload: any = {
         title: formData.title,
         description: formData.description,
         price: parseFloat(formData.price || "0"),
+        quantity: Math.max(1, parseInt(formData.quantity || "1", 10)),
         images: newImages,
         photos: newImages,
         category: formData.category,
         condition: formData.condition,
         status: formData.status,
+        deliveryOptions,
         updatedAt: serverTimestamp(),
       };
 
-      await updateDoc(doc(db, "items", itemId), updatePayload);
-      navigate("/vendor/dashboard");
+      await updateDoc(doc(db, "marketplaceItems", itemId), updatePayload);
+      navigate("/seller/dashboard");
     } catch (err) {
       console.error("Failed to update item:", err);
       alert("Failed to update item. Please try again.");
@@ -175,7 +190,7 @@ export default function EditVendorItem() {
     <div className="min-h-screen bg-gray-50 pb-24">
       <div className="bg-gradient-to-br from-blue-600 to-purple-600 text-white p-6">
         <div className="max-w-3xl mx-auto">
-          <button onClick={() => navigate('/vendor/dashboard')} className="flex items-center gap-2 text-white/90 hover:text-white mb-4">← Back</button>
+          <button onClick={() => navigate('/seller/dashboard')} className="flex items-center gap-2 text-white/90 hover:text-white mb-4">← Back</button>
           <h1 className="text-3xl font-bold mb-2">Edit Item</h1>
           <p className="text-blue-100">Update your marketplace listing</p>
         </div>
@@ -215,8 +230,35 @@ export default function EditVendorItem() {
                 <input type="number" step="0.01" min="0" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Quantity *</label>
+                <input type="number" min="1" value={formData.quantity} onChange={(e) => setFormData({ ...formData, quantity: e.target.value })} className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Delivery Options *</label>
+                <div className="space-y-2">
+                  {deliveryOptions.map((option) => (
+                    <label key={option.value} className="flex items-center gap-2 text-sm text-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={formData.deliveryOptions.includes(option.value)}
+                        onChange={(e) => {
+                          const next = e.target.checked
+                            ? [...formData.deliveryOptions, option.value]
+                            : formData.deliveryOptions.filter((value) => value !== option.value);
+                          setFormData({ ...formData, deliveryOptions: next });
+                        }}
+                        className="h-4 w-4 text-purple-600 border-gray-300 rounded"
+                      />
+                      {option.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
               <div className="flex gap-3">
-                <button type="button" onClick={() => navigate('/vendor/dashboard')} className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl">Cancel</button>
+                <button type="button" onClick={() => navigate('/seller/dashboard')} className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl">Cancel</button>
                 <button type="submit" disabled={saving} data-testid="save-changes-btn" aria-label="save-changes" className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl">{saving ? 'Saving...' : 'Save Changes'}</button>
               </div>
             </form>

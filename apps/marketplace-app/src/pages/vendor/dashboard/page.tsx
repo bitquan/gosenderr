@@ -162,18 +162,18 @@ export default function VendorDashboard() {
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-3xl font-bold mb-2">Vendor Dashboard</h1>
+              <h1 className="text-3xl font-bold mb-2">Seller Dashboard</h1>
               <p className="text-blue-100">Manage your marketplace listings</p>
             </div>
             <div className="flex space-x-3">
               <Link
-                to="/vendor/orders"
+                to="/seller/orders"
                 className="px-6 py-3 bg-white/20 text-white rounded-xl font-semibold hover:bg-white/30 transition-all"
               >
                 View Orders
               </Link>
               <Link
-                to="/vendor/items/new"
+                to="/seller/items/new"
                 className="px-6 py-3 bg-white text-purple-600 rounded-xl font-semibold hover:shadow-lg transition-all"
               >
                 + New Item
@@ -227,7 +227,7 @@ export default function VendorDashboard() {
                     {lowStockItems.slice(0, 3).map((item) => (
                       <li key={item.id}>
                         {item.title} - Only {item.stock} left
-                        <Link to={`/vendor/items/${item.id}/edit`} className="ml-2 underline">
+                        <Link to={`/seller/items/${item.id}/edit`} className="ml-2 underline">
                           Update
                         </Link>
                       </li>
@@ -260,7 +260,7 @@ export default function VendorDashboard() {
                 Start selling by creating your first marketplace item
               </p>
               <Link
-                to="/vendor/items/new"
+                to="/seller/items/new"
                 className="inline-block px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
               >
                 Create First Item
@@ -302,7 +302,7 @@ export default function VendorDashboard() {
                     </span>
                     <div className="flex gap-2">
                       <Link
-                        to={`/vendor/items/${item.id}/edit`}
+                        to={`/seller/items/${item.id}/edit`}
                         className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
                       >
                         Edit

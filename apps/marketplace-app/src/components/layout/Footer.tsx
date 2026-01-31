@@ -36,8 +36,8 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link to="/vendors" className="hover:text-purple-600 transition-colors">
-                  Vendors
+                <Link to="/marketplace" className="hover:text-purple-600 transition-colors">
+                  Sellers
                 </Link>
               </li>
             </ul>
@@ -48,13 +48,13 @@ export function Footer() {
             <h3 className="font-semibold text-gray-900 mb-3">For Sellers</h3>
             <ul className="space-y-2 text-sm text-gray-600">
               <li>
-                <Link to="/signup" className="hover:text-purple-600 transition-colors">
-                  Become a Vendor
+                <Link to="/seller/apply" className="hover:text-purple-600 transition-colors">
+                  Become a Seller
                 </Link>
               </li>
               <li>
-                <Link to="/vendor/dashboard" className="hover:text-purple-600 transition-colors">
-                  Vendor Dashboard
+                <Link to="/seller/dashboard" className="hover:text-purple-600 transition-colors">
+                  Seller Dashboard
                 </Link>
               </li>
             </ul>

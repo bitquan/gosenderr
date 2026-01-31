@@ -9,10 +9,10 @@ export function RoleSwitcher() {
   const { role } = useUserRole();
   const [isOpen, setIsOpen] = useState(false);
 
-  // All logged-in users can access both customer and vendor roles
+  // All logged-in users can access both customer and seller roles
   const roles = [
     { value: "customer", label: "Customer", icon: "👤", route: "/dashboard" },
-    { value: "vendor", label: "Vendor", icon: "🏪", route: "/vendor/dashboard" },
+    { value: "seller", label: "Seller", icon: "🏪", route: "/seller/dashboard" },
   ];
 
   const currentRole = roles.find((r) => r.value === role) || roles[0];

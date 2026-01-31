@@ -89,7 +89,7 @@ services:
       - HOST=0.0.0.0
       - PORT=5173
       - DEBUG=vite:server
-    command: sh -lc "pnpm install --frozen-lockfile && pnpm --filter @gosenderr/customer-app dev -- --host 0.0.0.0 --logLevel debug"
+    command: sh -lc "pnpm install --frozen-lockfile && pnpm --filter @gosenderr/marketplace-app dev -- --host 0.0.0.0 --logLevel debug"
     healthcheck:
       test: ["CMD", "sh", "-c", "curl -sSf http://localhost:5173/ || exit 1"]
       interval: 10s
