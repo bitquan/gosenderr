@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">GoSenderr Customer</string>
+    <string name="title_activity_main">GoSenderr Customer</string>
+    <string name="package_name">com.gosenderr.customer</string>
+    <string name="custom_url_scheme">com.gosenderr.customer</string>
+</resources>

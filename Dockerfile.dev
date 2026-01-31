@@ -3,11 +3,14 @@ FROM --platform=linux/amd64 node:18-bullseye
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends git curl ca-certificates \
+  && apt-get install -y --no-install-recommends git curl ca-certificates default-jre-headless \
   && rm -rf /var/lib/apt/lists/*
 
 # Enable Corepack and pnpm
 RUN corepack enable && corepack prepare pnpm@8.15.1 --activate
+
+# Install Firebase CLI globally
+RUN npm install -g firebase-tools@13.27.0
 
 WORKDIR /workspace
 
