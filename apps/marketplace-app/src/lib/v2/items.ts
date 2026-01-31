@@ -23,11 +23,12 @@ export interface Item extends Omit<ItemDoc, "createdAt" | "updatedAt"> {
 
 // Get all available items
 export async function getAvailableItems(): Promise<Item[]> {
-  const itemsRef = collection(db, "items");
+  const itemsRef = collection(db, "marketplaceItems");
   const q = query(
     itemsRef,
-    where("status", "==", "available"),
-    orderBy("createdAt", "desc"),
+    where("isActive", "==", true),
+    where("status", "==", "active"),
+    orderBy("publishedAt", "desc"),
   );
 
   const snapshot = await getDocs(q);
@@ -43,12 +44,13 @@ export async function getAvailableItems(): Promise<Item[]> {
 export async function getItemsByCategory(
   category: ItemCategory,
 ): Promise<Item[]> {
-  const itemsRef = collection(db, "items");
+  const itemsRef = collection(db, "marketplaceItems");
   const q = query(
     itemsRef,
     where("category", "==", category),
-    where("status", "==", "available"),
-    orderBy("createdAt", "desc"),
+    where("isActive", "==", true),
+    where("status", "==", "active"),
+    orderBy("publishedAt", "desc"),
   );
 
   const snapshot = await getDocs(q);
@@ -60,7 +62,7 @@ export async function getItemsByCategory(
 
 // Get items by seller
 export async function getItemsBySeller(sellerId: string): Promise<Item[]> {
-  const itemsRef = collection(db, "items");
+  const itemsRef = collection(db, "marketplaceItems");
   const q = query(itemsRef, where("sellerId", "==", sellerId));
 
   const snapshot = await getDocs(q);
@@ -79,7 +81,7 @@ export async function getItem(itemId: string): Promise<Item | null> {
   console.log("db instance:", db ? "exists" : "null");
 
   try {
-    const itemRef = doc(db, "items", itemId);
+    const itemRef = doc(db, "marketplaceItems", itemId);
     console.log("Attempting to fetch item from Firestore...");
     const snapshot = await getDoc(itemRef);
     console.log("Fetch successful, exists:", snapshot.exists());
@@ -115,7 +117,7 @@ export interface CreateItemInput {
 }
 
 export async function createItem(input: CreateItemInput): Promise<string> {
-  const itemsRef = collection(db, "items");
+  const itemsRef = collection(db, "marketplaceItems");
 
   const itemData = {
     sellerId: input.sellerId,
@@ -130,7 +132,13 @@ export async function createItem(input: CreateItemInput): Promise<string> {
       requiresHelp: false,
     },
     isFoodItem: input.category === "food",
-    status: "available" as ItemStatus,
+    status: "active" as ItemStatus,
+    isActive: true,
+    views: 0,
+    favorites: 0,
+    soldCount: 0,
+    publishedAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
     createdAt: serverTimestamp(),
   };
 
@@ -143,7 +151,7 @@ export async function updateItemStatus(
   itemId: string,
   status: ItemStatus,
 ): Promise<void> {
-  const itemRef = doc(db, "items", itemId);
+  const itemRef = doc(db, "marketplaceItems", itemId);
   await updateDoc(itemRef, {
     status,
   });
@@ -151,7 +159,7 @@ export async function updateItemStatus(
 
 // Delete item (mark as deleted)
 export async function deleteItem(itemId: string): Promise<void> {
-  const itemRef = doc(db, "items", itemId);
+  const itemRef = doc(db, "marketplaceItems", itemId);
   await updateDoc(itemRef, {
     status: "sold" as ItemStatus, // Mark as sold since 'deleted' is not in ItemStatus type
   });

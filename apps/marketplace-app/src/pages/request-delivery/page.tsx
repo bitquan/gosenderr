@@ -1,17 +1,12 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  query,
-  where,
-} from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
-import { ItemDoc, UserDoc, FoodTemperature } from "@gosenderr/shared";
+import { UserDoc, FoodTemperature } from "@gosenderr/shared";
+import type { MarketplaceItem } from "@/types/marketplace";
+import { marketplaceService } from "@/services/marketplace.service";
 import { calcMiles } from "@/lib/v2/pricing";
 import {
   calculateCourierRate,
@@ -34,8 +29,19 @@ interface DropoffAddress {
   lng: number;
 }
 
-interface ItemDocWithId extends ItemDoc {
-  id: string;
+interface DeliveryItem extends MarketplaceItem {
+  pickupLocation: {
+    address: string;
+    lat: number;
+    lng: number;
+  };
+  isFoodItem: boolean;
+  foodDetails?: {
+    temperature: FoodTemperature;
+    requiresCooler?: boolean;
+    requiresHotBag?: boolean;
+    requiresDrinkCarrier?: boolean;
+  };
 }
 
 export default function RequestDeliveryPage() {
@@ -43,7 +49,7 @@ export default function RequestDeliveryPage() {
   const [searchParams] = useSearchParams();
   const { user, loading: authLoading } = useAuthUser();
 
-  const [item, setItem] = useState<ItemDocWithId | null>(null);
+  const [item, setItem] = useState<DeliveryItem | null>(null);
   const [itemId, setItemId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -74,17 +80,34 @@ export default function RequestDeliveryPage() {
 
     async function loadItem() {
       try {
-        const itemRef = doc(db, "items", itemId!);
-        const itemSnap = await getDoc(itemRef);
+        const fetchedItem = await marketplaceService.getItem(itemId!);
 
-        if (!itemSnap.exists()) {
+        if (!fetchedItem) {
           setError("Item not found");
           setLoading(false);
           return;
         }
 
-        const itemData = itemSnap.data() as ItemDoc;
-        const itemWithId: ItemDocWithId = { ...itemData, id: itemSnap.id };
+        const location = fetchedItem.pickupLocation?.location as any;
+        const lat = location?.latitude ?? fetchedItem.pickupLocation?.lat;
+        const lng = location?.longitude ?? fetchedItem.pickupLocation?.lng;
+
+        if (lat == null || lng == null) {
+          setError("Pickup location is missing for this item");
+          setLoading(false);
+          return;
+        }
+
+        const itemWithId: DeliveryItem = {
+          ...fetchedItem,
+          pickupLocation: {
+            address: fetchedItem.pickupLocation?.address || "Pickup location",
+            lat,
+            lng,
+          },
+          isFoodItem: fetchedItem.category === "food",
+        };
+
         setItem(itemWithId);
         setLoading(false);
       } catch (err) {
