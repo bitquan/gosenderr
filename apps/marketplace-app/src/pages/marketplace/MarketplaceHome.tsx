@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '../../lib/firebase/client'
 import { marketplaceService } from '../../services/marketplace.service'
-import type { MarketplaceItem, ItemCategory, ItemCondition } from '../../types/marketplace'
+import { ItemCategory, ItemCondition } from '../../types/marketplace'
+import type { MarketplaceItem } from '../../types/marketplace'
 import { SearchBar } from '../../components/marketplace/SearchBar'
 import { CategoryNav } from '../../components/marketplace/CategoryNav'
 import { FilterSidebar, FilterOptions } from '../../components/marketplace/FilterSidebar'
@@ -31,14 +32,14 @@ export default function MarketplaceHome() {
   })
 
   const categories: ItemCategory[] = [
-    'electronics',
-    'clothing',
-    'home',
-    'books',
-    'toys',
-    'sports',
-    'automotive',
-    'other',
+    ItemCategory.ELECTRONICS,
+    ItemCategory.CLOTHING,
+    ItemCategory.HOME,
+    ItemCategory.BOOKS,
+    ItemCategory.TOYS,
+    ItemCategory.SPORTS,
+    ItemCategory.AUTOMOTIVE,
+    ItemCategory.OTHER,
   ]
 
   useEffect(() => {
@@ -60,7 +61,7 @@ export default function MarketplaceHome() {
           condition: filters.conditions.length > 0 ? filters.conditions[0] as ItemCondition : undefined,
           minPrice: filters.priceRange[0],
           maxPrice: filters.priceRange[1],
-          sortBy: filters.sortBy,
+          sortBy: (filters.sortBy === 'date_asc' ? 'date_desc' : filters.sortBy),
           limit: 50
         })
       }

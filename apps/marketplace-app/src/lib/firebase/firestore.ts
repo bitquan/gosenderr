@@ -21,7 +21,6 @@ import {
   JobDoc, 
   JobStatus, 
   TransportMode, 
-  // @ts-expect-error - Used in type definitions
   RateCard,
   CourierData 
 } from '@gosenderr/shared';

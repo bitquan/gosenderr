@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
-// @ts-expect-error - Used in type definitions
 import { Job, JobDoc } from '@/lib/v2/types';
 
 export function useCustomerJobs(uid: string | null) {

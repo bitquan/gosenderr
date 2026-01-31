@@ -30,11 +30,22 @@ export default function SellPage() {
   const [photoPreviewUrls, setPhotoPreviewUrls] = useState<string[]>([])
 
   const categories: ItemCategory[] = [
-    'electronics', 'clothing', 'home', 'books', 'toys', 'sports', 'automotive', 'other'
+    ItemCategory.ELECTRONICS,
+    ItemCategory.CLOTHING,
+    ItemCategory.HOME,
+    ItemCategory.BOOKS,
+    ItemCategory.TOYS,
+    ItemCategory.SPORTS,
+    ItemCategory.AUTOMOTIVE,
+    ItemCategory.OTHER,
   ]
 
   const conditions: ItemCondition[] = [
-    'new', 'like_new', 'good', 'fair', 'poor'
+    ItemCondition.NEW,
+    ItemCondition.LIKE_NEW,
+    ItemCondition.GOOD,
+    ItemCondition.FAIR,
+    ItemCondition.POOR,
   ]
 
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {

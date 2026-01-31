@@ -60,7 +60,7 @@ export default function ItemDetailPage() {
 
   const handleAddToCart = () => {
     if (item) {
-      addItem(item, quantity)
+      addItem(item as any, quantity)
     }
   }
 

@@ -26,7 +26,7 @@ export default function StripeOnboardingPage() {
   }, []);
 
   const checkAccountStatus = async () => {
-    if (!user?.sellerProfile?.stripeAccountId) {
+    if (!(user as any)?.sellerProfile?.stripeAccountId) {
       setAccountStatus({
         hasAccount: false,
         detailsSubmitted: false,
@@ -63,7 +63,7 @@ export default function StripeOnboardingPage() {
         
         // Save account ID to user profile
         if (user) {
-          const userRef = doc(db, 'users', user.id);
+          const userRef = doc(db, 'users', (user as any).uid ?? (user as any).id);
           await updateDoc(userRef, {
             'sellerProfile.stripeAccountId': result.accountId,
             'sellerProfile.stripeOnboardingComplete': false,
@@ -89,7 +89,7 @@ export default function StripeOnboardingPage() {
     navigate('/profile/seller-settings');
   };
 
-  if (!user?.sellerProfile) {
+  if (!(user as any)?.sellerProfile) {
     return (
       <div className="max-w-2xl mx-auto p-6">
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">

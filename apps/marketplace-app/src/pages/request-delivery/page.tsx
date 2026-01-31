@@ -29,7 +29,7 @@ interface DropoffAddress {
   lng: number;
 }
 
-interface DeliveryItem extends MarketplaceItem {
+type DeliveryItem = Omit<MarketplaceItem, "pickupLocation"> & {
   pickupLocation: {
     address: string;
     lat: number;
@@ -42,7 +42,7 @@ interface DeliveryItem extends MarketplaceItem {
     requiresHotBag?: boolean;
     requiresDrinkCarrier?: boolean;
   };
-}
+};
 
 export default function RequestDeliveryPage() {
   const navigate = useNavigate();
@@ -88,9 +88,10 @@ export default function RequestDeliveryPage() {
           return;
         }
 
-        const location = fetchedItem.pickupLocation?.location as any;
-        const lat = location?.latitude ?? fetchedItem.pickupLocation?.lat;
-        const lng = location?.longitude ?? fetchedItem.pickupLocation?.lng;
+        const pickupLocation = fetchedItem.pickupLocation as any;
+        const location = pickupLocation?.location as any;
+        const lat = location?.latitude ?? pickupLocation?.lat;
+        const lng = location?.longitude ?? pickupLocation?.lng;
 
         if (lat == null || lng == null) {
           setError("Pickup location is missing for this item");
@@ -101,11 +102,11 @@ export default function RequestDeliveryPage() {
         const itemWithId: DeliveryItem = {
           ...fetchedItem,
           pickupLocation: {
-            address: fetchedItem.pickupLocation?.address || "Pickup location",
+            address: pickupLocation?.address || "Pickup location",
             lat,
             lng,
           },
-          isFoodItem: fetchedItem.category === "food",
+          isFoodItem: (fetchedItem as any).category === "food",
         };
 
         setItem(itemWithId);

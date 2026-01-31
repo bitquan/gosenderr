@@ -120,7 +120,7 @@ export default function SellerSettingsPage() {
         </div>
 
         {/* Stripe Connect Setup Card */}
-        {!user?.sellerProfile?.stripeOnboardingComplete && (
+        {!(user as any)?.sellerProfile?.stripeOnboardingComplete && (
           <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl shadow-lg p-6 mb-6 text-white">
             <div className="flex items-start gap-4">
               <div className="p-3 bg-white/20 rounded-lg">

@@ -1,7 +1,6 @@
 
 import { useState } from 'react';
 import { TransportMode } from '@/lib/v2/types';
-// @ts-expect-error - May be used in future
 import { calcFee, calcMiles } from '@/lib/v2/pricing';
 
 interface RateCard {
