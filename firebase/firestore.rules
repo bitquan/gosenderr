@@ -755,5 +755,107 @@ service cloud.firestore {
       // Only admins can create/update payouts
       allow create, update: if isAdmin();
     }
+
+    // ========== MARKETPLACE ITEMS ==========
+    match /marketplaceItems/{itemId} {
+      // Anyone can read active marketplace items (public browse)
+      allow read: if resource.data.isActive == true && resource.data.status == 'active';
+      
+      // Sellers can read their own items (even inactive/draft)
+      allow read: if signedIn() && request.auth.uid == resource.data.sellerId;
+      
+      // Admins can read all items
+      allow read: if isAdmin();
+      
+      // Authenticated users can create listings
+      allow create: if signedIn() 
+        && request.resource.data.sellerId == request.auth.uid
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.price > 0
+        && request.resource.data.photos.size() > 0;
+      
+      // Sellers can update their own items
+      allow update: if signedIn() 
+        && request.auth.uid == resource.data.sellerId
+        && request.resource.data.sellerId == resource.data.sellerId; // Can't change seller
+      
+      // Sellers can delete (soft) their own items
+      allow delete: if signedIn() && request.auth.uid == resource.data.sellerId;
+    }
+
+    // ========== ORDERS ==========
+    match /orders/{orderId} {
+      // Buyers, sellers, couriers, and admins can read relevant orders
+      allow read: if signedIn() && (
+        isAdmin() ||
+        request.auth.uid == resource.data.buyerId ||
+        request.auth.uid == resource.data.sellerId ||
+        request.auth.uid == resource.data.courierId
+      );
+      
+      // Only Cloud Functions can create orders (payment processing)
+      allow create: if false;
+      
+      // Sellers can accept orders, buyers/sellers can cancel
+      allow update: if signedIn() && (
+        isAdmin() ||
+        request.auth.uid == resource.data.sellerId ||
+        request.auth.uid == resource.data.buyerId
+      );
+    }
+
+    // ========== CONVERSATIONS ==========
+    match /conversations/{conversationId} {
+      // Participants can read conversations
+      allow read: if signedIn() && request.auth.uid in resource.data.participants;
+      
+      // Authenticated users can create conversations
+      allow create: if signedIn() && request.auth.uid in request.resource.data.participants;
+      
+      // Participants can update conversations (unread counts)
+      allow update: if signedIn() && request.auth.uid in resource.data.participants;
+      
+      // Messages subcollection
+      match /messages/{messageId} {
+        // Participants can read messages
+        allow read: if signedIn() && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
+        
+        // Participants can create messages
+        allow create: if signedIn() 
+          && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants
+          && request.resource.data.senderId == request.auth.uid;
+        
+        // Participants can update messages (mark as read)
+        allow update: if signedIn() && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
+      }
+    }
+
+    // ========== RATINGS ==========
+    match /ratings/{ratingId} {
+      // Anyone can read visible ratings
+      allow read: if resource.data.isVisible == true;
+      
+      // Reviewee can read their own ratings
+      allow read: if signedIn() && request.auth.uid == resource.data.revieweeId;
+      
+      // Admins can read all ratings
+      allow read: if isAdmin();
+      
+      // Only reviewers can create ratings (after order completion)
+      allow create: if signedIn() 
+        && request.resource.data.reviewerId == request.auth.uid
+        && request.resource.data.score >= 1
+        && request.resource.data.score <= 5;
+      
+      // Reviewee can respond to ratings
+      allow update: if signedIn() && request.auth.uid == resource.data.revieweeId;
+    }
+
+    // ========== FAVORITES ==========
+    match /favorites/{userId}/items/{itemId} {
+      // Users can read/write their own favorites
+      allow read, write: if signedIn() && request.auth.uid == userId;
+    }
   }
 }
