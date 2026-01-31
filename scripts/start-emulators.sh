@@ -23,7 +23,13 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 # Start emulators in background
-firebase emulators:start --host 0.0.0.0 --import=./firebase-emulator-data --export-on-exit &
+# Use docker-specific config when running inside the container (IN_DOCKER=1)
+if [ "${IN_DOCKER:-}" = "1" ] || [ -f "/.dockerenv" ]; then
+  echo "Using docker config: firebase.docker.json"
+  firebase emulators:start --config=firebase.docker.json --import=./firebase-emulator-data --export-on-exit &
+else
+  firebase emulators:start --import=./firebase-emulator-data --export-on-exit &
+fi
 EMULATOR_PID=$!
 
 # Wait for emulators to be ready (check if Firestore port is open)
