@@ -2,6 +2,7 @@ version: "3.9"
 
 services:
   dev:
+    platform: ${DOCKER_PLATFORM:-linux/arm64}
     build:
       context: .
       dockerfile: Dockerfile.dev
@@ -15,6 +16,7 @@ services:
     command: tail -f /dev/null
 
   firebase-emulator:
+    platform: ${DOCKER_PLATFORM:-linux/arm64}
     build:
       context: .
       dockerfile: Dockerfile.dev
@@ -26,12 +28,6 @@ services:
       - node_modules:/workspace/node_modules
     working_dir: /workspace
     command: sh -lc "./scripts/start-emulators.sh"
-    healthcheck:
-      test: ["CMD", "sh", "-c", "curl -sSf http://localhost:4000/ || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 6
-      start_period: 20s
     ports:
       - "9099:9099" # Auth
       - "8080:8080" # Firestore
