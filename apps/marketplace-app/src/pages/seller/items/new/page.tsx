@@ -7,7 +7,7 @@ import { marketplaceService } from "@/services/marketplace.service";
 import { DeliveryOption, ItemCategory, ItemCondition } from "@/types/marketplace";
 import { Card, CardContent } from "@/components/ui/Card";
 
-export default function NewVendorItem() {
+export default function NewSellerItem() {
   const navigate = useNavigate();
   const { uid } = useAuthUser();
   const [loading, setLoading] = useState(false);

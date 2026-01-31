@@ -46,7 +46,7 @@ export function RoleGuard({ children, allowedRoles, redirectTo }: RoleGuardProps
     // Default redirect based on user's primary role
     if (roles.includes('customer') || roles.includes('buyer')) {
       return <Navigate to="/dashboard" replace />
-    } else if (roles.includes('vendor') || roles.includes('seller')) {
+    } else if (roles.includes('seller')) {
       return <Navigate to="/seller/dashboard" replace />
     } else if (roles.includes('courier')) {
       return <Navigate to="/courier/dashboard" replace />
