@@ -64,7 +64,7 @@ export default function MyListingsPage() {
         status: 'sold',
         isActive: false,
         soldCount: (item.soldCount || 0) + 1
-      })
+      } as any)
       await loadListings() // Reload
     } catch (error) {
       console.error('Error marking as sold:', error)
@@ -77,7 +77,7 @@ export default function MyListingsPage() {
       await marketplaceService.updateListing(itemId, {
         status: 'active',
         isActive: true
-      })
+      } as any)
       await loadListings() // Reload
     } catch (error) {
       console.error('Error reactivating:', error)

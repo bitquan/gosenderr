@@ -5,7 +5,6 @@ import {
   doc,
   serverTimestamp,
   updateDoc,
-  // @ts-expect-error - Used in type definitions
   Timestamp,
   getDoc,
 } from "firebase/firestore";

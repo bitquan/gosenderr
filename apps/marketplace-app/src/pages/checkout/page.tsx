@@ -10,7 +10,8 @@ import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-
 import { marketplaceService } from '@/services/marketplace.service';
 import { stripeService } from '@/services/stripe.service';
 import { useAuth } from '@/hooks/useAuth';
-import type { MarketplaceItem, DeliveryOption, Address } from '@/types/marketplace';
+import { DeliveryOption } from '@/types/marketplace';
+import type { MarketplaceItem, Address } from '@/types/marketplace';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
 
@@ -139,7 +140,7 @@ function CheckoutForm({ item }: { item: MarketplaceItem }) {
   const navigate = useNavigate();
   const [step, setStep] = useState<'delivery' | 'payment'>('delivery');
   const [deliveryOption, setDeliveryOption] = useState<DeliveryOption>(
-    item.deliveryOptions[0] || 'shipping'
+    item.deliveryOptions[0] || DeliveryOption.SHIPPING
   );
   const [deliveryAddress, setDeliveryAddress] = useState<Partial<Address>>({
     street: '',
@@ -162,7 +163,7 @@ function CheckoutForm({ item }: { item: MarketplaceItem }) {
       const result = await stripeService.createPaymentIntent({
         itemId: item.id,
         quantity: 1,
-        deliveryOption,
+        deliveryOption: deliveryOption as any,
         deliveryFee: deliveryOption === 'pickup' ? 0 : 5.99,
         deliveryAddressId: undefined
       });

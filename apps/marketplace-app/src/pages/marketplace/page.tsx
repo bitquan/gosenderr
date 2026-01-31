@@ -1,20 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { marketplaceService } from "@/services/marketplace.service";
-import type { MarketplaceItem, ItemCategory } from "@/types/marketplace";
+import { ItemCategory } from "@/types/marketplace";
+import type { MarketplaceItem } from "@/types/marketplace";
 import { ItemCard } from "@/components/marketplace/ItemCard";
 import { Card, CardContent } from "@/components/ui/Card";
 
 const CATEGORIES: Array<{ value: ItemCategory | "all"; label: string }> = [
   { value: "all", label: "All Items" },
-  { value: "electronics", label: "Electronics" },
-  { value: "clothing", label: "Clothing" },
-  { value: "home", label: "Home" },
-  { value: "books", label: "Books" },
-  { value: "toys", label: "Toys" },
-  { value: "sports", label: "Sports" },
-  { value: "automotive", label: "Automotive" },
-  { value: "other", label: "Other" },
+  { value: ItemCategory.ELECTRONICS, label: "Electronics" },
+  { value: ItemCategory.CLOTHING, label: "Clothing" },
+  { value: ItemCategory.HOME, label: "Home" },
+  { value: ItemCategory.BOOKS, label: "Books" },
+  { value: ItemCategory.TOYS, label: "Toys" },
+  { value: ItemCategory.SPORTS, label: "Sports" },
+  { value: ItemCategory.AUTOMOTIVE, label: "Automotive" },
+  { value: ItemCategory.OTHER, label: "Other" },
 ];
 
 export default function MarketplacePage() {
