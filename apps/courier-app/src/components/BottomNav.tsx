@@ -33,62 +33,6 @@ export function BottomNav({ items }: BottomNavProps) {
     };
   }, []);
 
-  useEffect(() => {
-    const handleGlobalPointer = (event: PointerEvent) => {
-      const x = event.clientX;
-      const y = event.clientY;
-      const target = event.target as HTMLElement | null;
-      const hit = document.elementFromPoint(x, y) as HTMLElement | null;
-
-      console.log("🧭 Global tap", {
-        x,
-        y,
-        targetTag: target?.tagName,
-        targetClasses: target?.className,
-        targetNavItem: target?.closest("[data-nav-item]")?.getAttribute("data-nav-item"),
-        hitTag: hit?.tagName,
-        hitClasses: hit?.className,
-        hitNavItem: hit?.closest("[data-nav-item]")?.getAttribute("data-nav-item"),
-      });
-
-      const indicator = document.createElement("div");
-      indicator.style.position = "fixed";
-      indicator.style.left = `${x - 12}px`;
-      indicator.style.top = `${y - 12}px`;
-      indicator.style.width = "24px";
-      indicator.style.height = "24px";
-      indicator.style.borderRadius = "9999px";
-      indicator.style.border = "2px solid #10b981";
-      indicator.style.background = "rgba(16, 185, 129, 0.2)";
-      indicator.style.zIndex = "9999";
-      indicator.style.pointerEvents = "none";
-      indicator.style.boxShadow = "0 0 8px rgba(16, 185, 129, 0.6)";
-      document.body.appendChild(indicator);
-      setTimeout(() => indicator.remove(), 300);
-    };
-
-    document.addEventListener("pointerdown", handleGlobalPointer, true);
-    return () => document.removeEventListener("pointerdown", handleGlobalPointer, true);
-  }, []);
-
-  const logNavTap = (event: React.PointerEvent<HTMLDivElement | HTMLAnchorElement>) => {
-    const x = event.clientX;
-    const y = event.clientY;
-    const target = event.target as HTMLElement | null;
-    const hit = document.elementFromPoint(x, y) as HTMLElement | null;
-
-    console.log("🔎 BottomNav tap", {
-      x,
-      y,
-      targetTag: target?.tagName,
-      targetClasses: target?.className,
-      targetNavItem: target?.closest("[data-nav-item]")?.getAttribute("data-nav-item"),
-      hitTag: hit?.tagName,
-      hitClasses: hit?.className,
-      hitNavItem: hit?.closest("[data-nav-item]")?.getAttribute("data-nav-item"),
-    });
-  };
-
   return (
     <nav
       data-bottom-nav="true"
@@ -100,7 +44,6 @@ export function BottomNav({ items }: BottomNavProps) {
         paddingTop: "6px",
         touchAction: "manipulation",
       }}
-      onPointerDown={logNavTap}
     >
       <div className="max-w-lg mx-auto">
         <div className="flex items-stretch justify-around px-2 py-2 min-h-[64px]">
@@ -119,7 +62,6 @@ export function BottomNav({ items }: BottomNavProps) {
                     : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
                 }`}
                 style={{ WebkitTapHighlightColor: 'transparent' }}
-                onPointerDown={logNavTap}
               >
                 <div className="relative">
                   <span className="text-2xl">{item.icon}</span>
@@ -146,7 +88,7 @@ export function BottomNav({ items }: BottomNavProps) {
 // Courier navigation items
 export const courierNavItems: NavItem[] = [
   { icon: "🏠", label: "Dashboard", href: "/dashboard" },
-  { icon: "📦", label: "Active", href: "/jobs" },
+  { icon: "📦", label: "Jobs", href: "/jobs" },
   { icon: "💰", label: "Earnings", href: "/earnings" },
   { icon: "⚙️", label: "Settings", href: "/settings" },
 ];

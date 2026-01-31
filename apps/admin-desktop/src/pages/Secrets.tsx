@@ -14,6 +14,12 @@ interface StripeSecrets {
   updatedByEmail?: string
 }
 
+interface MapboxSecrets {
+  publicToken: string
+  updatedAt?: any
+  updatedByEmail?: string
+}
+
 export default function SecretsPage() {
   const { user } = useAuth()
   const { showToast } = useToast()
@@ -26,6 +32,9 @@ export default function SecretsPage() {
     secretKey: '',
     webhookSecret: '',
     mode: 'test',
+  })
+  const [mapbox, setMapbox] = useState<MapboxSecrets>({
+    publicToken: '',
   })
 
   useEffect(() => {
@@ -43,6 +52,17 @@ export default function SecretsPage() {
           secretKey: data.secretKey || '',
           webhookSecret: data.webhookSecret || '',
           mode: data.mode || 'test',
+          updatedAt: data.updatedAt,
+          updatedByEmail: data.updatedByEmail,
+        })
+      }
+
+      const mapboxRef = doc(db, 'secrets', 'mapbox')
+      const mapboxSnap = await getDoc(mapboxRef)
+      if (mapboxSnap.exists()) {
+        const data = mapboxSnap.data() as MapboxSecrets
+        setMapbox({
+          publicToken: data.publicToken || '',
           updatedAt: data.updatedAt,
           updatedByEmail: data.updatedByEmail,
         })
@@ -71,7 +91,19 @@ export default function SecretsPage() {
         },
         { merge: true }
       )
-      showToast('Stripe secrets saved', 'success')
+
+      await setDoc(
+        doc(db, 'secrets', 'mapbox'),
+        {
+          publicToken: mapbox.publicToken,
+          updatedAt: serverTimestamp(),
+          updatedBy: user.uid,
+          updatedByEmail: user.email || '',
+        },
+        { merge: true }
+      )
+
+      showToast('Secrets saved', 'success')
     } catch (error) {
       console.error('Error saving secrets:', error)
       showToast('Failed to save Stripe secrets', 'error')
@@ -81,6 +113,7 @@ export default function SecretsPage() {
   }
 
   const lastUpdated = secrets.updatedAt?.toDate ? secrets.updatedAt.toDate() : null
+  const mapboxUpdated = mapbox.updatedAt?.toDate ? mapbox.updatedAt.toDate() : null
 
   if (loading) {
     return (
@@ -191,6 +224,32 @@ export default function SecretsPage() {
                 </div>
                 <p className="text-xs text-gray-500 mt-1">Used to verify Stripe webhook signatures.</p>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card variant="elevated">
+          <CardHeader>
+            <CardTitle>Mapbox</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Public Token</label>
+                <input
+                  type="text"
+                  value={mapbox.publicToken}
+                  onChange={(e) => setMapbox({ ...mapbox, publicToken: e.target.value })}
+                  placeholder="pk.eyJ..."
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">Used for map previews and address search.</p>
+              </div>
+              {mapboxUpdated && (
+                <div className="text-xs text-gray-500">
+                  Last updated {mapboxUpdated.toLocaleString()} {mapbox.updatedByEmail ? `by ${mapbox.updatedByEmail}` : ''}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

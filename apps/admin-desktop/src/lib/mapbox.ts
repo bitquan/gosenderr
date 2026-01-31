@@ -5,11 +5,7 @@ export interface GeocodedAddress {
   place_name: string;
 }
 
-const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || '';
-
-if (!MAPBOX_TOKEN) {
-  console.warn('VITE_MAPBOX_TOKEN is not set');
-}
+import { getMapboxToken } from './mapbox/mapbox';
 
 /**
  * Geocode an address query using Mapbox Geocoding API
@@ -22,14 +18,16 @@ export async function geocodeAddress(
     return [];
   }
 
-  if (!MAPBOX_TOKEN) {
+  const token = await getMapboxToken();
+
+  if (!token) {
     console.error("Mapbox token not configured");
     return [];
   }
 
   try {
     const encodedQuery = encodeURIComponent(query);
-    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedQuery}.json?access_token=${MAPBOX_TOKEN}&autocomplete=true&limit=5`;
+    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedQuery}.json?access_token=${token}&autocomplete=true&limit=5`;
 
     const response = await fetch(url);
 
@@ -41,7 +39,7 @@ export async function geocodeAddress(
         status: response.status,
         statusText: response.statusText,
         body: errorBody,
-        url: url.replace(MAPBOX_TOKEN, "REDACTED"),
+        url: url.replace(token, "REDACTED"),
       });
       return [];
     }

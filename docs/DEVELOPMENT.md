@@ -60,6 +60,20 @@ docker compose up -d admin-app
 
 This approach keeps host `node_modules` from clobbering container-installed native modules and prevents the cross-arch issues we encountered.
 
+### Admin Desktop packaging smoke test
+
+Run these outside Docker on the native OS (macOS for `.dmg`, Windows for `.exe`) to avoid cross-arch issues:
+
+```bash
+pnpm --filter @gosenderr/admin-desktop dist
+```
+
+Verify the following in the packaged app:
+- App opens without a white screen.
+- Login works and the dashboard renders.
+- Cmd/Ctrl+K opens Global Search.
+- Open-in-new-window routes render correctly.
+
 ## VS Code Dev Container
 
 There is a Node-focused devcontainer available: `.devcontainer/devcontainer.node.json`.

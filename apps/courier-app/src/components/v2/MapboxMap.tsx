@@ -10,6 +10,8 @@ interface MapboxMapProps {
   height?: string;
   routeSegments?: RouteSegment[];
   onMapLoad?: (map: any) => void;
+  showLabels?: boolean;
+  showPopups?: boolean;
 }
 
 export interface MapboxMapHandle {
@@ -23,6 +25,8 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(({
   height = "400px",
   routeSegments = [],
   onMapLoad,
+  showLabels = true,
+  showPopups = true,
 }, ref) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
@@ -244,25 +248,29 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(({
 
     // Only create markers if both pickup and dropoff exist
     if (pickup && dropoff) {
-      markersRef.current.pickup = new mapboxgl.Marker({ color: "#16a34a" })
-        .setLngLat([pickup.lng, pickup.lat])
-        .setPopup(
-          new mapboxgl.Popup().setHTML(
-            `<strong>Pickup</strong>${pickup.label ? `<br/>${pickup.label}` : ""}`,
-          ),
-        )
-        .addTo(mapRef.current);
+      const pickupMarker = new mapboxgl.Marker({ color: "#16a34a" })
+        .setLngLat([pickup.lng, pickup.lat]);
 
-      markersRef.current.dropoff = new mapboxgl.Marker({ color: "#dc2626" })
-        .setLngLat([dropoff.lng, dropoff.lat])
-        .setPopup(
+      const dropoffMarker = new mapboxgl.Marker({ color: "#dc2626" })
+        .setLngLat([dropoff.lng, dropoff.lat]);
+
+      if (showPopups) {
+        pickupMarker.setPopup(
           new mapboxgl.Popup().setHTML(
-            `<strong>Dropoff</strong>${dropoff.label ? `<br/>${dropoff.label}` : ""}`,
+            `<strong>Pickup</strong>${showLabels && pickup.label ? `<br/>${pickup.label}` : ""}`,
           ),
-        )
-        .addTo(mapRef.current);
+        );
+        dropoffMarker.setPopup(
+          new mapboxgl.Popup().setHTML(
+            `<strong>Dropoff</strong>${showLabels && dropoff.label ? `<br/>${dropoff.label}` : ""}`,
+          ),
+        );
+      }
+
+      markersRef.current.pickup = pickupMarker.addTo(mapRef.current);
+      markersRef.current.dropoff = dropoffMarker.addTo(mapRef.current);
     }
-  }, [pickup, dropoff, mapReady]);
+  }, [pickup, dropoff, mapReady, showLabels, showPopups]);
 
   // Update route segments
   useEffect(() => {
@@ -344,8 +352,16 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(({
           <p style={{ marginBottom: "8px" }}>Map unavailable</p>
           <p style={{ fontSize: "12px" }}>Set VITE_MAPBOX_TOKEN in .env.local</p>
           <div style={{ marginTop: "16px", fontSize: "14px", textAlign: "left" }}>
-              {pickup && <p>📍 Pickup: {pickup.label || `${pickup.lat}, ${pickup.lng}`}</p>}
-              {dropoff && <p>🎯 Dropoff: {dropoff.label || `${dropoff.lat}, ${dropoff.lng}`}</p>}
+              {pickup && (
+                <p>
+                  📍 Pickup: {showLabels && pickup.label ? pickup.label : 'Approximate location'}
+                </p>
+              )}
+              {dropoff && (
+                <p>
+                  🎯 Dropoff: {showLabels && dropoff.label ? dropoff.label : 'Approximate location'}
+                </p>
+              )}
             {courierLocation && (
               <p>🚗 Courier: {courierLocation.lat}, {courierLocation.lng}</p>
             )}

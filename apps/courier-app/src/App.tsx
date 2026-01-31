@@ -88,7 +88,7 @@ function App() {
               <Route path="/routes" element={<RoutesPage />} />
               <Route path="/active-route" element={<ActiveRoutePage />} />
               <Route path="/jobs/:jobId" element={<JobDetailPage />} />
-              <Route path="/jobs" element={<RoutesPage />} />
+              <Route path="/jobs" element={<DashboardPage />} />
               <Route path="/navigation/active" element={<ActiveNavigationPage />} />
               <Route path="/earnings" element={<EarningsPage />} />
               <Route path="/rate-cards" element={<RateCardsPage />} />
