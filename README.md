@@ -25,6 +25,10 @@ A modern on-demand delivery platform with web apps (Vite + React + TypeScript) t
 
 **Note**: All web apps can be packaged as native iOS and Android apps using Capacitor.
 
+## ✅ Testing & Deployment
+
+See the emulator-first rollout checklist in [docs/TESTING_DEPLOYMENT_PLAN.md](docs/TESTING_DEPLOYMENT_PLAN.md).
+
 ## 📱 Active Applications
 
 | App | Port | Hosting URL | Purpose |
