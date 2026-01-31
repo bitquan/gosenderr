@@ -3,13 +3,19 @@
 ## Overview
 The Copilot instructions for the restructured marketplace-app architecture aim to provide guidance on utilizing GitHub Copilot effectively in this context. This includes best practices, coding standards, and examples relevant to the architecture.
 
-## Project Structure
-The marketplace-app has been restructured into several microservices, each with its own responsibility.
+## Project Ownership
+You are the dedicated developer for the entire project and should take end-to-end ownership of implementation, cleanup, and maintenance tasks.
 
-- **User Service**: Manages user profiles, authentication, and authorization.
-- **Product Service**: Handles product listings, details, and search functionality.
-- **Order Service**: Manages the order processing and payment workflows.
-- **Notification Service**: Responsible for sending email and push notifications.
+## Project Structure
+This is a monorepo with Vite + React apps and Firebase backend.
+
+- **apps/marketplace-app**: Customer marketplace (browse, buy, sell)
+- **apps/courier-app**: Courier workflow (jobs, navigation)
+- **apps/admin-app**: Web admin portal
+- **apps/admin-desktop**: Electron admin desktop app
+- **apps/landing**: Marketing / entry point
+- **packages/shared**: Shared types and utilities
+- **firebase/**: Functions, rules, emulators
 
 ## Using GitHub Copilot
 1. **Setup**: Ensure that GitHub Copilot is enabled in your IDE.
@@ -32,21 +38,23 @@ function createUser(data) {
 
 ## Project Reorganization (v2) — Documentation & Repo Actions
 
-When adding or updating high-level project-plan documentation (e.g. `docs/project-plan/*`), follow these steps to keep the repo and CI healthy:
+When adding or updating high-level project-plan documentation (e.g. `docs/project-plan/*`), follow these steps to keep the repo healthy:
 
 - Linkability & discoverability
   - Add or update `docs/project-plan/README.md` and ensure it is linked from `README.md` and `docs/_sidebar.md` so teammates can find it easily.
 - Local verification
   - Run `pnpm run verify:docs` and fix any missing canonical docs (the script checks for `ARCHITECTURE.md`, `DEVELOPMENT.md`, `DEPLOYMENT.md`, `API_REFERENCE.md`).
-  - Run `npx -y cspell "docs/**/*.md" --exclude "docs/archive/**"` and whitelist new technical words in `cspell.json` when appropriate.
+  - Run `npx -y cspell "docs/**/*.md"` and whitelist new technical words in `cspell.json` when appropriate.
   - Run a link-checker (e.g., `markdown-link-check` or `lychee`) and fix broken links.
 - Changelog & PRs
   - Add a short `CHANGELOG.md` entry summarizing the documentation addition or change in the same PR.
   - Include a short PR checklist: docs links added, `verify:docs` passes locally, `cspell` updated if needed, and follow-up issues created for migration tasks.
-- Publishing
-  - If you host docs (VitePress/VuePress/DocSite), update the docs sidebar or site config and build the site to confirm rendering.
 - Governance
   - Update `CODEOWNERS` for new docs areas if reviewer responsibilities change.
+
+**Legacy content policy**
+- If a file/app does not align with the current project plan, archive it on the `scrapile` branch under `scrapile/legacy/*`.
+- Keep main branch lean: only active apps and canonical docs.
 
 - Phase 1 — Admin Desktop specific workflow
   - Add a Phase 1 checklist to `docs/project-plan/03-PHASE-1-ADMIN-DESKTOP.md` (scaffold, migrate, native menus, offline storage, packaging, CI). This file should contain step-by-step dev & verification steps and explicit phase exit criteria.
@@ -162,3 +170,12 @@ const results = flags?.['smart_matching_v2']
   ? await newMatchingAlgorithm(params)
   : await oldMatchingAlgorithm(params)
 ```
+
+## Issues & Support Workflow
+Use GitHub issue templates to triage bugs by app:
+- Admin Desktop: `.github/ISSUE_TEMPLATE/admin-desktop-bug.yml`
+- Admin Web: `.github/ISSUE_TEMPLATE/admin-web-bug.yml`
+- Marketplace: `.github/ISSUE_TEMPLATE/marketplace-bug.yml`
+- Courier: `.github/ISSUE_TEMPLATE/courier-bug.yml`
+- Landing: `.github/ISSUE_TEMPLATE/landing-web-bug.yml`
+- General: `.github/ISSUE_TEMPLATE/bug-report.yml`
