@@ -9,7 +9,7 @@ interface OrderItem {
   title: string;
   quantity: number;
   price: number;
-  vendorId: string;
+  sellerId: string;
 }
 
 interface Order {
@@ -63,7 +63,7 @@ export default function VendorOrders() {
           ...doc.data(),
         }))
         .filter((order: any) => {
-          return order.items?.some((item: OrderItem) => item.vendorId === uid);
+          return order.items?.some((item: OrderItem) => item.sellerId === uid);
         }) as Order[];
 
       // Sort by date (newest first)
@@ -246,7 +246,7 @@ export default function VendorOrders() {
           <div className="space-y-4">
             {finalOrders.map((order) => {
               // Filter items to show only vendor's items
-              const vendorItems = order.items.filter((item) => item.vendorId === uid);
+              const sellerItems = order.items.filter((item) => item.sellerId === uid);
               const vendorTotal = vendorItems.reduce(
                 (sum, item) => sum + item.price * item.quantity,
                 0

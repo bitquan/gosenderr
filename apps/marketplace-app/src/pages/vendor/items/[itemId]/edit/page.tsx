@@ -55,10 +55,9 @@ export default function EditVendorItem() {
         const data: any = snap.data();
 
         // Only allow the seller to edit in the UI
-        // Backwards-compat: if `sellerId` is missing, fall back to `vendorId`.
-        const ownerId = data.sellerId || data.vendorId || null;
+        const ownerId = data.sellerId || null;
         if (ownerId !== uid) {
-          console.warn('Unauthorized edit attempt: ownerId mismatch', { ownerId, uid, itemId, sellerId: data.sellerId, vendorId: data.vendorId });
+          console.warn('Unauthorized edit attempt: ownerId mismatch', { ownerId, uid, itemId, sellerId: data.sellerId });
           // Show more context in dev mode to aid debugging; keep generic alert in production
           if (import.meta.env.MODE !== 'production') {
             alert(`You are not authorized to edit this item (ownerId=${ownerId}, uid=${uid})`);

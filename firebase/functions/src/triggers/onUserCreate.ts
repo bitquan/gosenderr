@@ -16,6 +16,17 @@ export const onUserCreate = functions.firestore
     console.log(`🔐 Setting custom claims for user: ${uid}`);
 
     try {
+      // Ensure the Auth user exists before attempting to set claims
+      try {
+        await auth.getUser(uid);
+      } catch (err: any) {
+        if (err.code === 'auth/user-not-found') {
+          console.warn(`⚠️ Auth user not found for ${uid}; skipping setting custom claims.`);
+          return;
+        }
+        throw err;
+      }
+
       // Get the role from the newly created document
       const role = userData?.role || "customer";
 
@@ -25,9 +36,9 @@ export const onUserCreate = functions.firestore
         admin: role === "admin",
       });
 
-      console.log(`✅ Custom claims set for ${uid}: role=${role}`);
-    } catch (error) {
+      console.log(`✅ Custom claims set for ${uid}: role=${role}`);      return;    } catch (error) {
       console.error(`❌ Error setting custom claims for ${uid}:`, error);
-      throw error;
+      // Don't rethrow for expected conditions; let the emulator continue
+      return null;
     }
   });

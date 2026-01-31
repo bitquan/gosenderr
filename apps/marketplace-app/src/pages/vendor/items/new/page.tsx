@@ -78,8 +78,8 @@ export default function NewVendorItem() {
           : 'other',
         condition: 'new',
         status: 'available', // must be one of ['available','pending','sold'] per rules
-        vendorId: uid,
-        vendorName: userDoc?.displayName || 'Vendor',
+        sellerId: uid,
+        sellerName: userDoc?.displayName || 'Seller',
         sellerId: uid,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),

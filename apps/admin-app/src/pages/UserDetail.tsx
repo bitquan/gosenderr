@@ -38,7 +38,7 @@ interface User {
     completedDeliveries?: number
     licenseNumber?: string
   }
-  vendorProfile?: {
+  sellerProfile?: {
     storeName?: string
     businessName?: string
     verified?: boolean
@@ -190,7 +190,7 @@ export default function UserDetailPage() {
 
       // Count vendor items
       const itemsSnap = await getDocs(
-        query(collection(db, 'marketplaceItems'), where('vendorId', '==', userId!))
+        query(collection(db, 'marketplaceItems'), where('sellerId', '==', userId!))
       )
 
       // Count courier deliveries
@@ -381,8 +381,8 @@ export default function UserDetailPage() {
                 {user.role === 'admin' && (
                   <span className="px-2 py-1 rounded-full bg-red-100 text-red-700 text-xs font-semibold">Admin</span>
                 )}
-                {user.role === 'vendor' && (
-                  <span className="px-2 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold">🏪 Vendor</span>
+                {user.role === 'seller' && (
+                  <span className="px-2 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold">🏪 Seller</span>
                 )}
                 {user.role === 'courier' && (
                   <span className="px-2 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-semibold">Courier</span>
@@ -558,10 +558,10 @@ export default function UserDetailPage() {
           </Card>
         )}
 
-        {user.role === 'vendor' && user.vendorProfile && (
+        {user.role === 'seller' && user.sellerProfile && (
           <Card variant="elevated">
             <CardHeader>
-              <CardTitle>🏪 Vendor Information</CardTitle>
+              <CardTitle>🏪 Seller Information</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -573,25 +573,25 @@ export default function UserDetailPage() {
                   <div className="p-4 bg-yellow-50 rounded-lg">
                     <p className="text-sm text-gray-600 font-semibold">Rating</p>
                     <p className="text-2xl font-bold text-yellow-600 mt-1">
-                      {user.vendorProfile?.rating?.toFixed(1) || 'N/A'} ⭐
+                      {user.sellerProfile?.rating?.toFixed(1) || 'N/A'} ⭐
                     </p>
                   </div>
                   <div className="p-4 bg-purple-50 rounded-lg">
                     <p className="text-sm text-gray-600 font-semibold">Total Sales</p>
-                    <p className="text-2xl font-bold text-purple-600 mt-1">${user.vendorProfile?.totalSales?.toFixed(2) || '0.00'}</p>
+                    <p className="text-2xl font-bold text-purple-600 mt-1">${user.sellerProfile?.totalSales?.toFixed(2) || '0.00'}</p>
                   </div>
                 </div>
-                {user.vendorProfile?.businessName && (
+                {user.sellerProfile?.businessName && (
                   <div>
                     <p className="text-sm text-gray-500 font-semibold">Business Name</p>
-                    <p className="text-gray-900">{user.vendorProfile.businessName}</p>
+                    <p className="text-gray-900">{user.sellerProfile.businessName}</p>
                   </div>
                 )}
-                {user.vendorProfile?.verified && (
+                {user.sellerProfile?.verified && (
                   <div>
                     <p className="text-sm text-gray-500 font-semibold">Verification Status</p>
                     <p className="text-gray-900 text-green-600 font-semibold">
-                      ✓ Verified {user.vendorProfile.verifiedAt && `on ${formatDate(user.vendorProfile.verifiedAt)}`}
+                      ✓ Verified {user.sellerProfile.verifiedAt && `on ${formatDate(user.sellerProfile.verifiedAt)}`}
                     </p>
                   </div>
                 )}

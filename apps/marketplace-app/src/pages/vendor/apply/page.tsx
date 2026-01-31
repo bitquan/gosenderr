@@ -5,7 +5,7 @@ import { db } from "@/lib/firebase/client";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { Card, CardContent } from "@/components/ui/Card";
 
-export default function VendorApplicationPage() {
+export default function SellerApplicationPage() {
   const navigate = useNavigate();
   const { uid } = useAuthUser();
   const [loading, setLoading] = useState(false);
@@ -25,8 +25,8 @@ export default function VendorApplicationPage() {
 
     setLoading(true);
     try {
-      // Create vendor application
-      await setDoc(doc(db, `vendorApplications/${uid}`), {
+      // Create seller application
+      await setDoc(doc(db, `sellerApplications/${uid}`), {
         ...formData,
         userId: uid,
         status: "pending",
@@ -34,11 +34,11 @@ export default function VendorApplicationPage() {
         updatedAt: serverTimestamp(),
       });
 
-      // Update user doc to mark as vendor applicant
+      // Update user doc to mark as seller applicant
       await setDoc(
         doc(db, `users/${uid}`),
         {
-          vendorApplication: {
+          sellerApplication: {
             status: "pending",
             submittedAt: serverTimestamp(),
           },
@@ -74,7 +74,7 @@ export default function VendorApplicationPage() {
           <CardContent className="p-8">
             <div className="text-center mb-8">
               <div className="text-6xl mb-4">🏪</div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Become a Vendor</h1>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Become a Seller</h1>
               <p className="text-gray-600">
                 Join our marketplace and start selling your products today
               </p>
@@ -186,7 +186,7 @@ export default function VendorApplicationPage() {
                   className="mt-1 w-5 h-5 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
                 />
                 <label htmlFor="terms" className="text-sm text-gray-700">
-                  I agree to the vendor terms and conditions, including a 10% platform fee on all sales *
+                  I agree to the seller terms and conditions, including a 10% platform fee on all sales *
                 </label>
               </div>
 

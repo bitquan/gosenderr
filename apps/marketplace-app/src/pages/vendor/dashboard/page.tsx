@@ -14,8 +14,8 @@ interface Item {
   price: number;
   category: string;
   images: string[];
-  vendorId: string;
-  vendorName: string;
+  sellerId: string;
+  sellerName: string;
   stock: number;
   status: "active" | "sold" | "draft";
   createdAt: any;
@@ -51,7 +51,7 @@ export default function VendorDashboard() {
     try {
       const itemsQuery = query(
         collection(db, "marketplaceItems"),
-        where("vendorId", "==", uid),
+        where("sellerId", "==", uid),
         orderBy("createdAt", "desc")
       );
       const snapshot = await getDocs(itemsQuery);
@@ -70,13 +70,13 @@ export default function VendorDashboard() {
       const ordersSnapshot = await getDocs(collection(db, "orders"));
       const vendorOrders = ordersSnapshot.docs.filter((doc) => {
         const orderData = doc.data();
-        return orderData.items?.some((item: any) => item.vendorId === uid);
+        return orderData.items?.some((item: any) => item.sellerId === uid);
       });
 
       const totalRevenue = vendorOrders.reduce((sum, doc) => {
         const orderData = doc.data();
         const vendorItemsTotal = orderData.items
-          ?.filter((item: any) => item.vendorId === uid)
+            ?.filter((item: any) => item.sellerId === uid)
           .reduce((itemSum: number, item: any) => itemSum + (item.price * item.quantity), 0) || 0;
         return sum + vendorItemsTotal;
       }, 0);
@@ -106,7 +106,7 @@ export default function VendorDashboard() {
         const dayRevenue = dayOrders.reduce((sum, doc) => {
           const orderData = doc.data();
           const vendorItemsTotal = orderData.items
-            ?.filter((item: any) => item.vendorId === uid)
+            ?.filter((item: any) => item.sellerId === uid)
             .reduce((itemSum: number, item: any) => itemSum + (item.price * item.quantity), 0) || 0;
           return sum + vendorItemsTotal;
         }, 0);

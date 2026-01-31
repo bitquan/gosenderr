@@ -86,7 +86,7 @@ export function Navbar({ children }: NavbarProps) {
                       ? "/courier/dashboard"
                       : role === "runner"
                         ? "/runner/dashboard"
-                        : role === "vendor"
+                        : role === "seller"
                           ? "/vendor/items"
                           : "/customer/dashboard"
               }
@@ -104,7 +104,7 @@ export function Navbar({ children }: NavbarProps) {
                         ? "linear-gradient(135deg, #10b981 0%, #059669 100%)"
                         : role === "runner"
                           ? "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)"
-                          : role === "vendor"
+                          : role === "seller"
                             ? "linear-gradient(135deg, #ec4899 0%, #db2777 100%)"
                             : "#6b7280",
                 color: "white",
@@ -134,7 +134,7 @@ export function Navbar({ children }: NavbarProps) {
                     ? "🚗 Senderr"
                     : role === "runner"
                       ? "🚚 Shifter"
-                      : role === "vendor"
+                      : role === "seller"
                         ? "🏪 Market Senderr"
                         : role}
             </Link>
@@ -163,7 +163,7 @@ export function Navbar({ children }: NavbarProps) {
               Marketplace
             </Link>
 
-            {user && role === "vendor" && (
+            {user && role === "seller" && (
               <Link
                 to="/marketplace/create"
                 style={{
@@ -180,7 +180,7 @@ export function Navbar({ children }: NavbarProps) {
               </Link>
             )}
 
-            {user && role && role !== "vendor" && (
+            {user && role && role !== "seller" && (
               <Link
                 to="/marketplace/create"
                 style={{
@@ -193,7 +193,7 @@ export function Navbar({ children }: NavbarProps) {
                   whiteSpace: "nowrap",
                 }}
               >
-                🏪 Become a Vendor
+                🏪 Become a Seller
               </Link>
             )}
 
@@ -227,7 +227,7 @@ export function Navbar({ children }: NavbarProps) {
               </Link>
             )}
 
-            {user && role === "vendor" && (
+            {user && role === "seller" && (
               <Link
                 to="/vendor/items"
                 style={{

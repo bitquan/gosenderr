@@ -84,8 +84,7 @@ test.skip('full vendor lifecycle: create item and verify public marketplace', as
       price: { doubleValue: 9.99 },
       images: { arrayValue: { values: [{ stringValue: `https://storage.googleapis.com/${projectId}/marketplace/fakeVendor/${Date.now()}_e2e.png` }] } },
       sellerId: { stringValue: 'fakeVendor' },
-      vendorId: { stringValue: 'fakeVendor' },
-      vendorName: { stringValue: 'Vendor' },
+      sellerName: { stringValue: 'Seller' },
       status: { stringValue: 'active' }
     };
 

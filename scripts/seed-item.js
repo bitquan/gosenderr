@@ -28,7 +28,7 @@ async function main() {
   if (!res.ok) throw new Error('Failed to sign in/up test user: ' + res.status);
   const json = await res.json();
   const uid = json.localId;
-  console.log('Test vendor uid:', uid);
+  console.log('Test seller uid:', uid);
 
   // Init admin and write item doc
   initializeApp({ projectId: process.env.GCP_PROJECT || 'gosenderr-6773f' });
@@ -43,8 +43,8 @@ async function main() {
     category: 'other',
     condition: 'new',
     status: 'available',
-    vendorId: uid,
-    vendorName: 'Seed Vendor',
+    sellerId: uid,
+    sellerName: 'Seed Seller',
     sellerId: uid,
     createdAt: new Date(),
     updatedAt: new Date(),
