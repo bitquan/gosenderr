@@ -1,22 +1,25 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { getAvailableItems, Item } from "@/lib/v2/items";
-import type { ItemCategory } from "@/lib/v2/types";
-import { ItemCard } from "@/features/marketplace/ItemCard";
+import { marketplaceService } from "@/services/marketplace.service";
+import type { MarketplaceItem, ItemCategory } from "@/types/marketplace";
+import { ItemCard } from "@/components/marketplace/ItemCard";
 import { Card, CardContent } from "@/components/ui/Card";
 
 const CATEGORIES: Array<{ value: ItemCategory | "all"; label: string }> = [
   { value: "all", label: "All Items" },
-  { value: "furniture", label: "Furniture" },
   { value: "electronics", label: "Electronics" },
   { value: "clothing", label: "Clothing" },
-  { value: "food", label: "Food" },
+  { value: "home", label: "Home" },
+  { value: "books", label: "Books" },
+  { value: "toys", label: "Toys" },
+  { value: "sports", label: "Sports" },
+  { value: "automotive", label: "Automotive" },
   { value: "other", label: "Other" },
 ];
 
 export default function MarketplacePage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [items, setItems] = useState<Item[]>([]);
+  const [items, setItems] = useState<MarketplaceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -36,7 +39,10 @@ export default function MarketplacePage() {
       setLoading(true);
       setError(null);
       try {
-        const data = await getAvailableItems();
+        const data = await marketplaceService.getItems({
+          category: selectedCategory === "all" ? undefined : selectedCategory,
+          limit: 100,
+        });
         if (active) {
           setItems(data);
         }
@@ -56,7 +62,7 @@ export default function MarketplacePage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [selectedCategory]);
 
   const filteredItems = useMemo(() => {
     return items.filter((item) => {

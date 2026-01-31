@@ -138,7 +138,7 @@ export default function PaymentPage() {
 
       // Update item status to 'pending'
       if (orderDetails.itemId) {
-        const itemRef = doc(db, "items", orderDetails.itemId);
+        const itemRef = doc(db, "marketplaceItems", orderDetails.itemId);
         await updateDoc(itemRef, {
           status: "pending",
           updatedAt: serverTimestamp(),
