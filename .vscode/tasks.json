@@ -78,7 +78,7 @@
     {
       "label": "📦 Customer App (Port 5173)",
       "type": "shell",
-      "command": "pnpm --filter @gosenderr/customer-app dev",
+      "command": "pnpm --filter @gosenderr/marketplace-app dev",
       "isBackground": true,
       "problemMatcher": {
         "pattern": {
@@ -105,7 +105,7 @@
     {
       "label": "📦 Customer App (Port 5180)",
       "type": "shell",
-      "command": "PORT=5180 VITE_PORT=5180 pnpm --filter @gosenderr/customer-app dev -- --host 127.0.0.1",
+      "command": "PORT=5180 VITE_PORT=5180 pnpm --filter @gosenderr/marketplace-app dev -- --host 127.0.0.1",
       "isBackground": true,
       "problemMatcher": {
         "pattern": {
@@ -310,7 +310,7 @@
     {
       "label": "Build: Customer App",
       "type": "shell",
-      "command": "pnpm --filter @gosenderr/customer-app build",
+      "command": "pnpm --filter @gosenderr/marketplace-app build",
       "problemMatcher": ["$tsc"],
       "presentation": {
         "reveal": "always",
@@ -320,7 +320,7 @@
     {
       "label": "Build: Customer App",
       "type": "shell",
-      "command": "pnpm --filter @gosenderr/customer-app build",
+      "command": "pnpm --filter @gosenderr/marketplace-app build",
       "problemMatcher": ["$tsc"],
       "presentation": {
         "reveal": "always",

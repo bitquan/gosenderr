@@ -154,7 +154,7 @@ export default function CustomerSettingsPage() {
                     Easy setup, secure payments, and 24/7 support.
                   </p>
                   <Link
-                    to="/vendor/apply"
+                    to="/seller/apply"
                     className="inline-block px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all"
                   >
                     Apply Now

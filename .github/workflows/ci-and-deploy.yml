@@ -71,13 +71,13 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Install Playwright browsers
-        run: pnpm --filter @gosenderr/customer-app exec playwright install --with-deps
+        run: pnpm --filter @gosenderr/marketplace-app exec playwright install --with-deps
 
       - name: Build shared packages
         run: pnpm --filter @gosenderr/shared build
 
       - name: Run Playwright tests
-        run: pnpm --filter @gosenderr/customer-app test:e2e
+        run: pnpm --filter @gosenderr/marketplace-app test:e2e
         env:
           VITE_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
           VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
@@ -91,7 +91,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
-          path: apps/customer-app/playwright-report/
+          path: apps/marketplace-app/playwright-report/
           retention-days: 30
 
       - name: Test Summary

@@ -13,16 +13,16 @@ const ONE_PX_PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNg
 test.skip('full vendor lifecycle: create item and verify public marketplace', async ({ page, browser }) => {
   // Sign in
   await page.goto('/login');
-  await page.getByText('Vendor').click();
+  await page.getByText('Seller').click();
   await page.fill('input[type="email"]', VENDOR_EMAIL);
   await page.fill('input[type="password"]', VENDOR_PASS);
   await page.click('button:has-text("Sign In")');
-  await page.waitForURL('**/vendor/dashboard', { timeout: 10000 });
-  await expect(page.locator('text=Vendor Dashboard')).toBeVisible();
+  await page.waitForURL('**/seller/dashboard', { timeout: 10000 });
+  await expect(page.locator('text=Seller Dashboard')).toBeVisible();
 
   // Go to new item
-  await page.goto('/vendor/items/new');
-  await expect(page.locator('text=Create New Item')).toBeVisible();
+  await page.goto('/seller/items/new');
+  await expect(page.locator('text=Create New Listing')).toBeVisible();
 
   // Debug listeners
   page.on('console', (msg) => console.log('PAGE LOG:', msg.type(), msg.text()));
@@ -49,7 +49,7 @@ test.skip('full vendor lifecycle: create item and verify public marketplace', as
   });
 
   // Prepare temp image
-  const tmpDir = path.resolve(process.cwd(), 'apps/customer-app/tests/e2e/tmp');
+  const tmpDir = path.resolve(process.cwd(), 'apps/marketplace-app/tests/e2e/tmp');
   if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
   const filePath = path.join(tmpDir, `e2e-${Date.now()}.png`);
   fs.writeFileSync(filePath, Buffer.from(ONE_PX_PNG, 'base64'));
@@ -69,8 +69,8 @@ test.skip('full vendor lifecycle: create item and verify public marketplace', as
 
   // Wait for redirect to dashboard — if upload failed, fallback to creating an item directly via Firestore REST
   try {
-    await page.waitForURL('**/vendor/dashboard', { timeout: 8000 });
-    await expect(page.locator('text=Vendor Dashboard')).toBeVisible();
+    await page.waitForURL('**/seller/dashboard', { timeout: 8000 });
+    await expect(page.locator('text=Seller Dashboard')).toBeVisible();
   } catch (err) {
     console.log('Upload likely failed; creating item directly via Firestore REST');
 

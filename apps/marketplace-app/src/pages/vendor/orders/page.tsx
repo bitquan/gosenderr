@@ -157,11 +157,11 @@ export default function VendorOrders() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Vendor Orders</h1>
+              <h1 className="text-3xl font-bold text-gray-900">Seller Orders</h1>
               <p className="text-gray-600 mt-1">Manage orders for your items</p>
             </div>
             <Link
-              to="/vendor/dashboard"
+              to="/seller/dashboard"
               className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
             >
               Back to Dashboard

@@ -14,7 +14,7 @@ export default defineConfig({
   },
   webServer: {
     // preview server should match the dev server port the CI uses
-    command: 'pnpm --filter @gosenderr/customer-app exec -- vite preview --port 5180 --strictPort',
+    command: 'pnpm --filter @gosenderr/marketplace-app exec -- vite preview --port 5180 --strictPort',
     port: 5180,
     timeout: 120_000,
     reuseExistingServer: !process.env.CI,

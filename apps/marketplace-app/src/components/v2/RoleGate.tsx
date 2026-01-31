@@ -5,7 +5,7 @@ import { useUserRole } from '@/hooks/v2/useUserRole';
 
 interface RoleGateProps {
   children: ReactNode;
-  allowedRole: 'customer' | 'courier' | 'vendor';
+  allowedRole: 'customer' | 'courier' | 'seller';
 }
 
 /**
@@ -29,7 +29,7 @@ export function RoleGate({ children, allowedRole }: RoleGateProps) {
       if (role === 'customer') {
         navigate('/jobs');
       } else if (role === 'seller') {
-        navigate('/vendor/dashboard');
+        navigate('/seller/dashboard');
       } else {
         navigate('/courier/dashboard');
       }
