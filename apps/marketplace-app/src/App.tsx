@@ -44,7 +44,7 @@ import StripeOnboardingPage from './pages/profile/stripe-onboarding/page'
 import OrderDetailPage from './pages/orders/[orderId]/page'
 
 // Vendor pages
-import VendorApplicationPage from './pages/vendor/apply/page'
+import SellerApplicationPage from './pages/vendor/apply/page'
 import VendorDashboard from './pages/vendor/dashboard/page'
 import NewVendorItem from './pages/vendor/items/new/page'
 import EditVendorItem from './pages/vendor/items/[itemId]/edit/page'
@@ -189,7 +189,7 @@ function App() {
             {/* Vendor Routes */}
             <Route path="/vendor/apply" element={
               <RoleGuard allowedRoles={['customer', 'buyer', 'vendor', 'seller']}>
-                <VendorApplicationPage />
+                <SellerApplicationPage />
               </RoleGuard>
             } />
             <Route path="/vendor/dashboard" element={

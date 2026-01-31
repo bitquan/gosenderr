@@ -64,14 +64,14 @@ export default function AdminDashboardPage() {
         const customers = users.filter(u => u.role === 'customer').length
         const couriers = users.filter(u => u.role === 'courier').length
         const runners = users.filter(u => u.packageRunnerProfile?.status === 'approved').length
-        const vendors = users.filter(u => u.vendorProfile?.status === 'active').length
+        const sellers = users.filter(u => u.sellerProfile?.status === 'active').length
         const admins = users.filter(u => u.admin === true).length
 
         const usersByRole = [
           { name: 'Customers', value: customers, color: '#6B7280' },
           { name: 'Couriers', value: couriers, color: '#6B4EFF' },
           { name: 'Runners', value: runners, color: '#F97316' },
-          { name: 'Vendors', value: vendors, color: '#6366F1' },
+          { name: 'Sellers', value: sellers, color: '#6366F1' },
           { name: 'Admins', value: admins, color: '#EF4444' }
         ]
 

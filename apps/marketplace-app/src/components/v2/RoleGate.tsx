@@ -28,7 +28,7 @@ export function RoleGate({ children, allowedRole }: RoleGateProps) {
       // Wrong role, redirect to correct home
       if (role === 'customer') {
         navigate('/jobs');
-      } else if (role === 'vendor') {
+      } else if (role === 'seller') {
         navigate('/vendor/dashboard');
       } else {
         navigate('/courier/dashboard');

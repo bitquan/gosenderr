@@ -412,12 +412,12 @@ export default function OrderDetailPage() {
 
               <Card variant="elevated">
                 <CardHeader>
-                  <CardTitle>🏪 Vendor Information</CardTitle>
+                  <CardTitle>🏪 Seller Information</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
                     <div>
-                      <p className="text-sm text-gray-500 font-semibold">Vendor Name</p>
+                      <p className="text-sm text-gray-500 font-semibold">Seller Name</p>
                       <p className="text-gray-900 font-semibold">{vendor?.name || order.sellerName || 'N/A'}</p>
                     </div>
                     <div>
@@ -425,13 +425,13 @@ export default function OrderDetailPage() {
                       <p className="text-gray-900">{order.sellerEmail}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500 font-semibold">Vendor ID</p>
+                      <p className="text-sm text-gray-500 font-semibold">Seller ID</p>
                       <p className="text-xs text-gray-600 font-mono">{order.sellerId}</p>
                     </div>
-                    {vendor?.vendorProfile?.rating && (
+                    {vendor?.sellerProfile?.rating && (
                       <div>
                         <p className="text-sm text-gray-500 font-semibold">Rating</p>
-                        <p className="text-gray-900">{vendor.vendorProfile.rating.toFixed(1)} ⭐</p>
+                        <p className="text-gray-900">{vendor.sellerProfile.rating.toFixed(1)} ⭐</p>
                       </div>
                     )}
                   </div>

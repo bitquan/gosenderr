@@ -3,7 +3,7 @@ import { doc, onSnapshot } from 'firebase/firestore'
 import { useAuth } from './useAuth'
 import { db } from '../lib/firebase/client'
 
-export type UserRole = 'customer' | 'vendor' | 'courier' | 'admin' | 'buyer' | 'seller' | 'package_runner'
+export type UserRole = 'customer' | 'courier' | 'admin' | 'buyer' | 'seller' | 'package_runner'
 
 export interface UseRoleReturn {
   role: UserRole | null
@@ -12,7 +12,7 @@ export interface UseRoleReturn {
   loading: boolean
   hasRole: (role: UserRole) => boolean
   isCustomer: boolean
-  isVendor: boolean
+  isSeller: boolean
   isCourier: boolean
   isAdmin: boolean
 }
@@ -82,7 +82,7 @@ export function useRole(): UseRoleReturn {
     loading: authLoading || loading,
     hasRole,
     isCustomer: hasRole('customer') || hasRole('buyer'),
-    isVendor: hasRole('vendor') || hasRole('seller'),
+    isSeller: hasRole('seller'),
     isCourier: hasRole('courier'),
     isAdmin: hasRole('admin')
   }

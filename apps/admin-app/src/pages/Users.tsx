@@ -24,7 +24,7 @@ interface User {
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState<'all' | 'customer' | 'courier' | 'package_runner' | 'vendor' | 'admin'>('all')
+  const [filter, setFilter] = useState<'all' | 'customer' | 'courier' | 'package_runner' | 'seller' | 'admin'>('all')
   const [editRoleUser, setEditRoleUser] = useState<User | null>(null)
   const [banUser, setBanUser] = useState<User | null>(null)
   const [createUserOpen, setCreateUserOpen] = useState(false)
@@ -55,7 +55,7 @@ export default function AdminUsersPage() {
     if (filter === 'admin') return user.role === 'admin'
     if (filter === 'courier') return user.role === 'courier' || user.courierProfile
     if (filter === 'package_runner') return user.role === 'package_runner'
-    if (filter === 'vendor') return user.role === 'vendor'
+    if (filter === 'seller') return user.role === 'seller'
     if (filter === 'customer') return user.role === 'customer' || (!user.role && !user.courierProfile)
     return true
   })
@@ -90,7 +90,7 @@ export default function AdminUsersPage() {
         {/* Filter Tabs */}
         <div className="bg-white rounded-2xl shadow-lg p-2 flex gap-2 flex-wrap">
           {(() => {
-            const filterArray = ['all', 'customer', 'courier', 'package_runner', 'vendor', 'admin'] as const
+            const filterArray = ['all', 'customer', 'courier', 'package_runner', 'seller', 'admin'] as const
             console.log('🔍 FILTER ARRAY:', filterArray)
             console.log('🔍 FILTER ARRAY LENGTH:', filterArray.length)
             
@@ -100,7 +100,7 @@ export default function AdminUsersPage() {
                 if (f === 'admin') return user.role === 'admin'
                 if (f === 'courier') return user.role === 'courier' || user.courierProfile
                 if (f === 'package_runner') return user.role === 'package_runner'
-                if (f === 'vendor') return user.role === 'vendor'
+                if (f === 'seller') return user.role === 'seller'
                 if (f === 'customer') return user.role === 'customer' || (!user.role && !user.courierProfile)
                 return false
               }).length
@@ -119,7 +119,7 @@ export default function AdminUsersPage() {
                 >
                   <div className="flex items-center justify-center gap-2">
                     <span>
-                      {f === 'package_runner' ? 'Runners' : f === 'customer' ? 'Customers' : f === 'courier' ? 'Couriers' : f === 'vendor' ? 'Vendors' : f === 'admin' ? 'Admins' : 'All'}
+                      {f === 'package_runner' ? 'Runners' : f === 'customer' ? 'Customers' : f === 'courier' ? 'Couriers' : f === 'seller' ? 'Sellers' : f === 'admin' ? 'Admins' : 'All'}
                     </span>
                     <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
                       filter === f ? 'bg-white/20' : 'bg-gray-100'
@@ -142,7 +142,7 @@ export default function AdminUsersPage() {
                  filter === 'customer' ? 'Customers' :
                  filter === 'courier' ? 'Couriers' :
                  filter === 'package_runner' ? 'Runners' :
-                 filter === 'vendor' ? 'Vendors' :
+                 filter === 'seller' ? 'Sellers' :
                  filter === 'admin' ? 'Admins' : 'Users'} ({filteredUsers.length})
               </CardTitle>
               <button
@@ -196,9 +196,9 @@ export default function AdminUsersPage() {
                               🚛 Package Runner
                             </span>
                           )}
-                          {user.role === 'vendor' && (
+                          {user.role === 'seller' && (
                             <span className="px-2 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold">
-                              🏪 Vendor
+                              🏪 Seller
                             </span>
                           )}
                           {(user.role === 'courier' || user.courierProfile) && (

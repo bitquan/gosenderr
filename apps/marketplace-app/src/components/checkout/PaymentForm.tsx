@@ -79,7 +79,7 @@ export function PaymentForm({ amount, shippingInfo, items, onSuccess }: PaymentF
           title: cartItem.item.title,
           quantity: cartItem.quantity,
           price: cartItem.item.price,
-          vendorId: cartItem.item.vendorId,
+          sellerId: cartItem.item.sellerId,
         })),
       }) as { data: { clientSecret: string; orderId: string; status: string } }
 

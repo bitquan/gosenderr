@@ -23,29 +23,33 @@ service cloud.firestore {
     }
     
     function isCourier() {
-      return signedIn() && (
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'courier' ||
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('courierProfile', null) != null
-      );
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && (
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'courier' ||
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('courierProfile', null) != null
+        );
     }
     
     function isPackageRunner() {
       return signedIn() && request.auth.token.get('packageRunner', false) == true;
     }
     
-    function isVendor() {
-      return signedIn() && (
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'vendor' ||
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('vendorProfile', null) != null
-      );
+    function isSeller() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && (
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'seller' ||
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('sellerProfile', null) != null
+        );
     }
     
     function validRole(role) {
-      return role in ['buyer', 'seller', 'courier', 'admin', 'customer', 'runner', 'vendor', 'package_runner'];
+      return role in ['buyer', 'seller', 'courier', 'admin', 'customer', 'runner', 'package_runner'];
     }
     
     function validNonAdminRole(role) {
-      return role in ['buyer', 'seller', 'courier', 'customer', 'runner', 'vendor', 'package_runner'];
+      return role in ['buyer', 'seller', 'courier', 'customer', 'runner', 'package_runner'];
     }
 
     function validJobStatus(s) {
@@ -138,7 +142,7 @@ service cloud.firestore {
       
       // Any user can create items (they become the seller)
       allow create: if signedIn()
-        && request.resource.data.sellerId == request.auth.uid
+        && ('sellerId' in request.resource.data && request.resource.data.sellerId == request.auth.uid)
         && validItemCategory(request.resource.data.category)
         && validItemCondition(request.resource.data.condition)
         && validItemStatus(request.resource.data.status)
@@ -146,7 +150,7 @@ service cloud.firestore {
         && request.resource.data.photos.size() <= 10;
       
       // Only seller can update/delete their items
-      allow update, delete: if signedIn() && resource.data.sellerId == request.auth.uid;
+      allow update, delete: if signedIn() && ('sellerId' in resource.data && resource.data.sellerId == request.auth.uid);
       
       // Admins can read/update/delete any item
       allow read, update, delete: if isAdmin();
@@ -155,11 +159,11 @@ service cloud.firestore {
     // ========== MARKETPLACE ORDERS ==========
     match /marketplaceOrders/{orderId} {
       function isSeller() {
-        return signedIn() && resource.data.sellerId == request.auth.uid;
+        return signedIn() && ('sellerId' in resource.data && resource.data.sellerId == request.auth.uid);
       }
 
       function isBuyer() {
-        return signedIn() && resource.data.buyerId == request.auth.uid;
+        return signedIn() && ('buyerId' in resource.data && resource.data.buyerId == request.auth.uid);
       }
       
       function validOrderStatus(status) {
@@ -217,11 +221,11 @@ service cloud.firestore {
     // ========== DELIVERY JOBS ==========
     match /deliveryJobs/{jobId} {
       function isCustomer() {
-        return signedIn() && resource.data.customerId == request.auth.uid;
+        return signedIn() && ('customerId' in resource.data && resource.data.customerId == request.auth.uid);
       }
       
       function isSeller() {
-        return signedIn() && resource.data.sellerId == request.auth.uid;
+        return signedIn() && ('sellerId' in resource.data && resource.data.sellerId == request.auth.uid);
       }
 
       function isJobCourier() {
@@ -253,7 +257,7 @@ service cloud.firestore {
       
       // Create: customer or seller can create delivery jobs
       allow create: if signedIn()
-        && (request.resource.data.customerId == request.auth.uid || request.resource.data.sellerId == request.auth.uid)
+        && ((('customerId' in request.resource.data && request.resource.data.customerId == request.auth.uid) || ('sellerId' in request.resource.data && request.resource.data.sellerId == request.auth.uid)))
         && request.resource.data.status == 'open'
         && request.resource.data.get('courierId', null) == null
         && validJobStatus(request.resource.data.status)
@@ -590,15 +594,23 @@ service cloud.firestore {
       // Anyone can read marketplace items
       allow read, list: if true;
       
-      // Vendors can create items (supports `vendorId` or legacy `sellerId`)
+      // Sellers can create items (must set `sellerId` to request.auth.uid)
       allow create: if signedIn() 
-        && isVendor()
-        && (request.resource.data.vendorId == request.auth.uid || request.resource.data.sellerId == request.auth.uid)
+        && isSeller()
+        && ('sellerId' in request.resource.data && request.resource.data.sellerId == request.auth.uid)
         && request.resource.data.status in ['draft', 'active', 'inactive']
         && request.resource.data.price > 0;
       
-      // Vendors can update/delete their own items
-      allow update, delete: if signedIn() && (request.auth.uid == resource.data.vendorId || request.auth.uid == resource.data.sellerId);
+      // Sellers can update their own items (or allow public view count increments)
+      allow update: if (
+        signedIn() && ('sellerId' in resource.data && request.auth.uid == resource.data.sellerId)
+      ) || (
+        request.resource.data.diff(resource.data).changedKeys().hasOnly(['views'])
+        && request.resource.data.get('views', 0) == resource.data.get('views', 0) + 1
+      );
+
+      // Sellers can delete their own items
+      allow delete: if signedIn() && ('sellerId' in resource.data && request.auth.uid == resource.data.sellerId);
       
       // Admins can do anything
       allow read, write: if isAdmin();
@@ -613,17 +625,17 @@ service cloud.firestore {
       // Customers can read their own orders
       allow get: if signedIn() && request.auth.uid == resource.data.customerId;
       
-      // Vendors can read orders (will filter client-side for their items)
-      allow get: if signedIn() && isVendor();
+      // Sellers can read orders (will filter client-side for their items)
+      allow get: if signedIn() && isSeller();
       
       // Customers can create orders
       allow create: if signedIn() 
         && request.resource.data.customerId == request.auth.uid
         && request.resource.data.items.size() > 0;
       
-      // Vendors can update order status
+      // Sellers can update order status
       allow update: if signedIn() 
-        && isVendor()
+        && isSeller()
         && request.resource.data.status in ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
       
       // Customers can cancel pending orders
@@ -636,8 +648,8 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
-    // ========== VENDOR APPLICATIONS ==========
-    match /vendorApplications/{userId} {
+    // ========== SELLER APPLICATIONS ==========
+    match /sellerApplications/{userId} {
       // Users can read their own application
       allow read: if signedIn() && request.auth.uid == userId;
       
@@ -723,8 +735,8 @@ service cloud.firestore {
       // Users can read their own disputes, admins can read all
       allow read: if signedIn() && (
         isAdmin() ||
-        request.auth.uid == resource.data.customerId ||
-        request.auth.uid == resource.data.vendorId
+        ('customerId' in resource.data && request.auth.uid == resource.data.customerId) ||
+        ('sellerId' in resource.data && request.auth.uid == resource.data.sellerId)
       );
       
       // Authenticated users can create disputes
@@ -775,13 +787,18 @@ service cloud.firestore {
         && request.resource.data.price > 0
         && request.resource.data.photos.size() > 0;
       
-      // Sellers can update their own items
-      allow update: if signedIn() 
-        && request.auth.uid == resource.data.sellerId
-        && request.resource.data.sellerId == resource.data.sellerId; // Can't change seller
+      // Sellers can update their own items (or allow public view count increments)
+      allow update: if (
+        signedIn()
+        && ('sellerId' in resource.data && request.auth.uid == resource.data.sellerId)
+        && (!('sellerId' in request.resource.data) || request.resource.data.sellerId == resource.data.sellerId) // Can't change seller
+      ) || (
+        request.resource.data.diff(resource.data).changedKeys().hasOnly(['views'])
+        && request.resource.data.get('views', 0) == resource.data.get('views', 0) + 1
+      );
       
       // Sellers can delete (soft) their own items
-      allow delete: if signedIn() && request.auth.uid == resource.data.sellerId;
+      allow delete: if signedIn() && ('sellerId' in resource.data && request.auth.uid == resource.data.sellerId);
     }
 
     // ========== ORDERS ==========

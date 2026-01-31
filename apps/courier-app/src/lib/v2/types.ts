@@ -55,7 +55,7 @@ export type UserRole =
   | "buyer"
   | "seller"
   | "runner"
-  | "vendor";
+  | "seller";
 
 // Re-export JobStatus enum values as string union type for backward compatibility
 export type JobStatus =

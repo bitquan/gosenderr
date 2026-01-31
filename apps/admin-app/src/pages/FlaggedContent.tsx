@@ -12,8 +12,8 @@ interface FlaggedItem {
   price: number
   category: string
   images: string[]
-  vendorId: string
-  vendorName: string
+  sellerId: string
+  sellerName: string
   vendorEmail: string
   status: 'flagged'
   flagReason: string
@@ -180,7 +180,7 @@ export default function FlaggedContentPage() {
                             <div className="flex items-start justify-between mb-2">
                               <div>
                                 <h3 className="text-lg font-semibold text-gray-900">{item.title}</h3>
-                                <p className="text-sm text-gray-600">by {item.vendorName || item.vendorEmail}</p>
+                                <p className="text-sm text-gray-600">by {item.sellerName || item.vendorEmail}</p>
                               </div>
                               <div className="text-right">
                                 <p className="text-lg font-bold text-purple-600">{formatCurrency(item.price)}</p>

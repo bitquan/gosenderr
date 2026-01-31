@@ -9,7 +9,7 @@ interface OrderItem {
   title: string
   quantity: number
   price: number
-  vendorId: string
+  sellerId: string
 }
 
 interface Order {

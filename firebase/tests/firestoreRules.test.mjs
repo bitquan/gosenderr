@@ -20,14 +20,14 @@ async function run() {
 
   try {
     await assertSucceeds(
-      user123Db.collection('vendorApplications').doc('user123').set({
+      user123Db.collection('sellerApplications').doc('user123').set({
         userId: 'user123',
         businessName: 'Test Vendor',
         status: 'pending',
         createdAt: new Date(),
       })
     );
-    console.log('Test 1: PASS - owner can create vendorApplication');
+    console.log('Test 1: PASS - owner can create sellerApplication');
   } catch (err) {
     console.error('Test 1: FAIL', err);
   }
@@ -36,7 +36,7 @@ async function run() {
   const user456 = testEnv.authenticatedContext('user456').firestore();
   try {
     await assertFails(
-      user456.collection('vendorApplications').doc('user123').update({ status: 'approved' })
+      user456.collection('sellerApplications').doc('user123').update({ status: 'approved' })
     );
     console.log('Test 2: PASS - non-admin cannot approve');
   } catch (err) {
@@ -48,7 +48,7 @@ async function run() {
   const adminDb = admin.firestore();
   try {
     await assertSucceeds(
-      adminDb.collection('vendorApplications').doc('user123').update({ status: 'approved' })
+      adminDb.collection('sellerApplications').doc('user123').update({ status: 'approved' })
     );
     console.log('Test 3: PASS - admin can approve');
   } catch (err) {

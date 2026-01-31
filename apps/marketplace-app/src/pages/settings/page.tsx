@@ -11,7 +11,7 @@ import { getAuthSafe } from "@/lib/firebase/auth";
 export default function CustomerSettingsPage() {
   const navigate = useNavigate();
   const { user, loading, uid } = useAuthUser();
-  const [vendorStatus, setVendorStatus] = useState<"none" | "pending" | "approved">("none");
+  const [sellerStatus, setSellerStatus] = useState<"none" | "pending" | "approved">("none");
 
   const handleSignOut = async () => {
     try {
@@ -28,18 +28,18 @@ export default function CustomerSettingsPage() {
   useEffect(() => {
     if (!uid) return;
     
-    const checkVendorStatus = async () => {
+    const checkSellerStatus = async () => {
       const userDoc = await getDoc(doc(db, `users/${uid}`));
       const userData = userDoc.data();
       
-      if (userData?.isVendor === true || userData?.vendorApplication?.status === "approved") {
-        setVendorStatus("approved");
-      } else if (userData?.vendorApplication?.status === "pending") {
-        setVendorStatus("pending");
+      if (userData?.isSeller === true || userData?.sellerApplication?.status === "approved") {
+        setSellerStatus("approved");
+      } else if (userData?.sellerApplication?.status === "pending") {
+        setSellerStatus("pending");
       }
     };
     
-    checkVendorStatus();
+    checkSellerStatus();
   }, [uid]);
 
   if (loading) {
@@ -139,15 +139,15 @@ export default function CustomerSettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Vendor Section */}
-        {vendorStatus === "none" && (
+        {/* Seller Section */}
+        {sellerStatus === "none" && (
           <Card variant="elevated" className="border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-blue-50">
             <CardContent className="p-6">
               <div className="flex items-start gap-4">
                 <div className="text-5xl">🏪</div>
                 <div className="flex-1">
                   <h3 className="text-xl font-bold text-gray-900 mb-2">
-                    Become a Vendor
+                    Become a Seller
                   </h3>
                   <p className="text-gray-600 mb-4">
                     Sell your products on our marketplace and reach thousands of customers. 
@@ -165,14 +165,14 @@ export default function CustomerSettingsPage() {
           </Card>
         )}
 
-        {vendorStatus === "pending" && (
+        {sellerStatus === "pending" && (
           <Card variant="elevated" className="border-2 border-yellow-200 bg-yellow-50">
             <CardContent className="p-6">
               <div className="flex items-start gap-4">
                 <div className="text-5xl">⏳</div>
                 <div className="flex-1">
                   <h3 className="text-xl font-bold text-gray-900 mb-2">
-                    Vendor Application Pending
+                    Seller Application Pending
                   </h3>
                   <p className="text-gray-600">
                     We're reviewing your application. You'll receive an email within 24 hours.

@@ -296,7 +296,7 @@ export default function SystemCheckPage() {
     try {
       const testOrder = {
         customerId: 'test-customer-' + Date.now(),
-        vendorId: 'test-vendor-' + Date.now(),
+        sellerId: 'test-seller-' + Date.now(),
         total: 99.99,
         status: 'pending',
         createdAt: Timestamp.now(),
@@ -369,7 +369,7 @@ export default function SystemCheckPage() {
         orderId: 'test-order-' + Date.now(),
         userEmail: `user-${Date.now()}@example.com`,
         customerId: 'test-cust-' + Date.now(),
-        vendorId: 'test-vend-' + Date.now(),
+        sellerId: 'test-sell-' + Date.now(),
         reportedBy: testUserId,
         reason: 'System Test Dispute',
         description: 'This is a test dispute for system validation.',
@@ -395,7 +395,7 @@ export default function SystemCheckPage() {
       // Create order
       const order = await addDoc(collection(db, 'orders'), {
         customerId: 'test-cust-' + Date.now(),
-        vendorId: 'test-vend-' + Date.now(),
+        sellerId: 'test-sell-' + Date.now(),
         total: 50.00,
         status: 'delivered',
         createdAt: Timestamp.now(),

@@ -35,7 +35,7 @@ export default async function globalSetup() {
     await fetch(`${FIRESTORE_BASE}/items/test-item-1`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fields: { title: { stringValue: 'Test Item for E2E' }, description: { stringValue: 'Seeded test item' }, price: { doubleValue: 19.99 }, status: { stringValue: 'available' }, sellerId: { stringValue: 'vendor' }, vendorName: { stringValue: 'Test Vendor' }, createdAt: { timestampValue: new Date().toISOString() } } }),
+      body: JSON.stringify({ fields: { title: { stringValue: 'Test Item for E2E' }, description: { stringValue: 'Seeded test item' }, price: { doubleValue: 19.99 }, status: { stringValue: 'available' }, sellerId: { stringValue: 'seller' }, sellerName: { stringValue: 'Test Seller' }, createdAt: { timestampValue: new Date().toISOString() } } }),
     })
   } catch (e) {
     console.warn('Failed to create test item:', e)

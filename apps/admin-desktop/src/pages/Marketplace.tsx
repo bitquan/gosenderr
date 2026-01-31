@@ -14,8 +14,8 @@ interface MarketplaceItem {
   condition: string
   images: string[]
   stock: number
-  vendorId: string
-  vendorName: string
+  sellerId: string
+  sellerName: string
   status: string
   featured: boolean
   createdAt?: any
@@ -94,7 +94,7 @@ export default function AdminMarketplacePage() {
     const matchesFilter = filter === 'all' || item.status === filter
     const matchesSearch = !searchQuery || 
       item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.vendorName.toLowerCase().includes(searchQuery.toLowerCase())
+      item.sellerName.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory
     return matchesFilter && matchesSearch && matchesCategory
   })
@@ -229,7 +229,7 @@ export default function AdminMarketplacePage() {
                       <div className="flex items-start justify-between mb-2">
                         <div>
                           <h3 className="text-lg font-semibold text-gray-900">{item.title}</h3>
-                          <p className="text-sm text-gray-600">by {item.vendorName}</p>
+                          <p className="text-sm text-gray-600">by {item.sellerName}</p>
                         </div>
                         <div className="flex items-center gap-2">
                           {item.featured && (

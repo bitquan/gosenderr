@@ -13,8 +13,8 @@ interface MarketplaceItem {
   price: number
   category: string
   images: string[]
-  vendorId: string
-  vendorName: string
+  sellerId: string
+  sellerName: string
   vendorEmail: string
   stock: number
   status: 'draft' | 'pending' | 'active' | 'flagged' | 'removed'
@@ -109,7 +109,7 @@ export default function ItemDetailPage() {
         adminEmail: user.email,
         itemId: item.id,
         itemTitle: item.title,
-        vendorId: item.vendorId,
+        sellerId: item.sellerId,
         timestamp: new Date()
       })
 
@@ -141,7 +141,7 @@ export default function ItemDetailPage() {
         adminEmail: user.email,
         itemId: item.id,
         itemTitle: item.title,
-        vendorId: item.vendorId,
+        sellerId: item.sellerId,
         timestamp: new Date()
       })
 
@@ -421,9 +421,9 @@ export default function ItemDetailPage() {
                   <p className="font-medium">{item.category}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Vendor</p>
-                  <Link to={`/users/${item.vendorId}`} className="font-medium text-purple-600 hover:underline">
-                    {item.vendorName || item.vendorEmail}
+                  <p className="text-sm text-gray-600">Seller</p>
+                  <Link to={`/users/${item.sellerId}`} className="font-medium text-purple-600 hover:underline">
+                    {item.sellerName || item.vendorEmail}
                   </Link>
                 </div>
                 <div>
