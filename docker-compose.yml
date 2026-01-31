@@ -39,6 +39,17 @@ services:
       - "4000:4000" # Emulator UI
     environment:
       - FIREBASE_EMULATOR_HUB=localhost:4400
+      - GCLOUD_PROJECT=gosenderr-6773f
+      - FIREBASE_PROJECT_ID=gosenderr-6773f
+      - PROJECT_ID=gosenderr-6773f
+      - APP_ENV=development
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "sh", "-c", "curl -sSf http://localhost:4000/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 60s
 
   admin-app:
     build:
