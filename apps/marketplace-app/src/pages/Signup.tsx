@@ -42,7 +42,8 @@ export default function SignupPage() {
       await setDoc(doc(db, 'users', user.uid), {
         email: user.email,
         displayName: displayName || user.email?.split('@')[0],
-        roles: ['buyer', 'seller'], // Everyone can buy and sell
+        role: 'customer', // single role used by security rules
+        roles: ['buyer', 'seller'], // Backwards-compatible array for UI
         profilePhotoUrl: '',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),

@@ -590,15 +590,15 @@ service cloud.firestore {
       // Anyone can read marketplace items
       allow read, list: if true;
       
-      // Vendors can create items
+      // Vendors can create items (supports `vendorId` or legacy `sellerId`)
       allow create: if signedIn() 
         && isVendor()
-        && request.resource.data.vendorId == request.auth.uid
+        && (request.resource.data.vendorId == request.auth.uid || request.resource.data.sellerId == request.auth.uid)
         && request.resource.data.status in ['draft', 'active', 'inactive']
         && request.resource.data.price > 0;
       
       // Vendors can update/delete their own items
-      allow update, delete: if signedIn() && request.auth.uid == resource.data.vendorId;
+      allow update, delete: if signedIn() && (request.auth.uid == resource.data.vendorId || request.auth.uid == resource.data.sellerId);
       
       // Admins can do anything
       allow read, write: if isAdmin();
