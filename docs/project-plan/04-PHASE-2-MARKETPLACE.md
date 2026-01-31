@@ -8,7 +8,7 @@
 
 ## 📋 Overview
 
-Transform the existing `apps/customer-app` (Vite + React) into a unified marketplace application where users can both buy AND sell items. Implement a single user model with role-based permissions, then wrap with Capacitor for native iOS deployment.
+Build on the existing `apps/marketplace-app` (Vite + React) as the unified marketplace application where users can both buy AND sell items. Implement a single user model with role-based permissions, then wrap with Capacitor for native iOS deployment.
 
 **Core Principle:** One account, multiple capabilities. Every user can browse, buy, and sell.
 

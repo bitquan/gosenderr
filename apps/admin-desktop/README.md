@@ -25,4 +25,4 @@ Electron-based desktop app for GoSenderr platform administrators (Phase 1).
 - `src/` - React renderer (copied from admin-app)
 - `electron-builder.yml` - Packaging configuration
 
-See `docs/ELECTRON_SETUP.md` for detailed setup and `docs/project-plan/03-PHASE-1-ADMIN-DESKTOP.md` for the full implementation plan.
+See [docs/project-plan/03-PHASE-1-ADMIN-DESKTOP.md](docs/project-plan/03-PHASE-1-ADMIN-DESKTOP.md) for the full implementation plan.

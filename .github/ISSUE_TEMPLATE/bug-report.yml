@@ -1,0 +1,78 @@
+name: Bug report
+description: Report a bug in any GoSenderr app
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: dropdown
+    id: app
+    attributes:
+      label: Affected app
+      options:
+        - Admin Desktop (Electron)
+        - Admin Web (admin-app)
+        - Marketplace (marketplace-app)
+        - Courier (courier-app)
+        - Landing/Marketing
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      options:
+        - Production
+        - Staging
+        - Local dev
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: URL or screen
+      placeholder: https://... or screen name
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Provide clear, numbered steps.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / console output
+      description: Paste relevant logs or error messages.
+      render: shell
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: Drag and drop images here.
+  - type: input
+    id: device
+    attributes:
+      label: Device / OS
+      placeholder: macOS 14.2, iPhone 15 iOS 17.3, Windows 11
+  - type: input
+    id: browser
+    attributes:
+      label: Browser (if web)
+      placeholder: Chrome 122, Safari 17
+  - type: input
+    id: version
+    attributes:
+      label: App version / commit (if known)

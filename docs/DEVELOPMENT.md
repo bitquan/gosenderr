@@ -30,10 +30,9 @@ bash scripts/dev-docker-down.sh
   - Storage: `localhost:9199`
   - Emulator UI: `localhost:4000`
 - `admin-app` — Admin app dev server on `localhost:3000`
-- `customer-app` — Customer app dev server on `localhost:5173`
+- `marketplace-app` — Marketplace app dev server on `localhost:5173`
 - `courier-app` — Courier app dev server on `localhost:5174`
-- `shifter-app` — Runner/Shifter dev server on `localhost:5175`
-- `web-app` — Marketing site dev server on `localhost:3003`
+- `admin-desktop` — Vite renderer dev server on `localhost:5176`
 
 ## Notes & troubleshooting
 

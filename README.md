@@ -10,12 +10,11 @@ A modern on-demand delivery platform with web apps (Vite + React + TypeScript) t
 ```
 /
 ├── apps/
-│   ├── customer-app/     # Vite Customer Web App (Port 5173)
+│   ├── marketplace-app/  # Vite Marketplace Web App (Port 5173)
 │   ├── courier-app/      # Vite Courier Web App (Port 5174)
-│   ├── shifter-app/      # Vite Runner/Shifter Web App (Port 5175)
-│   ├── admin-app/        # Vite Admin Dashboard (Port 5176)
-│   ├── landing/          # Role Selection Landing Page
-│   └── web/              # Legacy Next.js App (deprecated)
+│   ├── admin-app/        # Vite Admin Dashboard (Port 3000)
+│   ├── admin-desktop/    # Electron Admin Desktop App (Port 5176)
+│   └── landing/          # Landing / Marketing Page
 ├── packages/
 │   └── shared/           # Shared TypeScript types and utilities
 ├── firebase/             # Firebase security rules and Cloud Functions
@@ -27,17 +26,17 @@ A modern on-demand delivery platform with web apps (Vite + React + TypeScript) t
 
 ## ✅ Testing & Deployment
 
-See the emulator-first rollout checklist in [docs/TESTING_DEPLOYMENT_PLAN.md](docs/TESTING_DEPLOYMENT_PLAN.md).
+See the rollout checklist in [docs/project-plan/09-DAILY-CHECKLIST.md](docs/project-plan/09-DAILY-CHECKLIST.md).
 
 ## 📱 Active Applications
 
 | App | Port | Hosting URL | Purpose |
 |-----|------|-------------|---------|
-| Customer | 5173 | gosenderr-customer.web.app | Create and track deliveries |
-| Courier | 5174 | gosenderr-courier.web.app | Accept and complete individual jobs |
-| Shifter/Runner | 5175 | gosenderr-runner.web.app | Manage routes and bulk deliveries |
-| Admin | 5176 | gosenderr-admin.web.app | Platform management |
-| Landing | - | gosenderr-6773f.web.app | Role selection entry point |
+| Marketplace | 5173 | gosenderr-marketplace.web.app | Browse and purchase items |
+| Courier | 5174 | gosenderr-courier.web.app | Accept and complete jobs |
+| Admin (Web) | 3000 | gosenderr-admin.web.app | Platform management |
+| Admin Desktop | 5176 | — | Native admin tooling |
+| Landing | - | gosenderr-6773f.web.app | Marketing / entry point |
 
 ## 🚀 Quick Start
 
@@ -62,14 +61,11 @@ pnpm install
 Each app needs its own `.env.local` file:
 
 ```bash
-# Customer App
-cp apps/customer-app/.env.example apps/customer-app/.env.local
+# Marketplace App
+cp apps/marketplace-app/.env.example apps/marketplace-app/.env.local
 
 # Courier App
 cp apps/courier-app/.env.example apps/courier-app/.env.local
-
-# Runner App
-cp apps/shifter-app/.env.example apps/shifter-app/.env.local
 
 # Admin App
 cp apps/admin-app/.env.example apps/admin-app/.env.local
@@ -84,7 +80,7 @@ Required variables for all apps:
 - `VITE_FIREBASE_MESSAGING_SENDER_ID`
 - `VITE_FIREBASE_APP_ID`
 - `VITE_MAPBOX_TOKEN` - From https://mapbox.com
-- `VITE_APP_ROLE` - Set automatically per app (customer/courier/runner/admin)
+- `VITE_APP_ROLE` - Set automatically per app (marketplace/courier/admin)
 
 3. **Build shared package:**
 
@@ -129,16 +125,17 @@ This automatically starts:
 
 ---
 
-### 🌐 All Apps (Legacy Vite Web Apps)
+### 🌐 All Apps (Vite Web Apps)
 
 ```bash
 # Run all apps
 pnpm dev
 
 # Or run individual apps
-cd apps/customer-app && pnpm dev   # Port 5173
-cd apps/courier-app && pnpm dev    # Port 5174
-cd apps/admin-app && pnpm dev      # Port 3000
+cd apps/marketplace-app && pnpm dev   # Port 5173
+cd apps/courier-app && pnpm dev       # Port 5174
+cd apps/admin-app && pnpm dev         # Port 3000
+cd apps/admin-desktop && pnpm dev     # Port 5176 (renderer)
 ```
 
 **Docker-based development:** If you prefer a reproducible, containerized setup that includes the Firebase emulators and app dev servers, use:
@@ -147,13 +144,13 @@ cd apps/admin-app && pnpm dev      # Port 3000
 pnpm dev:docker   # or bash scripts/dev-docker-up.sh
 ```
 
-See `docs/DEVELOPMENT.md` for details and troubleshooting.
+See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for details and troubleshooting.
 
 Apps will be available at:
-- Customer: http://localhost:5173
+- Marketplace: http://localhost:5173
 - Courier: http://localhost:5174
-- Runner: http://localhost:5175
-- Admin: http://localhost:5176
+- Admin (Web): http://localhost:3000
+- Admin Desktop (renderer): http://localhost:5176
 
 ## 🚢 Deployment
 
@@ -161,9 +158,8 @@ Each app is deployed separately to Firebase Hosting:
 
 ```bash
 # Deploy individual apps
-pnpm deploy:customer
+pnpm deploy:marketplace
 pnpm deploy:courier
-pnpm deploy:runner
 pnpm deploy:admin
 
 # Deploy all apps
@@ -171,15 +167,14 @@ pnpm deploy:all
 ```
 
 Firebase Hosting sites:
-- Customer: `gosenderr-customer`
+- Marketplace: `gosenderr-marketplace`
 - Courier: `gosenderr-courier`
-- Runner: `gosenderr-runner`
 - Admin: `gosenderr-admin`
 - Landing: `gosenderr-6773f` (default site)
 
 ## 📱 Features
 
-### Customer App (`apps/customer-app`)
+### Marketplace App (`apps/marketplace-app`)
 
 - **Authentication**: Phone Auth with Firebase + Email fallback
 - **Job Creation**: Create delivery jobs with pickup/dropoff locations via map or address search
@@ -197,17 +192,15 @@ Firebase Hosting sites:
 - **Stripe Connect**: Onboard to receive payouts
 - **Bottom Navigation**: Dashboard, Active, Earnings, Settings tabs
 
-### Runner/Shifter App (`apps/shifter-app`)
+### Admin Desktop App (`apps/admin-desktop`)
 
-- **Route Management**: Accept bulk delivery routes with multiple stops
-- **Multi-Stop Optimization**: Handle sequential deliveries efficiently
-- **Job Organization**: View all jobs within a route
-- **Earnings Dashboard**: Track route earnings and performance metrics
-- **Bottom Navigation**: Home, Routes, Jobs, Earnings, Settings tabs
+- **Native Electron shell**: Admin tooling in a desktop window
+- **Local emulators**: Streamlined workflow for Phase 1
+- **Packaging**: macOS/Windows artifacts via electron-builder
 
 ### Admin App (`apps/admin-app`)
 
-- **User Management**: View and manage customers, couriers, and runners
+- **User Management**: View and manage marketplace users and couriers
 - **Job Monitoring**: Track all jobs system-wide with status filters
 - **Hub Management**: Create and manage delivery hubs/zones
 - **Rate Cards**: Configure delivery pricing tiers
@@ -279,9 +272,8 @@ pnpm lint                 # Lint all packages
 pnpm clean                # Clean all build artifacts
 
 # Deployment
-pnpm deploy:customer      # Deploy customer app
+pnpm deploy:marketplace   # Deploy marketplace app
 pnpm deploy:courier       # Deploy courier app
-pnpm deploy:runner        # Deploy runner app
 pnpm deploy:admin         # Deploy admin app
 pnpm deploy:all           # Deploy all apps
 ```
@@ -307,7 +299,7 @@ pnpm dev        # Watch mode for development
 ## 🔐 Authentication Flow
 
 1. User visits landing page at https://gosenderr-6773f.web.app
-2. Selects role (Customer, Courier, Runner, or Admin)
+2. Selects role (Marketplace, Courier, or Admin)
 3. Redirected to role-specific app login page
 4. Authenticates via Phone Auth (or Email fallback)
 5. On first login, user profile is created with selected role
@@ -315,9 +307,8 @@ pnpm dev        # Watch mode for development
 
 ### Role-Specific Entry Points
 
-- Customer: `gosenderr-customer.web.app/login`
+- Marketplace: `gosenderr-marketplace.web.app/login`
 - Courier: `gosenderr-courier.web.app/login`
-- Runner: `gosenderr-runner.web.app/login`
 - Admin: `gosenderr-admin.web.app/login`
 
 ## 🛠️ Development
@@ -350,13 +341,7 @@ import { JobDoc, JobStatus, UserDoc } from "@gosenderr/shared";
 
 ### Navigation Pattern
 
-All apps use bottom navigation with role-specific tabs:
-- **Customer**: Home, Jobs, Settings (3 tabs)
-- **Courier**: Dashboard, Active, Earnings, Settings (4 tabs)
-- **Runner**: Home, Routes, Jobs, Earnings, Settings (5 tabs)
-- **Admin**: Dashboard, Users, Jobs, Hubs, Settings (5 tabs)
-
-See [docs/NAVIGATION_GUIDE.md](docs/NAVIGATION_GUIDE.md) for implementation details.
+See [docs/project-plan/02-USER-ROLES-AND-FLOWS.md](docs/project-plan/02-USER-ROLES-AND-FLOWS.md) for role flows and navigation patterns.
 
 ---
 
@@ -425,4 +410,4 @@ With Capacitor plugins, apps can access:
 3. Sign with release keystore
 4. Upload to Play Console
 
-**Documentation**: See [docs/CAPACITOR_SETUP.md](docs/CAPACITOR_SETUP.md) for detailed mobile deployment guide.
+**Documentation**: See [docs/project-plan/05-PHASE-3-COURIER-IOS.md](docs/project-plan/05-PHASE-3-COURIER-IOS.md) for detailed mobile deployment guide.
