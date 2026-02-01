@@ -4,12 +4,13 @@ import { uploadJobPhoto, UploadProgress } from '@/lib/storage/uploadJobPhoto';
 
 let photoCounter = 0;
 const createPhotoId = () => {
-  if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
-    const bytes = new Uint32Array(2);
-    crypto.getRandomValues(bytes);
-    return `photo_${bytes[0].toString(36)}_${bytes[1].toString(36)}`;
+  const cryptoObj = globalThis.crypto;
+  if (!cryptoObj?.getRandomValues) {
+    throw new Error('Secure random generator unavailable');
   }
-  return `photo_${Date.now().toString(36)}_${(photoCounter++).toString(36)}`;
+  const bytes = new Uint32Array(2);
+  cryptoObj.getRandomValues(bytes);
+  return `photo_${bytes[0].toString(36)}_${bytes[1].toString(36)}_${(photoCounter++).toString(36)}`;
 };
 
 export interface PhotoFile {
