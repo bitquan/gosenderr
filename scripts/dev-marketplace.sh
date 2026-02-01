@@ -9,8 +9,8 @@ cleanup() {
   if [ ! -z "$FIREBASE_PID" ]; then
     kill $FIREBASE_PID 2>/dev/null
   fi
-  if [ ! -z "$CUSTOMER_PID" ]; then
-    kill $CUSTOMER_PID 2>/dev/null
+  if [ ! -z "$MARKETPLACE_PID" ]; then
+    kill $MARKETPLACE_PID 2>/dev/null
   fi
   
   # Kill any processes on our ports
@@ -36,15 +36,15 @@ FIREBASE_PID=$!
 # Wait for emulators to start
 sleep 5
 
-# Start Customer App
-echo "🛍️ Starting Customer App (Marketplace)..."
-pnpm --filter @gosenderr/customer-app dev &
-CUSTOMER_PID=$!
+# Start Marketplace App
+echo "🛍️ Starting Marketplace App..."
+pnpm --filter @gosenderr/marketplace-app dev &
+MARKETPLACE_PID=$!
 
 echo ""
 echo "✅ Marketplace Dev Environment Started!"
 echo ""
-echo "📱 Customer App: http://localhost:5173"
+echo "📱 Marketplace App: http://localhost:5173"
 echo "🔥 Firebase UI: http://localhost:4000"
 echo ""
 echo "Press Ctrl+C to stop all services"

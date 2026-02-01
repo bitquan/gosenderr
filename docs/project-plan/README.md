@@ -1,5 +1,7 @@
 # GoSenderr v2 - Project Planning Documentation
 
+> **Status:** ✅ **Ready for implementation** — _Reviewed Jan 30, 2026_
+
 **Complete reorganization plan for building GoSenderr v2**
 
 This directory contains comprehensive planning documentation for the GoSenderr v2 project reorganization. These documents serve as the **single source of truth** for development - no code changes required, only documentation.
@@ -267,7 +269,7 @@ cd apps/admin-desktop
 
 ### Documentation Links
 - [Electron Docs](https://www.electronjs.org/docs)
-- [React Native Docs](https://reactnative.dev/docs)
+- [React Native Docs](https://reactnative.dev)
 - [Capacitor Docs](https://capacitorjs.com/docs)
 - [Firebase Docs](https://firebase.google.com/docs)
 - [Mapbox Docs](https://docs.mapbox.com/)

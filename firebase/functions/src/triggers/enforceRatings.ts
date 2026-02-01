@@ -22,7 +22,12 @@ export const enforceRatings = functions.firestore
     const ratingData = snapshot.data();
     const ratingId = context.params.ratingId;
 
-    const {toUserId, role, stars} = ratingData;
+    const {toUserId, role, stars, type} = ratingData;
+
+    if (type === "marketplace") {
+      console.log(`Rating ${ratingId}: marketplace rating ignored by enforceRatings`);
+      return null;
+    }
 
     if (!toUserId || !role || !stars) {
       console.error(`Rating ${ratingId}: Missing required fields`);

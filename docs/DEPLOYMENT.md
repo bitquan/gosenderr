@@ -1,9 +1,10 @@
 # Deployment (Draft)
 
 ## Sites and hosting
-- `gosenderr-customer.web.app` — customer app
+- `gosenderr-marketplace.web.app` — marketplace app
 - `gosenderr-courier.web.app` — courier app
-- `gosenderr-admin.web.app` — admin
+- `gosenderr-admin.web.app` — admin app
+- `gosenderr-6773f.web.app` — landing site
 
 ## Deploy steps
 - Build: `pnpm build`

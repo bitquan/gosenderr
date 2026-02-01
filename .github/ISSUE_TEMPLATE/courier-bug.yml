@@ -1,0 +1,59 @@
+name: Courier app bug
+description: Report a bug in the Courier app (web or iOS)
+title: "[Courier Bug]: "
+labels:
+  - bug
+  - courier
+body:
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Web
+        - iOS (Capacitor)
+        - Android (Capacitor)
+    validations:
+      required: true
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      options:
+        - Production
+        - Staging
+        - Local dev
+    validations:
+      required: true
+  - type: input
+    id: build
+    attributes:
+      label: App version / build
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      render: shell
+  - type: input
+    id: device
+    attributes:
+      label: Device / OS
+      placeholder: iPhone 15 iOS 17.3, Pixel 8 Android 14

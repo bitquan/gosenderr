@@ -14,8 +14,8 @@ interface MarketplaceItem {
   condition: string
   images: string[]
   stock: number
-  vendorId: string
-  vendorName: string
+  sellerId: string
+  sellerName: string
   status: string
   featured: boolean
   createdAt?: any
@@ -94,7 +94,7 @@ export default function AdminMarketplacePage() {
     const matchesFilter = filter === 'all' || item.status === filter
     const matchesSearch = !searchQuery || 
       item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.vendorName.toLowerCase().includes(searchQuery.toLowerCase())
+      item.sellerName.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory
     return matchesFilter && matchesSearch && matchesCategory
   })
@@ -163,7 +163,7 @@ export default function AdminMarketplacePage() {
         <div className="bg-white rounded-2xl shadow-lg p-4 flex gap-4 flex-wrap">
           <input
             type="text"
-            placeholder="Search by title or vendor..."
+            placeholder="Search by title or seller..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="flex-1 min-w-[250px] px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -229,7 +229,7 @@ export default function AdminMarketplacePage() {
                       <div className="flex items-start justify-between mb-2">
                         <div>
                           <h3 className="text-lg font-semibold text-gray-900">{item.title}</h3>
-                          <p className="text-sm text-gray-600">by {item.vendorName}</p>
+                          <p className="text-sm text-gray-600">by {item.sellerName}</p>
                         </div>
                         <div className="flex items-center gap-2">
                           {item.featured && (

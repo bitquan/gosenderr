@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { createUserWithEmailAndPassword } from 'firebase/auth'
 import { doc, setDoc } from 'firebase/firestore'
-import { auth, db } from '../lib/firebase'
+import { signUpWithEmail, db } from '../lib/firebase'
 
 export default function SignupPage() {
   const [email, setEmail] = useState('')
@@ -32,11 +31,11 @@ export default function SignupPage() {
     setLoading(true)
 
     try {
-      if (!auth || !db) throw new Error('Firebase not initialized')
+      if (!db) throw new Error('Firebase not initialized')
 
       console.log('📝 Creating user account with email:', email)
       // Create user account
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+      const userCredential = await signUpWithEmail(email, password)
       const user = userCredential.user
       console.log('✅ User account created:', user.uid)
 

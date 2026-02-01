@@ -22,6 +22,7 @@ export function useFeatureFlags() {
               enabled: true,
               itemListings: true,
               combinedPayments: true,
+              courierOffers: false,
             },
             delivery: {
               onDemand: true,
@@ -56,6 +57,7 @@ export function useFeatureFlags() {
               disputeManagement: true,
               analytics: true,
               featureFlagsControl: true,
+              webPortalEnabled: false,
             },
             advanced: {
               pushNotifications: true,

@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { signInWithEmailAndPassword } from 'firebase/auth'
-import { auth } from '../lib/firebase'
+import { signInWithEmail } from '../lib/firebase'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -16,8 +15,7 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      if (!auth) throw new Error('Firebase not initialized')
-      await signInWithEmailAndPassword(auth, email, password)
+      await signInWithEmail(email, password)
       navigate('/dashboard')
     } catch (err: any) {
       setError(err.message || 'Failed to sign in')

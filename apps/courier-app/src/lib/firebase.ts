@@ -1,6 +1,14 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app'
 import { getFirestore, Firestore } from 'firebase/firestore'
-import { getAuth, Auth, indexedDBLocalPersistence, initializeAuth } from 'firebase/auth'
+import {
+  getAuth,
+  Auth,
+  indexedDBLocalPersistence,
+  initializeAuth,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut as firebaseSignOut,
+} from 'firebase/auth'
 import { getStorage, FirebaseStorage } from 'firebase/storage'
 import { getFunctions, Functions } from 'firebase/functions'
 import { Capacitor } from '@capacitor/core'
@@ -54,3 +62,20 @@ export const auth = authInstance as Auth
 export const storage = storageInstance as FirebaseStorage
 export const functions = functionsInstance as Functions
 export const isFirebaseReady = () => !!dbInstance
+
+export const getAuthSafe = () => authInstance ?? null
+
+export async function signInWithEmail(email: string, password: string) {
+  if (!authInstance) throw new Error('Firebase Auth not initialized')
+  return signInWithEmailAndPassword(authInstance, email, password)
+}
+
+export async function signUpWithEmail(email: string, password: string) {
+  if (!authInstance) throw new Error('Firebase Auth not initialized')
+  return createUserWithEmailAndPassword(authInstance, email, password)
+}
+
+export async function signOut() {
+  if (!authInstance) throw new Error('Firebase Auth not initialized')
+  return firebaseSignOut(authInstance)
+}

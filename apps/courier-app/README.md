@@ -2,7 +2,7 @@
 
 ## 🚚 Access Courier Portal
 
-**Local Development Server:** http://localhost:3001
+**Local Development Server:** http://localhost:5174
 
 Already running in your terminal!
 
@@ -13,11 +13,11 @@ Already running in your terminal!
 ### Option 1: Create New Courier Account
 1. Open http://localhost:3001
 2. You'll see the login page
-3. Use the same email/password you used for customer app
+3. Use the same email/password you used for marketplace app
 4. The system will use your existing account
 
 ### Option 2: Use Existing Account
-- Use the same credentials from customer app
+- Use the same credentials from marketplace app
 - The auth is shared across both portals
 
 ---
@@ -52,7 +52,7 @@ pnpm build
 \`\`\`
 
 ### Port
-- Default: 3001 (auto-selected if 3000 is in use)
+- Default: 5174
 - Hot reload enabled ⚡
 
 ---
@@ -86,5 +86,5 @@ apps/courier-app/
 
 ## 📱 Related Apps
 
-- **Customer App (Deployed)**: https://gosenderr-6773f.web.app
-- **Customer App (Local)**: Run \`pnpm dev\` in \`apps/customer-app\`
+- **Marketplace App (Deployed)**: https://gosenderr-marketplace.web.app
+- **Marketplace App (Local)**: Run \`pnpm dev\` in \`apps/marketplace-app\`

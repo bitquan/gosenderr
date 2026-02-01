@@ -1,15 +1,5 @@
 import * as functions from 'firebase-functions/v2';
-import Stripe from 'stripe';
-
-function getStripe() {
-  const apiKey = process.env.STRIPE_SECRET_KEY;
-  if (!apiKey) {
-    throw new Error('STRIPE_SECRET_KEY not configured');
-  }
-  return new Stripe(apiKey, {
-    apiVersion: '2025-02-24.acacia',
-  });
-}
+import { getStripeClient } from './stripeSecrets';
 
 interface MarketplaceCheckoutData {
   itemTitle: string;
@@ -68,7 +58,7 @@ export const marketplaceCheckout = functions.https.onCall<MarketplaceCheckoutDat
       courierStripeAccountId && courierStripeAccountId.startsWith('acct_');
 
     try {
-      const stripe = getStripe();
+      const stripe = await getStripeClient();
       if (hasCourierStripe) {
         // 3-WAY SPLIT: Vendor + Courier + Platform
         const session = await stripe.checkout.sessions.create({

@@ -4,11 +4,16 @@ import { useNavigate } from "react-router-dom";
 import { createStripeConnectLink } from "@/lib/cloudFunctions";
 import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { getAuthSafe } from "@/lib/firebase/auth";
+import { getAuthSafe } from "@/lib/firebase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 
 interface CourierProfile {
   stripeConnectAccountId?: string;
+  stripeChargesEnabled?: boolean;
+  stripePayoutsEnabled?: boolean;
+  stripeRequirementsDue?: string[];
+  stripeRequirementsPastDue?: string[];
+  stripeAccountStatus?: string;
   status?: string;
 }
 
@@ -70,6 +75,7 @@ export default function CourierStripeOnboardingPage() {
       if (!courierProfile?.stripeConnectAccountId) {
         await updateDoc(doc(db, "users", userId), {
           "courierProfile.stripeConnectAccountId": data.accountId,
+          "courierProfile.stripeAccountId": data.accountId,
           updatedAt: serverTimestamp(),
         });
         setCourierProfile({
@@ -104,6 +110,11 @@ export default function CourierStripeOnboardingPage() {
   }
 
   const hasStripeAccount = !!courierProfile?.stripeConnectAccountId;
+  const chargesEnabled = Boolean(courierProfile?.stripeChargesEnabled);
+  const payoutsEnabled = Boolean(courierProfile?.stripePayoutsEnabled);
+  const requirementsDue = courierProfile?.stripeRequirementsDue || [];
+  const requirementsPastDue = courierProfile?.stripeRequirementsPastDue || [];
+  const isVerified = chargesEnabled && payoutsEnabled;
 
   return (
     <div className="min-h-screen bg-[#F8F9FF] px-6 py-10">
@@ -132,9 +143,20 @@ export default function CourierStripeOnboardingPage() {
               </div>
 
               {hasStripeAccount ? (
-                <div className="rounded-xl bg-green-50 border border-green-200 p-4 text-sm text-green-700">
-                  ✅ Stripe account connected! You're all set to receive
-                  payments.
+                <div className="rounded-xl bg-green-50 border border-green-200 p-4 text-sm text-green-700 space-y-2">
+                  <div>
+                    {isVerified
+                      ? "✅ Stripe account connected! You're all set to receive payments."
+                      : "⚠️ Stripe account connected, but onboarding is incomplete."}
+                  </div>
+                  <div className="text-xs text-green-700">
+                    Charges: {chargesEnabled ? "Enabled" : "Disabled"} • Payouts: {payoutsEnabled ? "Enabled" : "Disabled"}
+                  </div>
+                  {(requirementsDue.length > 0 || requirementsPastDue.length > 0) && (
+                    <div className="text-xs text-green-700">
+                      Requirements due: {requirementsDue.length} • Past due: {requirementsPastDue.length}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="rounded-xl bg-yellow-50 border border-yellow-200 p-4 text-sm text-yellow-800">

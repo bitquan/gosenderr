@@ -9,7 +9,7 @@ interface Dispute {
   jobId?: string
   userId: string
   userEmail: string
-  userRole?: 'customer' | 'courier' | 'vendor'
+  userRole?: 'customer' | 'courier' | 'seller'
   reason: string
   description: string
   status: 'open' | 'reviewing' | 'resolved' | 'closed'

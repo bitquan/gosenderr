@@ -5,7 +5,7 @@ import { PackageRateCardBuilder } from "@/components/v2/PackageRateCardBuilder";
 import { FoodRateCardBuilder } from "@/components/v2/FoodRateCardBuilder";
 import { PackageRateCard, FoodRateCard } from "@gosenderr/shared";
 import { db } from "@/lib/firebase";
-import { getAuthSafe } from "@/lib/firebase/auth";
+import { getAuthSafe } from "@/lib/firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
@@ -125,7 +125,7 @@ export default function RateCardsPage() {
 
   if (mode === "edit-package") {
     return (
-      <div className="fixed inset-0 w-screen h-screen overflow-y-auto pb-24 safe-top bg-white">
+      <div className="min-h-screen bg-white">
         <PackageRateCardBuilder
           currentRateCard={packageRateCard || undefined}
           onSave={handleSavePackageRateCard}
@@ -145,7 +145,7 @@ export default function RateCardsPage() {
 
   if (mode === "edit-food") {
     return (
-      <div className="fixed inset-0 w-screen h-screen overflow-y-auto pb-24 safe-top bg-white">
+      <div className="min-h-screen bg-white">
         <FoodRateCardBuilder
           currentRateCard={foodRateCard || undefined}
           onSave={handleSaveFoodRateCard}
@@ -167,7 +167,7 @@ export default function RateCardsPage() {
 
 
   return (
-    <div className="fixed inset-0 w-screen h-screen overflow-y-auto pb-24 safe-top bg-[#F8F9FF]">
+    <div className="min-h-screen bg-[#F8F9FF]">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-6">
         {/* Header */}
         <div className="space-y-2">

@@ -8,9 +8,20 @@
 
 ## 📋 Overview
 
-Transform the existing `apps/customer-app` (Vite + React) into a unified marketplace application where users can both buy AND sell items. Implement a single user model with role-based permissions, then wrap with Capacitor for native iOS deployment.
+Build on the existing `apps/marketplace-app` (Vite + React) as the unified marketplace application where users can both buy AND sell items. Implement a single user model with role-based permissions, then wrap with Capacitor for native iOS deployment.
 
 **Core Principle:** One account, multiple capabilities. Every user can browse, buy, and sell.
+
+**Feature Flag Requirement:** All new Phase 2 features must ship behind feature flags for safe rollout and instant rollback.
+
+**Recommended Flags (create in admin UI):**
+- `marketplace_v2` (master switch)
+- `seller_portal_v2` (seller dashboard + listings)
+- `listing_create_v1`
+- `checkout_v2`
+- `messaging_v1`
+- `ratings_v1`
+- `profile_v2`
 
 ---
 
@@ -248,6 +259,24 @@ apps/marketplace-app/
 │   └── assets/
 └── package.json
 ```
+
+### Routing & Navigation
+
+**Public routes:**
+- `/` → Marketplace home
+- `/marketplace` and `/marketplace/:itemId`
+
+**Seller routes (protected):**
+- `/seller/apply`
+- `/seller/dashboard`
+- `/seller/items/new`
+- `/seller/items/:itemId/edit`
+- `/seller/orders`
+
+**Profile routes (protected):**
+- `/profile/listings`
+- `/profile/seller-settings`
+- `/profile/stripe-onboarding`
 
 ---
 
@@ -1071,10 +1100,10 @@ export function usePushNotifications() {
 4. Write security rules for marketplace collections
 
 **Afternoon (4 hours):**
-5. Implement user profile enhancement (seller profile)
-6. Create migration script for existing users
-7. Test user model with Firebase Auth
-8. Create seed data for development
+5. Create feature flags in Firestore and admin UI
+6. Implement user profile enhancement (seller profile auto-create)
+7. Create migration script for existing users (sellerId + sellerProfile)
+8. Test user model + flags with Firebase Auth and seed data
 
 **Deliverable:** Database schema complete, user model working
 
@@ -1362,6 +1391,22 @@ onSnapshot(query, (snapshot) => {
    ↓
 14. Receive payout
 ```
+
+---
+
+## 🚦 Feature Flags & Rollout Plan
+
+1. **Deploy code with flags off** (`marketplace_v2=false`)
+2. **Create flags in admin UI** with clear descriptions
+3. **Enable for internal admins only** (test cohort)
+4. **Gradual rollout** (10% → 25% → 50% → 100%)
+5. **Monitor logs and support tickets** during rollout
+6. **Rollback instantly** by toggling flags off if issues arise
+
+**Minimum kill switches:**
+- `marketplace_v2`
+- `seller_portal_v2`
+- `checkout_v2`
 
 ---
 

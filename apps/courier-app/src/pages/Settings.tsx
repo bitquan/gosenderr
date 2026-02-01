@@ -1,4 +1,4 @@
-import { auth } from '../lib/firebase'
+import { signOut } from '../lib/firebase'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardHeader, CardTitle, CardContent } from '../components/Card'
 import { useAdmin } from '../hooks/useAdmin'
@@ -10,7 +10,7 @@ export default function SettingsPage() {
   const handleSignOut = async () => {
     if (!window.confirm('Sign out of your account?')) return
     try {
-      await auth.signOut()
+      await signOut()
       navigate('/login')
     } catch (error) {
       console.error('Error signing out:', error)
