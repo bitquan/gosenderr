@@ -24,7 +24,7 @@ export default function CourierRoutesPage() {
   } = useRoutes({ status: "available" });
   const { flags, loading: flagsLoading } = useFeatureFlags();
   const { userDoc, loading: userLoading } = useUserDoc();
-  const courierStatus = userDoc?.courierProfile?.status || "none";
+  const courierStatus = (userDoc?.courierProfile as any)?.status || "none";
   const isApproved = courierStatus === "approved";
 
   useEffect(() => {

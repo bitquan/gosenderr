@@ -21,9 +21,9 @@ export default function CourierDashboardMobile() {
 
   const courierLocation = userDoc?.courierProfile?.currentLocation || null;
   const transportMode = userDoc?.courierProfile?.vehicleType || "car";
-  const courierStatus = userDoc?.courierProfile?.status || "none";
+  const courierStatus = (userDoc?.courierProfile as any)?.status || "none";
   const isApproved = courierStatus === "approved";
-  const rejectionReason = userDoc?.courierProfile?.rejectionReason || null;
+  const rejectionReason = (userDoc?.courierProfile as any)?.rejectionReason || null;
 
   const activeJobs = useMemo(() => {
     return jobs.filter(
