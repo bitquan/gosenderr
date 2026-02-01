@@ -1,0 +1,84 @@
+name: Incident report
+description: Report production incidents or outages
+title: "[Incident]: "
+labels:
+  - type:security
+  - env:prod
+body:
+  - type: input
+    id: start-time
+    attributes:
+      label: Start time (UTC)
+      placeholder: 2026-01-31 12:34 UTC
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - SEV-1 (Critical)
+        - SEV-2 (High)
+        - SEV-3 (Medium)
+        - SEV-4 (Low)
+    validations:
+      required: true
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Impacted area
+      options:
+        - Admin app
+        - Admin desktop
+        - Courier app
+        - Marketplace app
+        - Vendor app
+        - Landing/marketing
+        - Web app
+        - Firebase backend
+        - Shared packages
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact
+      description: Users affected, duration, and scope.
+    validations:
+      required: true
+  - type: textarea
+    id: timeline
+    attributes:
+      label: Timeline (UTC)
+      description: Key events with timestamps.
+      placeholder: |
+        - 12:34 Detected...
+        - 12:40 Mitigation started...
+    validations:
+      required: true
+  - type: textarea
+    id: mitigation
+    attributes:
+      label: Mitigation / resolution
+    validations:
+      required: true
+  - type: textarea
+    id: root-cause
+    attributes:
+      label: Suspected root cause
+    validations:
+      required: true
+  - type: textarea
+    id: follow-ups
+    attributes:
+      label: Follow-up actions
+      placeholder: |
+        - [ ] ...
+    validations:
+      required: true
