@@ -6,6 +6,8 @@ import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { marketplaceService } from "@/services/marketplace.service";
 import { DeliveryOption, ItemCategory, ItemCondition } from "@/types/marketplace";
 import { Card, CardContent } from "@/components/ui/Card";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase/client";
 
 export default function NewSellerItem() {
   const navigate = useNavigate();
@@ -13,6 +15,9 @@ export default function NewSellerItem() {
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [sellerStatus, setSellerStatus] = useState<"none" | "pending" | "approved" | "rejected">("none");
+  const [sellerRejectionReason, setSellerRejectionReason] = useState<string | null>(null);
+  const [sellerStatusLoading, setSellerStatusLoading] = useState(true);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -80,6 +85,42 @@ export default function NewSellerItem() {
     };
   }, [images]);
 
+  useEffect(() => {
+    const loadSellerStatus = async () => {
+      if (!uid) {
+        setSellerStatusLoading(false);
+        return;
+      }
+
+      try {
+        const userSnap = await getDoc(doc(db, "users", uid));
+        const userData = userSnap.data();
+        const roles = Array.isArray(userData?.roles) ? userData.roles : [];
+        const hasSellerRole = userData?.role === "seller" || roles.includes("seller");
+
+        if (hasSellerRole || userData?.sellerApplication?.status === "approved") {
+          setSellerStatus("approved");
+          setSellerRejectionReason(null);
+        } else if (userData?.sellerApplication?.status === "pending") {
+          setSellerStatus("pending");
+          setSellerRejectionReason(null);
+        } else if (userData?.sellerApplication?.status === "rejected") {
+          setSellerStatus("rejected");
+          setSellerRejectionReason(userData?.sellerApplication?.rejectionReason || null);
+        } else {
+          setSellerStatus("none");
+          setSellerRejectionReason(null);
+        }
+      } catch (error) {
+        console.error("Failed to load seller status:", error);
+      } finally {
+        setSellerStatusLoading(false);
+      }
+    };
+
+    loadSellerStatus();
+  }, [uid]);
+
   const uploadImages = async (): Promise<string[]> => {
     const imageUrls: string[] = [];
 
@@ -100,6 +141,11 @@ export default function NewSellerItem() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!uid) return;
+
+    if (sellerStatus !== "approved") {
+      alert("Your seller application must be approved before creating listings.");
+      return;
+    }
 
     setLoading(true);
     try {
@@ -129,6 +175,58 @@ export default function NewSellerItem() {
       setLoading(false);
     }
   };
+
+  if (sellerStatusLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-600">Checking seller status...</div>
+      </div>
+    );
+  }
+
+  if (sellerStatus !== "approved") {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+        <Card>
+          <CardContent className="p-8 text-center">
+            <div className="text-5xl mb-4">🏪</div>
+            {sellerStatus === "pending" && (
+              <>
+                <h2 className="text-2xl font-bold mb-2">Seller Application Pending</h2>
+                <p className="text-gray-600">Your application is under review.</p>
+              </>
+            )}
+            {sellerStatus === "rejected" && (
+              <>
+                <h2 className="text-2xl font-bold mb-2">Application Rejected</h2>
+                <p className="text-gray-600 mb-4">
+                  {sellerRejectionReason || "Your application was not approved. Please resubmit."}
+                </p>
+                <button
+                  onClick={() => navigate("/seller/apply")}
+                  className="px-6 py-3 bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-xl font-semibold"
+                >
+                  Resubmit Application
+                </button>
+              </>
+            )}
+            {sellerStatus === "none" && (
+              <>
+                <h2 className="text-2xl font-bold mb-2">Apply to Become a Seller</h2>
+                <p className="text-gray-600 mb-4">Complete the seller application to list items.</p>
+                <button
+                  onClick={() => navigate("/seller/apply")}
+                  className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl font-semibold"
+                >
+                  Apply Now
+                </button>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24">

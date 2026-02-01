@@ -64,16 +64,13 @@ export default function RequestDeliveryPage() {
   const [selectedCourier, setSelectedCourier] =
     useState<CourierWithRate | null>(null);
   const [searchingCouriers, setSearchingCouriers] = useState(false);
+  const [showTabs, setShowTabs] = useState(false);
 
-  // Step 1: Load item from URL params
+  // Step 1: Load item from URL params (optional)
   useEffect(() => {
     const id = searchParams?.get("itemId");
-    if (!id) {
-      navigate("/marketplace");
-      return;
-    }
     setItemId(id);
-  }, [navigate, searchParams]);
+  }, [searchParams]);
 
   useEffect(() => {
     if (!itemId) return;
@@ -295,6 +292,80 @@ export default function RequestDeliveryPage() {
     return null;
   }
 
+  if (!itemId) {
+    return (
+      <div className="min-h-screen bg-[#F8F9FF] pb-24">
+        <div className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] rounded-b-[32px] p-6 text-white shadow-lg">
+          <div className="max-w-4xl mx-auto">
+            <h1 className="text-2xl font-bold">Request a Delivery</h1>
+            <p className="text-purple-100 text-sm">
+              Choose a marketplace item or create a custom send.
+            </p>
+          </div>
+        </div>
+
+        <div className="max-w-4xl mx-auto px-6 -mt-8 space-y-6">
+          <div className="md:hidden flex items-center justify-between">
+            <button
+              onClick={() => setShowTabs((prev) => !prev)}
+              className="inline-flex items-center gap-2 rounded-xl bg-white/90 px-3 py-2 text-sm font-semibold text-gray-700 shadow border border-gray-100"
+            >
+              <span className="text-lg">☰</span>
+              Delivery Options
+            </button>
+          </div>
+          <div className={`bg-white rounded-2xl shadow-lg p-2 flex gap-2 ${showTabs ? 'flex' : 'hidden'} md:flex`}>
+            <button
+              className="flex-1 py-3 px-4 rounded-xl font-semibold text-gray-600 hover:bg-gray-50 transition-all"
+              onClick={() => navigate('/marketplace')}
+            >
+              Marketplace Item
+            </button>
+            <button
+              className="flex-1 py-3 px-4 rounded-xl font-semibold bg-green-600 text-white shadow-md"
+              onClick={() => navigate('/jobs/new')}
+            >
+              Custom Send
+            </button>
+          </div>
+          <Card variant="elevated">
+            <CardHeader>
+              <CardTitle>Marketplace Delivery</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-600 mb-4">
+                Pick an item from the marketplace and request delivery from a seller.
+              </p>
+              <button
+                onClick={() => navigate("/marketplace")}
+                className="px-6 py-3 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-700"
+              >
+                Browse Marketplace
+              </button>
+            </CardContent>
+          </Card>
+
+          <Card variant="elevated">
+            <CardHeader>
+              <CardTitle>Custom Delivery</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-600 mb-4">
+                Send anything that isn’t listed in the marketplace. Enter pickup and dropoff details.
+              </p>
+              <button
+                onClick={() => navigate("/jobs/new")}
+                className="px-6 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700"
+              >
+                Create Custom Send
+              </button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center">
@@ -310,7 +381,7 @@ export default function RequestDeliveryPage() {
     return (
       <NotFoundPage
         title={error || "Item not found"}
-        description="Please choose another item to deliver."
+        description="Please choose another item to deliver or create a custom send."
         actionHref="/marketplace"
         actionLabel="Back to Marketplace"
         emoji="📦"
@@ -351,6 +422,29 @@ export default function RequestDeliveryPage() {
       </div>
 
       <div className="max-w-4xl mx-auto px-6 -mt-8 space-y-6">
+        <div className="md:hidden flex items-center justify-between">
+          <button
+            onClick={() => setShowTabs((prev) => !prev)}
+            className="inline-flex items-center gap-2 rounded-xl bg-white/90 px-3 py-2 text-sm font-semibold text-gray-700 shadow border border-gray-100"
+          >
+            <span className="text-lg">☰</span>
+            Delivery Options
+          </button>
+        </div>
+        <div className={`bg-white rounded-2xl shadow-lg p-2 flex gap-2 ${showTabs ? 'flex' : 'hidden'} md:flex`}>
+          <button
+            className="flex-1 py-3 px-4 rounded-xl font-semibold bg-purple-600 text-white shadow-md"
+            onClick={() => navigate(`/request-delivery?itemId=${itemId}`)}
+          >
+            Marketplace Item
+          </button>
+          <button
+            className="flex-1 py-3 px-4 rounded-xl font-semibold text-gray-600 hover:bg-gray-50 transition-all"
+            onClick={() => navigate('/jobs/new')}
+          >
+            Custom Send
+          </button>
+        </div>
         {/* Step 1: Item Summary */}
         <Card variant="elevated" className="animate-fade-in">
           <CardHeader>

@@ -400,6 +400,12 @@ export default function AdminDashboardPage() {
                 <p className="text-sm text-gray-600">Review courier applications</p>
               </Link>
 
+              <Link to="/seller-approval" className="p-6 bg-gradient-to-br from-indigo-50 to-purple-100 border-2 border-indigo-200 rounded-xl hover:shadow-lg transition-all text-center">
+                <div className="text-4xl mb-3">🏪</div>
+                <h3 className="font-bold text-gray-900 mb-1">Seller Approval</h3>
+                <p className="text-sm text-gray-600">Review seller applications</p>
+              </Link>
+
               <Link to="/revenue" className="p-6 bg-gradient-to-br from-emerald-50 to-emerald-100 border-2 border-emerald-200 rounded-xl hover:shadow-lg transition-all text-center">
                 <div className="text-4xl mb-3">💰</div>
                 <h3 className="font-bold text-gray-900 mb-1">Revenue</h3>

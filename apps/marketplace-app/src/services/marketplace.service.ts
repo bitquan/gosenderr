@@ -147,6 +147,15 @@ export class MarketplaceService {
     }
     
     const userData = userSnap.data();
+
+    const roles = Array.isArray(userData?.roles) ? userData.roles : [];
+    const hasSellerRole = userData?.role === 'seller' || roles.includes('seller');
+    const sellerApprovalStatus = userData?.sellerApplication?.status || userData?.sellerProfile?.status;
+    const sellerApproved = hasSellerRole || sellerApprovalStatus === 'approved' || userData?.sellerProfile?.isActive === true;
+
+    if (!sellerApproved) {
+      throw new Error('Seller application must be approved before creating listings');
+    }
     
     // Create listing
     const normalizeUrl = (url: string) => {

@@ -184,6 +184,11 @@ function App() {
                 <ScheduledDeliveriesPage />
               </RoleGuard>
             } />
+            <Route path="/jobs/new" element={
+              <RoleGuard allowedRoles={['customer', 'buyer']}>
+                <NewJobPage />
+              </RoleGuard>
+            } />
             
             {/* Seller Routes */}
             <Route path="/seller/apply" element={

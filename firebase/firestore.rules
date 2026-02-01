@@ -711,10 +711,11 @@ service cloud.firestore {
         && request.auth.uid == userId
         && request.resource.data.status == 'pending';
       
-      // Users can update their pending application
+      // Users can update their pending application or resubmit after rejection
       allow update: if signedIn() 
         && request.auth.uid == userId
-        && resource.data.status == 'pending';
+        && request.resource.data.status == 'pending'
+        && resource.data.status in ['pending', 'rejected'];
       
       // Admins can read and update all applications
       allow read, update: if isAdmin();

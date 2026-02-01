@@ -11,7 +11,8 @@ import { getAuthSafe } from "@/lib/firebase/auth";
 export default function CustomerSettingsPage() {
   const navigate = useNavigate();
   const { user, loading, uid } = useAuthUser();
-  const [sellerStatus, setSellerStatus] = useState<"none" | "pending" | "approved">("none");
+  const [sellerStatus, setSellerStatus] = useState<"none" | "pending" | "approved" | "rejected">("none");
+  const [sellerRejectionReason, setSellerRejectionReason] = useState<string | null>(null);
 
   const handleSignOut = async () => {
     try {
@@ -32,10 +33,18 @@ export default function CustomerSettingsPage() {
       const userDoc = await getDoc(doc(db, `users/${uid}`));
       const userData = userDoc.data();
       
-      if (userData?.isSeller === true || userData?.sellerApplication?.status === "approved") {
+      const roles = Array.isArray(userData?.roles) ? userData.roles : [];
+      const hasSellerRole = userData?.role === "seller" || roles.includes("seller") || userData?.isSeller === true;
+
+      if (hasSellerRole || userData?.sellerApplication?.status === "approved") {
         setSellerStatus("approved");
+        setSellerRejectionReason(null);
       } else if (userData?.sellerApplication?.status === "pending") {
         setSellerStatus("pending");
+        setSellerRejectionReason(null);
+      } else if (userData?.sellerApplication?.status === "rejected") {
+        setSellerStatus("rejected");
+        setSellerRejectionReason(userData?.sellerApplication?.rejectionReason || null);
       }
     };
     
@@ -177,6 +186,30 @@ export default function CustomerSettingsPage() {
                   <p className="text-gray-600">
                     We're reviewing your application. You'll receive an email within 24 hours.
                   </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {sellerStatus === "rejected" && (
+          <Card variant="elevated" className="border-2 border-red-200 bg-red-50">
+            <CardContent className="p-6">
+              <div className="flex items-start gap-4">
+                <div className="text-5xl">⚠️</div>
+                <div className="flex-1">
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">
+                    Seller Application Rejected
+                  </h3>
+                  <p className="text-gray-600 mb-3">
+                    {sellerRejectionReason || "Your application was not approved. Please review and resubmit."}
+                  </p>
+                  <Link
+                    to="/seller/apply"
+                    className="inline-block px-6 py-3 bg-gradient-to-r from-red-500 to-orange-500 text-white font-semibold rounded-xl hover:shadow-lg transition-all"
+                  >
+                    Resubmit Application
+                  </Link>
                 </div>
               </div>
             </CardContent>

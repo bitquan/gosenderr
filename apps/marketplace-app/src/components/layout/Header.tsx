@@ -1,4 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom'
+import { useState } from 'react'
 import { useAuth } from '../../hooks/useAuth'
 import { useRole } from '../../hooks/useRole'
 import { useCart } from '../../contexts/CartContext'
@@ -12,6 +13,7 @@ export function Header() {
   const { user, loading } = useAuth()
   const { roles, primaryRole } = useRole()
   const navigate = useNavigate()
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   
   // Safety check for cart context (handles HMR edge cases)
   let cart
@@ -82,6 +84,16 @@ export function Header() {
 
           {/* Right side - Cart & Auth */}
           <div className="flex items-center space-x-4">
+            {/* Mobile menu toggle */}
+            {user && (
+              <button
+                onClick={() => setMobileMenuOpen((prev) => !prev)}
+                className="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 text-gray-700"
+                aria-label="Open navigation"
+              >
+                ☰
+              </button>
+            )}
             {/* Shopping Cart */}
             <button
               onClick={openCart}
@@ -138,6 +150,33 @@ export function Header() {
           </div>
         </div>
       </div>
+      {user && (
+        <div className={`md:hidden px-4 pb-3 ${mobileMenuOpen ? 'block' : 'hidden'}`}>
+          <div className="rounded-2xl bg-white shadow-lg border border-gray-100 p-3 space-y-2">
+            <Link
+              to="/marketplace"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block w-full rounded-xl px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+            >
+              Marketplace Items
+            </Link>
+            <Link
+              to="/jobs/new"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block w-full rounded-xl px-4 py-3 text-sm font-semibold text-green-700 hover:bg-green-50"
+            >
+              Custom Send
+            </Link>
+            <Link
+              to="/request-delivery"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block w-full rounded-xl px-4 py-3 text-sm font-semibold text-purple-700 hover:bg-purple-50"
+            >
+              Delivery Options
+            </Link>
+          </div>
+        </div>
+      )}
     </header>
   )
 }

@@ -1,26 +1,58 @@
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { db, storage } from "@/lib/firebase";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
+import { useUserDoc } from "@/hooks/v2/useUserDoc";
 import { PackageRateCardBuilder } from "@/components/v2/PackageRateCardBuilder";
 import { FoodRateCardBuilder } from "@/components/v2/FoodRateCardBuilder";
 import { LoadingState } from "@gosenderr/ui";
 import { PackageRateCard, FoodRateCard } from "@gosenderr/shared";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 type VehicleType = "foot" | "bike" | "scooter" | "car" | "van" | "truck";
-type Step = 1 | 2 | 3 | 4 | 5;
+type Step = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 
 export default function CourierOnboarding() {
   const { uid, loading: authLoading } = useAuthUser();
+  const { userDoc, loading: userLoading } = useUserDoc();
   const navigate = useNavigate();
   const [step, setStep] = useState<Step>(1);
   const [submitting, setSubmitting] = useState(false);
+  const [statusLoading, setStatusLoading] = useState(true);
+  const [courierStatus, setCourierStatus] = useState<string | null>(null);
+  const [rejectionReason, setRejectionReason] = useState<string | null>(null);
 
   // Step 1: Vehicle Type
   const [vehicleType, setVehicleType] = useState<VehicleType>("car");
   const [serviceRadius, setServiceRadius] = useState(15);
+
+  // Step 2: Identity & Contact
+  const [legalName, setLegalName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
+
+  // Step 3: Vehicle Details
+  const [vehicleMake, setVehicleMake] = useState("");
+  const [vehicleModel, setVehicleModel] = useState("");
+  const [vehicleYear, setVehicleYear] = useState("");
+  const [licensePlate, setLicensePlate] = useState("");
+
+  // Step 4: Insurance
+  const [insuranceProvider, setInsuranceProvider] = useState("");
+  const [policyNumber, setPolicyNumber] = useState("");
+  const [policyExpiresAt, setPolicyExpiresAt] = useState("");
+
+  const [documents, setDocuments] = useState<{
+    governmentId: File | null;
+    vehicleRegistration: File | null;
+    insurance: File | null;
+  }>({
+    governmentId: null,
+    vehicleRegistration: null,
+    insurance: null,
+  });
 
   // Step 2: Work Modes
   const [packagesEnabled, setPackagesEnabled] = useState(false);
@@ -31,7 +63,26 @@ export default function CourierOnboarding() {
     useState<PackageRateCard | null>(null);
   const [foodRateCard, setFoodRateCard] = useState<FoodRateCard | null>(null);
 
-  if (authLoading) {
+  useEffect(() => {
+    if (authLoading || userLoading) {
+      setStatusLoading(true);
+      return;
+    }
+
+    if (!uid) {
+      setCourierStatus(null);
+      setRejectionReason(null);
+      setStatusLoading(false);
+      return;
+    }
+
+    const profileStatus = userDoc?.courierProfile?.status || null;
+    setCourierStatus(profileStatus);
+    setRejectionReason(userDoc?.courierProfile?.rejectionReason || null);
+    setStatusLoading(false);
+  }, [authLoading, userLoading, uid, userDoc]);
+
+  if (authLoading || userLoading || statusLoading) {
     return <LoadingState fullPage message="Loading your profile..." />;
   }
 
@@ -41,52 +92,128 @@ export default function CourierOnboarding() {
   }
 
   const handleNext = () => {
-    // Validate current step
-    if (step === 2 && !packagesEnabled && !foodEnabled) {
+    if (step === 2) {
+      if (!legalName.trim() || !phone.trim() || !documents.governmentId) {
+        alert("Please provide your legal name, phone, and upload a government ID.");
+        return;
+      }
+    }
+
+    if (step === 3) {
+      if (!vehicleMake.trim() || !vehicleModel.trim() || !vehicleYear.trim() || !licensePlate.trim()) {
+        alert("Please complete your vehicle details.");
+        return;
+      }
+    }
+
+    if (step === 4) {
+      if (!insuranceProvider.trim() || !policyNumber.trim() || !policyExpiresAt.trim() || !documents.insurance) {
+        alert("Please provide your insurance details and upload proof of insurance.");
+        return;
+      }
+    }
+
+    if (step === 5 && !packagesEnabled && !foodEnabled) {
       alert("Please select at least one delivery type");
       return;
     }
 
-    // Skip to appropriate next step
-    if (step === 2) {
+    if (step === 5) {
       if (packagesEnabled) {
-        setStep(3);
-      } else if (foodEnabled) {
-        setStep(4);
+        setStep(6);
+        return;
       }
-    } else if (step === 3) {
       if (foodEnabled) {
-        setStep(4);
-      } else {
-        setStep(5);
+        setStep(7);
+        return;
       }
-    } else if (step === 4) {
-      setStep(5);
-    } else {
-      setStep((step + 1) as Step);
+      setStep(8);
+      return;
     }
+
+    if (step === 6) {
+      if (foodEnabled) {
+        setStep(7);
+        return;
+      }
+      setStep(8);
+      return;
+    }
+
+    if (step === 7) {
+      setStep(8);
+      return;
+    }
+
+    setStep((step + 1) as Step);
   };
 
   const handleBack = () => {
-    if (step === 3 && !packagesEnabled) {
-      setStep(2);
-    } else if (step === 4 && !packagesEnabled) {
-      setStep(2);
-    } else if (step === 5) {
-      if (foodEnabled) {
-        setStep(4);
-      } else if (packagesEnabled) {
-        setStep(3);
-      } else {
-        setStep(2);
-      }
-    } else {
-      setStep((step - 1) as Step);
+    if (step === 8) {
+      if (foodEnabled) return setStep(7);
+      if (packagesEnabled) return setStep(6);
+      return setStep(5);
     }
+    if (step === 7) {
+      if (packagesEnabled) return setStep(6);
+      return setStep(5);
+    }
+    if (step === 6) return setStep(5);
+    if (step === 5) return setStep(4);
+    if (step === 4) return setStep(3);
+    if (step === 3) return setStep(2);
+    if (step === 2) return setStep(1);
+    setStep((step - 1) as Step);
+  };
+
+  const uploadDocuments = async () => {
+    if (!uid) throw new Error("Missing user ID");
+
+    const uploads: Array<{
+      label: string;
+      url: string;
+      name: string;
+      contentType: string;
+      uploadedAt: any;
+    }> = [];
+
+    const files = [
+      { label: "Government ID", file: documents.governmentId },
+      { label: "Vehicle Registration", file: documents.vehicleRegistration },
+      { label: "Insurance", file: documents.insurance },
+    ].filter((item) => Boolean(item.file)) as Array<{ label: string; file: File }>;
+
+    for (const item of files) {
+      const storageRef = ref(
+        storage,
+        `courierDocuments/${uid}/${Date.now()}_${item.file.name}`
+      );
+      await uploadBytes(storageRef, item.file);
+      const url = await getDownloadURL(storageRef);
+      uploads.push({
+        label: item.label,
+        url,
+        name: item.file.name,
+        contentType: item.file.type || "application/octet-stream",
+        uploadedAt: new Date(),
+      });
+    }
+
+    return uploads;
   };
 
   const handleSubmit = async () => {
     if (!uid) return;
+
+    if (courierStatus === "pending") {
+      alert("Your courier application is already pending review.");
+      return;
+    }
+
+    if (courierStatus === "approved") {
+      alert("Your courier profile is already approved.");
+      return;
+    }
 
     setSubmitting(true);
 
@@ -95,16 +222,36 @@ export default function CourierOnboarding() {
       console.log('Package rate card:', packageRateCard);
       console.log('Food rate card:', foodRateCard);
 
+      const uploadedDocs = await uploadDocuments();
+
       const courierProfile: any = {
         vehicleType,
         serviceRadius,
+        phone,
         workModes: {
           packagesEnabled,
           foodEnabled,
         },
+        identity: {
+          legalName,
+          dateOfBirth: dateOfBirth || null,
+        },
+        vehicleDetails: {
+          make: vehicleMake,
+          model: vehicleModel,
+          year: vehicleYear,
+          licensePlate,
+        },
+        insurance: {
+          provider: insuranceProvider,
+          policyNumber,
+          expiresAt: policyExpiresAt,
+        },
+        documents: uploadedDocs,
         status: "pending",
-        createdAt: serverTimestamp(),
+        appliedAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
+        rejectionReason: null,
       };
 
       if (packageRateCard) {
@@ -124,6 +271,7 @@ export default function CourierOnboarding() {
         {
           courierProfile,
           role: "courier",
+          phone,
           updatedAt: serverTimestamp(),
         },
         { merge: true },
@@ -182,23 +330,72 @@ export default function CourierOnboarding() {
             marginBottom: "10px",
           }}
         >
-          {[1, 2, 3, 4, 5].map((s) => (
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((s) => (
             <div
               key={s}
               style={{
                 flex: 1,
                 height: "4px",
                 background: s <= step ? "#3b82f6" : "#e5e7eb",
-                marginRight: s < 5 ? "8px" : 0,
+                marginRight: s < 8 ? "8px" : 0,
                 borderRadius: "2px",
               }}
             />
           ))}
         </div>
         <p style={{ fontSize: "14px", color: "#666", textAlign: "center" }}>
-          Step {step} of 5
+          Step {step} of 8
         </p>
       </div>
+
+      {courierStatus === "approved" && (
+        <div
+          style={{
+            padding: "16px",
+            background: "#ecfdf3",
+            border: "1px solid #a7f3d0",
+            borderRadius: "12px",
+            marginBottom: "20px",
+            color: "#065f46",
+            fontSize: "14px",
+          }}
+        >
+          ✅ Your courier profile is approved. You can start accepting jobs.
+        </div>
+      )}
+
+      {courierStatus === "pending" && (
+        <div
+          style={{
+            padding: "16px",
+            background: "#fef3c7",
+            border: "1px solid #fbbf24",
+            borderRadius: "12px",
+            marginBottom: "20px",
+            color: "#92400e",
+            fontSize: "14px",
+          }}
+        >
+          ⏳ Your courier application is under review.
+        </div>
+      )}
+
+      {courierStatus === "rejected" && (
+        <div
+          style={{
+            padding: "16px",
+            background: "#fee2e2",
+            border: "1px solid #fecaca",
+            borderRadius: "12px",
+            marginBottom: "20px",
+            color: "#991b1b",
+            fontSize: "14px",
+          }}
+        >
+          ❌ Your application was rejected.{" "}
+          {rejectionReason ? `Reason: ${rejectionReason}` : "Please update your details and reapply."}
+        </div>
+      )}
 
       {/* Step 1: Vehicle Type */}
       {step === 1 && (
@@ -295,8 +492,295 @@ export default function CourierOnboarding() {
         </div>
       )}
 
-      {/* Step 2: Work Modes */}
+      {/* Step 2: Identity & Contact */}
       {step === 2 && (
+        <div>
+          <h1 style={{ marginBottom: "10px" }}>Identity Verification</h1>
+          <p style={{ color: "#666", marginBottom: "30px" }}>
+            Provide your legal details and upload a government ID.
+          </p>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "14px", marginBottom: "30px" }}>
+            <div>
+              <label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>
+                Legal Name *
+              </label>
+              <input
+                value={legalName}
+                onChange={(e) => setLegalName(e.target.value)}
+                placeholder="Full legal name"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>
+                Phone Number *
+              </label>
+              <input
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="(555) 555-5555"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>
+                Date of Birth
+              </label>
+              <input
+                type="date"
+                value={dateOfBirth}
+                onChange={(e) => setDateOfBirth(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>
+                Government ID *
+              </label>
+              <input
+                type="file"
+                accept="image/*,application/pdf"
+                onChange={(e) =>
+                  setDocuments({
+                    ...documents,
+                    governmentId: e.target.files?.[0] || null,
+                  })
+                }
+                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+              />
+              {documents.governmentId && (
+                <p className="text-xs text-gray-500 mt-2">
+                  Selected: {documents.governmentId.name}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div style={{ display: "flex", gap: "12px" }}>
+            <button
+              onClick={handleBack}
+              style={{
+                flex: 1,
+                padding: "14px",
+                background: "#f3f4f6",
+                color: "#374151",
+                border: "none",
+                borderRadius: "8px",
+                fontSize: "16px",
+                fontWeight: "600",
+                cursor: "pointer",
+              }}
+            >
+              ← Back
+            </button>
+            <button
+              onClick={handleNext}
+              style={{
+                flex: 2,
+                padding: "14px",
+                background: "#3b82f6",
+                color: "white",
+                border: "none",
+                borderRadius: "8px",
+                fontSize: "16px",
+                fontWeight: "600",
+                cursor: "pointer",
+              }}
+            >
+              Next →
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 3: Vehicle Details */}
+      {step === 3 && (
+        <div>
+          <h1 style={{ marginBottom: "10px" }}>Vehicle Details</h1>
+          <p style={{ color: "#666", marginBottom: "30px" }}>
+            Provide your vehicle details and registration document.
+          </p>
+
+          <div style={{ display: "grid", gap: "14px", marginBottom: "30px" }}>
+            <input
+              value={vehicleMake}
+              onChange={(e) => setVehicleMake(e.target.value)}
+              placeholder="Make (e.g. Toyota)"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <input
+              value={vehicleModel}
+              onChange={(e) => setVehicleModel(e.target.value)}
+              placeholder="Model (e.g. Corolla)"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <input
+              value={vehicleYear}
+              onChange={(e) => setVehicleYear(e.target.value)}
+              placeholder="Year (e.g. 2022)"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <input
+              value={licensePlate}
+              onChange={(e) => setLicensePlate(e.target.value)}
+              placeholder="License Plate"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <div>
+              <label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>
+                Vehicle Registration (Optional)
+              </label>
+              <input
+                type="file"
+                accept="image/*,application/pdf"
+                onChange={(e) =>
+                  setDocuments({
+                    ...documents,
+                    vehicleRegistration: e.target.files?.[0] || null,
+                  })
+                }
+                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+              />
+              {documents.vehicleRegistration && (
+                <p className="text-xs text-gray-500 mt-2">
+                  Selected: {documents.vehicleRegistration.name}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div style={{ display: "flex", gap: "12px" }}>
+            <button
+              onClick={handleBack}
+              style={{
+                flex: 1,
+                padding: "14px",
+                background: "#f3f4f6",
+                color: "#374151",
+                border: "none",
+                borderRadius: "8px",
+                fontSize: "16px",
+                fontWeight: "600",
+                cursor: "pointer",
+              }}
+            >
+              ← Back
+            </button>
+            <button
+              onClick={handleNext}
+              style={{
+                flex: 2,
+                padding: "14px",
+                background: "#3b82f6",
+                color: "white",
+                border: "none",
+                borderRadius: "8px",
+                fontSize: "16px",
+                fontWeight: "600",
+                cursor: "pointer",
+              }}
+            >
+              Next →
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 4: Insurance */}
+      {step === 4 && (
+        <div>
+          <h1 style={{ marginBottom: "10px" }}>Insurance Details</h1>
+          <p style={{ color: "#666", marginBottom: "30px" }}>
+            Upload proof of insurance and provide policy details.
+          </p>
+
+          <div style={{ display: "grid", gap: "14px", marginBottom: "30px" }}>
+            <input
+              value={insuranceProvider}
+              onChange={(e) => setInsuranceProvider(e.target.value)}
+              placeholder="Insurance Provider"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <input
+              value={policyNumber}
+              onChange={(e) => setPolicyNumber(e.target.value)}
+              placeholder="Policy Number"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <div>
+              <label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>
+                Policy Expiration Date *
+              </label>
+              <input
+                type="date"
+                value={policyExpiresAt}
+                onChange={(e) => setPolicyExpiresAt(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>
+                Proof of Insurance *
+              </label>
+              <input
+                type="file"
+                accept="image/*,application/pdf"
+                onChange={(e) =>
+                  setDocuments({
+                    ...documents,
+                    insurance: e.target.files?.[0] || null,
+                  })
+                }
+                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+              />
+              {documents.insurance && (
+                <p className="text-xs text-gray-500 mt-2">
+                  Selected: {documents.insurance.name}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div style={{ display: "flex", gap: "12px" }}>
+            <button
+              onClick={handleBack}
+              style={{
+                flex: 1,
+                padding: "14px",
+                background: "#f3f4f6",
+                color: "#374151",
+                border: "none",
+                borderRadius: "8px",
+                fontSize: "16px",
+                fontWeight: "600",
+                cursor: "pointer",
+              }}
+            >
+              ← Back
+            </button>
+            <button
+              onClick={handleNext}
+              style={{
+                flex: 2,
+                padding: "14px",
+                background: "#3b82f6",
+                color: "white",
+                border: "none",
+                borderRadius: "8px",
+                fontSize: "16px",
+                fontWeight: "600",
+                cursor: "pointer",
+              }}
+            >
+              Next →
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 5: Work Modes */}
+      {step === 5 && (
         <div>
           <h1 style={{ marginBottom: "10px" }}>Delivery Types</h1>
           <p style={{ color: "#666", marginBottom: "30px" }}>
@@ -416,8 +900,8 @@ export default function CourierOnboarding() {
         </div>
       )}
 
-      {/* Step 3: Package Rate Card */}
-      {step === 3 && packagesEnabled && (
+      {/* Step 6: Package Rate Card */}
+      {step === 6 && packagesEnabled && (
         <div>
           <h1 style={{ marginBottom: "10px" }}>Package Delivery Rates</h1>
           <p style={{ color: "#666", marginBottom: "30px" }}>
@@ -472,7 +956,7 @@ export default function CourierOnboarding() {
                 onClick={() => {
                   setPackagesEnabled(false);
                   if (foodEnabled) {
-                    setStep(4);
+                    setStep(7);
                   } else {
                     alert("You must enable at least one delivery type");
                   }
@@ -496,8 +980,8 @@ export default function CourierOnboarding() {
         </div>
       )}
 
-      {/* Step 4: Food Rate Card */}
-      {step === 4 && foodEnabled && (
+      {/* Step 7: Food Rate Card */}
+      {step === 7 && foodEnabled && (
         <div>
           <h1 style={{ marginBottom: "10px" }}>Food Delivery Rates</h1>
           <p style={{ color: "#666", marginBottom: "30px" }}>
@@ -552,7 +1036,7 @@ export default function CourierOnboarding() {
                 onClick={() => {
                   setFoodEnabled(false);
                   if (packagesEnabled && packageRateCard) {
-                    setStep(5);
+                    setStep(8);
                   } else {
                     alert("You must enable at least one delivery type");
                   }
@@ -576,8 +1060,8 @@ export default function CourierOnboarding() {
         </div>
       )}
 
-      {/* Step 5: Review & Submit */}
-      {step === 5 && (
+      {/* Step 8: Review & Submit */}
+      {step === 8 && (
         <div>
           <h1 style={{ marginBottom: "10px" }}>Review Your Setup</h1>
           <p style={{ color: "#666", marginBottom: "30px" }}>
@@ -604,6 +1088,48 @@ export default function CourierOnboarding() {
                 </p>
                 <p style={{ margin: "8px 0" }}>
                   <strong>Service Radius:</strong> {serviceRadius} miles
+                </p>
+                <p style={{ margin: "8px 0" }}>
+                  <strong>Vehicle Details:</strong> {vehicleYear} {vehicleMake} {vehicleModel}
+                </p>
+                <p style={{ margin: "8px 0" }}>
+                  <strong>License Plate:</strong> {licensePlate}
+                </p>
+              </div>
+            </div>
+
+            {/* Identity Summary */}
+            <div
+              style={{
+                padding: "20px",
+                background: "#f9fafb",
+                borderRadius: "12px",
+                marginBottom: "16px",
+              }}
+            >
+              <h3 style={{ margin: "0 0 12px 0", fontSize: "18px" }}>
+                Identity & Insurance
+              </h3>
+              <div style={{ fontSize: "14px", color: "#666" }}>
+                <p style={{ margin: "8px 0" }}>
+                  <strong>Legal Name:</strong> {legalName}
+                </p>
+                <p style={{ margin: "8px 0" }}>
+                  <strong>Phone:</strong> {phone}
+                </p>
+                {dateOfBirth && (
+                  <p style={{ margin: "8px 0" }}>
+                    <strong>Date of Birth:</strong> {dateOfBirth}
+                  </p>
+                )}
+                <p style={{ margin: "8px 0" }}>
+                  <strong>Insurance Provider:</strong> {insuranceProvider}
+                </p>
+                <p style={{ margin: "8px 0" }}>
+                  <strong>Policy Number:</strong> {policyNumber}
+                </p>
+                <p style={{ margin: "8px 0" }}>
+                  <strong>Policy Expiration:</strong> {policyExpiresAt}
                 </p>
               </div>
             </div>

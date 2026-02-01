@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
-import { collection, query, onSnapshot, doc, updateDoc } from 'firebase/firestore'
+import { addDoc, collection, query, onSnapshot, doc, updateDoc } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { Card, CardContent } from '../components/Card'
 import { StatusBadge } from '../components/Badge'
 import { Avatar } from '../components/Avatar'
 import { Link } from 'react-router-dom'
+import { useAuth } from '../hooks/useAuth'
 
 interface Courier {
   id: string
@@ -15,16 +16,30 @@ interface Courier {
     status?: string
     phone?: string
     vehicleType?: string
+    vehicleDetails?: {
+      make?: string
+      model?: string
+      year?: string
+      licensePlate?: string
+    }
     equipment?: string[]
     availability?: string
     appliedAt?: any
     approvedAt?: any
     rejectedAt?: any
     rejectionReason?: string
+    documents?: Array<{
+      label: string
+      url: string
+      name: string
+      contentType: string
+      uploadedAt?: any
+    }>
   }
 }
 
 export default function CourierApprovalPage() {
+  const { user } = useAuth()
   const [couriers, setCouriers] = useState<Courier[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'pending' | 'approved' | 'rejected' | 'all'>('pending')
@@ -50,13 +65,27 @@ export default function CourierApprovalPage() {
     return () => unsubscribe()
   }, [])
 
+  const logAdminAction = async (action: string, courierId: string, payload?: Record<string, any>) => {
+    await addDoc(collection(db, 'adminLogs'), {
+      action,
+      adminId: user?.uid || 'admin',
+      adminEmail: user?.email || 'admin',
+      userId: courierId,
+      timestamp: new Date(),
+      ...payload,
+    })
+  }
+
   const handleApprove = async (courierId: string) => {
     setProcessing(courierId)
     try {
       await updateDoc(doc(db, 'users', courierId), {
         'courierProfile.status': 'approved',
         'courierProfile.approvedAt': new Date(),
-        'courierProfile.approvedBy': 'admin'
+        'courierProfile.approvedBy': user?.uid || 'admin'
+      })
+      await logAdminAction('courier_application_approved', courierId, {
+        newStatus: 'approved'
       })
       alert('Courier approved successfully')
     } catch (error: any) {
@@ -79,8 +108,12 @@ export default function CourierApprovalPage() {
       await updateDoc(doc(db, 'users', courierId), {
         'courierProfile.status': 'rejected',
         'courierProfile.rejectedAt': new Date(),
-        'courierProfile.rejectedBy': 'admin',
+        'courierProfile.rejectedBy': user?.uid || 'admin',
         'courierProfile.rejectionReason': reason
+      })
+      await logAdminAction('courier_application_rejected', courierId, {
+        newStatus: 'rejected',
+        reason
       })
       alert('Courier application rejected')
       setShowRejectModal(false)
@@ -275,6 +308,20 @@ export default function CourierApprovalPage() {
                         </div>
                       )}
 
+                      {profile?.vehicleDetails && (
+                        <div className="p-3 bg-gray-50 rounded-xl">
+                          <p className="text-xs text-gray-500 mb-1">Vehicle Details</p>
+                          <p className="font-medium">
+                            {profile.vehicleDetails.year} {profile.vehicleDetails.make} {profile.vehicleDetails.model}
+                          </p>
+                          {profile.vehicleDetails.licensePlate && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              Plate: {profile.vehicleDetails.licensePlate}
+                            </p>
+                          )}
+                        </div>
+                      )}
+
                       {profile?.availability && (
                         <div className="p-3 bg-gray-50 rounded-xl">
                           <p className="text-xs text-gray-500 mb-1">Availability</p>
@@ -294,6 +341,29 @@ export default function CourierApprovalPage() {
                       <div className="p-3 bg-red-50 border border-red-200 rounded-xl mb-4">
                         <p className="text-xs text-red-500 mb-1">Rejection Reason</p>
                         <p className="text-sm text-red-900">{profile.rejectionReason}</p>
+                      </div>
+                    )}
+
+                    {profile?.documents && profile.documents.length > 0 && (
+                      <div className="p-3 bg-white border border-gray-200 rounded-xl mb-4">
+                        <p className="text-xs text-gray-500 mb-2">Uploaded Documents</p>
+                        <div className="space-y-2">
+                          {profile.documents.map((docItem) => (
+                            <div key={docItem.url} className="flex items-center justify-between text-sm">
+                              <span className="text-gray-700">
+                                {docItem.label}: {docItem.name}
+                              </span>
+                              <a
+                                href={docItem.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-indigo-600 hover:underline"
+                              >
+                                View
+                              </a>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
 

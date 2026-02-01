@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../contexts/AuthContext'
 import { marketplaceService } from '../../../services/marketplace.service'
 import { ItemCategory, ItemCondition, DeliveryOption } from '../../../types/marketplace'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { storage } from '../../../lib/firebase/client'
+import { doc, getDoc } from 'firebase/firestore'
+import { db } from '../../../lib/firebase/client'
 
 /**
  * Sell Page - Create new marketplace listing (Phase 2)
@@ -28,6 +30,45 @@ export default function SellPage() {
   })
   const [photos, setPhotos] = useState<File[]>([])
   const [photoPreviewUrls, setPhotoPreviewUrls] = useState<string[]>([])
+  const [sellerStatus, setSellerStatus] = useState<'none' | 'pending' | 'approved' | 'rejected'>('none')
+  const [sellerRejectionReason, setSellerRejectionReason] = useState<string | null>(null)
+  const [sellerStatusLoading, setSellerStatusLoading] = useState(true)
+
+  useEffect(() => {
+    const loadSellerStatus = async () => {
+      if (!user) {
+        setSellerStatusLoading(false)
+        return
+      }
+
+      try {
+        const userSnap = await getDoc(doc(db, 'users', user.uid))
+        const userData = userSnap.data()
+        const roles = Array.isArray(userData?.roles) ? userData.roles : []
+        const hasSellerRole = userData?.role === 'seller' || roles.includes('seller')
+
+        if (hasSellerRole || userData?.sellerApplication?.status === 'approved') {
+          setSellerStatus('approved')
+          setSellerRejectionReason(null)
+        } else if (userData?.sellerApplication?.status === 'pending') {
+          setSellerStatus('pending')
+          setSellerRejectionReason(null)
+        } else if (userData?.sellerApplication?.status === 'rejected') {
+          setSellerStatus('rejected')
+          setSellerRejectionReason(userData?.sellerApplication?.rejectionReason || null)
+        } else {
+          setSellerStatus('none')
+          setSellerRejectionReason(null)
+        }
+      } catch (error) {
+        console.error('Failed to load seller status:', error)
+      } finally {
+        setSellerStatusLoading(false)
+      }
+    }
+
+    loadSellerStatus()
+  }, [user])
 
   const categories: ItemCategory[] = [
     ItemCategory.ELECTRONICS,
@@ -100,6 +141,11 @@ export default function SellPage() {
       return
     }
 
+    if (sellerStatus !== 'approved') {
+      alert('Your seller application must be approved before creating listings.')
+      return
+    }
+
     if (photos.length === 0) {
       alert('Please add at least one photo')
       return
@@ -157,6 +203,60 @@ export default function SellPage() {
         >
           Sign In
         </button>
+      </div>
+    )
+  }
+
+  if (sellerStatusLoading) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-12 text-center">
+        <p className="text-gray-600">Checking seller status...</p>
+      </div>
+    )
+  }
+
+  if (sellerStatus !== 'approved') {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-12">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
+          <div className="text-5xl mb-4">🏪</div>
+          {sellerStatus === 'pending' && (
+            <>
+              <h2 className="text-2xl font-bold mb-2">Seller Application Pending</h2>
+              <p className="text-gray-600 mb-6">
+                Your application is under review. You'll be notified once approved.
+              </p>
+            </>
+          )}
+          {sellerStatus === 'rejected' && (
+            <>
+              <h2 className="text-2xl font-bold mb-2">Application Rejected</h2>
+              <p className="text-gray-600 mb-6">
+                {sellerRejectionReason || 'Your application was not approved. Please review and resubmit.'}
+              </p>
+              <button
+                onClick={() => navigate('/seller/apply')}
+                className="px-6 py-3 bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-lg font-semibold"
+              >
+                Resubmit Application
+              </button>
+            </>
+          )}
+          {sellerStatus === 'none' && (
+            <>
+              <h2 className="text-2xl font-bold mb-2">Apply to Become a Seller</h2>
+              <p className="text-gray-600 mb-6">
+                Complete the seller application to start listing items on the marketplace.
+              </p>
+              <button
+                onClick={() => navigate('/seller/apply')}
+                className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-semibold"
+              >
+                Apply Now
+              </button>
+            </>
+          )}
+        </div>
       </div>
     )
   }
