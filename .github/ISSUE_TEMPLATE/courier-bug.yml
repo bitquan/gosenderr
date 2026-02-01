@@ -2,8 +2,8 @@ name: Courier app bug
 description: Report a bug in the Courier app (web or iOS)
 title: "[Courier Bug]: "
 labels:
-  - bug
-  - courier
+  - type:bug
+  - scope:courier
 body:
   - type: dropdown
     id: platform
@@ -13,6 +13,27 @@ body:
         - Web
         - iOS (Capacitor)
         - Android (Capacitor)
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - P0 - Critical
+        - P1 - High
+        - P2 - Medium
+        - P3 - Low
+    validations:
+      required: true
+  - type: dropdown
+    id: risk
+    attributes:
+      label: Risk
+      options:
+        - High
+        - Medium
+        - Low
     validations:
       required: true
   - type: dropdown

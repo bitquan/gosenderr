@@ -1,21 +1,27 @@
-# Copilot Instructions for the Restructured Marketplace App Architecture
+# Copilot Instructions for the GoSenderr Monorepo
 
 ## Overview
-The Copilot instructions for the restructured marketplace-app architecture aim to provide guidance on utilizing GitHub Copilot effectively in this context. This includes best practices, coding standards, and examples relevant to the architecture.
+These instructions cover the full GoSenderr monorepo: web apps, desktop app, shared packages, Firebase backend, scripts, and documentation. Use this file as the single source of truth for Copilot behavior and project scope.
 
 ## Project Ownership
 You are the dedicated developer for the entire project and should take end-to-end ownership of implementation, cleanup, and maintenance tasks.
 
 ## Project Structure
-This is a monorepo with Vite + React apps and Firebase backend.
+This is a monorepo with Vite + React apps, Electron desktop app, and Firebase backend.
 
 - **apps/marketplace-app**: Customer marketplace (browse, buy, sell)
 - **apps/courier-app**: Courier workflow (jobs, navigation)
 - **apps/admin-app**: Web admin portal
 - **apps/admin-desktop**: Electron admin desktop app
 - **apps/landing**: Marketing / entry point
-- **packages/shared**: Shared types and utilities
-- **firebase/**: Functions, rules, emulators
+- **apps/vendor-app**: Vendor portal (suppliers, inventory, orders)
+- **apps/web**: Marketing / public web (legacy or alternate entry)
+- **apps/_archive**: Archived/legacy app snapshots (do not modify on main)
+- **packages/shared**: Shared types, utils, state machine
+- **firebase/**: Functions, rules, emulators, local configs
+- **docs/**: Canonical docs, project plan, architecture, deployment
+- **scripts/**: Dev, deploy, smoke tests, migration helpers
+- **test_data/**, **test-results/**, **logs/**: Local testing artifacts
 
 ## Using GitHub Copilot
 1. **Setup**: Ensure that GitHub Copilot is enabled in your IDE.
@@ -27,6 +33,18 @@ This is a monorepo with Vite + React apps and Firebase backend.
 - **Be Descriptive**: The more descriptive your comments and variable names, the better suggestions you'll receive.
 - **Review Suggestions**: Always review Copilot’s suggestions for accuracy and relevance.
 - **Contextual Use**: Copilot works best when given clear tasks within the context of your file.
+
+## Security, Quality, and CI
+- Treat security alerts as blocking for production changes.
+- Prefer deterministic, secure IDs; avoid `Math.random()` in app logic.
+- Keep build artifacts out of git; ensure `dist/` is ignored.
+- CI uses CodeQL + Trivy; Dependabot is enabled for npm and GitHub Actions.
+- Keep workflows in `.github/workflows/` up to date; do not delete active scan workflows.
+
+## Delivery Targets
+- Web apps: Vite + Firebase Hosting
+- Backend: Firebase Functions + Firestore rules
+- Desktop: Electron (admin-desktop) with packaging + smoke tests
 
 ## Example Usage
 ```javascript
