@@ -35,6 +35,16 @@ service firebase.storage {
         && request.resource.size < 10 * 1024 * 1024;  // 10MB max
     }
 
+    function isValidSellerDocument() {
+      return request.resource.contentType.matches('image/(jpeg|png|webp)|application/pdf')
+        && request.resource.size < 15 * 1024 * 1024;  // 15MB max
+    }
+
+    function isValidCourierDocument() {
+      return request.resource.contentType.matches('image/(jpeg|png|webp)|application/pdf')
+        && request.resource.size < 15 * 1024 * 1024;  // 15MB max
+    }
+
     // Temporary job photos: jobs/{tempId}/photos/{photoFile}
     // tempId will be in format temp_1234567890_abc123
     match /jobs/{tempId}/photos/{photoFile} {
@@ -89,6 +99,30 @@ service firebase.storage {
       
       // User can read their own insurance documents
       // Admins can read any insurance documents (check via Firestore)
+      allow read: if isSignedIn() && (
+        uid() == userId
+        || get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      );
+    }
+
+    // Seller documents: sellerDocuments/{userId}/{documentFile}
+    match /sellerDocuments/{userId}/{documentFile} {
+      // User can upload their own seller documents
+      allow write: if isSignedIn() && uid() == userId && isValidSellerDocument();
+
+      // User can read their own documents; admins can read all
+      allow read: if isSignedIn() && (
+        uid() == userId
+        || get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      );
+    }
+
+    // Courier documents: courierDocuments/{userId}/{documentFile}
+    match /courierDocuments/{userId}/{documentFile} {
+      // User can upload their own courier documents
+      allow write: if isSignedIn() && uid() == userId && isValidCourierDocument();
+
+      // User can read their own documents; admins can read all
       allow read: if isSignedIn() && (
         uid() == userId
         || get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin'

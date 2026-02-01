@@ -17,6 +17,7 @@ import AuditLogsPage from './pages/AuditLogs'
 import FeatureFlagsPage from './pages/FeatureFlags'
 import DisputesPage from './pages/Disputes'
 import CourierApprovalPage from './pages/CourierApproval'
+import SellerApprovalPage from './pages/SellerApproval'
 import RevenuePage from './pages/Revenue'
 import MarketplacePage from './pages/Marketplace'
 import MarketplaceOrdersPage from './pages/MarketplaceOrders'
@@ -102,6 +103,7 @@ function App() {
                       <Route path="/rate-cards-comparison" element={<RateCardsComparison />} />
                       <Route path="/disputes" element={<DisputesPage />} />
                       <Route path="/courier-approval" element={<CourierApprovalPage />} />
+                      <Route path="/seller-approval" element={<SellerApprovalPage />} />
                       <Route path="/revenue" element={<RevenuePage />} />
                       <Route path="/messaging" element={<MessagingPage />} />
                       <Route path="/marketplace" element={<MarketplacePage />} />

@@ -21,6 +21,9 @@ export default function CourierDashboardMobile() {
 
   const courierLocation = userDoc?.courierProfile?.currentLocation || null;
   const transportMode = userDoc?.courierProfile?.vehicleType || "car";
+  const courierStatus = userDoc?.courierProfile?.status || "none";
+  const isApproved = courierStatus === "approved";
+  const rejectionReason = userDoc?.courierProfile?.rejectionReason || null;
 
   const activeJobs = useMemo(() => {
     return jobs.filter(
@@ -97,12 +100,12 @@ export default function CourierDashboardMobile() {
           <div className="flex items-center gap-3">
             <button
               onClick={handleToggleOnline}
-              disabled={togglingOnline}
+              disabled={togglingOnline || !isApproved}
               className={`px-4 py-2 rounded-lg text-sm font-semibold border transition-colors ${
                 userDoc?.courierProfile?.isOnline
                   ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
                   : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
-              } ${togglingOnline ? "opacity-60 cursor-not-allowed" : ""}`}
+              } ${togglingOnline || !isApproved ? "opacity-60 cursor-not-allowed" : ""}`}
             >
               {userDoc?.courierProfile?.isOnline ? "🟢 Online" : "⚪ Offline"}
             </button>
@@ -125,6 +128,31 @@ export default function CourierDashboardMobile() {
                 className="inline-flex items-center px-4 py-2 rounded-lg bg-amber-600 text-white text-sm font-semibold hover:bg-amber-700"
               >
                 Set Rate Card
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {!isApproved && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 text-yellow-900">
+            {courierStatus === "pending" && (
+              <p className="font-semibold">⏳ Your courier application is under review.</p>
+            )}
+            {courierStatus === "rejected" && (
+              <div>
+                <p className="font-semibold">❌ Your courier application was rejected.</p>
+                {rejectionReason && <p className="text-sm mt-1">Reason: {rejectionReason}</p>}
+              </div>
+            )}
+            {courierStatus === "none" && (
+              <p className="font-semibold">Complete onboarding to start accepting jobs.</p>
+            )}
+            <div className="mt-3">
+              <Link
+                to="/onboarding"
+                className="inline-flex items-center px-4 py-2 rounded-lg bg-yellow-600 text-white text-sm font-semibold hover:bg-yellow-700"
+              >
+                Start Onboarding
               </Link>
             </div>
           </div>
@@ -172,9 +200,15 @@ export default function CourierDashboardMobile() {
                   courierLocation={courierLocation}
                   transportMode={transportMode}
                   viewerUid={uid || undefined}
-                  onAccept={handleAccept}
+                  onAccept={isApproved ? handleAccept : undefined}
                   loading={acceptingJobId === job.id}
                   enableRoute={false}
+                  showAcceptButton={isApproved}
+                  footer={!isApproved ? (
+                    <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-2">
+                      Approval required before accepting jobs.
+                    </div>
+                  ) : undefined}
                 />
               ))}
             </div>

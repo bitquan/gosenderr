@@ -9,6 +9,7 @@ import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { RouteCard } from "@/components/RouteCard";
 import { RouteDetailsModal } from "@/components/RouteDetailsModal";
 import { LoadingSkeleton } from "@gosenderr/ui";
+import { useUserDoc } from "@/hooks/v2/useUserDoc";
 import type { RouteDoc } from "@gosenderr/shared";
 
 export default function CourierRoutesPage() {
@@ -22,6 +23,9 @@ export default function CourierRoutesPage() {
     error,
   } = useRoutes({ status: "available" });
   const { flags, loading: flagsLoading } = useFeatureFlags();
+  const { userDoc, loading: userLoading } = useUserDoc();
+  const courierStatus = userDoc?.courierProfile?.status || "none";
+  const isApproved = courierStatus === "approved";
 
   useEffect(() => {
     const auth = getAuthSafe();
@@ -48,6 +52,10 @@ export default function CourierRoutesPage() {
 
   const handleAcceptRoute = async (route: RouteDoc) => {
     if (!currentUser) return;
+    if (!isApproved) {
+      alert("Your courier profile must be approved before accepting routes.");
+      return;
+    }
 
     try {
       const routeRef = doc(db, "routes", route.routeId);
@@ -80,7 +88,7 @@ export default function CourierRoutesPage() {
     );
   }
 
-  if (authLoading || routesLoading || flagsLoading) {
+  if (authLoading || routesLoading || flagsLoading || userLoading) {
     return (
       <div className="max-w-4xl mx-auto p-6">
         <h1 className="text-3xl font-bold mb-6">Available Routes</h1>
@@ -117,6 +125,12 @@ export default function CourierRoutesPage() {
           Accept batched delivery routes for efficient earnings
         </p>
       </div>
+
+      {!isApproved && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 text-yellow-900 mb-6">
+          <p className="font-semibold">Approval required before accepting routes.</p>
+        </div>
+      )}
 
       {routes.length === 0 ? (
         <div className="text-center py-12 glass-card">

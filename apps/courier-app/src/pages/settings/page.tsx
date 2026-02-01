@@ -6,7 +6,8 @@ import { Link } from "react-router-dom";
 import { getAuthSafe } from "@/lib/firebase";
 import { useEffect, useState } from "react";
 import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { db, storage } from "@/lib/firebase";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 export default function CourierSettingsPage() {
   const navigate = useNavigate();
@@ -17,6 +18,16 @@ export default function CourierSettingsPage() {
   const [availability, setAvailability] = useState(false);
   const [serviceRadius, setServiceRadius] = useState(10);
   const [savingPreferences, setSavingPreferences] = useState(false);
+  const [uploadingDocs, setUploadingDocs] = useState(false);
+  const [documents, setDocuments] = useState<{
+    governmentId: File | null;
+    vehicleRegistration: File | null;
+    insurance: File | null;
+  }>({
+    governmentId: null,
+    vehicleRegistration: null,
+    insurance: null,
+  });
 
   useEffect(() => {
     if (user) {
@@ -70,6 +81,86 @@ export default function CourierSettingsPage() {
       console.error("Error saving courier preferences:", error);
     } finally {
       setSavingPreferences(false);
+    }
+  };
+
+  const handleUploadDocuments = async () => {
+    if (!user) return;
+
+    const files = [
+      { label: "Government ID", file: documents.governmentId },
+      { label: "Vehicle Registration", file: documents.vehicleRegistration },
+      { label: "Insurance", file: documents.insurance },
+    ].filter((item) => Boolean(item.file)) as Array<{ label: string; file: File }>;
+
+    if (files.length === 0) {
+      alert("Select at least one document to upload.");
+      return;
+    }
+
+    setUploadingDocs(true);
+    try {
+      const uploads: Array<{
+        label: string;
+        url: string;
+        name: string;
+        contentType: string;
+        uploadedAt: any;
+      }> = [];
+
+      for (const item of files) {
+        const storageRef = ref(
+          storage,
+          `courierDocuments/${user.uid}/${Date.now()}_${item.file.name}`
+        );
+        await uploadBytes(storageRef, item.file);
+        const url = await getDownloadURL(storageRef);
+        uploads.push({
+          label: item.label,
+          url,
+          name: item.file.name,
+          contentType: item.file.type || "application/octet-stream",
+          uploadedAt: new Date(),
+        });
+      }
+
+      const existingDocs = Array.isArray(courierData?.courierProfile?.documents)
+        ? courierData.courierProfile.documents
+        : [];
+
+      const currentStatus = courierData?.courierProfile?.status;
+      const shouldResetStatus = currentStatus === "rejected" || currentStatus === "pending";
+
+      await updateDoc(doc(db, "users", user.uid), {
+        "courierProfile.documents": [...existingDocs, ...uploads],
+        ...(shouldResetStatus
+          ? {
+              "courierProfile.status": "pending",
+              "courierProfile.rejectionReason": null,
+            }
+          : {}),
+        "courierProfile.updatedAt": serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+
+      setCourierData((prev: any) => ({
+        ...prev,
+        courierProfile: {
+          ...prev?.courierProfile,
+          documents: [...existingDocs, ...uploads],
+          ...(shouldResetStatus
+            ? { status: "pending", rejectionReason: null }
+            : {}),
+        },
+      }));
+
+      setDocuments({ governmentId: null, vehicleRegistration: null, insurance: null });
+      alert("Documents uploaded successfully.");
+    } catch (error) {
+      console.error("Error uploading documents:", error);
+      alert("Failed to upload documents. Please try again.");
+    } finally {
+      setUploadingDocs(false);
     }
   };
 
@@ -243,6 +334,122 @@ export default function CourierSettingsPage() {
                 </div>
                 <span className="text-2xl group-hover:translate-x-1 transition-transform">→</span>
               </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* Verification Documents */}
+        <div className="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden">
+          <div className="p-6 sm:p-8 border-b border-gray-200">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              🧾 Verification Documents
+            </h2>
+            <p className="text-sm text-gray-600 mb-6">
+              Upload updated documents if your details have changed or if your application was rejected.
+            </p>
+
+            {Array.isArray(courierData?.courierProfile?.documents) &&
+              courierData.courierProfile.documents.length > 0 && (
+                <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6">
+                  <p className="text-xs text-gray-500 mb-2">Current Documents</p>
+                  <div className="space-y-2">
+                    {courierData.courierProfile.documents.map((docItem: any) => (
+                      <div key={docItem.url} className="flex items-center justify-between text-sm">
+                        <span className="text-gray-700">
+                          {docItem.label}: {docItem.name}
+                        </span>
+                        <a
+                          href={docItem.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-indigo-600 hover:underline"
+                        >
+                          View
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Government ID
+                </label>
+                <input
+                  type="file"
+                  accept="image/*,application/pdf"
+                  onChange={(e) =>
+                    setDocuments({
+                      ...documents,
+                      governmentId: e.target.files?.[0] || null,
+                    })
+                  }
+                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                />
+                {documents.governmentId && (
+                  <p className="text-xs text-gray-500 mt-2">
+                    Selected: {documents.governmentId.name}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Vehicle Registration
+                </label>
+                <input
+                  type="file"
+                  accept="image/*,application/pdf"
+                  onChange={(e) =>
+                    setDocuments({
+                      ...documents,
+                      vehicleRegistration: e.target.files?.[0] || null,
+                    })
+                  }
+                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                />
+                {documents.vehicleRegistration && (
+                  <p className="text-xs text-gray-500 mt-2">
+                    Selected: {documents.vehicleRegistration.name}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Proof of Insurance
+                </label>
+                <input
+                  type="file"
+                  accept="image/*,application/pdf"
+                  onChange={(e) =>
+                    setDocuments({
+                      ...documents,
+                      insurance: e.target.files?.[0] || null,
+                    })
+                  }
+                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                />
+                {documents.insurance && (
+                  <p className="text-xs text-gray-500 mt-2">
+                    Selected: {documents.insurance.name}
+                  </p>
+                )}
+              </div>
+
+              <div className="text-xs text-gray-500">
+                Accepted formats: JPG, PNG, WEBP, PDF. Max size 15MB.
+              </div>
+
+              <button
+                onClick={handleUploadDocuments}
+                disabled={uploadingDocs}
+                className="w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
+              >
+                {uploadingDocs ? "Uploading..." : "Upload Documents"}
+              </button>
             </div>
           </div>
         </div>
