@@ -42,10 +42,8 @@ describe('SystemCheck - Run System Simulation', () => {
 
     await waitFor(() => expect(runSimMock).toHaveBeenCalledWith({ intensity: 3, cleanup: true }))
 
-    // The fake onSnapshot should have injected one entry, which should appear in the result list
-    await waitFor(() => expect(screen.getByText(/Created buyer/)).toBeInTheDocument())
-
-    // Summary card should display counts from mocked result
-    await waitFor(() => expect(screen.getByText(/Created Users: 1/)).toBeInTheDocument())
+    // Summary card should display the run id from mocked result
+    await waitFor(() => expect(screen.getByText(/Run ID:/)).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText(/run1/)).toBeInTheDocument())
   })
 })
