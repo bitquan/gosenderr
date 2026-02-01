@@ -59,9 +59,9 @@ export default function EditRoleModal({ user, isOpen, onClose, onSuccess }: Edit
 
       onSuccess()
       onClose()
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error updating role:', err)
-      setError(err.message || 'Failed to update role')
+      setError(err instanceof Error ? err.message : 'Failed to update role')
     } finally {
       setLoading(false)
     }

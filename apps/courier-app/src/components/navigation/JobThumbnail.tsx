@@ -1,14 +1,21 @@
 import { useEffect, useState, useRef } from 'react';
+import type { Map } from 'mapbox-gl';
 import type { Job } from '@/lib/v2/types';
 
 interface JobThumbnailProps {
   job: Job;
   isSelected: boolean;
   onClick: () => void;
-  map: any;
+  map: Map | null;
 }
 
+type JobPricingInfo = {
+  fee?: number;
+  deliverySize?: string;
+};
+
 export function JobThumbnail({ job, isSelected, onClick, map }: JobThumbnailProps) {
+  const pricing = job as Job & JobPricingInfo;
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
   const rafRef = useRef<number | undefined>(undefined);
 
@@ -74,10 +81,10 @@ export function JobThumbnail({ job, isSelected, onClick, map }: JobThumbnailProp
       >
         <div className="flex items-center gap-2 text-sm font-semibold whitespace-nowrap">
           <span>📦</span>
-          <span>${(job as any).fee?.toFixed(2) || '0.00'}</span>
+          <span>${pricing.fee?.toFixed(2) || '0.00'}</span>
         </div>
         <div className="text-xs mt-0.5 opacity-90">
-          {(job as any).deliverySize || 'Package'}
+          {pricing.deliverySize || 'Package'}
         </div>
       </div>
       {/* Arrow pointing down to marker */}

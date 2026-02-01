@@ -13,8 +13,8 @@ interface CustomerConfirmationProps {
 }
 
 export function CustomerConfirmation({
-  deliveryJobId,
-  deliveredAt,
+  deliveryJobId: _deliveryJobId,
+  deliveredAt: _deliveredAt,
   confirmationDeadline,
   onConfirm,
   alreadyConfirmed = false,
