@@ -11,6 +11,20 @@ import { calcMiles, calcFee } from "@/lib/v2/pricing";
 import { FLOOR_RATE_CARD } from "@/lib/v2/floorRateCard";
 import { GeoPoint, PackageSize, PackageFlags } from "@/lib/v2/types";
 
+const createTempJobId = () => {
+  const cryptoObj = globalThis.crypto;
+  if (cryptoObj?.randomUUID) {
+    return `temp_${Date.now()}_${cryptoObj.randomUUID()}`;
+  }
+  if (!cryptoObj?.getRandomValues) {
+    throw new Error("Secure random generator unavailable");
+  }
+  const bytes = new Uint32Array(2);
+  cryptoObj.getRandomValues(bytes);
+  const suffix = Array.from(bytes, (value) => value.toString(36)).join("");
+  return `temp_${Date.now()}_${suffix}`;
+};
+
 interface CustomerJobCreateFormProps {
   uid: string;
 }
@@ -26,9 +40,7 @@ export function CustomerJobCreateForm({ uid }: CustomerJobCreateFormProps) {
   const [photos, setPhotos] = useState<PhotoFile[]>([]);
 
   // Generate a stable temporary job ID for this session
-  const [tempJobId] = useState(
-    () => `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-  );
+  const [tempJobId] = useState(createTempJobId);
 
   const { couriers, loading: couriersLoading } = useNearbyCouriers(
     pickup,

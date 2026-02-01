@@ -2,6 +2,19 @@ import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { storage } from '@/lib/firebase/client';
 import { serverTimestamp } from 'firebase/firestore';
 
+const getSecureRandomId = () => {
+  const cryptoObj = globalThis.crypto;
+  if (cryptoObj?.randomUUID) {
+    return cryptoObj.randomUUID();
+  }
+  if (!cryptoObj?.getRandomValues) {
+    throw new Error('Secure random generator unavailable');
+  }
+  const bytes = new Uint32Array(4);
+  cryptoObj.getRandomValues(bytes);
+  return Array.from(bytes, (value) => value.toString(36)).join('');
+};
+
 export interface UploadProgress {
   bytesTransferred: number;
   totalBytes: number;
@@ -43,7 +56,7 @@ export async function uploadJobPhoto(
 
   // Generate unique filename
   const timestamp = Date.now();
-  const random = Math.random().toString(36).substring(2, 15);
+  const random = getSecureRandomId();
   const extension = file.name.split('.').pop() || 'jpg';
   const filename = `${timestamp}_${random}.${extension}`;
   
