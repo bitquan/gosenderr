@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage } from "@/lib/firebase/client";
@@ -12,6 +12,7 @@ export default function NewSellerItem() {
   const { uid } = useAuthUser();
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -55,6 +56,20 @@ export default function NewSellerItem() {
       setImages(files);
     }
   };
+
+  useEffect(() => {
+    if (images.length === 0) {
+      setPreviewUrls([]);
+      return;
+    }
+
+    const urls = images.map((image) => URL.createObjectURL(image));
+    setPreviewUrls(urls);
+
+    return () => {
+      urls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [images]);
 
   const uploadImages = async (): Promise<string[]> => {
     const imageUrls: string[] = [];
@@ -140,16 +155,18 @@ export default function NewSellerItem() {
                   onChange={handleImageChange}
                   className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
                 />
-                {images.length > 0 && (
+                {previewUrls.length > 0 && (
                   <div className="mt-4 grid grid-cols-5 gap-2">
-                    {images.map((img, idx) => (
-                      <img
-                        key={idx}
-                        src={URL.createObjectURL(img)}
-                        alt={`Preview ${idx + 1}`}
-                        className="w-full h-20 object-cover rounded-lg"
-                      />
-                    ))}
+                    {previewUrls.map((url, idx) =>
+                      url.startsWith("blob:") ? (
+                        <img
+                          key={url}
+                          src={url}
+                          alt={`Preview ${idx + 1}`}
+                          className="w-full h-20 object-cover rounded-lg"
+                        />
+                      ) : null
+                    )}
                   </div>
                 )}
               </div>
