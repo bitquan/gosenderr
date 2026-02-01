@@ -19,7 +19,7 @@ We actively maintain and provide security updates for the following versions of 
 | 0.x.x (Beta) | ⚠️ Limited Support | Migration recommended |
 | < 0.1.x | ❌ Not Supported | Please upgrade immediately |
 
-**Current Production Version:** `1.0.0` (or your actual version)
+**Current Production Version:** `1.0.0`
 
 ### Version Support Timeline
 
@@ -46,8 +46,11 @@ Instead, please use one of these secure channels:
 
 #### Option 2: Email
 Send detailed vulnerability reports to:
-- **Primary:** security@gosenderr.com (or your email)
+- **Primary:** security@gosenderr.com
 - **Backup:** bitquan@users.noreply.github.com
+
+#### Option 4: Security.txt
+See https://gosenderr.com/.well-known/security.txt for the latest reporting info.
 
 #### Option 3: Private Discussion
 For sensitive issues, request a private discussion by emailing the security team first.
