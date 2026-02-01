@@ -1,17 +1,18 @@
-import { render, screen, waitFor } from '@testing-library/react'
+/* @vitest-environment jsdom */
+import '@testing-library/jest-dom/vitest'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import SystemCheckPage from '../SystemCheck'
-import { describe, test, vi, beforeEach, expect } from 'vitest'
+import { describe, test, vi, beforeEach, afterEach, expect } from 'vitest'
 
 // Mock runSystemSimulation
 const runSimMock = vi.fn()
 vi.mock('../../lib/cloudFunctions', () => ({ runSystemSimulation: (...args: any[]) => runSimMock(...args) }))
 
 // Mock firestore onSnapshot to immediately call callback with a fake entry
-import { mockOnSnapshotForDoc } from '../../tests/firestoreMock'
-
-vi.mock('firebase/firestore', async (importOriginal) => {
-  const orig = await importOriginal()
+vi.mock('firebase/firestore', async () => {
+  const orig = await vi.importActual<typeof import('firebase/firestore')>('firebase/firestore')
+  const { mockOnSnapshotForDoc } = await import('../../tests/firestoreMock')
   return {
     ...(orig as any),
     onSnapshot: mockOnSnapshotForDoc(null, { created: { users: ['u1'], items: ['i1'], jobs: ['j1'] } })
@@ -20,6 +21,10 @@ vi.mock('firebase/firestore', async (importOriginal) => {
 
 beforeEach(() => {
   vi.resetAllMocks()
+})
+
+afterEach(() => {
+  cleanup()
 })
 
 describe('SystemCheck - Run System Simulation', () => {

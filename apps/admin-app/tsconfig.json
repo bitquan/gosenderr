@@ -26,7 +26,7 @@
       "@/*": ["./src/*"],
       "@gosenderr/shared": ["../../packages/shared/src"]
     },
-    "types": ["vite/client", "vitest/globals", "react", "react-dom", "@testing-library/jest-dom"]
+    "types": ["vite/client", "vitest/globals", "react", "react-dom", "react/jsx-runtime", "@testing-library/jest-dom"]
   },
   "include": ["src"],
   "exclude": ["src/**/__tests__", "src/**/*.spec.tsx", "src/**/*.test.tsx", "src/tests/**"],

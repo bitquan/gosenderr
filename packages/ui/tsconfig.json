@@ -25,7 +25,7 @@
     "paths": {
       "@/*": ["./src/*"]
     },
-    "types": ["vite/client", "react", "react-dom"]
+    "types": ["vite/client", "react", "react-dom", "react/jsx-runtime"]
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist"]
