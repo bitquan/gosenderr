@@ -6,13 +6,13 @@ import {
   collection,
   query,
   where,
-  // getDocs,
+  getDocs,
   orderBy,
   limit,
   onSnapshot,
   doc,
-  getDoc,
-  updateDoc,
+  addDoc,
+  deleteDoc,
   serverTimestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
@@ -36,7 +36,7 @@ export default function CustomerDashboardNew() {
   const [loading, setLoading] = useState(true);
   const [activities, setActivities] = useState<any[]>([]);
   const [savedAddresses, setSavedAddresses] = useState<
-    Array<{ label: string; address: string }>
+    Array<{ id: string; label: string; address: string }>
   >([]);
 
   const spendingData = useMemo(() => {
@@ -94,11 +94,20 @@ export default function CustomerDashboardNew() {
 
   const loadDashboardData = async () => {
     try {
-      const userDocRef = doc(db, "users", currentUser.uid);
-      const userSnapshot = await getDoc(userDocRef);
-      if (userSnapshot.exists()) {
-        setSavedAddresses(userSnapshot.data()?.savedAddresses || []);
-      }
+      const addressesQuery = query(
+        collection(db, "savedAddresses"),
+        where("userId", "==", currentUser.uid),
+      );
+      const addressSnapshot = await getDocs(addressesQuery);
+      const addressData = addressSnapshot.docs.map((docSnap) => {
+        const data = docSnap.data() as { label?: string; address?: string };
+        return {
+          id: docSnap.id,
+          label: data.label || "",
+          address: data.address || "",
+        };
+      });
+      setSavedAddresses(addressData);
 
       const packagesQuery = query(
         collection(db, "packages"),
@@ -179,21 +188,18 @@ export default function CustomerDashboardNew() {
     const address = prompt("Full address");
     if (!address) return;
 
-    const updated = [...savedAddresses, { label, address }];
-    await updateDoc(doc(db, "users", currentUser.uid), {
-      savedAddresses: updated,
-      updatedAt: serverTimestamp(),
+    const docRef = await addDoc(collection(db, "savedAddresses"), {
+      userId: currentUser.uid,
+      label,
+      address,
+      createdAt: serverTimestamp(),
     });
-    setSavedAddresses(updated);
+    setSavedAddresses((prev) => [...prev, { id: docRef.id, label, address }]);
   };
 
-  const handleRemoveAddress = async (index: number) => {
-    const updated = savedAddresses.filter((_, idx) => idx !== index);
-    await updateDoc(doc(db, "users", currentUser.uid), {
-      savedAddresses: updated,
-      updatedAt: serverTimestamp(),
-    });
-    setSavedAddresses(updated);
+  const handleRemoveAddress = async (addressId: string) => {
+    await deleteDoc(doc(db, "savedAddresses", addressId));
+    setSavedAddresses((prev) => prev.filter((addr) => addr.id !== addressId));
   };
 
   const updateActivities = (pkgs: any[], jbs: any[], ords: any[]) => {
@@ -390,9 +396,9 @@ export default function CustomerDashboardNew() {
               <p className="text-sm text-gray-500">No saved addresses yet.</p>
             ) : (
               <div className="space-y-3">
-                {savedAddresses.map((addr, index) => (
+                {savedAddresses.map((addr) => (
                   <div
-                    key={`${addr.label}-${index}`}
+                    key={addr.id}
                     className="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3"
                   >
                     <div>
@@ -400,7 +406,7 @@ export default function CustomerDashboardNew() {
                       <p className="text-sm text-gray-500">{addr.address}</p>
                     </div>
                     <button
-                      onClick={() => handleRemoveAddress(index)}
+                      onClick={() => handleRemoveAddress(addr.id)}
                       className="text-xs text-red-600 font-semibold"
                     >
                       Remove

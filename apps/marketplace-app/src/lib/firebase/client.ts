@@ -22,6 +22,9 @@ const isValidConfig =
   Boolean(import.meta.env.VITE_FIRESTORE_EMULATOR_HOST) ||
   Boolean(import.meta.env.VITE_FIREBASE_PROJECT_ID);
 
+const shouldUseEmulators =
+  import.meta.env.DEV && import.meta.env.VITE_USE_FIREBASE_EMULATORS === "true";
+
 let app: FirebaseApp | undefined;
 let dbInstance: Firestore | undefined;
 let storageInstance: FirebaseStorage | undefined;
@@ -37,28 +40,30 @@ if (isBrowser && isValidConfig) {
     authInstance = getAuth(app);
     console.log("Firebase initialized successfully");
     // If CI or local E2E sets emulator env vars, connect SDK to the emulators so tests operate against them.
-    try {
-      const authEmulator = (import.meta.env.VITE_FIREBASE_AUTH_EMULATOR_HOST || "").trim();
-      if (authEmulator && authInstance) {
-        // authEmulator expected as host:port
-        const [host, port] = authEmulator.split(":");
-        connectAuthEmulator(authInstance, `http://${host}:${port}`, { disableWarnings: true });
-        console.log(`Connected Auth to emulator http://${host}:${port}`);
+    if (shouldUseEmulators) {
+      try {
+        const authEmulator = (import.meta.env.VITE_FIREBASE_AUTH_EMULATOR_HOST || "").trim();
+        if (authEmulator && authInstance) {
+          // authEmulator expected as host:port
+          const [host, port] = authEmulator.split(":");
+          connectAuthEmulator(authInstance, `http://${host}:${port}`, { disableWarnings: true });
+          console.log(`Connected Auth to emulator http://${host}:${port}`);
+        }
+      } catch (err) {
+        console.warn("Failed to connect Auth emulator:", err);
       }
-    } catch (err) {
-      console.warn("Failed to connect Auth emulator:", err);
-    }
 
-    try {
-      const firestoreEmulator = (import.meta.env.VITE_FIRESTORE_EMULATOR_HOST || "").trim();
-      if (firestoreEmulator && dbInstance) {
-        const [host, portStr] = firestoreEmulator.split(":");
-        const port = Number(portStr || 8085);
-        connectFirestoreEmulator(dbInstance, host, port);
-        console.log(`Connected Firestore to emulator ${host}:${port}`);
+      try {
+        const firestoreEmulator = (import.meta.env.VITE_FIRESTORE_EMULATOR_HOST || "").trim();
+        if (firestoreEmulator && dbInstance) {
+          const [host, portStr] = firestoreEmulator.split(":");
+          const port = Number(portStr || 8085);
+          connectFirestoreEmulator(dbInstance, host, port);
+          console.log(`Connected Firestore to emulator ${host}:${port}`);
+        }
+      } catch (err) {
+        console.warn("Failed to connect Firestore emulator:", err);
       }
-    } catch (err) {
-      console.warn("Failed to connect Firestore emulator:", err);
     }
   } catch (error) {
     console.error("Failed to initialize Firebase:", error);

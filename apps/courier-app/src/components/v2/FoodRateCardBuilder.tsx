@@ -98,15 +98,19 @@ export function FoodRateCardBuilder({
   const handlePeakHourChange = (
     index: number,
     field: "days" | "startTime" | "endTime" | "multiplier",
-    value: any,
+    value: string | number | string[],
   ) => {
     const updated = [...peakHours];
     if (field === "days") {
-      updated[index].days = value;
+      updated[index].days = value as string[];
     } else if (field === "multiplier") {
-      updated[index].multiplier = parseFloat(value) || 1.0;
+      if (Array.isArray(value)) {
+        return;
+      }
+      const parsed = typeof value === "number" ? value : parseFloat(value);
+      updated[index].multiplier = parsed || 1.0;
     } else {
-      updated[index][field] = value;
+      updated[index][field] = typeof value === "string" ? value : String(value);
     }
     setPeakHours(updated);
   };
@@ -140,7 +144,6 @@ export function FoodRateCardBuilder({
   const calculatePreview = () => {
     const base = parseFloat(baseFare) || 0;
     const miles = parseFloat(previewMiles) || 0;
-    const driveMinutes = parseFloat(previewDriveMinutes) || 0;
     const waitMinutes = parseFloat(previewWaitMinutes) || 0;
     const mileRate = parseFloat(perMile) || 0;
     const waitRate = parseFloat(restaurantWaitPay) || 0;

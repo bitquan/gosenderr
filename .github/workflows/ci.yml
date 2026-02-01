@@ -45,6 +45,57 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Validate production env (marketplace)
+        if: github.ref == 'refs/heads/main'
+        env:
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+          VITE_MAPBOX_TOKEN: ${{ secrets.VITE_MAPBOX_TOKEN }}
+          VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.VITE_STRIPE_PUBLISHABLE_KEY }}
+          VITE_FIREBASE_AUTH_EMULATOR_HOST: ${{ secrets.VITE_FIREBASE_AUTH_EMULATOR_HOST }}
+          VITE_FIRESTORE_EMULATOR_HOST: ${{ secrets.VITE_FIRESTORE_EMULATOR_HOST }}
+          VITE_FIREBASE_EMULATORS: ${{ secrets.VITE_FIREBASE_EMULATORS }}
+        run: |
+          missing=()
+          required=(
+            VITE_FIREBASE_API_KEY
+            VITE_FIREBASE_AUTH_DOMAIN
+            VITE_FIREBASE_PROJECT_ID
+            VITE_FIREBASE_STORAGE_BUCKET
+            VITE_FIREBASE_MESSAGING_SENDER_ID
+            VITE_FIREBASE_APP_ID
+            VITE_MAPBOX_TOKEN
+            VITE_STRIPE_PUBLISHABLE_KEY
+          )
+          for var in "${required[@]}"; do
+            if [[ -z "${!var}" ]]; then
+              missing+=("$var")
+            fi
+          done
+          if (( ${#missing[@]} )); then
+            echo "Missing required production env vars: ${missing[*]}"
+            exit 1
+          fi
+          blocked=(
+            VITE_FIREBASE_AUTH_EMULATOR_HOST
+            VITE_FIRESTORE_EMULATOR_HOST
+            VITE_FIREBASE_EMULATORS
+          )
+          forbidden=()
+          for var in "${blocked[@]}"; do
+            if [[ -n "${!var}" ]]; then
+              forbidden+=("$var")
+            fi
+          done
+          if (( ${#forbidden[@]} )); then
+            echo "Emulator env vars must not be set for production builds: ${forbidden[*]}"
+            exit 1
+          fi
+
       - name: Build shared package
         run: pnpm --filter @gosenderr/shared build
 
@@ -179,3 +230,60 @@ jobs:
 
       - name: Run admin app tests
         run: pnpm --filter @gosenderr/admin-app test -- --run
+
+  admin-desktop-packaging:
+    name: Admin Desktop Packaging (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    env:
+      CI: true
+      CSC_IDENTITY_AUTO_DISCOVERY: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8.15.1
+          run_install: false
+
+      - name: Enable corepack
+        run: corepack enable
+
+      - name: Get pnpm store path
+        id: pnpm-store
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-store.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared package
+        run: pnpm --filter @gosenderr/shared build
+
+      - name: Build admin desktop
+        run: pnpm --filter @gosenderr/admin-desktop build
+
+      - name: Package admin desktop (dir)
+        run: pnpm --filter @gosenderr/admin-desktop pack
+
+      - name: Verify packaging output
+        run: node -e "const fs=require('fs');const path=require('path');const dir=path.join(process.cwd(),'apps','admin-desktop','dist-electron');if(!fs.existsSync(dir)) {console.error('dist-electron missing');process.exit(1);}const files=fs.readdirSync(dir);if(!files.length){console.error('dist-electron empty');process.exit(1);}console.log('dist-electron contents:', files.join(', '));"

@@ -22,6 +22,7 @@ export { banUser } from "./http/banUser";
 export { createUserForAdmin } from "./http/createUserForAdmin";
 export { runTestFlow } from "./http/runTestFlow";
 export { getPublicConfig } from "./http/getPublicConfig";
+export { getPublicConfigHttp } from "./http/getPublicConfigHttp";
 
 // Stripe Functions
 export * from "./stripe";

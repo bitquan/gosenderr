@@ -25,6 +25,7 @@ import RateCardsPage from './pages/rate-cards/page'
 import EquipmentPage from './pages/equipment/page'
 import SetupPage from './pages/setup/page'
 import EarningsPage from './pages/earnings/page'
+import ProfilePage from './pages/Profile'
 
 function ProtectedRoute() {
   const { user, loading } = useAuth()
@@ -94,6 +95,7 @@ function App() {
               <Route path="/rate-cards" element={<RateCardsPage />} />
               <Route path="/equipment" element={<EquipmentPage />} />
               <Route path="/setup" element={<SetupPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/support" element={<SupportPage />} />
               <Route path="/onboarding" element={<OnboardingPage />} />

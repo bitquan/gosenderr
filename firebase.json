@@ -10,7 +10,8 @@
     "codebase": "default",
     "runtime": "nodejs20",
     "predeploy": [
-      "node scripts/predeploy-vendor-shared.js"
+      "node scripts/predeploy-vendor-shared.js",
+      "npm --prefix firebase/functions run build"
     ]
   },
   "hosting": [
@@ -68,6 +69,86 @@
     {
       "site": "gosenderr-admin",
       "public": "apps/admin-app/dist",
+      "ignore": ["firebase.json", "**/node_modules/**"],
+      "rewrites": [
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ],
+      "headers": [
+        {
+          "source": "**/*.@(jpg|jpeg|gif|png|svg|webp)",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "public, max-age=31536000, immutable"
+            }
+          ]
+        },
+        {
+          "source": "**/*.@(js|css)",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "public, max-age=31536000, immutable"
+            }
+          ]
+        },
+        {
+          "source": "**",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, no-store, must-revalidate"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "site": "gosenderr-courier",
+      "public": "apps/courier-app/dist",
+      "ignore": ["firebase.json", "**/node_modules/**"],
+      "rewrites": [
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ],
+      "headers": [
+        {
+          "source": "**/*.@(jpg|jpeg|gif|png|svg|webp)",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "public, max-age=31536000, immutable"
+            }
+          ]
+        },
+        {
+          "source": "**/*.@(js|css)",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "public, max-age=31536000, immutable"
+            }
+          ]
+        },
+        {
+          "source": "**",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, no-store, must-revalidate"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "site": "gosenderr-shifter",
+      "public": "apps/landing",
       "ignore": ["firebase.json", "**/node_modules/**"],
       "rewrites": [
         {

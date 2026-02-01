@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
-import { doc, onSnapshot, updateDoc, collection, query, where, getDocs } from 'firebase/firestore'
-import { db, auth } from '../lib/firebase'
+import { doc, onSnapshot, updateDoc, collection, query, where, getDocs, serverTimestamp } from 'firebase/firestore'
+import { db, auth, storage } from '../lib/firebase'
+import { updateProfile } from 'firebase/auth'
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { useAuth } from '../hooks/useAuth'
 import { useAdmin } from '../hooks/useAdmin'
 import { Card, CardHeader, CardTitle, CardContent } from '../components/Card'
@@ -23,6 +25,9 @@ export default function CourierProfilePage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [earnings, setEarnings] = useState({ total: 0, completed: 0, thisMonth: 0 })
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const [photoFile, setPhotoFile] = useState<File | null>(null)
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
 
   useEffect(() => {
     if (!user) return
@@ -102,6 +107,39 @@ export default function CourierProfilePage() {
     }
   }
 
+  const handlePhotoSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    setPhotoFile(file)
+    setPhotoPreview(URL.createObjectURL(file))
+  }
+
+  const handleUploadPhoto = async () => {
+    if (!user || !photoFile) return
+
+    setUploadingPhoto(true)
+    try {
+      const fileName = `profilePhotos/${user.uid}/${Date.now()}_${photoFile.name}`
+      const storageRef = ref(storage, fileName)
+      await uploadBytes(storageRef, photoFile)
+      const url = await getDownloadURL(storageRef)
+
+      await updateProfile(user, { photoURL: url })
+      await updateDoc(doc(db, 'users', user.uid), {
+        profilePhotoUrl: url,
+        updatedAt: serverTimestamp(),
+      })
+
+      setPhotoFile(null)
+      setPhotoPreview(null)
+    } catch (error) {
+      console.error('Error uploading profile photo:', error)
+      alert('Failed to upload photo. Please try again.')
+    } finally {
+      setUploadingPhoto(false)
+    }
+  }
+
   const handleSignOut = async () => {
     if (!window.confirm('Sign out of your account?')) return
     
@@ -140,12 +178,39 @@ export default function CourierProfilePage() {
         <Card variant="elevated" className="animate-fade-in">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] flex items-center justify-center text-3xl text-white shadow-lg">
-                {isAdmin ? '🔧' : '👤'}
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] flex items-center justify-center text-3xl text-white shadow-lg overflow-hidden">
+                {photoPreview || user?.photoURL ? (
+                  <img
+                    src={photoPreview || user?.photoURL || ''}
+                    alt="Profile"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span>{isAdmin ? '🔧' : '👤'}</span>
+                )}
               </div>
               <div>
                 <h2 className="text-xl font-bold text-gray-900">{user?.email}</h2>
                 <p className="text-sm text-gray-500">{isAdmin ? 'Admin Account' : 'Courier Account'}</p>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <label className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50 cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoSelect}
+                      className="hidden"
+                    />
+                    Choose Photo
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleUploadPhoto}
+                    disabled={!photoFile || uploadingPhoto}
+                    className="rounded-lg bg-purple-600 px-3 py-1 text-xs font-semibold text-white hover:bg-purple-700 disabled:opacity-50"
+                  >
+                    {uploadingPhoto ? 'Uploading...' : 'Upload'}
+                  </button>
+                </div>
               </div>
             </div>
           </CardContent>

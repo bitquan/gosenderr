@@ -8,7 +8,10 @@ interface JobFormProps {
     dropoff: GeoPoint;
   }) => void | Promise<void>;
   loading?: boolean;
-  onPickupDropoffChange?: (pickup: any, dropoff: any) => void;
+  onPickupDropoffChange?: (
+    pickup: GeoPoint | null,
+    dropoff: GeoPoint | null,
+  ) => void;
 }
 
 export function JobForm({

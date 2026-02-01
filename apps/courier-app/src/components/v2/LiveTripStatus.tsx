@@ -46,7 +46,7 @@ interface LiveTripStatusProps {
 }
 
 export function LiveTripStatus({
-  jobId,
+  jobId: _jobId,
   status,
   pickup,
   dropoff,

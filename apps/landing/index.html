@@ -1,10 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GoSenderr - Choose Your Role</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GoSenderr — On‑Demand Delivery</title>
     <style>
+        :root {
+            --bg: #0f172a;
+            --bg-2: #1e293b;
+            --accent: #7c3aed;
+            --accent-2: #22c55e;
+            --text: #f8fafc;
+            --muted: #cbd5f5;
+            --card: rgba(255, 255, 255, 0.08);
+            --border: rgba(148, 163, 184, 0.2);
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -13,192 +24,282 @@
 
         body {
             min-height: 100vh;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: radial-gradient(circle at top, #1e293b, #0b1120 70%);
+            color: var(--text);
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
         }
 
         .container {
             max-width: 1200px;
-            width: 100%;
+            margin: 0 auto;
+            padding: 40px 24px 80px;
         }
 
-        .header {
-            text-align: center;
-            margin-bottom: 60px;
-            animation: fadeInDown 0.8s ease;
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 40px;
         }
 
-        .logo {
-            font-size: 80px;
-            margin-bottom: 20px;
-        }
-
-        .title {
-            font-size: 48px;
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
             font-weight: 700;
-            color: white;
-            margin-bottom: 10px;
-        }
-
-        .subtitle {
             font-size: 20px;
-            color: rgba(255, 255, 255, 0.9);
         }
 
-        .cards {
+        .badge {
+            padding: 6px 12px;
+            border-radius: 999px;
+            background: rgba(124, 58, 237, 0.2);
+            border: 1px solid rgba(124, 58, 237, 0.4);
+            font-size: 12px;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+        }
+
+        .hero {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 30px;
-            animation: fadeInUp 0.8s ease 0.2s backwards;
+            gap: 40px;
+            align-items: center;
+            margin-bottom: 56px;
         }
 
-        .card {
-            background: white;
-            border-radius: 24px;
-            padding: 40px 30px;
-            text-align: center;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            text-decoration: none;
-            display: block;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        .hero h1 {
+            font-size: 48px;
+            line-height: 1.1;
+            margin-bottom: 16px;
         }
 
-        .card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+        .hero p {
+            font-size: 18px;
+            color: var(--muted);
+            margin-bottom: 24px;
         }
 
-        .card-icon {
-            font-size: 64px;
-            margin-bottom: 20px;
-            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+        .cta-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
         }
 
-        .card-title {
+        .btn {
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            border: 1px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #7c3aed, #4f46e5);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: var(--border);
+            color: var(--text);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .hero-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 28px;
+            backdrop-filter: blur(12px);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 16px;
+            margin-bottom: 56px;
+        }
+
+        .stat {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px;
+        }
+
+        .stat h3 {
+            font-size: 20px;
+            margin-bottom: 6px;
+        }
+
+        .stat p {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .section-title {
             font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 10px;
-            color: #333;
+            margin-bottom: 20px;
         }
 
-        .card-description {
-            font-size: 16px;
-            color: #666;
-            line-height: 1.5;
+        .features,
+        .roles {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 56px;
         }
 
-        .card-customer {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        .feature,
+        .role {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 20px;
         }
 
-        .card-customer .card-title,
-        .card-customer .card-description {
-            color: white;
+        .role strong {
+            display: block;
+            font-size: 18px;
+            margin: 8px 0 6px;
         }
 
-        .card-courier {
-            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+        .role p {
+            color: var(--muted);
+            font-size: 14px;
+            margin-bottom: 14px;
         }
 
-        .card-courier .card-title,
-        .card-courier .card-description {
-            color: white;
+        .role a {
+            font-size: 13px;
+            font-weight: 600;
+            color: #e0e7ff;
         }
 
-        .card-shifter {
-            background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
-        }
-
-        .card-shifter .card-title,
-        .card-shifter .card-description {
-            color: white;
-        }
-
-        .card-admin {
-            background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
-        }
-
-        .card-admin .card-title,
-        .card-admin .card-description {
-            color: white;
-        }
-
-        @keyframes fadeInDown {
-            from {
-                opacity: 0;
-                transform: translateY(-30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        footer {
+            border-top: 1px solid var(--border);
+            padding-top: 20px;
+            color: var(--muted);
+            font-size: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 8px;
         }
 
         @media (max-width: 768px) {
-            .title {
+            .hero h1 {
                 font-size: 36px;
-            }
-
-            .subtitle {
-                font-size: 18px;
-            }
-
-            .cards {
-                grid-template-columns: 1fr;
-                gap: 20px;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <div class="logo">📦</div>
-            <h1 class="title">GoSenderr</h1>
-            <p class="subtitle">Choose your role to get started</p>
-        </div>
+        <header>
+            <div class="brand">
+                <span>📦</span>
+                <span>GoSenderr</span>
+            </div>
+            <span class="badge">On‑Demand Delivery</span>
+        </header>
 
-        <div class="cards">
-            <a href="https://gosenderr-customer.web.app" class="card card-customer">
-                <div class="card-icon">👤</div>
-                <h2 class="card-title">Customer</h2>
-                <p class="card-description">Send packages and track deliveries</p>
-            </a>
+        <section class="hero">
+            <div>
+                <h1>Deliver anything, fast.</h1>
+                <p>
+                    GoSenderr connects customers, couriers, and businesses to move
+                    packages and orders across town with real‑time tracking.
+                </p>
+                <div class="cta-row">
+                    <a class="btn btn-primary" href="https://www.gosenderr.com">Open Marketplace</a>
+                    <a class="btn btn-secondary" href="https://gosenderr-courier.web.app">Become a Courier</a>
+                    <a class="btn btn-secondary" href="https://gosenderr-admin.web.app">Admin Console</a>
+                </div>
+            </div>
+            <div class="hero-card">
+                <h2>Real‑time delivery orchestration</h2>
+                <p>
+                    Match couriers, price jobs, and keep customers in the loop with live
+                    tracking, proof photos, and instant notifications.
+                </p>
+                <div class="cta-row">
+                    <a class="btn btn-primary" href="https://gosenderr-customer.web.app">Customer App</a>
+                    <a class="btn btn-secondary" href="https://gosenderr-courier.web.app">Sender App</a>
+                </div>
+            </div>
+        </section>
 
-            <a href="https://gosenderr-courier.web.app" class="card card-courier">
-                <div class="card-icon">🚗</div>
-                <h2 class="card-title">Courier</h2>
-                <p class="card-description">Deliver packages and earn money</p>
-            </a>
+        <section class="stats">
+            <div class="stat">
+                <h3>Live Tracking</h3>
+                <p>Real‑time status and ETA updates</p>
+            </div>
+            <div class="stat">
+                <h3>Flexible Delivery</h3>
+                <p>Marketplace orders or custom sends</p>
+            </div>
+            <div class="stat">
+                <h3>Secure Payments</h3>
+                <p>Stripe‑powered payouts and escrow</p>
+            </div>
+            <div class="stat">
+                <h3>Admin Control</h3>
+                <p>Approvals, audits, and feature flags</p>
+            </div>
+        </section>
 
-            <a href="https://gosenderr-shifter.web.app" class="card card-shifter">
-                <div class="card-icon">📍</div>
-                <h2 class="card-title">Shifter</h2>
-                <p class="card-description">Manage routes and deliveries</p>
-            </a>
+        <h2 class="section-title">Why GoSenderr</h2>
+        <section class="features">
+            <div class="feature">
+                <h3>Courier Matching</h3>
+                <p>Filter by availability, equipment, and service radius.</p>
+            </div>
+            <div class="feature">
+                <h3>Marketplace + Custom</h3>
+                <p>Sell items or request delivery without a listing.</p>
+            </div>
+            <div class="feature">
+                <h3>Operations Dashboard</h3>
+                <p>Manage disputes, approvals, and system health.</p>
+            </div>
+        </section>
 
-            <a href="https://gosenderr-admin.web.app" class="card card-admin">
-                <div class="card-icon">⚙️</div>
-                <h2 class="card-title">Admin</h2>
-                <p class="card-description">Manage platform operations</p>
-            </a>
-        </div>
+        <h2 class="section-title">Choose your role</h2>
+        <section class="roles">
+            <div class="role">
+                <span>👤</span>
+                <strong>Customer</strong>
+                <p>Book delivery, track jobs, and manage payment methods.</p>
+                <a href="https://www.gosenderr.com">Go to Marketplace →</a>
+            </div>
+            <div class="role">
+                <span>🚗</span>
+                <strong>Courier</strong>
+                <p>Accept jobs, manage rates, and get paid faster.</p>
+                <a href="https://gosenderr-courier.web.app">Open Sender App →</a>
+            </div>
+            <div class="role">
+                <span>⚙️</span>
+                <strong>Admin</strong>
+                <p>Oversee approvals, content moderation, and analytics.</p>
+                <a href="https://gosenderr-admin.web.app">Open Admin Console →</a>
+            </div>
+        </section>
+
+        <footer>
+            <span>© 2026 GoSenderr. All rights reserved.</span>
+            <span>Need help? Contact support in the app.</span>
+        </footer>
     </div>
 </body>
 </html>
