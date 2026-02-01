@@ -30,7 +30,8 @@ export default function AdminSidebar() {
       title: 'User Management',
       items: [
         { label: 'Users', path: '/users', icon: '👥' },
-        { label: 'Courier Approval', path: '/courier-approval', icon: '⚡' }
+        { label: 'Courier Approval', path: '/courier-approval', icon: '⚡' },
+        { label: 'Seller Approval', path: '/seller-approval', icon: '🏪' }
       ]
     },
     {
