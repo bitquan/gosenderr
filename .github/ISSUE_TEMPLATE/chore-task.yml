@@ -1,0 +1,66 @@
+name: Chore / maintenance task
+description: Engineering housekeeping, refactors, or maintenance work
+title: "[Chore]: "
+labels:
+  - type:chore
+body:
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Scope
+      options:
+        - Admin app
+        - Admin desktop
+        - Courier app
+        - Marketplace app
+        - Vendor app
+        - Landing/marketing
+        - Web app
+        - Firebase backend
+        - Shared packages
+        - Docs/Repo
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - P0 - Critical
+        - P1 - High
+        - P2 - Medium
+        - P3 - Low
+    validations:
+      required: true
+  - type: dropdown
+    id: risk
+    attributes:
+      label: Risk
+      options:
+        - High
+        - Medium
+        - Low
+    validations:
+      required: true
+  - type: textarea
+    id: task
+    attributes:
+      label: Task
+      description: What needs to be done?
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Bullet the outcomes that define done.
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies / blockers
+      placeholder: Links to issues, PRs, or docs.
