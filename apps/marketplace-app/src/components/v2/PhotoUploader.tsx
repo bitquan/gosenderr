@@ -2,15 +2,12 @@
 import { useRef, ChangeEvent, useEffect } from 'react';
 import { uploadJobPhoto, UploadProgress } from '@/lib/storage/uploadJobPhoto';
 
-let photoCounter = 0;
 const createPhotoId = () => {
   const cryptoObj = globalThis.crypto;
-  if (!cryptoObj?.getRandomValues) {
+  if (!cryptoObj?.randomUUID) {
     throw new Error('Secure random generator unavailable');
   }
-  const bytes = new Uint32Array(2);
-  cryptoObj.getRandomValues(bytes);
-  return `photo_${bytes[0].toString(36)}_${bytes[1].toString(36)}_${(photoCounter++).toString(36)}`;
+  return `photo_${cryptoObj.randomUUID()}`;
 };
 
 export interface PhotoFile {
