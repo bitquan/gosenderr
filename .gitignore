@@ -65,9 +65,15 @@ out/
 .firebase/
 firebase-debug.log
 firestore-debug.log
+firebase-emulator-data/
+firebase-export-*/
 
 # Turbo
 .turbo/
+
+# Logs
+logs/
+*.log
 
 # Secrets / env files
 .env*

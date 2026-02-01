@@ -27,10 +27,10 @@ export interface MarketplaceItem {
   // Core Identity
   id: string;
 
-  // Vendor Info
-  vendorId: string;
-  vendorName: string;
-  vendorLogo?: string;
+  // Seller Info
+  sellerId: string;
+  sellerName: string;
+  sellerLogo?: string;
 
   // Item Details
   title: string;
@@ -108,7 +108,7 @@ export interface OrderItem {
   price: number; // Price at time of order
   quantity: number;
   sku?: string;
-  vendorId?: string;
+  sellerId?: string;
 }
 
 // Payment status
@@ -145,9 +145,9 @@ export interface Order {
   customerEmail: string;
   customerPhone?: string;
 
-  // Vendor Info (for marketplace orders)
-  vendorId?: string;
-  vendorName?: string;
+  // Seller Info (for marketplace orders)
+  sellerId?: string;
+  sellerName?: string;
 
   // Order Items
   items: OrderItem[];
@@ -176,7 +176,7 @@ export interface Order {
 
   // Pickup Info (if applicable)
   pickupLocation?: {
-    vendorId: string;
+    sellerId: string;
     address: Address;
     instructions?: string;
   };
@@ -207,7 +207,7 @@ export interface Order {
 }
 
 // Vendor Profile
-export interface VendorProfile {
+export interface SellerProfile {
   businessName: string;
   description: string;
   businessType: "individual" | "llc" | "corporation" | "partnership";
@@ -232,14 +232,14 @@ export interface VendorProfile {
 }
 
 // Vendor Application status
-export type VendorApplicationStatus =
+export type SellerApplicationStatus =
   | "pending"
   | "under_review"
   | "approved"
   | "rejected";
 
 // Vendor Application
-export interface VendorApplication {
+export interface SellerApplication {
   // Applicant
   userId: string;
   email: string;
@@ -271,7 +271,7 @@ export interface VendorApplication {
   }>;
 
   // Status
-  status: VendorApplicationStatus;
+  status: SellerApplicationStatus;
 
   // Review
   reviewedBy?: string; // Admin user ID
@@ -291,7 +291,7 @@ export interface MarketplaceFilters {
   maxPrice?: number;
   condition?: ItemCondition;
   searchQuery?: string;
-  vendorId?: string;
+  sellerId?: string;
   sortBy?: "price" | "date" | "popularity";
   sortOrder?: "asc" | "desc";
 }

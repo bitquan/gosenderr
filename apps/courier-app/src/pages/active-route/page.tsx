@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getAuthSafe } from "@/lib/firebase/auth";
+import { getAuthSafe } from "@/lib/firebase";
 import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useRoutes } from "@/hooks/useRoutes";
@@ -172,7 +172,7 @@ export default function ActiveRoutePage() {
   }
 
   return (
-    <div className="fixed inset-0 w-screen h-screen overflow-y-auto pb-24 safe-top">
+    <div className="min-h-screen bg-[#F8F9FF]">
       <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
       {/* Header with Progress */}
       <div>

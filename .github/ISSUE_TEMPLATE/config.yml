@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Project Plan (v2)
+    url: https://github.com/bitquan/gosenderr/blob/main/docs/project-plan/README.md
+    about: Read the active project plan before filing.
+  - name: Security Issue
+    url: https://github.com/bitquan/gosenderr/blob/main/SECURITY.md
+    about: Report security vulnerabilities here.

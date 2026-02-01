@@ -1,15 +1,17 @@
 # Architecture (Draft)
 
 ## Overview
-- Monorepo with multiple apps: `customer-app`, `courier-app`, `admin-app`, `shifter-app`, `web`.
+- Monorepo with multiple apps: `marketplace-app`, `courier-app`, `admin-app`, `admin-desktop`, `landing`.
 - Backend: Firebase (Auth, Firestore, Cloud Functions, Hosting).
 - Payments: Stripe (Connect + Cloud Functions).
 - Maps: Mapbox for courier routing/UI.
 
 ## App responsibilities
-- `customer-app`: marketplace UI, ordering flow, vendor/courier interactions.
+- `marketplace-app`: marketplace UI, ordering flow, seller/courier interactions.
 - `courier-app`: map-first UI and navigation for couriers.
 - `admin-app`: administrative dashboards, user management.
+- `admin-desktop`: Electron shell for admin workflows.
+- `landing`: marketing and entry point.
 
 ## Data model
 - Use canonical Firestore collections and server timestamps. Document known collections here.

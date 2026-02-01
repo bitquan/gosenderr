@@ -536,7 +536,7 @@ firebase hosting:channel:deploy production \
 - [ ] Verify environment variables in `.env`
 - [ ] Run linter: `pnpm lint`
 - [ ] Deploy: `firebase deploy --only hosting:gosenderr-marketplace`
-- [ ] Verify live site: https://gosenderr-marketplace.web.app
+- [ ] Verify live site (placeholder): `https://gosenderr-marketplace.web.app`
 - [ ] Check browser console for errors
 - [ ] Test authentication flow
 - [ ] Test critical user paths
@@ -665,8 +665,8 @@ pnpm exec cap open ios
 
 3. **App Information:**
    - Category: Shopping
-   - Privacy Policy URL: https://gosenderr.com/privacy
-   - Support URL: https://gosenderr.com/support
+   - Privacy Policy URL (placeholder): `https://gosenderr.com/privacy`
+   - Support URL (placeholder): `https://gosenderr.com/support`
 
 4. **Pricing:** Free (in-app purchases for transactions)
 
@@ -690,7 +690,7 @@ pnpm exec cap open ios
 # 4. Share TestFlight link
 ```
 
-TestFlight Link: https://testflight.apple.com/join/XXXXXXXX
+TestFlight Link (placeholder): `https://testflight.apple.com/join/XXXXXXXX`
 
 ### Capacitor Plugins
 
@@ -1406,7 +1406,7 @@ pnpm store prune
 - **Firebase:** https://firebase.google.com/docs
 - **Electron:** https://www.electronjs.org/docs
 - **Capacitor:** https://capacitorjs.com/docs
-- **React Native:** https://reactnative.dev/docs
+- **React Native:** https://reactnative.dev
 - **Stripe:** https://stripe.com/docs
 
 ### Tools
@@ -1416,8 +1416,8 @@ pnpm store prune
 - **Stripe Dashboard:** https://dashboard.stripe.com
 
 ### Support
-- **GitHub Issues:** https://github.com/your-org/gosenderr/issues
-- **Internal Wiki:** https://wiki.gosenderr.com
+- **GitHub Issues:** https://github.com/bitquan/gosenderr/issues
+- **Internal Wiki:** `https://wiki.gosenderr.com` (placeholder)
 - **Slack:** #gosenderr-dev
 
 ---

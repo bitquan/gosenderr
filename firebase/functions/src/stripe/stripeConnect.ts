@@ -1,15 +1,5 @@
 import * as functions from 'firebase-functions/v2';
-import Stripe from 'stripe';
-
-function getStripe() {
-  const apiKey = process.env.STRIPE_SECRET_KEY;
-  if (!apiKey) {
-    throw new Error('STRIPE_SECRET_KEY not configured');
-  }
-  return new Stripe(apiKey, {
-    apiVersion: '2025-02-24.acacia',
-  });
-}
+import { getStripeClient } from './stripeSecrets';
 
 interface StripeConnectData {
   accountId?: string | null;
@@ -43,7 +33,7 @@ export const stripeConnect = functions.https.onCall<StripeConnectData>(
 
     try {
       // Create or retrieve Stripe Connect account
-      const stripe = getStripe();
+      const stripe = await getStripeClient();
       const account = accountId
         ? await stripe.accounts.retrieve(accountId)
         : await stripe.accounts.create({

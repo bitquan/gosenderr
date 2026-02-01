@@ -50,12 +50,35 @@ export function getJobVisibility(job: Job, viewer: JobViewer): JobVisibility {
  * Used for couriers viewing open jobs before acceptance
  */
 export function maskAddress(address: string): string {
-  // Extract approximate location (first part before comma, or just show general area)
-  const parts = address.split(',');
-  if (parts.length >= 2) {
-    // Show city/neighborhood only, e.g., "123 Main St, San Francisco, CA" -> "San Francisco, CA"
-    return parts.slice(1).join(',').trim();
+  const parts = address
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  const cleanedParts = parts.filter((part) => {
+    const lower = part.toLowerCase();
+    return lower !== 'usa' && lower !== 'united states' && lower !== 'united states of america';
+  });
+
+  if (cleanedParts.length >= 3) {
+    const city = cleanedParts[1];
+    const stateZip = cleanedParts[2];
+
+    if (city && stateZip) {
+      return `${city}, ${stateZip}`;
+    }
   }
+
+  if (cleanedParts.length === 2) {
+    return `${cleanedParts[0]}, ${cleanedParts[1]}`;
+  }
+
+  const cityStateZipMatch = address.match(/^(.+?)\s+([A-Z]{2})\s+(\d{5}(?:-\d{4})?)$/);
+  if (cityStateZipMatch) {
+    const [, city, state, zip] = cityStateZipMatch;
+    return `${city}, ${state} ${zip}`;
+  }
+
   return 'Approximate location';
 }
 
@@ -76,6 +99,9 @@ export function getDisplayAddress(
     return maskAddress(address);
   }
 
-  // Fallback to coordinates
-  return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+  if (canSeeExact) {
+    return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+  }
+
+  return 'Approximate location';
 }

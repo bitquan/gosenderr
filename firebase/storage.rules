@@ -55,7 +55,16 @@ service firebase.storage {
       );
     }
 
-    // Marketplace item photos: items/{userId}/{photoFile}
+    // Marketplace item photos: marketplace/{userId}/{photoFile}
+    match /marketplace/{userId}/{photoFile} {
+      // User can upload their own marketplace photos
+      allow write: if isSignedIn() && uid() == userId && isValidImage();
+      
+      // Anyone can read marketplace photos (public marketplace)
+      allow read: if true;
+    }
+
+    // Legacy path support: items/{userId}/{photoFile}
     match /items/{userId}/{photoFile} {
       // User can upload their own item photos
       allow write: if isSignedIn() && uid() == userId && isValidImage();

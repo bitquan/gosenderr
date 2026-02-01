@@ -111,7 +111,7 @@ pnpm list
 
 ```bash
 # Build customer app (main marketplace)
-pnpm --filter @gosenderr/customer-app build
+pnpm --filter @gosenderr/marketplace-app build
 
 # Build admin app
 pnpm --filter @gosenderr/admin-app build
@@ -122,7 +122,7 @@ pnpm build:all
 
 **Verify builds:**
 ```bash
-ls -la apps/customer-app/dist
+ls -la apps/marketplace-app/dist
 ls -la apps/admin-app/dist
 ```
 
@@ -538,7 +538,7 @@ pnpm add firebase@latest react@latest
 
 ```bash
 # Analyze bundle size
-pnpm --filter @gosenderr/customer-app build --analyze
+pnpm --filter @gosenderr/marketplace-app build --analyze
 
 # Lighthouse audit
 lighthouse https://gosenderr.com --output=html

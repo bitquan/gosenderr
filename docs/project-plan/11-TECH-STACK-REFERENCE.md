@@ -351,8 +351,8 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'firebase-vendor': ['firebase/app', 'firebase/auth', 'firebase/firestore'],
+          'react-seller': ['react', 'react-dom', 'react-router-dom'],
+          'firebase-seller': ['firebase/app', 'firebase/auth', 'firebase/firestore'],
         },
       },
     },
@@ -1695,7 +1695,7 @@ firebase functions:log
 ### Communities
 - React Discord: https://discord.gg/react
 - Firebase Discord: https://discord.gg/firebase
-- React Native Community: https://reactnative.dev/community
+- React Native: https://reactnative.dev
 
 ---
 

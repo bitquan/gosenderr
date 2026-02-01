@@ -17,7 +17,7 @@ const roles = [
   { value: 'customer', label: '📦 Customer', description: 'Can create delivery jobs' },
   { value: 'courier', label: '⚡ Courier', description: 'Can accept and deliver jobs' },
   { value: 'package_runner', label: '🚛 Package Runner', description: 'Long-distance package delivery' },
-  { value: 'vendor', label: '🏪 Vendor', description: 'Can sell items in marketplace' },
+  { value: 'seller', label: '🏪 Seller', description: 'Can sell items in marketplace' },
   { value: 'admin', label: '👑 Admin', description: 'Full platform access' }
 ]
 

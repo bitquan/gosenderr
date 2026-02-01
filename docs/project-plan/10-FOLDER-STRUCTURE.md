@@ -29,14 +29,14 @@ gosenderr/
 │       └── test.yml
 │
 ├── apps/
-│   ├── _archive/                    # Old unused code
-│   ├── admin-app/                   # Current admin (web)
+│   ├── admin-app/                   # Admin (web)
 │   │   ├── src/
 │   │   ├── public/
 │   │   ├── package.json
 │   │   └── vite.config.ts
-│   ├── courier-app/                 # Current courier (web)
-│   ├── customer-app/                # Current customer (web)
+│   ├── admin-desktop/               # Admin (Electron)
+│   ├── courier-app/                 # Courier (web + Capacitor)
+│   ├── marketplace-app/             # Marketplace (web)
 │   └── landing/                     # Landing page
 │
 ├── firebase/
@@ -73,7 +73,7 @@ gosenderr/
 ├── scripts/
 │   ├── deploy-cloudrun-web.sh
 │   ├── verify-phase0.sh
-│   └── predeploy-vendor-shared.js
+│   └── predeploy-seller-shared.js
 │
 ├── .env.example
 ├── .firebaserc
@@ -84,6 +84,8 @@ gosenderr/
 ├── turbo.json
 └── README.md
 ```
+
+**Legacy Note:** Older apps and docs are archived on the `scrapile` branch under `scrapile/legacy/*`.
 
 ---
 
@@ -103,8 +105,12 @@ gosenderr/
 │   │   ├── test.yml                 # Run tests
 │   │   └── lint.yml                 # Run linters
 │   ├── ISSUE_TEMPLATE/
-│   │   ├── bug_report.md
-│   │   └── feature_request.md
+│   │   ├── bug-report.yml
+│   │   ├── admin-desktop-bug.yml
+│   │   ├── admin-web-bug.yml
+│   │   ├── marketplace-bug.yml
+│   │   ├── courier-bug.yml
+│   │   └── landing-web-bug.yml
 │   └── PULL_REQUEST_TEMPLATE.md
 │
 ├── apps/                            # All applications
@@ -377,9 +383,9 @@ gosenderr/
 │   │   ├── tsconfig.json
 │   │   └── README.md
 │   │
-│   ├── admin-app/                   # TO REMOVE: Old web admin
-│   ├── courier-app-old/             # TO REMOVE: Old web courier
-│   ├── customer-app/                # TO REMOVE: Old customer app
+│   ├── admin-app/                   # Web admin (active)
+│   ├── courier-app/                 # Courier app (active)
+│   ├── marketplace-app/             # Marketplace app (active)
 │   │
 │   └── landing/                     # Marketing landing page
 │       ├── src/
@@ -538,7 +544,7 @@ gosenderr/
 │   ├── deploy-courier.sh            # NEW: Deploy courier
 │   ├── verify-phase0.sh
 │   ├── verify-docs.sh
-│   ├── predeploy-vendor-shared.js
+│   ├── predeploy-seller-shared.js
 │   ├── build-all.sh                 # Build all apps
 │   ├── test-all.sh                  # Test all apps
 │   └── README.md
@@ -915,13 +921,11 @@ packages:
 
 ### Phase 4: Archive Old Apps
 
-**Mark for removal (don't delete yet):**
+**Archive legacy apps in the `scrapile` branch:**
 ```bash
-mkdir -p apps/_archive
-# After verifying new apps work:
-# mv apps/admin-app apps/_archive/
-# mv apps/customer-app apps/_archive/
-# mv apps/courier-app apps/_archive/courier-app-old
+# In the scrapile branch:
+mkdir -p scrapile/legacy/apps
+# mv apps/<legacy-app> scrapile/legacy/apps/
 ```
 
 ### Phase 5: Update Documentation

@@ -10,6 +10,9 @@ interface MapboxMapProps {
   height?: string;
   routeSegments?: RouteSegment[];
   onMapLoad?: (map: any) => void;
+  showLabels?: boolean;
+  showPopups?: boolean;
+  interactive?: boolean;
 }
 
 export interface MapboxMapHandle {
@@ -23,6 +26,9 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(({
   height = "400px",
   routeSegments = [],
   onMapLoad,
+  showLabels = true,
+  showPopups = true,
+  interactive = true,
 }, ref) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
@@ -65,6 +71,16 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(({
           center: initialCenter as [number, number],
           zoom: 12,
         });
+
+        if (!interactive) {
+          map.scrollZoom.disable();
+          map.boxZoom.disable();
+          map.dragRotate.disable();
+          map.dragPan.disable();
+          map.keyboard.disable();
+          map.doubleClickZoom.disable();
+          map.touchZoomRotate.disable();
+        }
 
         mapRef.current = map;
 
@@ -115,36 +131,27 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(({
   }, [onMapLoad]);
 
   useEffect(() => {
-    console.log('🔵 Courier marker effect - courierLocation:', courierLocation, 'mapReady:', mapReady);
     if (!mapReady || !mapRef.current) {
-      console.log('🔵 Map not ready yet');
       return;
     }
 
     const mapboxgl = window.mapboxgl;
-    if (!mapboxgl) {
-      console.log('🔵 No mapboxgl');
-      return;
-    }
+    if (!mapboxgl) return;
 
     if (courierLocation && courierLocation.lat && courierLocation.lng) {
-      console.log('🔵 Has location, creating/updating marker');
       // Check if marker exists and is the old type (remove it to force recreation)
       if (markersRef.current.courier) {
         const element = markersRef.current.courier.getElement();
         // If it doesn't have our custom class, it's the old default marker - remove it
         if (!element.classList.contains('courier-location-marker')) {
-          console.log('🔵 Removing old default marker');
           markersRef.current.courier.remove();
           markersRef.current.courier = null;
         }
       }
       
       if (markersRef.current.courier) {
-        console.log('🔵 Updating existing marker position');
         markersRef.current.courier.setLngLat([courierLocation.lng, courierLocation.lat]);
       } else {
-        console.log('🔵 Creating new custom marker');
         // Create custom pulsing marker element
         const el = document.createElement('div');
         el.className = 'courier-location-marker';
@@ -207,17 +214,14 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(({
         el.appendChild(halo);
         el.appendChild(dot);
         
-        console.log('🔵 Adding marker to map with element:', el);
         markersRef.current.courier = new mapboxgl.Marker({ 
           element: el,
           anchor: 'center'
         })
           .setLngLat([courierLocation.lng, courierLocation.lat])
           .addTo(mapRef.current);
-        console.log('🔵 Courier marker added successfully:', markersRef.current.courier);
       }
     } else {
-      console.log('🔵 No courierLocation, removing marker if exists');
       if (markersRef.current.courier) {
         markersRef.current.courier.remove();
         markersRef.current.courier = null;
@@ -244,41 +248,33 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(({
 
     // Only create markers if both pickup and dropoff exist
     if (pickup && dropoff) {
-      markersRef.current.pickup = new mapboxgl.Marker({ color: "#16a34a" })
-        .setLngLat([pickup.lng, pickup.lat])
-        .setPopup(
-          new mapboxgl.Popup().setHTML(
-            `<strong>Pickup</strong>${pickup.label ? `<br/>${pickup.label}` : ""}`,
-          ),
-        )
-        .addTo(mapRef.current);
+      const pickupMarker = new mapboxgl.Marker({ color: "#16a34a" })
+        .setLngLat([pickup.lng, pickup.lat]);
 
-      markersRef.current.dropoff = new mapboxgl.Marker({ color: "#dc2626" })
-        .setLngLat([dropoff.lng, dropoff.lat])
-        .setPopup(
+      const dropoffMarker = new mapboxgl.Marker({ color: "#dc2626" })
+        .setLngLat([dropoff.lng, dropoff.lat]);
+
+      if (showPopups) {
+        pickupMarker.setPopup(
           new mapboxgl.Popup().setHTML(
-            `<strong>Dropoff</strong>${dropoff.label ? `<br/>${dropoff.label}` : ""}`,
+            `<strong>Pickup</strong>${showLabels && pickup.label ? `<br/>${pickup.label}` : ""}`,
           ),
-        )
-        .addTo(mapRef.current);
+        );
+        dropoffMarker.setPopup(
+          new mapboxgl.Popup().setHTML(
+            `<strong>Dropoff</strong>${showLabels && dropoff.label ? `<br/>${dropoff.label}` : ""}`,
+          ),
+        );
+      }
+
+      markersRef.current.pickup = pickupMarker.addTo(mapRef.current);
+      markersRef.current.dropoff = dropoffMarker.addTo(mapRef.current);
     }
-  }, [pickup, dropoff, mapReady]);
+  }, [pickup, dropoff, mapReady, showLabels, showPopups]);
 
   // Update route segments
   useEffect(() => {
-    console.log('🗺️ MapboxMap route effect triggered:', {
-      hasMap: !!mapRef.current,
-      styleLoaded: mapRef.current?.isStyleLoaded(),
-      mapReady,
-      numSegments: routeSegments.length,
-      segments: routeSegments.map(s => ({
-        type: s.type,
-        numCoords: s.coordinates.length
-      }))
-    });
-
     if (!mapRef.current || !mapReady) {
-      console.log('⏳ Map not ready yet, waiting...');
       return;
     }
 
@@ -294,18 +290,12 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(({
     });
 
     // Only add routes if we have segments
-    if (routeSegments.length === 0) {
-      console.log('🗺️ No route segments to display');
-      return;
-    }
-
-    console.log('🗺️ Adding route segments to map:', routeSegments.length);
+    if (routeSegments.length === 0) return;
 
     routeSegments.forEach((segment) => {
         const sourceId = `route-${segment.type}`;
         const layerId = `route-${segment.type}`;
       
-      console.log('  Adding route layer:', layerId, 'with', segment.coordinates.length, 'coordinates');
       map.addSource(sourceId, {
         type: 'geojson',
         data: {
@@ -344,8 +334,16 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(({
           <p style={{ marginBottom: "8px" }}>Map unavailable</p>
           <p style={{ fontSize: "12px" }}>Set VITE_MAPBOX_TOKEN in .env.local</p>
           <div style={{ marginTop: "16px", fontSize: "14px", textAlign: "left" }}>
-              {pickup && <p>📍 Pickup: {pickup.label || `${pickup.lat}, ${pickup.lng}`}</p>}
-              {dropoff && <p>🎯 Dropoff: {dropoff.label || `${dropoff.lat}, ${dropoff.lng}`}</p>}
+              {pickup && (
+                <p>
+                  📍 Pickup: {showLabels && pickup.label ? pickup.label : 'Approximate location'}
+                </p>
+              )}
+              {dropoff && (
+                <p>
+                  🎯 Dropoff: {showLabels && dropoff.label ? dropoff.label : 'Approximate location'}
+                </p>
+              )}
             {courierLocation && (
               <p>🚗 Courier: {courierLocation.lat}, {courierLocation.lng}</p>
             )}
@@ -355,7 +353,16 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(({
     );
   }
 
-  return <div ref={mapContainer} style={{ height, borderRadius: "8px" }} />;
+  return (
+    <div
+      ref={mapContainer}
+      style={{
+        height,
+        borderRadius: "8px",
+        pointerEvents: interactive ? "auto" : "none",
+      }}
+    />
+  );
 });
 
 MapboxMap.displayName = 'MapboxMap';

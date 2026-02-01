@@ -1,0 +1,76 @@
+{
+  "featureFlags": {
+    "marketplace": {
+      "name": "Marketplace",
+      "description": "Enable marketplace item listings and purchases",
+      "enabled": true,
+      "category": "marketplace",
+      "createdAt": { "__datatype__": "timestamp", "value": { "_seconds": 1738296000, "_nanoseconds": 0 } },
+      "updatedAt": { "__datatype__": "timestamp", "value": { "_seconds": 1738296000, "_nanoseconds": 0 } }
+    },
+    "package_shipping": {
+      "name": "Package Shipping",
+      "description": "Enable package shipping and long-haul delivery",
+      "enabled": true,
+      "category": "delivery",
+      "createdAt": { "__datatype__": "timestamp", "value": { "_seconds": 1738296000, "_nanoseconds": 0 } },
+      "updatedAt": { "__datatype__": "timestamp", "value": { "_seconds": 1738296000, "_nanoseconds": 0 } }
+    },
+    "stripe_payments": {
+      "name": "Stripe Payments",
+      "description": "Enable Stripe payment processing",
+      "enabled": true,
+      "category": "payments",
+      "createdAt": { "__datatype__": "timestamp", "value": { "_seconds": 1738296000, "_nanoseconds": 0 } },
+      "updatedAt": { "__datatype__": "timestamp", "value": { "_seconds": 1738296000, "_nanoseconds": 0 } }
+    },
+    "push_notifications": {
+      "name": "Push Notifications",
+      "description": "Enable push notifications for mobile apps",
+      "enabled": false,
+      "category": "notifications",
+      "createdAt": { "__datatype__": "timestamp", "value": { "_seconds": 1738296000, "_nanoseconds": 0 } },
+      "updatedAt": { "__datatype__": "timestamp", "value": { "_seconds": 1738296000, "_nanoseconds": 0 } }
+    },
+    "email_notifications": {
+      "name": "Email Notifications",
+      "description": "Enable email notifications",
+      "enabled": true,
+      "category": "notifications",
+      "createdAt": { "__datatype__": "timestamp", "value": { "_seconds": 1738296000, "_nanoseconds": 0 } },
+      "updatedAt": { "__datatype__": "timestamp", "value": { "_seconds": 1738296000, "_nanoseconds": 0 } }
+    },
+    "sms_notifications": {
+      "name": "SMS Notifications",
+      "description": "Enable SMS text notifications",
+      "enabled": false,
+      "category": "notifications",
+      "createdAt": { "__datatype__": "timestamp", "value": { "_seconds": 1738296000, "_nanoseconds": 0 } },
+      "updatedAt": { "__datatype__": "timestamp", "value": { "_seconds": 1738296000, "_nanoseconds": 0 } }
+    },
+    "live_tracking": {
+      "name": "Live Tracking",
+      "description": "Enable real-time delivery tracking on map",
+      "enabled": true,
+      "category": "delivery",
+      "createdAt": { "__datatype__": "timestamp", "value": { "_seconds": 1738296000, "_nanoseconds": 0 } },
+      "updatedAt": { "__datatype__": "timestamp", "value": { "_seconds": 1738296000, "_nanoseconds": 0 } }
+    },
+    "disputes_system": {
+      "name": "Disputes System",
+      "description": "Enable dispute filing and resolution",
+      "enabled": true,
+      "category": "system",
+      "createdAt": { "__datatype__": "timestamp", "value": { "_seconds": 1738296000, "_nanoseconds": 0 } },
+      "updatedAt": { "__datatype__": "timestamp", "value": { "_seconds": 1738296000, "_nanoseconds": 0 } }
+    },
+    "ratings_reviews": {
+      "name": "Ratings & Reviews",
+      "description": "Enable user ratings and reviews",
+      "enabled": true,
+      "category": "system",
+      "createdAt": { "__datatype__": "timestamp", "value": { "_seconds": 1738296000, "_nanoseconds": 0 } },
+      "updatedAt": { "__datatype__": "timestamp", "value": { "_seconds": 1738296000, "_nanoseconds": 0 } }
+    }
+  }
+}

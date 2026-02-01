@@ -1,0 +1,50 @@
+name: Admin web bug
+description: Report a bug in the Admin web app
+title: "[Admin Web Bug]: "
+labels:
+  - bug
+  - admin-web
+body:
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      options:
+        - Production
+        - Staging
+        - Local dev
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: URL
+      placeholder: https://...
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Console logs
+      render: shell
+  - type: input
+    id: browser
+    attributes:
+      label: Browser
+      placeholder: Chrome 122, Safari 17

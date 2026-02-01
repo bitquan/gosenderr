@@ -75,7 +75,7 @@ export default function CourierJobDetail() {
   };
 
   return (
-    <div className="fixed inset-0 w-screen h-screen overflow-y-auto bg-[#F8F9FF] pb-24 safe-top">
+    <div className="min-h-screen bg-[#F8F9FF]">
       {/* Header */}
       <div className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] p-6 text-white shadow-lg sticky top-0 z-10">
         <Link

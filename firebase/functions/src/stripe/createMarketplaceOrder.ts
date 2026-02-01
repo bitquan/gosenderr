@@ -1,21 +1,11 @@
 import * as functions from 'firebase-functions/v2';
 import * as admin from 'firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
-import Stripe from 'stripe';
+import { getStripeClient } from './stripeSecrets';
 
 // Ensure admin is initialized (safe to call multiple times)
 if (!admin.apps.length) {
   admin.initializeApp();
-}
-
-function getStripe() {
-  const apiKey = process.env.STRIPE_SECRET_KEY;
-  if (!apiKey) {
-    throw new Error('STRIPE_SECRET_KEY not configured');
-  }
-  return new Stripe(apiKey, {
-    apiVersion: '2025-02-24.acacia',
-  });
 }
 
 interface MarketplaceItem {
@@ -69,7 +59,7 @@ export const createMarketplaceOrder = functions.https.onCall<CreateMarketplaceOr
 
     try {
       const db = admin.firestore();
-      const stripe = getStripe();
+      const stripe = await getStripeClient();
       
       // Create payment intent with Stripe
       const paymentIntent = await stripe.paymentIntents.create({

@@ -1,0 +1,178 @@
+version: "3.9"
+
+services:
+  dev:
+    platform: ${DOCKER_PLATFORM:-linux/arm64}
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: gosenderr/dev:local
+    volumes:
+      - .:/workspace:cached
+      - node_modules:/workspace/node_modules
+    working_dir: /workspace
+    environment:
+      - NODE_ENV=development
+    command: tail -f /dev/null
+
+  firebase-emulator:
+    platform: ${DOCKER_PLATFORM:-linux/arm64}
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: gosenderr/dev:local
+    depends_on:
+      - dev
+    volumes:
+      - .:/workspace:cached
+      - node_modules:/workspace/node_modules
+    working_dir: /workspace
+    command: sh -lc "./scripts/start-emulators.sh"
+    ports:
+      - "9099:9099" # Auth
+      - "8080:8080" # Firestore
+      - "9199:9199" # Storage
+      - "4000:4000" # Emulator UI
+    environment:
+      - FIREBASE_EMULATOR_HUB=localhost:4400
+      - GCLOUD_PROJECT=gosenderr-6773f
+      - FIREBASE_PROJECT_ID=gosenderr-6773f
+      - PROJECT_ID=gosenderr-6773f
+      - APP_ENV=development
+      - IN_DOCKER=1
+      - ENABLE_STORAGE_IN_DOCKER=1
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "sh", "-c", "curl -sSf http://localhost:4000/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 60s
+
+  admin-app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: gosenderr/dev:local
+    depends_on:
+      - firebase-emulator
+    volumes:
+      - .:/workspace:cached
+      - node_modules:/workspace/node_modules
+    working_dir: /workspace
+    environment:
+      - HOST=0.0.0.0
+      - PORT=3000
+      - DEBUG=vite:server
+    command: sh -lc "pnpm install --frozen-lockfile && pnpm --filter @gosenderr/admin-app dev -- --host 0.0.0.0"
+    healthcheck:
+      test: ["CMD", "sh", "-c", "curl -sSf http://localhost:3000/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    ports:
+      - "3000:3000"
+
+  customer-app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: gosenderr/dev:local
+    depends_on:
+      - firebase-emulator
+    volumes:
+      - .:/workspace:cached
+      - node_modules:/workspace/node_modules
+    working_dir: /workspace
+    environment:
+      - HOST=0.0.0.0
+      - PORT=5173
+      - DEBUG=vite:server
+    command: sh -lc "pnpm install --frozen-lockfile && pnpm --filter @gosenderr/marketplace-app dev -- --host 0.0.0.0 --logLevel debug"
+    healthcheck:
+      test: ["CMD", "sh", "-c", "curl -sSf http://localhost:5173/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    ports:
+      - "5173:5173"
+
+  courier-app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: gosenderr/dev:local
+    depends_on:
+      - firebase-emulator
+    volumes:
+      - .:/workspace:cached
+      - node_modules:/workspace/node_modules
+    working_dir: /workspace
+    environment:
+      - HOST=0.0.0.0
+      - PORT=5174
+      - DEBUG=vite:server
+    command: sh -lc "pnpm install --frozen-lockfile && pnpm --filter @gosenderr/courier-app dev -- --host 0.0.0.0"
+    healthcheck:
+      test: ["CMD", "sh", "-c", "curl -sSf http://localhost:5174/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    ports:
+      - "5174:5174"
+
+  admin-desktop:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: gosenderr/dev:local
+    depends_on:
+      - firebase-emulator
+    volumes:
+      - .:/workspace:cached
+      - node_modules:/workspace/node_modules
+    working_dir: /workspace
+    environment:
+      - HOST=0.0.0.0
+      - PORT=5176
+      - DEBUG=vite:server
+    command: sh -lc "pnpm install --frozen-lockfile && pnpm --filter @gosenderr/admin-desktop dev -- --host 0.0.0.0"
+    healthcheck:
+      test: ["CMD", "sh", "-c", "curl -sSf http://localhost:5176/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    ports:
+      - "5176:5176"
+
+  web-app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: gosenderr/dev:local
+    depends_on:
+      - firebase-emulator
+    volumes:
+      - .:/workspace:cached
+      - node_modules:/workspace/node_modules
+    working_dir: /workspace
+    environment:
+      - HOST=0.0.0.0
+      - PORT=3003
+      - DEBUG=vite:server
+    command: sh -lc "pnpm install --frozen-lockfile && pnpm --filter @gosenderr/web dev -- --host 0.0.0.0"
+    healthcheck:
+      test: ["CMD", "sh", "-c", "curl -sSf http://localhost:3003/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    ports:
+      - "3003:3003"
+
+volumes:
+  node_modules:

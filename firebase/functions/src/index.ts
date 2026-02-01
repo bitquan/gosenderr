@@ -20,10 +20,8 @@ export { setPackageRunnerClaim } from "./http/setPackageRunnerClaim";
 export { setAdminClaim } from "./http/setAdminClaim";
 export { banUser } from "./http/banUser";
 export { createUserForAdmin } from "./http/createUserForAdmin";
-export { diagnoseCreateUserCall } from "./http/diagnoseCreateUserCall";
-export { simulateRule } from "./http/simulateRule";
 export { runTestFlow } from "./http/runTestFlow";
-export { runSystemSimulation } from "./http/runSystemSimulation";
+export { getPublicConfig } from "./http/getPublicConfig";
 
 // Stripe Functions
 export * from "./stripe";

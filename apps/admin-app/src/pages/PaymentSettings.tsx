@@ -5,10 +5,8 @@ import { useAuth } from '../hooks/useAuth'
 import { Card, CardHeader, CardTitle, CardContent } from '../components/Card'
 
 interface PaymentSettings {
-  stripePublishableKey: string
-  stripeSecretKey: string
   platformCommissionRate: number
-  vendorPayoutSchedule: 'daily' | 'weekly' | 'monthly'
+  sellerPayoutSchedule: 'daily' | 'weekly' | 'monthly'
   minimumPayoutAmount: number
   autoPayouts: boolean
   paymentMethods: {
@@ -24,10 +22,8 @@ interface PaymentSettings {
 export default function PaymentSettingsPage() {
   const { user } = useAuth()
   const [settings, setSettings] = useState<PaymentSettings>({
-    stripePublishableKey: '',
-    stripeSecretKey: '',
     platformCommissionRate: 10,
-    vendorPayoutSchedule: 'weekly',
+    sellerPayoutSchedule: 'weekly',
     minimumPayoutAmount: 50,
     autoPayouts: true,
     paymentMethods: {
@@ -52,7 +48,17 @@ export default function PaymentSettingsPage() {
       const docSnap = await getDoc(docRef)
       
       if (docSnap.exists()) {
-        setSettings(docSnap.data() as PaymentSettings)
+        const raw = docSnap.data() as any
+        setSettings({
+          platformCommissionRate: raw.platformCommissionRate ?? 10,
+          sellerPayoutSchedule: raw.sellerPayoutSchedule ?? raw.vendorPayoutSchedule ?? 'weekly',
+          minimumPayoutAmount: raw.minimumPayoutAmount ?? 50,
+          autoPayouts: raw.autoPayouts ?? true,
+          paymentMethods: raw.paymentMethods ?? { card: true, applePay: true, googlePay: true },
+          currency: raw.currency ?? 'USD',
+          taxRate: raw.taxRate ?? 0,
+          collectTax: raw.collectTax ?? false
+        })
       }
     } catch (error) {
       console.error('Error loading payment settings:', error)
@@ -97,38 +103,14 @@ export default function PaymentSettingsPage() {
       </div>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 -mt-8 space-y-6">
-        {/* Stripe Configuration */}
         <Card variant="elevated">
           <CardHeader>
-            <CardTitle>Stripe Configuration</CardTitle>
+            <CardTitle>Stripe Keys</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Publishable Key
-                </label>
-                <input
-                  type="text"
-                  value={settings.stripePublishableKey}
-                  onChange={(e) => setSettings({...settings, stripePublishableKey: e.target.value})}
-                  placeholder="pk_..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Secret Key
-                </label>
-                <input
-                  type="password"
-                  value={settings.stripeSecretKey}
-                  onChange={(e) => setSettings({...settings, stripeSecretKey: e.target.value})}
-                  placeholder="sk_..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
-                <p className="text-xs text-gray-500 mt-1">Keep this secret and secure</p>
-              </div>
+            <div className="text-sm text-gray-600">
+              Stripe keys are managed in the Secrets Manager. Go to Settings → Secrets to update
+              publishable keys, secret keys, and webhook secrets.
             </div>
           </CardContent>
         </Card>
@@ -190,10 +172,10 @@ export default function PaymentSettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Vendor Payouts */}
+        {/* Seller Payouts */}
         <Card variant="elevated">
           <CardHeader>
-            <CardTitle>Vendor Payouts</CardTitle>
+            <CardTitle>Seller Payouts</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -202,8 +184,8 @@ export default function PaymentSettingsPage() {
                   Payout Schedule
                 </label>
                 <select
-                  value={settings.vendorPayoutSchedule}
-                  onChange={(e) => setSettings({...settings, vendorPayoutSchedule: e.target.value as any})}
+                  value={settings.sellerPayoutSchedule}
+                  onChange={(e) => setSettings({...settings, sellerPayoutSchedule: e.target.value as any})}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                 >
                   <option value="daily">Daily</option>
@@ -225,7 +207,7 @@ export default function PaymentSettingsPage() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Vendors must have at least ${settings.minimumPayoutAmount} to receive a payout
+                  Sellers must have at least ${settings.minimumPayoutAmount} to receive a payout
                 </p>
               </div>
 

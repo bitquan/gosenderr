@@ -1,0 +1,20 @@
+appId: com.gosenderr.admin
+productName: GoSenderr Admin
+copyright: Copyright © 2026 GoSenderr
+
+directories:
+  output: dist-electron
+
+files:
+  - dist/**/*
+  - electron/out/**/*
+  - package.json
+
+mac:
+  category: public.app-category.business
+  target:
+    - dmg
+
+win:
+  target:
+    - nsis

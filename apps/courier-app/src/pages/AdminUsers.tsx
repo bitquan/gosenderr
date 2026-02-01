@@ -21,7 +21,7 @@ interface User {
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState<'all' | 'customer' | 'courier' | 'package_runner' | 'vendor' | 'admin'>('all')
+  const [filter, setFilter] = useState<'all' | 'customer' | 'courier' | 'package_runner' | 'seller' | 'admin'>('all')
   const [editRoleUser, setEditRoleUser] = useState<User | null>(null)
   const [banUser, setBanUser] = useState<User | null>(null)
 
@@ -49,13 +49,13 @@ export default function AdminUsersPage() {
     if (filter === 'admin') return user.role === 'admin'
     if (filter === 'courier') return user.role === 'courier' || user.courierProfile
     if (filter === 'package_runner') return user.role === 'package_runner'
-    if (filter === 'vendor') return user.role === 'vendor'
+    if (filter === 'seller') return user.role === 'seller'
     if (filter === 'customer') return user.role === 'customer' || (!user.role && !user.courierProfile)
     return true
   })
 
   return (
-    <div className="min-h-screen bg-[#F8F9FF] pb-24">
+    <div className="min-h-screen bg-[#F8F9FF]">
       <div className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] rounded-b-[32px] p-6 text-white shadow-lg">
         <div className="max-w-6xl mx-auto">
           <h1 className="text-3xl font-bold mb-2">👥 User Management</h1>
@@ -66,13 +66,13 @@ export default function AdminUsersPage() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 -mt-6 space-y-4">
         {/* Filter Tabs */}
         <div className="bg-white rounded-2xl shadow-lg p-2 flex gap-2 flex-wrap">
-          {(['all', 'customer', 'courier', 'package_runner', 'vendor', 'admin'] as const).map((f) => {
+          {(['all', 'customer', 'courier', 'package_runner', 'seller', 'admin'] as const).map((f) => {
             const count = users.filter(user => {
               if (f === 'all') return true
               if (f === 'admin') return user.role === 'admin'
               if (f === 'courier') return user.role === 'courier' || user.courierProfile
               if (f === 'package_runner') return user.role === 'package_runner'
-              if (f === 'vendor') return user.role === 'vendor'
+              if (f === 'seller') return user.role === 'seller'
               if (f === 'customer') return user.role === 'customer' || (!user.role && !user.courierProfile)
               return false
             }).length
@@ -89,7 +89,7 @@ export default function AdminUsersPage() {
               >
                 <div className="flex items-center justify-center gap-2">
                   <span>
-                    {f === 'package_runner' ? 'Runners' : f === 'customer' ? 'Customers' : f === 'courier' ? 'Couriers' : f === 'vendor' ? 'Vendors' : f === 'admin' ? 'Admins' : 'All'}
+                    {f === 'package_runner' ? 'Runners' : f === 'customer' ? 'Customers' : f === 'courier' ? 'Couriers' : f === 'seller' ? 'Sellers' : f === 'admin' ? 'Admins' : 'All'}
                   </span>
                   <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
                     filter === f ? 'bg-white/20' : 'bg-gray-100'
@@ -128,9 +128,9 @@ export default function AdminUsersPage() {
                               🚛 Package Runner
                             </span>
                           )}
-                          {user.role === 'vendor' && (
+                          {user.role === 'seller' && (
                             <span className="px-2 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold">
-                              🏪 Vendor
+                              🏪 Seller
                             </span>
                           )}
                           {(user.role === 'courier' || user.courierProfile) && (

@@ -4,9 +4,9 @@ export type ItemStatus = "draft" | "active" | "inactive" | "sold" | "archived";
 export type ItemCategory = "electronics" | "furniture" | "clothing" | "food" | "books" | "toys" | "sports" | "tools" | "home" | "garden" | "other";
 export interface MarketplaceItem {
     id: string;
-    vendorId: string;
-    vendorName: string;
-    vendorLogo?: string;
+    sellerId: string;
+    sellerName: string;
+    sellerLogo?: string;
     title: string;
     description: string;
     shortDescription?: string;
@@ -64,7 +64,7 @@ export interface OrderItem {
     price: number;
     quantity: number;
     sku?: string;
-    vendorId?: string;
+    sellerId?: string;
 }
 export type PaymentStatus = "pending" | "paid" | "refunded" | "failed" | "cancelled";
 export type OrderStatus = "pending" | "confirmed" | "preparing" | "ready" | "out_for_delivery" | "delivered" | "cancelled";
@@ -77,8 +77,8 @@ export interface Order {
     customerName: string;
     customerEmail: string;
     customerPhone?: string;
-    vendorId?: string;
-    vendorName?: string;
+    sellerId?: string;
+    sellerName?: string;
     items: OrderItem[];
     subtotal: number;
     tax: number;
@@ -95,7 +95,7 @@ export interface Order {
     fulfillmentMethod: FulfillmentMethod;
     deliveryAddress?: Address;
     pickupLocation?: {
-        vendorId: string;
+        sellerId: string;
         address: Address;
         instructions?: string;
     };
@@ -114,7 +114,7 @@ export interface Order {
     completedAt?: Timestamp;
     cancelledAt?: Timestamp;
 }
-export interface VendorProfile {
+export interface SellerProfile {
     businessName: string;
     description: string;
     businessType: "individual" | "llc" | "corporation" | "partnership";
@@ -131,8 +131,8 @@ export interface VendorProfile {
     isActive?: boolean;
     categories?: string[];
 }
-export type VendorApplicationStatus = "pending" | "under_review" | "approved" | "rejected";
-export interface VendorApplication {
+export type SellerApplicationStatus = "pending" | "under_review" | "approved" | "rejected";
+export interface SellerApplication {
     userId: string;
     email: string;
     displayName: string;
@@ -149,7 +149,7 @@ export interface VendorApplication {
         url: string;
         uploadedAt: Timestamp;
     }>;
-    status: VendorApplicationStatus;
+    status: SellerApplicationStatus;
     reviewedBy?: string;
     reviewedAt?: Timestamp;
     rejectionReason?: string;
@@ -163,7 +163,7 @@ export interface MarketplaceFilters {
     maxPrice?: number;
     condition?: ItemCondition;
     searchQuery?: string;
-    vendorId?: string;
+    sellerId?: string;
     sortBy?: "price" | "date" | "popularity";
     sortOrder?: "asc" | "desc";
 }
