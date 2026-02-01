@@ -154,6 +154,8 @@ Apps will be available at:
 
 ## 🚢 Deployment
 
+See the canonical deployment guide in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
 Each app is deployed separately to Firebase Hosting:
 
 ```bash
