@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ComponentType, type ReactNode, type MouseEventHandler, type ChangeEvent } from 'react'
 import { collection, getDocs, limit, query } from 'firebase/firestore'
 import { Link } from 'react-router-dom'
 import { db } from '../lib/firebase'
@@ -10,6 +10,15 @@ interface SearchResult {
   href?: string
   type: 'user' | 'order' | 'job'
 }
+
+interface LinkCompatProps {
+  to: string
+  onClick?: MouseEventHandler<HTMLAnchorElement>
+  className?: string
+  children: ReactNode
+}
+
+const LinkCompat = Link as unknown as ComponentType<LinkCompatProps>
 
 export default function GlobalSearchModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [loading, setLoading] = useState(false)
@@ -84,7 +93,7 @@ export default function GlobalSearchModal({ open, onClose }: { open: boolean; on
           <input
             autoFocus
             value={queryText}
-            onChange={(e) => setQueryText(e.target.value)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setQueryText(e.target.value)}
             placeholder="Search users, orders, jobs..."
             className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
           />
@@ -105,7 +114,7 @@ export default function GlobalSearchModal({ open, onClose }: { open: boolean; on
             <div className="space-y-2">
               {filtered.map((result: SearchResult) => (
                 result.href ? (
-                  <Link
+                  <LinkCompat
                     key={`${result.type}-${result.id}`}
                     to={result.href}
                     onClick={onClose}
@@ -116,7 +125,7 @@ export default function GlobalSearchModal({ open, onClose }: { open: boolean; on
                       <p className="text-xs text-gray-500">{result.subtitle}</p>
                     </div>
                     <span className="text-xs uppercase text-gray-400">{result.type}</span>
-                  </Link>
+                  </LinkCompat>
                 ) : (
                   <div key={`${result.type}-${result.id}`} className="flex items-center justify-between p-3 rounded-xl">
                     <div>

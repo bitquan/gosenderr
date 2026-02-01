@@ -5,6 +5,7 @@
 
 import * as functions from 'firebase-functions/v2';
 import * as admin from 'firebase-admin';
+import type Stripe from 'stripe';
 import { getStripeClient } from './stripeSecrets';
 
 // ============================================================================
