@@ -27,4 +27,4 @@ To run a manual deploy (staging or production):
 4. Fix minimal code or workflow change in a small branch and open a PR.
 
 ## Secrets & Configuration
-See the `env:` blocks in each workflow file for required secrets and variables.
+See the `env:` blocks in each workflow file for required secrets and variables. The checklist is in [docs/github-actions-fixes/SECRETS_CHECKLIST.md](../docs/github-actions-fixes/SECRETS_CHECKLIST.md).
