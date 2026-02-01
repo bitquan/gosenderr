@@ -30,7 +30,7 @@ if (isValidConfig) {
     dbInstance = getFirestore(app)
     authInstance = getAuth(app)
     storageInstance = getStorage(app)
-    functionsInstance = getFunctions(app)
+    functionsInstance = getFunctions(app, "us-central1")
     
     // Connect to Firebase Emulators only when explicitly enabled
     if (shouldUseEmulators) {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { useAuthUser } from '@/hooks/v2/useAuthUser';
 import { Link } from 'react-router-dom';
@@ -55,16 +55,15 @@ export default function SellerOrders() {
 
   const fetchSellerOrders = async () => {
     try {
-      // Fetch all orders and filter for seller's items
-      const ordersSnapshot = await getDocs(collection(db, 'orders'));
-      const sellerOrders = ordersSnapshot.docs
-        .map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }))
-        .filter((order: any) => {
-          return order.items?.some((item: OrderItem) => item.sellerId === uid);
-        }) as Order[];
+      const ordersQuery = query(
+        collection(db, 'orders'),
+        where('sellerId', '==', uid)
+      );
+      const ordersSnapshot = await getDocs(ordersQuery);
+      const sellerOrders = ordersSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Order[];
 
       // Sort by date (newest first)
       sellerOrders.sort((a, b) => {

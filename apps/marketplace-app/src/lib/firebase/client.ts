@@ -36,7 +36,7 @@ if (isBrowser && isValidConfig) {
     app = getApps().length ? getApp() : initializeApp(firebaseConfig);
     dbInstance = getFirestore(app);
     storageInstance = getStorage(app);
-    functionsInstance = getFunctions(app);
+    functionsInstance = getFunctions(app, "us-central1");
     authInstance = getAuth(app);
     console.log("Firebase initialized successfully");
     // If CI or local E2E sets emulator env vars, connect SDK to the emulators so tests operate against them.

@@ -9,6 +9,7 @@ export const getPublicConfig = functions.https.onCall(
       "http://localhost:5173",
       "http://127.0.0.1:5173",
     ],
+    minInstances: 1,
   },
   async () => {
   const stripeDoc = await admin.firestore().doc("secrets/stripe").get();

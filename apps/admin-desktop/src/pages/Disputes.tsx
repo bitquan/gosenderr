@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { collection, query, orderBy, getDocs, doc, updateDoc, Timestamp, addDoc } from 'firebase/firestore'
+import { collection, query, orderBy, getDocs, doc, updateDoc, Timestamp, addDoc, limit } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { Card, CardHeader, CardTitle, CardContent } from '../components/Card'
 
@@ -36,7 +36,7 @@ export default function DisputesPage() {
 
   const loadDisputes = async () => {
     try {
-      const q = query(collection(db, 'disputes'), orderBy('createdAt', 'desc'))
+      const q = query(collection(db, 'disputes'), orderBy('createdAt', 'desc'), limit(200))
       const snapshot = await getDocs(q)
       const disputesData = snapshot.docs.map(doc => ({
         id: doc.id,

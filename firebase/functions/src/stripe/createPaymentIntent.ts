@@ -10,6 +10,7 @@ interface CreatePaymentIntentData {
 export const createPaymentIntent = functions.https.onCall<CreatePaymentIntentData>(
   {
     cors: true,
+    minInstances: 1,
     // secrets: ['STRIPE_SECRET_KEY'],
   },
   async (request) => {

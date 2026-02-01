@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import { FoodRateCard } from "@gosenderr/shared";
+import { usePlatformSettings } from "@/hooks/usePlatformSettings";
 
 interface FoodRateCardBuilderProps {
   currentRateCard?: FoodRateCard;
@@ -21,6 +22,7 @@ export function FoodRateCardBuilder({
   currentRateCard,
   onSave,
 }: FoodRateCardBuilderProps) {
+  const { settings: platformSettings } = usePlatformSettings();
   const [baseFare, setBaseFare] = useState(
     currentRateCard?.baseFare?.toString() || "3.50",
   );
@@ -149,7 +151,7 @@ export function FoodRateCardBuilder({
     const peakMultiplier = getPeakMultiplier(previewDay, previewTime);
     const totalWithPeak = isPeak ? subtotal * peakMultiplier : subtotal;
 
-    const platformFee = 1.5;
+    const platformFee = platformSettings.platformFeeFood ?? 1.5;
     const customerPays = totalWithPeak + platformFee;
 
     return {

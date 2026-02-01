@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { updateProfile } from "firebase/auth";
-import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { doc, updateDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { db, storage } from "@/lib/firebase/client";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -59,11 +59,15 @@ export default function CustomerProfilePage() {
 
       // Update Firestore user document
       const userRef = doc(db, "users", user.uid);
-      await updateDoc(userRef, {
-        displayName: displayName || null,
-        phoneNumber: phoneNumber || null,
-        updatedAt: new Date(),
-      });
+      await setDoc(
+        userRef,
+        {
+          displayName: displayName || null,
+          phoneNumber: phoneNumber || null,
+          updatedAt: new Date(),
+        },
+        { merge: true },
+      );
 
       setIsEditing(false);
       window.location.reload(); // Refresh to show updated data
@@ -93,10 +97,14 @@ export default function CustomerProfilePage() {
       const url = await getDownloadURL(storageRef);
 
       await updateProfile(user, { photoURL: url });
-      await updateDoc(doc(db, "users", user.uid), {
-        profilePhotoUrl: url,
-        updatedAt: serverTimestamp(),
-      });
+      await setDoc(
+        doc(db, "users", user.uid),
+        {
+          profilePhotoUrl: url,
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true },
+      );
 
       setPhotoFile(null);
       setPhotoPreview(null);

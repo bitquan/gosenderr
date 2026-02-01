@@ -51,7 +51,6 @@ export function useNearbyCouriers(
       const q = query(
         usersRef,
         where("role", "==", "courier"),
-        where("courierProfile.status", "==", "approved"),
         where("courierProfile.isOnline", "==", true),
         where("courierProfile.currentLocation.geohash", ">=", hashPrefix),
         where("courierProfile.currentLocation.geohash", "<=", hashPrefix + "\uf8ff"),
@@ -77,6 +76,15 @@ export function useNearbyCouriers(
 
           merged.forEach((data, id) => {
             if (!data.courierProfile?.currentLocation || !data.courierProfile?.packageRateCard) return;
+
+            const courierStatus = data.courierProfile.status as string | undefined;
+            if (
+              courierStatus &&
+              courierStatus !== "approved" &&
+              courierStatus !== "active"
+            ) {
+              return;
+            }
 
             const equipmentBadges: Array<
               "dolly" | "blankets" | "straps" | "cooler" | "insulated_bag"

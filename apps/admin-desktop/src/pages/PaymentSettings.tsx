@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { useAuth } from '../hooks/useAuth'
 import { Card, CardHeader, CardTitle, CardContent } from '../components/Card'
@@ -8,6 +8,8 @@ interface PaymentSettings {
   stripePublishableKey: string
   stripeSecretKey: string
   platformCommissionRate: number
+  platformFeePackage: number
+  platformFeeFood: number
   vendorPayoutSchedule: 'daily' | 'weekly' | 'monthly'
   minimumPayoutAmount: number
   autoPayouts: boolean
@@ -27,6 +29,8 @@ export default function PaymentSettingsPage() {
     stripePublishableKey: '',
     stripeSecretKey: '',
     platformCommissionRate: 10,
+    platformFeePackage: 2.5,
+    platformFeeFood: 1.5,
     vendorPayoutSchedule: 'weekly',
     minimumPayoutAmount: 50,
     autoPayouts: true,
@@ -48,12 +52,22 @@ export default function PaymentSettingsPage() {
 
   const loadSettings = async () => {
     try {
-      const docRef = doc(db, 'platformSettings', 'payment')
-      const docSnap = await getDoc(docRef)
-      
-      if (docSnap.exists()) {
-        setSettings(docSnap.data() as PaymentSettings)
-      }
+      const [paymentSnap, secretsSnap] = await Promise.all([
+        getDoc(doc(db, 'platformSettings', 'payment')),
+        getDoc(doc(db, 'secrets', 'stripe'))
+      ])
+
+      const paymentData = paymentSnap.exists() ? (paymentSnap.data() as Partial<PaymentSettings>) : {}
+      const secretsData = secretsSnap.exists()
+        ? (secretsSnap.data() as { publishableKey?: string; secretKey?: string })
+        : {}
+
+      setSettings((prev) => ({
+        ...prev,
+        ...paymentData,
+        stripePublishableKey: secretsData.publishableKey || '',
+        stripeSecretKey: secretsData.secretKey || ''
+      }))
     } catch (error) {
       console.error('Error loading payment settings:', error)
     } finally {
@@ -66,7 +80,22 @@ export default function PaymentSettingsPage() {
     
     setSaving(true)
     try {
-      await setDoc(doc(db, 'platformSettings', 'payment'), settings)
+      const { stripePublishableKey, stripeSecretKey, ...paymentSettings } = settings
+
+      await Promise.all([
+        setDoc(doc(db, 'platformSettings', 'payment'), paymentSettings, { merge: true }),
+        setDoc(
+          doc(db, 'secrets', 'stripe'),
+          {
+            publishableKey: stripePublishableKey,
+            secretKey: stripeSecretKey,
+            updatedAt: serverTimestamp(),
+            updatedBy: user.uid,
+            updatedByEmail: user.email || ''
+          },
+          { merge: true }
+        )
+      ])
       alert('Payment settings saved successfully!')
     } catch (error) {
       console.error('Error saving payment settings:', error)
@@ -115,6 +144,7 @@ export default function PaymentSettingsPage() {
                   placeholder="pk_..."
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
+                <p className="text-xs text-gray-500 mt-1">Stored in Secrets (single source of truth).</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -156,6 +186,47 @@ export default function PaymentSettingsPage() {
                 <p className="text-xs text-gray-500 mt-1">
                   Platform takes {settings.platformCommissionRate}% from each transaction
                 </p>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Platform Fee (Packages)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={settings.platformFeePackage}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        platformFeePackage: parseFloat(e.target.value) || 0,
+                      })
+                    }
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Fixed fee per package delivery</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Platform Fee (Food)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={settings.platformFeeFood}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        platformFeeFood: parseFloat(e.target.value) || 0,
+                      })
+                    }
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Fixed fee per food delivery</p>
+                </div>
               </div>
               
               <div>

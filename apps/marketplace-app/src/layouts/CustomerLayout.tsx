@@ -2,7 +2,7 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { BottomNav, marketplaceNavItems } from '../components/BottomNav'
 import { Header } from '../components/layout/Header'
 import { Footer } from '../components/layout/Footer'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useAuthUser } from '../hooks/v2/useAuthUser'
 import { useCustomerJobs } from '../hooks/v2/useCustomerJobs'
 import { CustomerJobCreateForm } from '../features/jobs/customer/CustomerJobCreateForm'
@@ -16,6 +16,12 @@ export default function CustomerLayout() {
   const [showSendModal, setShowSendModal] = useState(false)
   const isSendActive = location.pathname.startsWith('/jobs/new') || location.pathname.startsWith('/request-delivery')
   const isHome = location.pathname === '/' || location.pathname.startsWith('/marketplace')
+
+  useEffect(() => {
+    if (showSendModal && isSendActive) {
+      setShowSendModal(false)
+    }
+  }, [showSendModal, isSendActive])
 
   const activeJob = useMemo(() => {
     if (jobsLoading || !jobs.length) return null

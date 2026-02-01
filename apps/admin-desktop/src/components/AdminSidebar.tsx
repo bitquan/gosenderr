@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { useFeatureFlags } from '../hooks/useFeatureFlags'
 
 interface NavItem {
   label: string
@@ -17,7 +18,23 @@ interface NavGroup {
 export default function AdminSidebar() {
   const location = useLocation()
   const { user, signOut } = useAuth()
+  const { flags } = useFeatureFlags()
   const [isMobileOpen, setIsMobileOpen] = useState(false)
+
+  const systemItems: NavItem[] = [
+    { label: 'Audit Logs', path: '/audit-logs', icon: '📋' },
+    { label: 'Feature Flags', path: '/feature-flags', icon: '🎚️' },
+    { label: 'Settings', path: '/settings', icon: '⚙️' },
+    { label: 'Stripe Keys', path: '/secrets', icon: '🔑' }
+  ]
+
+  if (flags?.admin?.systemLogs) {
+    systemItems.push({ label: 'System Logs', path: '/system-logs', icon: '🧾' })
+  }
+
+  if (flags?.admin?.firebaseExplorer) {
+    systemItems.push({ label: 'Firebase Explorer', path: '/firebase-explorer', icon: '🧭' })
+  }
 
   const navGroups: NavGroup[] = [
     {
@@ -37,43 +54,26 @@ export default function AdminSidebar() {
     {
       title: 'Communications',
       items: [
-        { label: 'Messaging', path: '/messaging', icon: '💬' },
         { label: 'Disputes', path: '/disputes', icon: '⚖️' }
       ]
     },
     {
       title: 'Operations',
       items: [
-        { label: 'Jobs', path: '/jobs', icon: '📦' },
-        { label: 'Courier Rates', path: '/rate-cards-comparison', icon: '💲' }
+        { label: 'Jobs', path: '/jobs', icon: '📦' }
       ]
     },
     {
       title: 'Marketplace',
       items: [
         { label: 'Items', path: '/marketplace', icon: '🛍️' },
-        { label: 'Flagged Content', path: '/flagged-content', icon: '🚩' },
         { label: 'Orders', path: '/marketplace-orders', icon: '📦' },
-        { label: 'Categories', path: '/categories', icon: '📁' }
-      ]
-    },
-    {
-      title: 'Finance',
-      items: [
-        { label: 'Revenue', path: '/revenue', icon: '💰' },
-        { label: 'Payment Settings', path: '/settings/payment', icon: '💳' }
+      
       ]
     },
     {
       title: 'System',
-      items: [
-        { label: 'System Check', path: '/system-check', icon: '🔧' },
-        { label: 'Audit Logs', path: '/audit-logs', icon: '📋' },
-        { label: 'Feature Flags', path: '/feature-flags', icon: '🎚️' },
-        { label: 'Secrets', path: '/settings/secrets', icon: '🔑' },
-        { label: 'Admin Flow Logs', path: '/admin-flow-logs', icon: '🧪' },
-        { label: 'Settings', path: '/settings', icon: '⚙️' }
-      ]
+      items: systemItems
     }
   ]
 

@@ -49,12 +49,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     initAuth()
 
+    let refreshInFlight: Promise<void> | null = null
+    let lastRefreshAt = 0
+
     const handleFocus = async () => {
-      try {
-        await auth.currentUser?.getIdToken(true)
-      } catch (error) {
-        console.warn('Failed to refresh auth token:', error)
-      }
+      if (document.visibilityState === 'hidden') return
+      if (!navigator.onLine) return
+      if (!auth.currentUser) return
+
+      const now = Date.now()
+      if (now - lastRefreshAt < 60_000) return
+      if (refreshInFlight) return
+
+      refreshInFlight = auth.currentUser
+        .getIdToken(true)
+        .then(() => {
+          lastRefreshAt = Date.now()
+        })
+        .catch((error: any) => {
+          if (error?.code === 'auth/network-request-failed') return
+          console.warn('Failed to refresh auth token:', error)
+        })
+        .finally(() => {
+          refreshInFlight = null
+        })
     }
 
     window.addEventListener('focus', handleFocus)

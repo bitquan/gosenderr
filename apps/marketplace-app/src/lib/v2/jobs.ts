@@ -31,6 +31,13 @@ interface CreateJobPayload {
   offerQueue?: string[];
   offerStatus?: "pending" | "open" | "expired" | "declined" | "accepted";
   offerExpiresAt?: Timestamp | null;
+  pricing?: {
+    courierRate: number;
+    platformFee: number;
+    totalAmount: number;
+  };
+  paymentStatus?: "pending" | "authorized" | "captured" | "refunded";
+  paymentIntentId?: string | null;
 }
 
 export async function createJob(
@@ -50,6 +57,9 @@ export async function createJob(
     offerQueue: payload.offerQueue ?? [],
     offerStatus: payload.offerStatus ?? "open",
     offerExpiresAt: payload.offerExpiresAt ?? null,
+    pricing: payload.pricing,
+    paymentStatus: payload.paymentStatus ?? "pending",
+    paymentIntentId: payload.paymentIntentId ?? null,
     courierUid: null,
     agreedFee: null,
     createdAt: serverTimestamp(),

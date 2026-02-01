@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { getStripePromise } from '@/lib/stripeConfig';
-import { addDoc, collection, getDocs, query, serverTimestamp, where } from 'firebase/firestore';
+import { addDoc, collection, onSnapshot, query, serverTimestamp, where } from 'firebase/firestore';
 import { marketplaceService } from '@/services/marketplace.service';
 import { stripeService } from '@/services/stripe.service';
 import { useAuth } from '@/hooks/useAuth';
@@ -20,6 +20,7 @@ import { calculateCourierRate, JobInfo } from '@/lib/pricing/calculateCourierRat
 import { AddressAutocomplete } from '@/components/v2/AddressAutocomplete';
 import { CourierSelector, CourierWithRate } from '@/components/v2/CourierSelector';
 import { UserDoc } from '@gosenderr/shared';
+import { usePlatformSettings } from '@/hooks/usePlatformSettings';
 
 const stripePromise = getStripePromise();
 
@@ -36,6 +37,7 @@ interface CheckoutSummary {
   courierEtaMinutes: number | null;
   courierDistance: number | null;
 }
+
 
 function parseAddressParts(address: string) {
   const parts = address.split(',').map((part) => part.trim());
@@ -254,6 +256,7 @@ function CheckoutForm({
   const { user } = useAuth();
   const navigate = useNavigate();
   const { flags } = useFeatureFlags();
+  const { settings: platformSettings } = usePlatformSettings();
   const [step, setStep] = useState<'delivery' | 'payment'>('delivery');
   const [deliveryOption, setDeliveryOption] = useState<DeliveryOption>(
     item.deliveryOptions[0] || DeliveryOption.SHIPPING
@@ -277,7 +280,7 @@ function CheckoutForm({
   const [courierError, setCourierError] = useState<string | null>(null);
   const isMockClientSecret = clientSecret.startsWith('pi_mock_');
   const courierOffersEnabled = !!flags?.marketplace?.courierOffers;
-  const pickupLocation = item.pickupLocation?.location as any;
+  const pickupLocation = (item.pickupLocation as any)?.location || (item.pickupLocation as any);
   const pickupLat = pickupLocation?.latitude ?? pickupLocation?.lat;
   const pickupLng = pickupLocation?.longitude ?? pickupLocation?.lng;
   const isFoodItem = (item as any).isFoodItem || (item as any).category === 'food';
@@ -288,6 +291,19 @@ function CheckoutForm({
       : deliveryOption === 'courier' && courierOffersEnabled
         ? selectedCourier?.rateBreakdown?.totalCustomerCharge ?? 0
         : 5.99;
+
+  const courierPriceRangeLabel = () => {
+    if (!courierOffersEnabled) return '$5.99';
+    if (availableCouriers.length === 0) return 'Select dropoff to see rates';
+    const totals = availableCouriers
+      .map((courier) => courier.rateBreakdown?.totalCustomerCharge)
+      .filter((value): value is number => typeof value === 'number' && !Number.isNaN(value));
+    if (totals.length === 0) return 'Select dropoff to see rates';
+    const min = Math.min(...totals);
+    const max = Math.max(...totals);
+    if (min === max) return `$${min.toFixed(2)}`;
+    return `$${min.toFixed(2)} - $${max.toFixed(2)}`;
+  };
 
   useEffect(() => {
     onSummaryChange({
@@ -330,30 +346,29 @@ function CheckoutForm({
 
   useEffect(() => {
     if (!courierOffersEnabled || deliveryOption !== 'courier') return;
-    if (!courierDropoff || courierDistance === 0) return;
     if (pickupLat == null || pickupLng == null) {
       setCourierError('Pickup location is missing for courier delivery.');
       return;
     }
 
-    async function findCouriers() {
-      setSearchingCouriers(true);
-      setAvailableCouriers([]);
-      setSelectedCourier(null);
-      setCourierError(null);
+    setSearchingCouriers(true);
+    setAvailableCouriers([]);
+    setSelectedCourier(null);
+    setCourierError(null);
 
-      try {
-        const usersRef = collection(db, 'users');
-        const courierQuery = query(
-          usersRef,
-          where('courierProfile.status', '==', 'approved'),
-          where('courierProfile.isOnline', '==', true),
-        );
+    const usersRef = collection(db, 'users');
+    const courierQuery = query(
+      usersRef,
+      where('role', '==', 'courier'),
+      where('courierProfile.isOnline', '==', true),
+    );
 
-        const snapshot = await getDocs(courierQuery);
+    const unsubscribe = onSnapshot(
+      courierQuery,
+      (snapshot) => {
         const couriers: CourierWithRate[] = [];
 
-        for (const docSnap of snapshot.docs) {
+        snapshot.forEach((docSnap) => {
           const courierData = docSnap.data() as UserDoc;
           const courier: CourierWithRate = {
             ...courierData,
@@ -362,14 +377,24 @@ function CheckoutForm({
             rateBreakdown: {} as any,
           };
 
-          if (!courier.courierProfile) continue;
+          if (!courier.courierProfile) return;
 
+          const courierStatus = courier.courierProfile.status as string | undefined;
+          if (
+            courierStatus &&
+            courierStatus !== 'approved' &&
+            courierStatus !== 'active'
+          ) {
+            return;
+          }
+
+          const workModes = courier.courierProfile.workModes;
           const workModeEnabled = isFoodItem
-            ? courier.courierProfile.workModes.foodEnabled
-            : courier.courierProfile.workModes.packagesEnabled;
+            ? workModes?.foodEnabled ?? true
+            : workModes?.packagesEnabled ?? true;
 
-          if (!workModeEnabled) continue;
-          if (!courier.courierProfile.currentLocation) continue;
+          if (!workModeEnabled) return;
+          if (!courier.courierProfile.currentLocation) return;
 
           const courierToPickup = calcMiles(
             {
@@ -379,7 +404,7 @@ function CheckoutForm({
             { lat: pickupLat, lng: pickupLng },
           );
 
-          if (courierToPickup > courier.courierProfile.serviceRadius) continue;
+          if (courierToPickup > courier.courierProfile.serviceRadius) return;
 
           courier.distance = courierToPickup;
 
@@ -387,26 +412,23 @@ function CheckoutForm({
             const equipment = courier.courierProfile.equipment;
             const foodDetails = (item as any).foodDetails;
 
-            if (foodDetails.requiresCooler && !equipment.cooler?.approved)
-              continue;
+            if (foodDetails.requiresCooler && !equipment.cooler?.approved) return;
             if (
               foodDetails.requiresHotBag &&
               !equipment.hot_bag?.approved &&
               !equipment.insulated_bag?.approved
-            )
-              continue;
+            ) return;
             if (
               foodDetails.requiresDrinkCarrier &&
               !equipment.drink_carrier?.approved
-            )
-              continue;
+            ) return;
           }
 
           const rateCard = isFoodItem
             ? courier.courierProfile.foodRateCard
             : courier.courierProfile.packageRateCard;
 
-          if (!rateCard) continue;
+          if (!rateCard) return;
 
           const jobInfo: JobInfo = {
             distance: courierDistance,
@@ -414,9 +436,12 @@ function CheckoutForm({
             isFoodItem,
           };
 
-          courier.rateBreakdown = calculateCourierRate(rateCard, jobInfo);
+          courier.rateBreakdown = calculateCourierRate(rateCard, jobInfo, new Date(), {
+            platformFeeFood: platformSettings.platformFeeFood,
+            platformFeePackage: platformSettings.platformFeePackage,
+          });
           couriers.push(courier);
-        }
+        });
 
         couriers.sort(
           (a, b) =>
@@ -425,15 +450,16 @@ function CheckoutForm({
         );
 
         setAvailableCouriers(couriers);
-      } catch (err) {
+        setSearchingCouriers(false);
+      },
+      (err) => {
         console.error('Error finding couriers:', err);
         setCourierError('Failed to find available couriers');
-      } finally {
         setSearchingCouriers(false);
-      }
-    }
+      },
+    );
 
-    findCouriers();
+    return () => unsubscribe();
   }, [
     courierOffersEnabled,
     deliveryOption,
@@ -444,6 +470,7 @@ function CheckoutForm({
     pickupLng,
     isFoodItem,
     item,
+    platformSettings,
   ]);
 
   const handleDeliverySubmit = async (e: React.FormEvent) => {
@@ -539,7 +566,11 @@ function CheckoutForm({
                       </div>
                     </div>
                     <div className="font-bold text-gray-900">
-                      {option === 'pickup' ? 'Free' : '$5.99'}
+                      {option === 'pickup'
+                        ? 'Free'
+                        : option === 'courier'
+                          ? courierPriceRangeLabel()
+                          : '$5.99'}
                     </div>
                   </div>
                 </button>
@@ -669,6 +700,7 @@ function CheckoutForm({
                   {courierError}
                 </div>
               )}
+
 
               {searchingCouriers ? (
                 <div className="py-6 text-center text-sm text-gray-600">

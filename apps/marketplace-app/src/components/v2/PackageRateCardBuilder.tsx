@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { PackageRateCard } from '@gosenderr/shared';
+import { usePlatformSettings } from '@/hooks/usePlatformSettings';
 
 interface PackageRateCardBuilderProps {
   currentRateCard?: PackageRateCard;
@@ -11,6 +12,7 @@ export function PackageRateCardBuilder({
   currentRateCard,
   onSave,
 }: PackageRateCardBuilderProps) {
+  const { settings: platformSettings } = usePlatformSettings();
   const [baseFare, setBaseFare] = useState(
     currentRateCard?.baseFare?.toString() || '8.00'
   );
@@ -61,7 +63,7 @@ export function PackageRateCardBuilder({
     const feesTotal = optionalFees.reduce((sum, fee) => sum + fee.amount, 0);
     
     const courierEarnings = baseCharge + mileCharge + timeCharge + feesTotal;
-    const platformFee = 2.50;
+    const platformFee = platformSettings.platformFeePackage ?? 2.5;
     const customerPays = courierEarnings + platformFee;
 
     return {

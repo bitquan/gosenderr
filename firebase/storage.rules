@@ -129,6 +129,22 @@ service firebase.storage {
       );
     }
 
+    // Delivery proof photos: delivery-photos/{courierId}/{jobId}/{photoFile}
+    match /delivery-photos/{courierId}/{jobId}/{photoFile} {
+      // Assigned courier can upload proof photos for the job
+      allow write: if isSignedIn()
+        && uid() == courierId
+        && isValidImage();
+
+      // Job creator and assigned courier can read proof photos
+      allow read: if isSignedIn() && (
+        uid() == courierId
+        || isJobCreator(jobId)
+        || isAssignedCourier(jobId)
+        || get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      );
+    }
+
     // Default deny
     match /{allPaths=**} {
       allow read, write: if false;

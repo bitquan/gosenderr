@@ -6,7 +6,8 @@ import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { marketplaceService } from "@/services/marketplace.service";
 import { DeliveryOption, ItemCategory, ItemCondition } from "@/types/marketplace";
 import { Card, CardContent } from "@/components/ui/Card";
-import { doc, getDoc } from "firebase/firestore";
+import { AddressAutocomplete } from "@/components/v2/AddressAutocomplete";
+import { doc, getDoc, GeoPoint } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 
 export default function NewSellerItem() {
@@ -15,6 +16,13 @@ export default function NewSellerItem() {
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [pickupLocation, setPickupLocation] = useState<{
+    address: string;
+    city: string;
+    state: string;
+    lat: number;
+    lng: number;
+  } | null>(null);
   const [sellerStatus, setSellerStatus] = useState<"none" | "pending" | "approved" | "rejected">("none");
   const [sellerRejectionReason, setSellerRejectionReason] = useState<string | null>(null);
   const [sellerStatusLoading, setSellerStatusLoading] = useState(true);
@@ -63,6 +71,18 @@ export default function NewSellerItem() {
     { value: "pickup" as DeliveryOption, label: "Pickup" },
     { value: "shipping" as DeliveryOption, label: "Shipping" },
   ];
+
+  const parseAddressParts = (address: string) => {
+    const parts = address.split(",").map((part) => part.trim());
+    const [street, city, stateZip] = parts;
+    const stateZipParts = (stateZip || "").split(" ").filter(Boolean);
+    const state = stateZipParts[0] || "";
+    return {
+      street: street || address,
+      city: city || "",
+      state,
+    };
+  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -147,6 +167,14 @@ export default function NewSellerItem() {
       return;
     }
 
+    const needsPickupLocation = formData.deliveryOptions.some(
+      (option) => option === "courier" || option === "pickup",
+    );
+    if (needsPickupLocation && !pickupLocation) {
+      alert("Please add a pickup location for courier or pickup delivery.");
+      return;
+    }
+
     setLoading(true);
     try {
       // Upload images
@@ -165,6 +193,14 @@ export default function NewSellerItem() {
         quantity: Math.max(1, parseInt(formData.quantity || "1", 10)),
         photos: imageUrls,
         deliveryOptions,
+        pickupLocation: pickupLocation
+          ? {
+              address: pickupLocation.address,
+              city: pickupLocation.city,
+              state: pickupLocation.state,
+              location: new GeoPoint(pickupLocation.lat, pickupLocation.lng),
+            }
+          : undefined,
       });
 
       navigate('/seller/dashboard');
@@ -449,6 +485,35 @@ export default function NewSellerItem() {
                     </label>
                   ))}
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Pickup Location
+                </label>
+                <AddressAutocomplete
+                  label="Pickup Address"
+                  placeholder="Enter pickup address..."
+                  onSelect={(result) => {
+                    const parsed = parseAddressParts(result.address);
+                    setPickupLocation({
+                      address: result.address,
+                      city: parsed.city,
+                      state: parsed.state,
+                      lat: result.lat,
+                      lng: result.lng,
+                    });
+                  }}
+                  required={formData.deliveryOptions.some(
+                    (option) => option === "courier" || option === "pickup",
+                  )}
+                />
+                {pickupLocation && (
+                  <div className="mt-3 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800">
+                    <div className="font-semibold">Pickup location set</div>
+                    <div>{pickupLocation.address}</div>
+                  </div>
+                )}
               </div>
 
               {/* Submit */}

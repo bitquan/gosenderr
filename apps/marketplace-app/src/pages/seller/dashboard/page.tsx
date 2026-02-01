@@ -78,11 +78,12 @@ export default function SellerDashboard() {
       );
       setLowStockItems(lowStock);
 
-      const ordersSnapshot = await getDocs(collection(db, "orders"));
-      const sellerOrders = ordersSnapshot.docs.filter((doc) => {
-        const orderData = doc.data();
-        return orderData.items?.some((item: any) => item.sellerId === uid);
-      });
+      const ordersQuery = query(
+        collection(db, "orders"),
+        where("sellerId", "==", uid)
+      );
+      const ordersSnapshot = await getDocs(ordersQuery);
+      const sellerOrders = ordersSnapshot.docs;
 
       let ratingAvg = 0;
       let ratingCount = 0;

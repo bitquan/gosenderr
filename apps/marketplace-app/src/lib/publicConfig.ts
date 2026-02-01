@@ -6,6 +6,8 @@ export interface PublicConfig {
 
 let cachedConfig: PublicConfig | null = null
 let inFlight: Promise<PublicConfig> | null = null
+let lastFailureAt: number | null = null
+const FAILURE_BACKOFF_MS = 60 * 1000
 
 function resolvePublicConfigUrl(): string {
   const explicitUrl = import.meta.env.VITE_PUBLIC_CONFIG_URL || ''
@@ -19,6 +21,10 @@ function resolvePublicConfigUrl(): string {
 
 export async function getPublicConfig(): Promise<PublicConfig> {
   if (cachedConfig) return cachedConfig
+
+  if (lastFailureAt && Date.now() - lastFailureAt < FAILURE_BACKOFF_MS) {
+    return {}
+  }
 
   if (!inFlight) {
     const url = resolvePublicConfigUrl()
@@ -40,9 +46,26 @@ export async function getPublicConfig(): Promise<PublicConfig> {
       })
       .catch((error) => {
         console.error('Failed to load public config', error)
+        lastFailureAt = Date.now()
         return {}
       })
   }
 
-  return inFlight
+  const result = await inFlight
+  if (Object.keys(result || {}).length) {
+    return result
+  }
+
+  try {
+    const { httpsCallable } = await import('firebase/functions')
+    const { functions } = await import('@/lib/firebase/client')
+    const getPublicConfigFn = httpsCallable<void, PublicConfig>(functions, 'getPublicConfig')
+    const response = await getPublicConfigFn()
+    cachedConfig = response.data || {}
+    return cachedConfig
+  } catch (callableError) {
+    console.error('Failed to load public config via callable', callableError)
+    lastFailureAt = Date.now()
+    return {}
+  }
 }

@@ -324,6 +324,16 @@ service cloud.firestore {
           && (resource.data.status == 'open' || resource.data.status == 'pending' || resource.data.status == 'assigned')
         )
         ||
+        // 1b) Creator can attach payment metadata
+        (
+          isCreator()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'paymentStatus',
+            'paymentIntentId',
+            'updatedAt'
+          ])
+        )
+        ||
         // 2) Any courier can claim an open or pending job (atomic claim)
         (
           (resource.data.status == 'open' || resource.data.status == 'pending')

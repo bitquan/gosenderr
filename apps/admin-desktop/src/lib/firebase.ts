@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app'
-import { getFirestore, Firestore } from 'firebase/firestore'
+import { getFirestore, Firestore, initializeFirestore, persistentLocalCache } from 'firebase/firestore'
 import { getAuth, Auth } from 'firebase/auth'
 import { getStorage, FirebaseStorage } from 'firebase/storage'
 import { getFunctions, Functions } from 'firebase/functions'
@@ -24,7 +24,14 @@ let functionsInstance: Functions | undefined
 if (isValidConfig) {
   try {
     app = getApps().length ? getApp() : initializeApp(firebaseConfig)
-    dbInstance = getFirestore(app)
+    try {
+      dbInstance = initializeFirestore(app, {
+        localCache: persistentLocalCache()
+      })
+    } catch (error) {
+      console.warn('Firestore persistence unavailable:', error)
+      dbInstance = getFirestore(app)
+    }
     authInstance = getAuth(app)
     storageInstance = getStorage(app)
     functionsInstance = getFunctions(app)

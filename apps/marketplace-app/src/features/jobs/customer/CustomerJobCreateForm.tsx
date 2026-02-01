@@ -11,6 +11,7 @@ import { createJob } from "@/lib/v2/jobs";
 import { calcMiles, calcFee } from "@/lib/v2/pricing";
 import { FLOOR_RATE_CARD } from "@/lib/v2/floorRateCard";
 import { GeoPoint, PackageSize, PackageFlags } from "@/lib/v2/types";
+import { usePlatformSettings } from "@/hooks/usePlatformSettings";
 
 const createTempJobId = () => {
   const cryptoObj = globalThis.crypto;
@@ -40,6 +41,7 @@ export function CustomerJobCreateForm({ uid }: CustomerJobCreateFormProps) {
   const [packageNotes, setPackageNotes] = useState("");
   const [photos, setPhotos] = useState<PhotoFile[]>([]);
   const [selectedCourierId, setSelectedCourierId] = useState<string | null>(null);
+  const { settings: platformSettings } = usePlatformSettings();
 
   // Generate a stable temporary job ID for this session
   const [tempJobId] = useState(createTempJobId);
@@ -82,6 +84,11 @@ export function CustomerJobCreateForm({ uid }: CustomerJobCreateFormProps) {
     [couriers],
   );
 
+  const selectedCourier = useMemo(() => {
+    if (!selectedCourierId) return null;
+    return eligibleCouriers.find((courier) => courier.uid === selectedCourierId) || null;
+  }, [eligibleCouriers, selectedCourierId]);
+
   const vehicleIcons: Record<string, string> = {
     foot: "🚶",
     bike: "🚴",
@@ -110,6 +117,10 @@ export function CustomerJobCreateForm({ uid }: CustomerJobCreateFormProps) {
         ? Timestamp.fromDate(new Date(Date.now() + 90 * 1000))
         : null;
 
+      const courierRate = selectedCourier?.estimatedFee ?? minEstimate;
+      const platformFee = platformSettings.platformFeePackage ?? 2.5;
+      const totalAmount = courierRate + platformFee;
+
       const jobId = await createJob(uid, {
         pickup,
         dropoff,
@@ -131,6 +142,12 @@ export function CustomerJobCreateForm({ uid }: CustomerJobCreateFormProps) {
         offerQueue,
         offerStatus: preferredCourierUid ? "pending" : "open",
         offerExpiresAt,
+        pricing: {
+          courierRate,
+          platformFee,
+          totalAmount,
+        },
+        paymentStatus: "pending",
       });
 
       navigate(`/jobs/${jobId}`);

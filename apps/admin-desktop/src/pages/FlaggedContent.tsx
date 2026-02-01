@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { collection, getDocs, query, where, orderBy } from 'firebase/firestore'
+import { collection, getDocs, query, where, limit } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { Card, CardHeader, CardTitle, CardContent } from '../components/Card'
 import { formatCurrency } from '../lib/utils'
@@ -35,7 +35,7 @@ export default function FlaggedContentPage() {
       const q = query(
         collection(db, 'marketplaceItems'),
         where('status', '==', 'flagged'),
-        orderBy('flaggedAt', 'desc')
+        limit(200)
       )
       
       const snapshot = await getDocs(q)
@@ -43,6 +43,12 @@ export default function FlaggedContentPage() {
         id: doc.id,
         ...doc.data()
       } as FlaggedItem))
+
+      itemsData.sort((a, b) => {
+        const aTime = a.flaggedAt?.toMillis?.() || 0
+        const bTime = b.flaggedAt?.toMillis?.() || 0
+        return bTime - aTime
+      })
       
       setItems(itemsData)
     } catch (error) {

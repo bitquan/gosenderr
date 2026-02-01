@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { collection, getDocs, doc, updateDoc, addDoc, setDoc, Timestamp } from 'firebase/firestore'
+import { collection, getDocs, doc, updateDoc, addDoc, setDoc, Timestamp, writeBatch } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { useAuth } from '../hooks/useAuth'
 import { Card, CardHeader, CardTitle, CardContent } from '../components/Card'
@@ -21,6 +21,7 @@ export default function FeatureFlagsPage() {
   const [flags, setFlags] = useState<FeatureFlag[]>([])
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState<string | null>(null)
+  const [deduping, setDeduping] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
   const [newFlag, setNewFlag] = useState({
     name: '',
@@ -109,6 +110,57 @@ export default function FeatureFlagsPage() {
     }
   }
 
+  const getDuplicateIds = () => {
+    const byKey = new Map<string, FeatureFlag[]>()
+    flags.forEach((flag) => {
+      const key = `${flag.category}::${flag.name}`
+      const list = byKey.get(key) || []
+      list.push(flag)
+      byKey.set(key, list)
+    })
+
+    const duplicates: FeatureFlag[] = []
+    byKey.forEach((list) => {
+      if (list.length <= 1) return
+      const sorted = [...list].sort((a, b) => {
+        const aTime = (a.updatedAt?.toMillis?.() ?? a.createdAt?.toMillis?.() ?? 0) as number
+        const bTime = (b.updatedAt?.toMillis?.() ?? b.createdAt?.toMillis?.() ?? 0) as number
+        return bTime - aTime
+      })
+      duplicates.push(...sorted.slice(1))
+    })
+
+    return duplicates.map((flag) => flag.id)
+  }
+
+  const handleDeleteDuplicates = async () => {
+    const duplicateIds = getDuplicateIds()
+    if (duplicateIds.length === 0) {
+      alert('No duplicate flags found.')
+      return
+    }
+
+    if (!confirm(`Delete ${duplicateIds.length} duplicate flags? This keeps the most recently updated copy for each name.`)) {
+      return
+    }
+
+    setDeduping(true)
+    try {
+      const batch = writeBatch(db)
+      duplicateIds.forEach((id) => {
+        batch.delete(doc(db, 'featureFlags', id))
+      })
+      await batch.commit()
+      await loadFlags()
+      alert('✅ Duplicate flags deleted.')
+    } catch (error) {
+      console.error('Error deleting duplicate flags:', error)
+      alert('Failed to delete duplicate flags')
+    } finally {
+      setDeduping(false)
+    }
+  }
+
   // Group flags by category
   const flagsByCategory = (flags || []).reduce((acc, flag) => {
     if (!acc[flag.category]) {
@@ -125,6 +177,8 @@ export default function FeatureFlagsPage() {
     notifications: '🔔',
     system: '⚙️'
   }
+
+  const duplicateCount = getDuplicateIds().length
 
   const handleToggleWebPortal = async (currentValue: boolean) => {
     try {
@@ -152,6 +206,19 @@ export default function FeatureFlagsPage() {
     }
   }
 
+  const handleToggleAdminTool = async (key: 'systemLogs' | 'firebaseExplorer', currentValue: boolean) => {
+    try {
+      await setDoc(
+        doc(db, 'featureFlags', 'config'),
+        { admin: { [key]: !currentValue } },
+        { merge: true }
+      )
+    } catch (error) {
+      console.error('Error updating admin tools flag:', error)
+      alert('Failed to update admin tools flag')
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[#F8F9FF] pb-8">
       <div className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] rounded-b-[32px] p-6 text-white shadow-lg">
@@ -160,12 +227,21 @@ export default function FeatureFlagsPage() {
             <h1 className="text-3xl font-bold mb-2">🎚️ Feature Flags</h1>
             <p className="text-purple-100">Enable or disable platform features</p>
           </div>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="px-6 py-3 bg-white text-purple-600 rounded-xl font-semibold hover:bg-purple-50 transition-all shadow-lg"
-          >
-            + Add New Flag
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleDeleteDuplicates}
+              disabled={deduping || duplicateCount === 0}
+              className="px-5 py-3 bg-white/90 text-purple-700 rounded-xl font-semibold hover:bg-white transition-all shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {deduping ? 'Deleting Duplicates…' : `Delete Duplicates${duplicateCount ? ` (${duplicateCount})` : ''}`}
+            </button>
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="px-6 py-3 bg-white text-purple-600 rounded-xl font-semibold hover:bg-purple-50 transition-all shadow-lg"
+            >
+              + Add New Flag
+            </button>
+          </div>
         </div>
       </div>
 
@@ -217,6 +293,51 @@ export default function FeatureFlagsPage() {
               >
                 {configFlags?.marketplace?.courierOffers ? 'Enabled' : 'Disabled'}
               </button>
+            </div>
+          </CardContent>
+        </Card>
+        <Card variant="elevated">
+          <CardHeader>
+            <CardTitle>Admin Tools</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-900">System Logs</p>
+                  <p className="text-xs text-gray-500">View local app logs inside admin-desktop.</p>
+                </div>
+                <button
+                  type="button"
+                  disabled={configLoading}
+                  onClick={() => handleToggleAdminTool('systemLogs', Boolean(configFlags?.admin?.systemLogs))}
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                    configFlags?.admin?.systemLogs
+                      ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {configFlags?.admin?.systemLogs ? 'Enabled' : 'Disabled'}
+                </button>
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-900">Firebase Explorer</p>
+                  <p className="text-xs text-gray-500">Read-only Firestore viewer in admin-desktop.</p>
+                </div>
+                <button
+                  type="button"
+                  disabled={configLoading}
+                  onClick={() => handleToggleAdminTool('firebaseExplorer', Boolean(configFlags?.admin?.firebaseExplorer))}
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                    configFlags?.admin?.firebaseExplorer
+                      ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {configFlags?.admin?.firebaseExplorer ? 'Enabled' : 'Disabled'}
+                </button>
+              </div>
             </div>
           </CardContent>
         </Card>

@@ -1,12 +1,14 @@
 
 import { useEffect, useRef, useState } from "react";
-import { GeoPoint, CourierLocation } from "@/lib/v2/types";
+import { GeoPoint, CourierLocation, JobProofPhoto } from "@/lib/v2/types";
 import { getMapboxToken } from "@/lib/mapbox/mapbox";
 
 interface MapboxMapProps {
   pickup: GeoPoint;
   dropoff: GeoPoint;
   courierLocation?: CourierLocation | null;
+  pickupProof?: JobProofPhoto | null;
+  dropoffProof?: JobProofPhoto | null;
   height?: string;
 }
 
@@ -14,11 +16,13 @@ export function MapboxMap({
   pickup,
   dropoff,
   courierLocation,
+  pickupProof,
+  dropoffProof,
   height = "400px",
 }: MapboxMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
-  const markersRef = useRef<{ pickup?: any; dropoff?: any; courier?: any }>({});
+  const markersRef = useRef<{ pickup?: any; dropoff?: any; courier?: any; pickupProof?: any; dropoffProof?: any }>({});
   const [hasToken, setHasToken] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -67,6 +71,32 @@ export function MapboxMap({
             .addTo(map);
 
           // Add dropoff marker (red)
+                    const createPhotoMarker = (url: string) => {
+                      const el = document.createElement("div");
+                      el.style.width = "48px";
+                      el.style.height = "48px";
+                      el.style.borderRadius = "12px";
+                      el.style.border = "2px solid #ffffff";
+                      el.style.backgroundImage = `url(${url})`;
+                      el.style.backgroundSize = "cover";
+                      el.style.backgroundPosition = "center";
+                      el.style.boxShadow = "0 6px 14px rgba(0,0,0,0.2)";
+                      return el;
+                    };
+
+                    if (pickupProof?.location) {
+                      markersRef.current.pickupProof = new mapboxgl.Marker({ element: createPhotoMarker(pickupProof.url) })
+                        .setLngLat([pickupProof.location.lng, pickupProof.location.lat])
+                        .setPopup(new mapboxgl.Popup().setHTML("<strong>Pickup photo</strong>"))
+                        .addTo(map);
+                    }
+
+                    if (dropoffProof?.location) {
+                      markersRef.current.dropoffProof = new mapboxgl.Marker({ element: createPhotoMarker(dropoffProof.url) })
+                        .setLngLat([dropoffProof.location.lng, dropoffProof.location.lat])
+                        .setPopup(new mapboxgl.Popup().setHTML("<strong>Dropoff photo</strong>"))
+                        .addTo(map);
+                    }
           markersRef.current.dropoff = new mapboxgl.Marker({ color: "#dc2626" })
             .setLngLat([dropoff.lng, dropoff.lat])
             .setPopup(
@@ -173,6 +203,12 @@ export function MapboxMap({
     dropoff.lng,
     pickup.label,
     dropoff.label,
+    pickupProof?.url,
+    pickupProof?.location?.lat,
+    pickupProof?.location?.lng,
+    dropoffProof?.url,
+    dropoffProof?.location?.lat,
+    dropoffProof?.location?.lng,
   ]);
 
   // Update courier marker
@@ -205,6 +241,68 @@ export function MapboxMap({
       }
     }
   }, [courierLocation?.lat, courierLocation?.lng]);
+
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    // @ts-ignore
+    const mapboxgl = window.mapboxgl;
+    if (!mapboxgl) return;
+
+    const createPhotoMarker = (url: string) => {
+      const el = document.createElement("div");
+      el.style.width = "48px";
+      el.style.height = "48px";
+      el.style.borderRadius = "12px";
+      el.style.border = "2px solid #ffffff";
+      el.style.backgroundImage = `url(${url})`;
+      el.style.backgroundSize = "cover";
+      el.style.backgroundPosition = "center";
+      el.style.boxShadow = "0 6px 14px rgba(0,0,0,0.2)";
+      return el;
+    };
+
+    if (pickupProof?.location) {
+      if (markersRef.current.pickupProof) {
+        markersRef.current.pickupProof.setLngLat([
+          pickupProof.location.lng,
+          pickupProof.location.lat,
+        ]);
+      } else {
+        markersRef.current.pickupProof = new mapboxgl.Marker({ element: createPhotoMarker(pickupProof.url) })
+          .setLngLat([pickupProof.location.lng, pickupProof.location.lat])
+          .setPopup(new mapboxgl.Popup().setHTML("<strong>Pickup photo</strong>"))
+          .addTo(mapRef.current);
+      }
+    } else if (markersRef.current.pickupProof) {
+      markersRef.current.pickupProof.remove();
+      markersRef.current.pickupProof = null;
+    }
+
+    if (dropoffProof?.location) {
+      if (markersRef.current.dropoffProof) {
+        markersRef.current.dropoffProof.setLngLat([
+          dropoffProof.location.lng,
+          dropoffProof.location.lat,
+        ]);
+      } else {
+        markersRef.current.dropoffProof = new mapboxgl.Marker({ element: createPhotoMarker(dropoffProof.url) })
+          .setLngLat([dropoffProof.location.lng, dropoffProof.location.lat])
+          .setPopup(new mapboxgl.Popup().setHTML("<strong>Dropoff photo</strong>"))
+          .addTo(mapRef.current);
+      }
+    } else if (markersRef.current.dropoffProof) {
+      markersRef.current.dropoffProof.remove();
+      markersRef.current.dropoffProof = null;
+    }
+  }, [
+    pickupProof?.url,
+    pickupProof?.location?.lat,
+    pickupProof?.location?.lng,
+    dropoffProof?.url,
+    dropoffProof?.location?.lat,
+    dropoffProof?.location?.lng,
+  ]);
 
   if (hasToken === false) {
     return (

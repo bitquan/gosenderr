@@ -2,24 +2,41 @@ import { JobStatus } from "@/lib/v2/types";
 
 interface StatusTimelineProps {
   currentStatus: JobStatus;
+  isPaymentLocked?: boolean;
 }
 
 const steps: { status: JobStatus; label: string }[] = [
   { status: "open", label: "Send Posted" },
-  { status: "assigned", label: "Senderr Assigned" },
-  { status: "enroute_pickup", label: "En Route to Pickup" },
-  { status: "arrived_pickup", label: "Arrived at Pickup" },
-  { status: "picked_up", label: "Package Picked Up" },
-  { status: "enroute_dropoff", label: "En Route to Dropoff" },
-  { status: "arrived_dropoff", label: "Arrived at Dropoff" },
+  { status: "assigned", label: "Start Heading to Pickup" },
+  { status: "enroute_pickup", label: "Mark Arrived at Pickup" },
+  { status: "arrived_pickup", label: "Mark Package Picked Up" },
+  { status: "picked_up", label: "Start Heading to Dropoff" },
+  { status: "enroute_dropoff", label: "Mark Arrived at Dropoff" },
+  { status: "arrived_dropoff", label: "Mark Completed" },
   { status: "completed", label: "Completed" },
 ];
 
-export function StatusTimeline({ currentStatus }: StatusTimelineProps) {
+export function StatusTimeline({ currentStatus, isPaymentLocked }: StatusTimelineProps) {
   const currentIndex = steps.findIndex((s) => s.status === currentStatus);
 
   return (
     <div style={{ padding: "20px 0" }}>
+      {isPaymentLocked && (
+        <div
+          style={{
+            marginBottom: "16px",
+            padding: "12px",
+            background: "#fffbeb",
+            border: "1px solid #fde68a",
+            borderRadius: "8px",
+            color: "#92400e",
+            fontSize: "13px",
+            fontWeight: 600,
+          }}
+        >
+          ⏳ Waiting for customer payment authorization before the trip can start.
+        </div>
+      )}
       <div style={{ position: "relative" }}>
         {/* Progress Line */}
         <div

@@ -114,6 +114,7 @@ export default function ItemDetailPage() {
   const availableStock = item ? (item.quantity ?? 0) : 0
   const canAddMore = item ? (inCart + quantity) <= availableStock : false
   const isOutOfStock = availableStock === 0
+  const isOwner = Boolean(user?.uid && item?.sellerId && user.uid === item.sellerId)
 
   if (loading) {
     return (
@@ -197,7 +198,17 @@ export default function ItemDetailPage() {
 
         {/* Item Details */}
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">{item.title}</h1>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
+            <h1 className="text-3xl font-bold text-gray-900">{item.title}</h1>
+            {isOwner && (
+              <Link
+                to={`/seller/items/${item.id}/edit`}
+                className="inline-flex items-center justify-center rounded-lg border border-purple-200 bg-purple-50 px-4 py-2 text-sm font-semibold text-purple-700 hover:bg-purple-100"
+              >
+                Edit Listing
+              </Link>
+            )}
+          </div>
 
           {/* Price */}
           <div className="flex items-baseline gap-3 mb-6">

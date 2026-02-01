@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, updateDoc, serverTimestamp, GeoPoint } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase/client";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { useUserDoc } from "@/hooks/v2/useUserDoc";
 import { Card, CardContent } from "@/components/ui/Card";
+import { AddressAutocomplete } from "@/components/v2/AddressAutocomplete";
 
 export default function EditSellerItem() {
   const { itemId } = useParams();
@@ -16,6 +17,13 @@ export default function EditSellerItem() {
   const [saving, setSaving] = useState(false);
   const [images, setImages] = useState<string[]>([]);
   const [newFiles, setNewFiles] = useState<File[]>([]);
+  const [pickupLocation, setPickupLocation] = useState<{
+    address: string;
+    city: string;
+    state: string;
+    lat: number;
+    lng: number;
+  } | null>(null);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -32,6 +40,18 @@ export default function EditSellerItem() {
     { value: "pickup", label: "Pickup" },
     { value: "shipping", label: "Shipping" },
   ];
+
+  const parseAddressParts = (address: string) => {
+    const parts = address.split(",").map((part) => part.trim());
+    const [street, city, stateZip] = parts;
+    const stateZipParts = (stateZip || "").split(" ").filter(Boolean);
+    const state = stateZipParts[0] || "";
+    return {
+      street: street || address,
+      city: city || "",
+      state,
+    };
+  };
 
   useEffect(() => {
     if (!itemId) return;
@@ -87,6 +107,21 @@ export default function EditSellerItem() {
           deliveryOptions: data.deliveryOptions || ["courier"],
         });
         setImages(data.images || data.photos || []);
+        if (data.pickupLocation) {
+          const pickupData = data.pickupLocation as any;
+          const location = pickupData.location || pickupData;
+          const lat = location?.latitude ?? location?.lat;
+          const lng = location?.longitude ?? location?.lng;
+          if (lat != null && lng != null) {
+            setPickupLocation({
+              address: pickupData.address || "",
+              city: pickupData.city || "",
+              state: pickupData.state || "",
+              lat,
+              lng,
+            });
+          }
+        }
         console.log('EditPage loaded item data:', data);
       } catch (err) {
         console.error("Failed to load item:", err);
@@ -154,6 +189,15 @@ export default function EditSellerItem() {
     setSaving(true);
 
     try {
+      const needsPickupLocation = formData.deliveryOptions.some(
+        (option) => option === "courier" || option === "pickup",
+      );
+      if (needsPickupLocation && !pickupLocation) {
+        alert("Please add a pickup location for courier or pickup delivery.");
+        setSaving(false);
+        return;
+      }
+
       const uploaded = await uploadNewFiles();
       const newImages = [...images, ...uploaded];
       const deliveryOptions = formData.deliveryOptions.length > 0
@@ -171,6 +215,14 @@ export default function EditSellerItem() {
         condition: formData.condition,
         status: formData.status,
         deliveryOptions,
+        pickupLocation: pickupLocation
+          ? {
+              address: pickupLocation.address,
+              city: pickupLocation.city,
+              state: pickupLocation.state,
+              location: new GeoPoint(pickupLocation.lat, pickupLocation.lng),
+            }
+          : undefined,
         updatedAt: serverTimestamp(),
       };
 
@@ -255,6 +307,33 @@ export default function EditSellerItem() {
                     </label>
                   ))}
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Pickup Location</label>
+                <AddressAutocomplete
+                  label="Pickup Address"
+                  placeholder="Enter pickup address..."
+                  onSelect={(result) => {
+                    const parsed = parseAddressParts(result.address);
+                    setPickupLocation({
+                      address: result.address,
+                      city: parsed.city,
+                      state: parsed.state,
+                      lat: result.lat,
+                      lng: result.lng,
+                    });
+                  }}
+                  required={formData.deliveryOptions.some(
+                    (option) => option === "courier" || option === "pickup",
+                  )}
+                />
+                {pickupLocation && (
+                  <div className="mt-3 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800">
+                    <div className="font-semibold">Pickup location set</div>
+                    <div>{pickupLocation.address}</div>
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-3">

@@ -105,6 +105,40 @@ function buildMenu() {
   Menu.setApplicationMenu(menu)
 }
 
+ipcMain.handle('get-app-logs', async () => {
+  try {
+    if (!fs.existsSync(logFile)) {
+      return ''
+    }
+    const contents = fs.readFileSync(logFile, 'utf-8')
+    const lines = contents.split('\n')
+    return lines.slice(-500).join('\n')
+  } catch (error) {
+    console.error('Failed to read log file:', error)
+    return ''
+  }
+})
+
+ipcMain.handle('clear-app-logs', async () => {
+  try {
+    fs.writeFileSync(logFile, '')
+    return true
+  } catch (error) {
+    console.error('Failed to clear log file:', error)
+    return false
+  }
+})
+
+ipcMain.handle('open-log-file', async () => {
+  try {
+    await shell.openPath(logFile)
+    return true
+  } catch (error) {
+    console.error('Failed to open log file:', error)
+    return false
+  }
+})
+
 function showLoadError(details: string) {
   logError(details)
   dialog.showMessageBox({

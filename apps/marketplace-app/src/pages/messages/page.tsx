@@ -30,8 +30,7 @@ export default function MessagesPage() {
 
     const conversationsQuery = query(
       collection(db, "conversations"),
-      where("participants", "array-contains", uid),
-      orderBy("lastMessageAt", "desc")
+      where("participants", "array-contains", uid)
     );
 
     const unsubscribe = onSnapshot(
