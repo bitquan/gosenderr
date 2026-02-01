@@ -135,6 +135,44 @@ function createWindow() {
     mainWindow.loadFile(indexPath)
   }
 
+  const getHashFromUrl = (url: string) => {
+    try {
+      const parsed = new URL(url)
+      if (parsed.hash) return parsed.hash
+      if (parsed.protocol !== 'file:' && parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+        return ''
+      }
+      const pathname = parsed.pathname || ''
+      if (pathname.endsWith('/index.html') || pathname.endsWith('index.html')) return ''
+      return `#${pathname}`
+    } catch {
+      return ''
+    }
+  }
+
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    if (process.env.NODE_ENV === 'development') {
+      if (url.startsWith('http://localhost:5176') || url.startsWith('http://127.0.0.1:5176')) {
+        const hash = getHashFromUrl(url)
+        if (hash && !url.includes('#')) {
+          event.preventDefault()
+          mainWindow?.loadURL(`http://localhost:5176/${hash}`)
+        }
+      }
+      return
+    }
+
+    if (url.startsWith('file://')) {
+      const hash = getHashFromUrl(url)
+      if (hash) {
+        event.preventDefault()
+        const appPath = app.getAppPath()
+        const indexPath = path.join(appPath, 'dist', 'index.html')
+        mainWindow?.loadFile(indexPath, { hash })
+      }
+    }
+  })
+
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     const child = new BrowserWindow({
       width: 1200,
