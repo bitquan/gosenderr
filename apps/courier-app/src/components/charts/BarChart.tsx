@@ -11,8 +11,10 @@ import {
 } from "recharts";
 import { cn } from "@/lib/utils";
 
+type ChartDatum = Record<string, number | string>;
+
 interface BarChartProps {
-  data: Array<Record<string, any>>;
+  data: ChartDatum[];
   xKey: string;
   yKey: string;
   color?: string;

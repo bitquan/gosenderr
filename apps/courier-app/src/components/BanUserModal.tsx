@@ -54,9 +54,9 @@ export default function BanUserModal({ user, isOpen, onClose, onSuccess }: BanUs
 
       onSuccess()
       onClose()
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error updating ban status:', err)
-      setError(err.message || 'Failed to update ban status')
+      setError(err instanceof Error ? err.message : 'Failed to update ban status')
     } finally {
       setLoading(false)
     }

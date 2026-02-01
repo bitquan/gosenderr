@@ -74,7 +74,7 @@ export function CourierSelector({
   couriers,
   selectedCourierId,
   onSelect,
-  isFoodItem,
+  isFoodItem: _isFoodItem,
 }: CourierSelectorProps) {
   if (couriers.length === 0) {
     return (
