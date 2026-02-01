@@ -3,7 +3,7 @@
 ## Overview
 This repository uses the following workflows:
 
-- `CI (ci.yml)` — lint and docs verification on PRs and main.
+- `CI (ci.yml)` — lint, docs verification, type check, build, and unit tests on PRs and main.
 - `CI and Deploy (ci-and-deploy.yml)` — Trivy security scan (scheduled + PR/main).
 - `CodeQL (codeql-analysis.yml)` — CodeQL analysis on PRs/main and weekly schedule.
 - `Deploy (deploy.yml)` — manual deployment workflow with environment selection.
