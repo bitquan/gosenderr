@@ -84,22 +84,22 @@ updates:
           - "patch"
 
   # ============================================
-  # SHIFTER APP (Runner/Package delivery app)
+  # ADMIN DESKTOP (Electron app)
   # ============================================
   - package-ecosystem: "npm"
-    directory: "/apps/shifter-app"
+    directory: "/apps/admin-desktop"
     schedule:
       interval: "weekly"
-      day: "tuesday"
+      day: "wednesday"
       time: "09:00"
     open-pull-requests-limit: 5
     labels:
       - "dependencies"
-      - "shifter-app"
+      - "admin-desktop"
     commit-message:
-      prefix: "chore(shifter-app)"
+      prefix: "chore(admin-desktop)"
     groups:
-      shifter-app-minor-patch:
+      admin-desktop-minor-patch:
         patterns:
           - "*"
         update-types:
