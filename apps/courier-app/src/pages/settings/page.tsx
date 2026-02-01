@@ -5,7 +5,7 @@ import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { Link } from "react-router-dom";
 import { getAuthSafe } from "@/lib/firebase";
 import { useEffect, useState } from "react";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 export default function CourierSettingsPage() {
@@ -14,6 +14,9 @@ export default function CourierSettingsPage() {
   const [courierData, setCourierData] = useState<any>(null);
   const [dataLoading, setDataLoading] = useState(true);
   const [signingOut, setSigningOut] = useState(false);
+  const [availability, setAvailability] = useState(false);
+  const [serviceRadius, setServiceRadius] = useState(10);
+  const [savingPreferences, setSavingPreferences] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -22,6 +25,11 @@ export default function CourierSettingsPage() {
           const userDoc = await getDoc(doc(db, 'users', user.uid));
           if (userDoc.exists()) {
             setCourierData(userDoc.data());
+            const profile = userDoc.data().courierProfile;
+            if (profile) {
+              setAvailability(Boolean(profile.isOnline));
+              setServiceRadius(Number(profile.serviceRadius || 10));
+            }
           }
         } finally {
           setDataLoading(false);
@@ -45,6 +53,23 @@ export default function CourierSettingsPage() {
     } catch (error) {
       console.error("Error signing out:", error);
       setSigningOut(false);
+    }
+  };
+
+  const handleSavePreferences = async () => {
+    if (!user) return;
+
+    setSavingPreferences(true);
+    try {
+      await updateDoc(doc(db, 'users', user.uid), {
+        'courierProfile.isOnline': availability,
+        'courierProfile.serviceRadius': serviceRadius,
+        updatedAt: serverTimestamp(),
+      });
+    } catch (error) {
+      console.error("Error saving courier preferences:", error);
+    } finally {
+      setSavingPreferences(false);
     }
   };
 
@@ -76,6 +101,16 @@ export default function CourierSettingsPage() {
               👤 Account
             </h2>
             <div className="space-y-4">
+              <Link
+                to="/profile"
+                className="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-100"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-lg">🧾</span>
+                  <span>Profile</span>
+                </div>
+                <span className="text-gray-400">→</span>
+              </Link>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-gray-50 rounded-xl p-4">
                   <p className="text-xs text-gray-600 font-medium mb-1">Email</p>
@@ -122,6 +157,64 @@ export default function CourierSettingsPage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-6">
               🚚 Delivery Settings
             </h2>
+            <div className="space-y-5 mb-6">
+              <div className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3">
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">Availability</p>
+                  <p className="text-xs text-gray-500">
+                    Toggle whether you are accepting new deliveries.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setAvailability((prev) => !prev)}
+                  className={`relative inline-flex h-7 w-12 items-center rounded-full transition ${
+                    availability ? "bg-emerald-500" : "bg-gray-300"
+                  }`}
+                  aria-label="Toggle availability"
+                >
+                  <span
+                    className={`inline-block h-5 w-5 transform rounded-full bg-white transition ${
+                      availability ? "translate-x-6" : "translate-x-1"
+                    }`}
+                  />
+                </button>
+              </div>
+
+              <div className="rounded-xl border border-gray-200 px-4 py-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">Service radius</p>
+                    <p className="text-xs text-gray-500">
+                      How far you are willing to drive for pickups.
+                    </p>
+                  </div>
+                  <span className="text-sm font-semibold text-gray-900">
+                    {serviceRadius} mi
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={1}
+                  max={50}
+                  step={1}
+                  value={serviceRadius}
+                  onChange={(event) => setServiceRadius(Number(event.target.value))}
+                  className="mt-3 w-full"
+                />
+                <div className="mt-2 flex justify-between text-xs text-gray-400">
+                  <span>1 mi</span>
+                  <span>50 mi</span>
+                </div>
+              </div>
+
+              <button
+                onClick={handleSavePreferences}
+                disabled={savingPreferences}
+                className="w-full rounded-xl bg-purple-600 px-4 py-3 text-sm font-semibold text-white hover:bg-purple-700 disabled:opacity-60"
+              >
+                {savingPreferences ? "Saving..." : "Save Delivery Preferences"}
+              </button>
+            </div>
             <div className="space-y-3">
               <Link
                 to="/rate-cards"

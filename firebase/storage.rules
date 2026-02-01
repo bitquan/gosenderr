@@ -64,6 +64,15 @@ service firebase.storage {
       allow read: if true;
     }
 
+    // Profile photos: profilePhotos/{userId}/{photoFile}
+    match /profilePhotos/{userId}/{photoFile} {
+      // User can upload their own profile photo
+      allow write: if isSignedIn() && uid() == userId && isValidImage();
+
+      // Profile photos are public (used across marketplace and courier views)
+      allow read: if true;
+    }
+
     // Legacy path support: items/{userId}/{photoFile}
     match /items/{userId}/{photoFile} {
       // User can upload their own item photos

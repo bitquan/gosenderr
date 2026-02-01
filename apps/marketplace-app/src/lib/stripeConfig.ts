@@ -1,6 +1,5 @@
-import { httpsCallable } from 'firebase/functions'
 import { loadStripe, Stripe } from '@stripe/stripe-js'
-import { functions } from '@/lib/firebase/client'
+import { getPublicConfig } from './publicConfig'
 
 let cachedPublishableKey: string | null = null
 let stripePromise: Promise<Stripe | null> | null = null
@@ -11,14 +10,10 @@ async function fetchPublishableKey(): Promise<string> {
   const fallbackKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || ''
 
   try {
-    if (functions) {
-      const callable = httpsCallable(functions, 'getPublicConfig')
-      const result = await callable()
-      const data = result.data as { stripePublishableKey?: string }
-      if (data?.stripePublishableKey) {
-        cachedPublishableKey = data.stripePublishableKey
-        return cachedPublishableKey
-      }
+    const config = await getPublicConfig()
+    if (config?.stripePublishableKey) {
+      cachedPublishableKey = config.stripePublishableKey
+      return cachedPublishableKey
     }
   } catch (error) {
     console.warn('Failed to fetch Stripe publishable key from config:', error)

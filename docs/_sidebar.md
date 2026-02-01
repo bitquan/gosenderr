@@ -17,4 +17,5 @@
   - [Architecture](ARCHITECTURE.md)
   - [Development](DEVELOPMENT.md)
   - [Deployment guide](DEPLOYMENT.md)
+  - [Production monitoring](PRODUCTION_MONITORING.md)
   - [API Reference](API_REFERENCE.md)

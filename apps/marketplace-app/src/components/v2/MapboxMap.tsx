@@ -1,6 +1,7 @@
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { GeoPoint, CourierLocation } from "@/lib/v2/types";
+import { getMapboxToken } from "@/lib/mapbox/mapbox";
 
 interface MapboxMapProps {
   pickup: GeoPoint;
@@ -18,19 +19,19 @@ export function MapboxMap({
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const markersRef = useRef<{ pickup?: any; dropoff?: any; courier?: any }>({});
+  const [hasToken, setHasToken] = useState<boolean | null>(null);
 
   useEffect(() => {
-    // Check if mapbox token is available
-    const token = import.meta.env.VITE_MAPBOX_TOKEN;
-    if (!token) {
-      console.warn("Mapbox token not found");
-      return;
-    }
-
-    // Load mapbox-gl dynamically
     if (typeof window === "undefined") return;
+    let isMounted = true;
 
     const loadMapbox = async () => {
+      const token = await getMapboxToken();
+      if (!isMounted) return;
+
+      setHasToken(!!token);
+      if (!token) return;
+
       // @ts-ignore
       if (!window.mapboxgl) {
         const mapboxgl = await import("mapbox-gl");
@@ -81,66 +82,66 @@ export function MapboxMap({
               const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${pickup.lng},${pickup.lat};${dropoff.lng},${dropoff.lat}?geometries=geojson&access_token=${token}`;
               const response = await fetch(url);
               const data = await response.json();
-              
+
               if (data.routes && data.routes[0]) {
                 const routeGeometry = data.routes[0].geometry;
-                
+
                 // Add route source and layer
-                map.addSource('route', {
-                  type: 'geojson',
+                map.addSource("route", {
+                  type: "geojson",
                   data: {
-                    type: 'Feature',
+                    type: "Feature",
                     properties: {},
-                    geometry: routeGeometry
-                  }
+                    geometry: routeGeometry,
+                  },
                 });
 
                 map.addLayer({
-                  id: 'route',
-                  type: 'line',
-                  source: 'route',
+                  id: "route",
+                  type: "line",
+                  source: "route",
                   layout: {
-                    'line-join': 'round',
-                    'line-cap': 'round'
+                    "line-join": "round",
+                    "line-cap": "round",
                   },
                   paint: {
-                    'line-color': '#3b82f6',
-                    'line-width': 4,
-                    'line-opacity': 0.75
-                  }
+                    "line-color": "#3b82f6",
+                    "line-width": 4,
+                    "line-opacity": 0.75,
+                  },
                 });
               }
             } catch (error) {
-              console.error('Error fetching route:', error);
+              console.error("Error fetching route:", error);
               // Fallback to straight line if API fails
-              map.addSource('route', {
-                type: 'geojson',
+              map.addSource("route", {
+                type: "geojson",
                 data: {
-                  type: 'Feature',
+                  type: "Feature",
                   properties: {},
                   geometry: {
-                    type: 'LineString',
+                    type: "LineString",
                     coordinates: [
                       [pickup.lng, pickup.lat],
-                      [dropoff.lng, dropoff.lat]
-                    ]
-                  }
-                }
+                      [dropoff.lng, dropoff.lat],
+                    ],
+                  },
+                },
               });
 
               map.addLayer({
-                id: 'route',
-                type: 'line',
-                source: 'route',
+                id: "route",
+                type: "line",
+                source: "route",
                 layout: {
-                  'line-join': 'round',
-                  'line-cap': 'round'
+                  "line-join": "round",
+                  "line-cap": "round",
                 },
                 paint: {
-                  'line-color': '#3b82f6',
-                  'line-width': 4,
-                  'line-opacity': 0.75
-                }
+                  "line-color": "#3b82f6",
+                  "line-width": 4,
+                  "line-opacity": 0.75,
+                },
               });
             }
           };
@@ -159,6 +160,7 @@ export function MapboxMap({
     loadMapbox();
 
     return () => {
+      isMounted = false;
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
@@ -204,9 +206,7 @@ export function MapboxMap({
     }
   }, [courierLocation?.lat, courierLocation?.lng]);
 
-  const token = import.meta.env.VITE_MAPBOX_TOKEN;
-
-  if (!token) {
+  if (hasToken === false) {
     return (
       <div
         style={{
@@ -223,7 +223,7 @@ export function MapboxMap({
         <div style={{ textAlign: "center" }}>
           <p style={{ marginBottom: "8px" }}>Map unavailable</p>
           <p style={{ fontSize: "12px" }}>
-            Set NEXT_PUBLIC_MAPBOX_TOKEN in .env.local
+            Set VITE_MAPBOX_TOKEN or configure public config.
           </p>
           <div
             style={{ marginTop: "16px", fontSize: "14px", textAlign: "left" }}

@@ -2,6 +2,13 @@
 import { useEffect, useRef, useImperativeHandle, forwardRef, useState } from "react";
 import { GeoPoint, CourierLocation } from "@/lib/v2/types";
 import type { RouteSegment } from "@/lib/navigation/types";
+import type { Map as MapboxMapInstance, Marker as MapboxMarker } from "mapbox-gl";
+
+declare global {
+  interface Window {
+    mapboxgl?: any;
+  }
+}
 
 interface MapboxMapProps {
   pickup?: GeoPoint;
@@ -9,14 +16,14 @@ interface MapboxMapProps {
   courierLocation?: CourierLocation | null;
   height?: string;
   routeSegments?: RouteSegment[];
-  onMapLoad?: (map: any) => void;
+  onMapLoad?: (map: MapboxMapInstance) => void;
   showLabels?: boolean;
   showPopups?: boolean;
   interactive?: boolean;
 }
 
 export interface MapboxMapHandle {
-  getMap: () => any | null;
+  getMap: () => MapboxMapInstance | null;
 }
 
 export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(({
@@ -31,8 +38,12 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(({
   interactive = true,
 }, ref) => {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<any>(null);
-  const markersRef = useRef<{ pickup?: any; dropoff?: any; courier?: any }>({});
+  const mapRef = useRef<MapboxMapInstance | null>(null);
+  const markersRef = useRef<{
+    pickup?: MapboxMarker | null;
+    dropoff?: MapboxMarker | null;
+    courier?: MapboxMarker | null;
+  }>({});
   const [mapReady, setMapReady] = useState(false);
 
   useImperativeHandle(ref, () => ({
@@ -51,11 +62,12 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(({
     const loadMapbox = async () => {
       if (!window.mapboxgl) {
         const mapboxglModule = await import("mapbox-gl");
-        window.mapboxgl = mapboxglModule.default as any;
+        window.mapboxgl = mapboxglModule.default;
       }
 
       const mapboxgl = window.mapboxgl;
-      (mapboxgl as any).accessToken = token;
+      if (!mapboxgl) return;
+      mapboxgl.accessToken = token;
 
       if (!mapRef.current && mapContainer.current) {
         // Use courier location or pickup as initial center
@@ -239,11 +251,11 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(({
     // Remove existing pickup/dropoff markers
     if (markersRef.current.pickup) {
       markersRef.current.pickup.remove();
-      markersRef.current.pickup = null;
+      markersRef.current.pickup = undefined;
     }
     if (markersRef.current.dropoff) {
       markersRef.current.dropoff.remove();
-      markersRef.current.dropoff = null;
+      markersRef.current.dropoff = undefined;
     }
 
     // Only create markers if both pickup and dropoff exist

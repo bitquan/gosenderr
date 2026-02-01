@@ -67,7 +67,7 @@ async function notifyCustomerJobAssigned(jobId: string, job: any) {
     title: "Courier Assigned! 🎉",
     body: "A courier has been assigned to your delivery.",
     data: {type: "job_assigned", jobId},
-  });
+  }, "deliveryUpdates");
 }
 
 async function notifyCourierJobAssigned(jobId: string, job: any) {
@@ -75,7 +75,7 @@ async function notifyCourierJobAssigned(jobId: string, job: any) {
     title: "New Job Assigned",
     body: `Pickup at ${job.pickup.address}`,
     data: {type: "job_assigned", jobId},
-  });
+  }, "deliveryUpdates");
 }
 
 async function notifyCustomerCourierEnRoute(jobId: string, job: any) {
@@ -83,7 +83,7 @@ async function notifyCustomerCourierEnRoute(jobId: string, job: any) {
     title: "Courier On The Way 🚗",
     body: "Your courier is heading to the pickup location.",
     data: {type: "courier_enroute", jobId},
-  });
+  }, "deliveryUpdates");
 }
 
 async function notifyCustomerPackagePickedUp(jobId: string, job: any) {
@@ -91,7 +91,7 @@ async function notifyCustomerPackagePickedUp(jobId: string, job: any) {
     title: "Package Picked Up 📦",
     body: "Your courier has picked up the package.",
     data: {type: "package_picked_up", jobId},
-  });
+  }, "deliveryUpdates");
 }
 
 async function notifyCustomerOutForDelivery(jobId: string, job: any) {
@@ -99,7 +99,7 @@ async function notifyCustomerOutForDelivery(jobId: string, job: any) {
     title: "Out For Delivery 🚚",
     body: "Your package is on the way to the destination!",
     data: {type: "out_for_delivery", jobId},
-  });
+  }, "deliveryUpdates");
 }
 
 async function notifyCustomerDeliveryComplete(jobId: string, job: any) {
@@ -107,7 +107,7 @@ async function notifyCustomerDeliveryComplete(jobId: string, job: any) {
     title: "Delivered! ✅",
     body: "Your package has been delivered successfully.",
     data: {type: "delivery_complete", jobId},
-  });
+  }, "deliveryUpdates");
 }
 
 async function notifyCourierJobComplete(jobId: string, job: any) {
@@ -115,7 +115,7 @@ async function notifyCourierJobComplete(jobId: string, job: any) {
     title: "Job Complete! 💰",
     body: `You earned $${job.payment?.courierPayout?.toFixed(2) || "0.00"}`,
     data: {type: "job_complete", jobId},
-  });
+  }, "deliveryUpdates");
 }
 
 async function notifyPartiesJobCancelled(jobId: string, job: any) {
@@ -124,7 +124,7 @@ async function notifyPartiesJobCancelled(jobId: string, job: any) {
     title: "Delivery Cancelled",
     body: job.cancelReason || "The delivery has been cancelled.",
     data: {type: "job_cancelled", jobId},
-  });
+  }, "deliveryUpdates");
 
   // Notify courier if assigned
   if (job.courierUid) {
@@ -132,7 +132,7 @@ async function notifyPartiesJobCancelled(jobId: string, job: any) {
       title: "Job Cancelled",
       body: "The delivery job has been cancelled.",
       data: {type: "job_cancelled", jobId},
-    });
+    }, "deliveryUpdates");
   }
 }
 
@@ -140,10 +140,18 @@ async function sendNotification(uid: string, message: {
   title: string;
   body: string;
   data: Record<string, string>;
-}) {
+}, preferenceKey: "deliveryUpdates" | "nearbyCourierAlerts" | "marketing") {
   try {
     const userDoc = await db.collection("users").doc(uid).get();
-    const fcmToken = userDoc.data()?.fcmToken;
+    const userData = userDoc.data() || {};
+    const prefs = userData.notificationPreferences || {};
+    const shouldSend = prefs[preferenceKey] !== false;
+    if (!shouldSend) {
+      console.log(`Notifications disabled for ${uid} (${preferenceKey})`);
+      return;
+    }
+
+    const fcmToken = userData.fcmToken;
 
     if (!fcmToken) {
       console.log(`No FCM token for user ${uid}`);

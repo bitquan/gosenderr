@@ -213,6 +213,14 @@ open https://gosenderr.com
 
 ---
 
+## 📈 Production Monitoring & Alerting
+
+Set up the baseline monitoring and alerting checklist before opening production traffic:
+
+- See [docs/PRODUCTION_MONITORING.md](PRODUCTION_MONITORING.md)
+
+---
+
 ## Domain Configuration
 
 ### 1. Add Custom Domain

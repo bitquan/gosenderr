@@ -21,6 +21,9 @@ let authInstance: Auth | undefined
 let storageInstance: FirebaseStorage | undefined
 let functionsInstance: Functions | undefined
 
+const shouldUseEmulators =
+  import.meta.env.DEV && import.meta.env.VITE_USE_FIREBASE_EMULATORS === "true"
+
 if (isValidConfig) {
   try {
     app = getApps().length ? getApp() : initializeApp(firebaseConfig)
@@ -29,8 +32,8 @@ if (isValidConfig) {
     storageInstance = getStorage(app)
     functionsInstance = getFunctions(app)
     
-    // Connect to Firebase Emulators in development
-    if (import.meta.env.DEV) {
+    // Connect to Firebase Emulators only when explicitly enabled
+    if (shouldUseEmulators) {
       try {
         connectFirestoreEmulator(dbInstance, '127.0.0.1', 8080)
         connectAuthEmulator(authInstance, 'http://127.0.0.1:9099', { disableWarnings: true })

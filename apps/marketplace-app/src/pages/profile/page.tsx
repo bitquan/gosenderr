@@ -4,11 +4,12 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { updateProfile } from "firebase/auth";
-import { doc, updateDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase/firestore";
+import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { db, storage } from "@/lib/firebase/client";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Avatar } from "@/components/ui/Avatar";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 export default function CustomerProfilePage() {
   const navigate = useNavigate();
@@ -17,6 +18,9 @@ export default function CustomerProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   if (loading) {
     return (
@@ -71,6 +75,40 @@ export default function CustomerProfilePage() {
     }
   };
 
+  const handlePhotoSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  };
+
+  const handleUploadPhoto = async () => {
+    if (!user || !photoFile) return;
+
+    setUploadingPhoto(true);
+    try {
+      const fileName = `profilePhotos/${user.uid}/${Date.now()}_${photoFile.name}`;
+      const storageRef = ref(storage, fileName);
+      await uploadBytes(storageRef, photoFile);
+      const url = await getDownloadURL(storageRef);
+
+      await updateProfile(user, { photoURL: url });
+      await updateDoc(doc(db, "users", user.uid), {
+        profilePhotoUrl: url,
+        updatedAt: serverTimestamp(),
+      });
+
+      setPhotoFile(null);
+      setPhotoPreview(null);
+      window.location.reload();
+    } catch (error) {
+      console.error("Error uploading profile photo:", error);
+      alert("Failed to upload photo. Please try again.");
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#F8F9FF] px-6 py-10">
       <div className="max-w-3xl mx-auto space-y-6">
@@ -93,7 +131,7 @@ export default function CustomerProfilePage() {
               {/* Profile Photo */}
               <div className="flex items-center gap-4">
                 <Avatar
-                  src={user.photoURL ?? undefined}
+                  src={photoPreview || user.photoURL || undefined}
                   fallback={user.displayName || user.email || undefined}
                   size="xl"
                 />
@@ -102,7 +140,26 @@ export default function CustomerProfilePage() {
                     Profile Photo
                   </div>
                   <div className="text-xs text-gray-500">
-                    Coming soon: Upload custom photo
+                    Upload a clear headshot for your account.
+                  </div>
+                  <div className="mt-3 flex flex-wrap items-center gap-3">
+                    <label className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50 cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handlePhotoSelect}
+                        className="hidden"
+                      />
+                      Choose Photo
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleUploadPhoto}
+                      disabled={!photoFile || uploadingPhoto}
+                      className="rounded-lg bg-purple-600 px-3 py-1 text-xs font-semibold text-white hover:bg-purple-700 disabled:opacity-50"
+                    >
+                      {uploadingPhoto ? "Uploading..." : "Upload"}
+                    </button>
                   </div>
                 </div>
               </div>
