@@ -65,6 +65,8 @@ out/
 .firebase/
 firebase-debug.log
 firestore-debug.log
+firebase-emulator-data/
+firebase-export-*/
 
 # Turbo
 .turbo/
