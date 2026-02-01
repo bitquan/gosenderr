@@ -76,9 +76,9 @@ export default function CourierOnboarding() {
       return;
     }
 
-    const profileStatus = userDoc?.courierProfile?.status || null;
+    const profileStatus = (userDoc?.courierProfile as any)?.status || null;
     setCourierStatus(profileStatus);
-    setRejectionReason(userDoc?.courierProfile?.rejectionReason || null);
+    setRejectionReason((userDoc?.courierProfile as any)?.rejectionReason || null);
     setStatusLoading(false);
   }, [authLoading, userLoading, uid, userDoc]);
 
