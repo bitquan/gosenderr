@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ChangeEvent } from 'react'
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { useAuth } from '../hooks/useAuth'
@@ -182,7 +182,9 @@ export default function SecretsPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Mode</label>
                 <select
                   value={secrets.mode}
-                  onChange={(e) => setSecrets({ ...secrets, mode: e.target.value as 'test' | 'live' })}
+                  onChange={(e: ChangeEvent<HTMLSelectElement>) =>
+                    setSecrets({ ...secrets, mode: e.target.value as 'test' | 'live' })
+                  }
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                 >
                   <option value="test">Test</option>
@@ -220,7 +222,9 @@ export default function SecretsPage() {
                   <input
                     type="text"
                     value={secrets.publishableKey}
-                    onChange={(e) => setSecrets({ ...secrets, publishableKey: e.target.value })}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                      setSecrets({ ...secrets, publishableKey: e.target.value })
+                    }
                     placeholder="pk_test_..."
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                   />
@@ -233,7 +237,9 @@ export default function SecretsPage() {
                     <input
                       type={showSecret ? 'text' : 'password'}
                       value={secrets.secretKey}
-                      onChange={(e) => setSecrets({ ...secrets, secretKey: e.target.value })}
+                      onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                        setSecrets({ ...secrets, secretKey: e.target.value })
+                      }
                       placeholder="sk_test_..."
                       className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                     />
@@ -254,7 +260,9 @@ export default function SecretsPage() {
                     <input
                       type={showWebhook ? 'text' : 'password'}
                       value={secrets.webhookSecret}
-                      onChange={(e) => setSecrets({ ...secrets, webhookSecret: e.target.value })}
+                      onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                        setSecrets({ ...secrets, webhookSecret: e.target.value })
+                      }
                       placeholder="whsec_..."
                       className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                     />
@@ -277,7 +285,9 @@ export default function SecretsPage() {
                   <input
                     type="text"
                     value={secrets.livePublishableKey}
-                    onChange={(e) => setSecrets({ ...secrets, livePublishableKey: e.target.value })}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                      setSecrets({ ...secrets, livePublishableKey: e.target.value })
+                    }
                     placeholder="pk_live_..."
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                   />
@@ -290,7 +300,9 @@ export default function SecretsPage() {
                     <input
                       type={showSecret ? 'text' : 'password'}
                       value={secrets.liveSecretKey}
-                      onChange={(e) => setSecrets({ ...secrets, liveSecretKey: e.target.value })}
+                      onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                        setSecrets({ ...secrets, liveSecretKey: e.target.value })
+                      }
                       placeholder="sk_live_..."
                       className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                     />
@@ -311,7 +323,9 @@ export default function SecretsPage() {
                     <input
                       type={showWebhook ? 'text' : 'password'}
                       value={secrets.liveWebhookSecret}
-                      onChange={(e) => setSecrets({ ...secrets, liveWebhookSecret: e.target.value })}
+                      onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                        setSecrets({ ...secrets, liveWebhookSecret: e.target.value })
+                      }
                       placeholder="whsec_..."
                       className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                     />
@@ -341,7 +355,9 @@ export default function SecretsPage() {
                 <input
                   type="text"
                   value={mapbox.publicToken}
-                  onChange={(e) => setMapbox({ ...mapbox, publicToken: e.target.value })}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                    setMapbox({ ...mapbox, publicToken: e.target.value })
+                  }
                   placeholder="pk.eyJ..."
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
