@@ -25,6 +25,15 @@ export default function NewSellerItem() {
     deliveryOptions: ["courier"] as DeliveryOption[],
   });
 
+  const toSafeBlobUrl = (url: string) => {
+    try {
+      const parsed = new URL(url);
+      return parsed.protocol === "blob:" ? parsed.href : null;
+    } catch {
+      return null;
+    }
+  };
+
   const categories = [
     { value: "electronics", label: "📱 Electronics" },
     { value: "clothing", label: "👕 Clothing" },
@@ -157,16 +166,17 @@ export default function NewSellerItem() {
                 />
                 {previewUrls.length > 0 && (
                   <div className="mt-4 grid grid-cols-5 gap-2">
-                    {previewUrls.map((url, idx) =>
-                      url.startsWith("blob:") ? (
+                    {previewUrls.map((url, idx) => {
+                      const safeUrl = toSafeBlobUrl(url);
+                      return safeUrl ? (
                         <img
-                          key={url}
-                          src={url}
+                          key={safeUrl}
+                          src={safeUrl}
                           alt={`Preview ${idx + 1}`}
                           className="w-full h-20 object-cover rounded-lg"
                         />
-                      ) : null
-                    )}
+                      ) : null;
+                    })}
                   </div>
                 )}
               </div>
