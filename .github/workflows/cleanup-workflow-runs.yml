@@ -32,12 +32,13 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
-            const daysInput = core.getInput('days') || '30'
+            const workflowInputs = (context.payload && context.payload.inputs) ? context.payload.inputs : {}
+            const daysInput = workflowInputs.days || '30'
             const days = parseInt(daysInput, 10)
             if (isNaN(days) || days < 0) throw new Error(`Invalid 'days' input: ${daysInput}. Provide 0 or a positive integer.`)
-            const workflowId = (core.getInput('workflow_id') || '').trim()
-            const branch = core.getInput('branch') || ''
-            const preview = (core.getInput('preview') || 'true') === 'true'
+            const workflowId = (workflowInputs.workflow_id || '').trim()
+            const branch = workflowInputs.branch || ''
+            const preview = (workflowInputs.preview || 'true') === 'true'
             const cutoff = days === 0 ? null : new Date(Date.now() - days * 24 * 60 * 60 * 1000)
             core.info(cutoff ? `Cutoff date: ${cutoff.toISOString()}` : 'Cutoff date: none (delete all)')
 
