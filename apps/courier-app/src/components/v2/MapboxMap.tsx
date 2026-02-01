@@ -37,8 +37,17 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(({
   showPopups = true,
   interactive = true,
 }, ref) => {
+  const isValidLngLat = (lng?: number, lat?: number) =>
+    Number.isFinite(lng) && Number.isFinite(lat);
+  const isValidCoord = (coord: [number, number]) =>
+    Array.isArray(coord) &&
+    coord.length === 2 &&
+    Number.isFinite(coord[0]) &&
+    Number.isFinite(coord[1]);
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapboxMapInstance | null>(null);
+  const fitRetryCountRef = useRef(0);
+  const fitRetryTimeoutRef = useRef<number | null>(null);
   const markersRef = useRef<{
     pickup?: MapboxMarker | null;
     dropoff?: MapboxMarker | null;
@@ -71,10 +80,10 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(({
 
       if (!mapRef.current && mapContainer.current) {
         // Use courier location or pickup as initial center
-        const initialCenter = courierLocation 
-          ? [courierLocation.lng, courierLocation.lat]
-          : pickup 
-          ? [pickup.lng, pickup.lat]
+        const initialCenter = isValidLngLat(courierLocation?.lng, courierLocation?.lat)
+          ? [courierLocation!.lng, courierLocation!.lat]
+          : isValidLngLat(pickup?.lng, pickup?.lat)
+          ? [pickup!.lng, pickup!.lat]
           : [-77.4182, 38.9493]; // Default to DC area
           
         const map = new mapboxgl.Map({
@@ -98,7 +107,12 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(({
 
         map.on("load", () => {
           // Only create pickup/dropoff markers if they exist
-          if (pickup && dropoff) {
+          if (
+            pickup &&
+            dropoff &&
+            isValidLngLat(pickup.lng, pickup.lat) &&
+            isValidLngLat(dropoff.lng, dropoff.lat)
+          ) {
             markersRef.current.pickup = new mapboxgl.Marker({ color: "#16a34a" })
               .setLngLat([pickup.lng, pickup.lat])
               .setPopup(
@@ -117,10 +131,6 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(({
               )
               .addTo(map);
 
-            const bounds = new mapboxgl.LngLatBounds();
-            bounds.extend([pickup.lng, pickup.lat]);
-            bounds.extend([dropoff.lng, dropoff.lat]);
-            map.fitBounds(bounds, { padding: 50 });
           }
 
           setMapReady(true);
@@ -135,12 +145,87 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(({
     loadMapbox();
 
     return () => {
+      if (fitRetryTimeoutRef.current) {
+        window.clearTimeout(fitRetryTimeoutRef.current);
+        fitRetryTimeoutRef.current = null;
+      }
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
       }
     };
   }, [onMapLoad]);
+
+  const fitMapToRoute = () => {
+    if (!mapReady || !mapRef.current) return;
+
+    const map = mapRef.current;
+    const mapboxgl = window.mapboxgl;
+    if (!mapboxgl) return;
+
+    const routeCoordinates = routeSegments
+      .flatMap((segment) => segment.coordinates || [])
+      .filter(isValidCoord);
+
+    const coordinates = [
+      ...routeCoordinates,
+      ...(pickup && isValidLngLat(pickup.lng, pickup.lat)
+        ? [[pickup.lng, pickup.lat] as [number, number]]
+        : []),
+      ...(dropoff && isValidLngLat(dropoff.lng, dropoff.lat)
+        ? [[dropoff.lng, dropoff.lat] as [number, number]]
+        : []),
+    ];
+
+    if (coordinates.length < 2) return;
+
+    const seed = coordinates.find(isValidCoord);
+    if (!seed) return;
+
+    const bounds = new mapboxgl.LngLatBounds(seed, seed);
+    coordinates.forEach((coord) => {
+      if (isValidCoord(coord)) {
+        bounds.extend(coord);
+      }
+    });
+
+    const container = map.getContainer();
+    if (!container || container.clientWidth === 0 || container.clientHeight === 0) {
+      if (fitRetryCountRef.current < 3 && !fitRetryTimeoutRef.current) {
+        fitRetryCountRef.current += 1;
+        fitRetryTimeoutRef.current = window.setTimeout(() => {
+          fitRetryTimeoutRef.current = null;
+          fitMapToRoute();
+        }, 150);
+      }
+      return;
+    }
+
+    try {
+      map.resize();
+      const minSide = Math.min(container.clientWidth, container.clientHeight);
+      const paddingValue = Math.min(60, Math.max(12, Math.floor(minSide * 0.2)));
+      map.fitBounds(bounds, {
+        padding: { top: paddingValue, right: paddingValue, bottom: paddingValue, left: paddingValue },
+        maxZoom: 15,
+        duration: interactive ? 800 : 0,
+      });
+    } catch (error) {
+      console.warn("Failed to fit map bounds", error);
+      return;
+    }
+
+    map.once("moveend", () => {
+      const minZoom = 11;
+      if (interactive && map.getZoom() < minZoom) {
+        map.setZoom(minZoom);
+      }
+    });
+  };
+
+  useEffect(() => {
+    fitMapToRoute();
+  }, [mapReady, pickup, dropoff, routeSegments]);
 
   useEffect(() => {
     if (!mapReady || !mapRef.current) {
@@ -150,7 +235,7 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(({
     const mapboxgl = window.mapboxgl;
     if (!mapboxgl) return;
 
-    if (courierLocation && courierLocation.lat && courierLocation.lng) {
+    if (courierLocation && isValidLngLat(courierLocation.lng, courierLocation.lat)) {
       // Check if marker exists and is the old type (remove it to force recreation)
       if (markersRef.current.courier) {
         const element = markersRef.current.courier.getElement();
@@ -259,7 +344,12 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(({
     }
 
     // Only create markers if both pickup and dropoff exist
-    if (pickup && dropoff) {
+    if (
+      pickup &&
+      dropoff &&
+      isValidLngLat(pickup.lng, pickup.lat) &&
+      isValidLngLat(dropoff.lng, dropoff.lat)
+    ) {
       const pickupMarker = new mapboxgl.Marker({ color: "#16a34a" })
         .setLngLat([pickup.lng, pickup.lat]);
 
@@ -305,9 +395,12 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(({
     if (routeSegments.length === 0) return;
 
     routeSegments.forEach((segment) => {
-        const sourceId = `route-${segment.type}`;
-        const layerId = `route-${segment.type}`;
-      
+      const validCoordinates = (segment.coordinates || []).filter(isValidCoord);
+      if (validCoordinates.length < 2) return;
+
+      const sourceId = `route-${segment.type}`;
+      const layerId = `route-${segment.type}`;
+
       map.addSource(sourceId, {
         type: 'geojson',
         data: {
@@ -315,7 +408,7 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(({
           properties: {},
           geometry: {
             type: 'LineString',
-            coordinates: segment.coordinates,
+            coordinates: validCoordinates,
           },
         },
       });

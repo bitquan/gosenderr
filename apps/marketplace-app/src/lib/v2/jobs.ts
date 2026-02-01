@@ -26,6 +26,11 @@ interface CreateJobPayload {
   dropoff: GeoPoint;
   package: PackageInfo;
   photos: JobPhoto[];
+  preferredCourierUid?: string | null;
+  offerCourierUid?: string | null;
+  offerQueue?: string[];
+  offerStatus?: "pending" | "open" | "expired" | "declined" | "accepted";
+  offerExpiresAt?: Timestamp | null;
 }
 
 export async function createJob(
@@ -40,6 +45,11 @@ export async function createJob(
     dropoff: payload.dropoff,
     package: payload.package,
     photos: payload.photos,
+    preferredCourierUid: payload.preferredCourierUid ?? null,
+    offerCourierUid: payload.offerCourierUid ?? null,
+    offerQueue: payload.offerQueue ?? [],
+    offerStatus: payload.offerStatus ?? "open",
+    offerExpiresAt: payload.offerExpiresAt ?? null,
     courierUid: null,
     agreedFee: null,
     createdAt: serverTimestamp(),

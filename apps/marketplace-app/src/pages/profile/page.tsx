@@ -131,7 +131,7 @@ export default function CustomerProfilePage() {
               {/* Profile Photo */}
               <div className="flex items-center gap-4">
                 <Avatar
-                  src={photoPreview || user.photoURL || undefined}
+                  src={photoPreview ?? user.photoURL ?? undefined}
                   fallback={user.displayName || user.email || undefined}
                   size="xl"
                 />

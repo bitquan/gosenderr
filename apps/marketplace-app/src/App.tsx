@@ -6,6 +6,7 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 import { RoleGuard } from './components/auth/RoleGuard'
 import { PublicOnlyRoute } from './components/auth/RoleGuard'
+import { NotFoundPage } from './components/ui/NotFoundPage'
 
 // Layouts
 import CustomerLayout from './layouts/CustomerLayout'
@@ -34,6 +35,7 @@ import ReviewsPage from './pages/reviews/page'
 import ScheduledDeliveriesPage from './pages/scheduled-deliveries/page'
 import ShipPage from './pages/ship/page'
 import SupportPage from './pages/support/page'
+import UnauthorizedPage from './pages/unauthorized'
 import MarketplaceHome from './pages/marketplace/MarketplaceHome'
 import MarketplaceItemPage from './pages/marketplace/[itemId]/page'
 import MarketplaceCheckoutPage from './pages/marketplace/checkout/page'
@@ -97,15 +99,12 @@ function App() {
             </PublicOnlyRoute>
           } />
           
-          {/* Public marketplace route */}
+          {/* Public marketplace routes */}
           <Route path="/" element={<CustomerLayout />}>
             <Route index element={marketplaceEnabled ? <MarketplaceHome /> : <MarketplaceDisabled />} />
             <Route path="/marketplace" element={marketplaceEnabled ? <MarketplaceHome /> : <MarketplaceDisabled />} />
             <Route path="/marketplace/:itemId" element={marketplaceEnabled ? <MarketplaceItemPage /> : <MarketplaceDisabled />} />
-            <Route path="/checkout" element={<CheckoutPage />} />
-            <Route path="/orders" element={<OrdersPage />} />
-            <Route path="/orders/:orderId" element={<OrderDetailPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/unauthorized" element={<UnauthorizedPage />} />
           </Route>
           
           {/* Protected marketplace sell route */}
@@ -120,9 +119,6 @@ function App() {
           {/* Protected customer routes */}
           <Route element={<ProtectedRoute><CustomerLayout /></ProtectedRoute>}>
             
-            {/* Redirect /dashboard to /marketplace */}
-            <Route path="/dashboard" element={<Navigate to="/marketplace" replace />} />
-
             {/* Customer dashboard */}
             <Route path="/dashboard" element={
               <RoleGuard allowedRoles={["customer", "buyer", "seller"]}>
@@ -130,8 +126,6 @@ function App() {
               </RoleGuard>
             } />
 
-            <Route path="/marketplace" element={marketplaceEnabled ? <MarketplaceHome /> : <MarketplaceDisabled />} />
-            <Route path="/marketplace/:itemId" element={marketplaceEnabled ? <MarketplaceItemPage /> : <MarketplaceDisabled />} />
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/orders" element={<OrdersPage />} />
             <Route path="/orders/:orderId" element={<OrderDetailPage />} />
@@ -139,6 +133,7 @@ function App() {
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/addresses" element={<AddressesPage />} />
             <Route path="/payment-methods" element={<PaymentMethodsPage />} />
+            <Route path="/payment" element={<PaymentPage />} />
             <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/reviews" element={ratingsEnabled ? <ReviewsPage /> : <MarketplaceDisabled />} />
             <Route path="/support" element={<SupportPage />} />
@@ -189,6 +184,31 @@ function App() {
                 <NewJobPage />
               </RoleGuard>
             } />
+            <Route path="/jobs" element={
+              <RoleGuard allowedRoles={['customer', 'buyer']}>
+                <JobsPage />
+              </RoleGuard>
+            } />
+            <Route path="/jobs/:jobId" element={
+              <RoleGuard allowedRoles={['customer', 'buyer']}>
+                <JobDetailPage />
+              </RoleGuard>
+            } />
+            <Route path="/packages" element={
+              <RoleGuard allowedRoles={['customer', 'buyer']}>
+                <PackagesPage />
+              </RoleGuard>
+            } />
+            <Route path="/packages/new" element={
+              <RoleGuard allowedRoles={['customer', 'buyer']}>
+                <NewPackagePage />
+              </RoleGuard>
+            } />
+            <Route path="/packages/:packageId" element={
+              <RoleGuard allowedRoles={['customer', 'buyer']}>
+                <PackageDetailPage />
+              </RoleGuard>
+            } />
             
             {/* Seller Routes */}
             <Route path="/seller/apply" element={
@@ -222,6 +242,18 @@ function App() {
               </RoleGuard>
             } />
           </Route>
+          <Route
+            path="*"
+            element={
+              <NotFoundPage
+                title="Page not found"
+                description="We couldn't find that page."
+                actionHref="/marketplace"
+                actionLabel="Back to marketplace"
+                emoji="🧭"
+              />
+            }
+          />
         </Routes>
           )}
         </CartProvider>

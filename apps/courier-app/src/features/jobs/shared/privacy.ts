@@ -50,6 +50,38 @@ export function getJobVisibility(job: Job, viewer: JobViewer): JobVisibility {
  * Used for couriers viewing open jobs before acceptance
  */
 export function maskAddress(address: string): string {
+  const normalized = address.trim();
+  const cityStateZipRegex = /([A-Za-z .'-]+),\s*([A-Z]{2})\s*(\d{5}(?:-\d{4})?)/g;
+  const cityStateZipMatches = [...normalized.matchAll(cityStateZipRegex)];
+
+  if (cityStateZipMatches.length > 0) {
+    const match = cityStateZipMatches[cityStateZipMatches.length - 1];
+    const city = match[1].trim();
+    const state = match[2].trim();
+    const zip = match[3].trim();
+    return `${city}, ${state} ${zip}`;
+  }
+
+  const zipMatch = normalized.match(/(\d{5}(?:-\d{4})?)/);
+  if (zipMatch && zipMatch.index !== undefined) {
+    const zip = zipMatch[1];
+    const beforeZip = normalized.slice(0, zipMatch.index).replace(/,$/, '').trim();
+    const parts = beforeZip.split(',').map((part) => part.trim()).filter(Boolean);
+    if (parts.length > 0) {
+      const lastPart = parts[parts.length - 1];
+      const stateMatch = lastPart.match(/\b([A-Z]{2})$/);
+      if (stateMatch) {
+        const state = stateMatch[1];
+        const city = parts.length > 1
+          ? parts[parts.length - 2]
+          : lastPart.replace(stateMatch[0], '').trim();
+        if (city) {
+          return `${city}, ${state} ${zip}`;
+        }
+      }
+    }
+  }
+
   const parts = address
     .split(',')
     .map((part) => part.trim())

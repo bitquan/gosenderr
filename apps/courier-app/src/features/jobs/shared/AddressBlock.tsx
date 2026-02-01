@@ -7,11 +7,18 @@ interface AddressBlockProps {
   location: GeoPoint;
   canSeeExact: boolean;
   icon?: string;
+  addressOverride?: string;
 }
 
-export function AddressBlock({ label, location, canSeeExact, icon = '📍' }: AddressBlockProps) {
+export function AddressBlock({
+  label,
+  location,
+  canSeeExact,
+  icon = '📍',
+  addressOverride,
+}: AddressBlockProps) {
   const displayAddress = getDisplayAddress(
-    location.label,
+    addressOverride ?? location.label,
     location.lat,
     location.lng,
     canSeeExact
