@@ -15,7 +15,7 @@
     "build:electron": "tsc -p electron/tsconfig.json",
     "build": "pnpm build:renderer && pnpm build:electron",
     "pack": "electron-builder --dir",
-    "dist": "pnpm build && electron-builder && open dist-electron/*.dmg"
+    "dist": "pnpm build && electron-builder && open dist-electron/*.dmg && open dist-electron"
   },
   "dependencies": {
     "@stripe/react-stripe-js": "^2.4.0",

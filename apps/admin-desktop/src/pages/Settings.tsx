@@ -208,7 +208,7 @@ export default function SettingsPage() {
           <CardTitle>Advanced Settings</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid md:grid-cols-3 gap-4 mb-6">
+          <div className="grid md:grid-cols-4 gap-4 mb-6">
             <Link 
               to="/settings/payment" 
               className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 border-2 border-purple-200 rounded-xl hover:shadow-lg transition-all text-center"
@@ -234,6 +234,14 @@ export default function SettingsPage() {
               <div className="text-4xl mb-2">🔒</div>
               <h3 className="font-bold text-gray-900">Security</h3>
               <p className="text-sm text-gray-600 mt-1">Access control, admins</p>
+            </Link>
+            <Link 
+              to="/secrets" 
+              className="p-4 bg-gradient-to-br from-emerald-50 to-emerald-100 border-2 border-emerald-200 rounded-xl hover:shadow-lg transition-all text-center"
+            >
+              <div className="text-4xl mb-2">🔑</div>
+              <h3 className="font-bold text-gray-900">Stripe Keys</h3>
+              <p className="text-sm text-gray-600 mt-1">Publishable/secret keys</p>
             </Link>
           </div>
 

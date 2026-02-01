@@ -25,11 +25,11 @@ export async function captureGPSPhoto(
 ): Promise<PhotoResult> {
   const { quality = 0.7, maxSizeMB = 0.5, maxWidthOrHeight = 1920 } = options;
 
-  // Get current GPS position
-  const position = await getCurrentPosition();
-
-  // Capture photo from camera
+  // Capture photo from camera (must be triggered by user gesture)
   const photoBlob = await capturePhotoFromCamera();
+
+  // Get current GPS position after photo capture
+  const position = await getCurrentPosition();
 
   // Compress image
   const compressedBlob = await imageCompression(photoBlob as File, {
@@ -74,12 +74,52 @@ function getCurrentPosition(): Promise<GeolocationPosition> {
       reject(new Error("Geolocation is not supported by this browser"));
       return;
     }
+    const tryPosition = (
+      options: PositionOptions,
+      onError: (error: GeolocationPositionError) => void,
+    ) => {
+      navigator.geolocation.getCurrentPosition(resolve, onError, options);
+    };
 
-    navigator.geolocation.getCurrentPosition(resolve, reject, {
-      enableHighAccuracy: true,
-      timeout: 10000,
-      maximumAge: 0,
-    });
+    // Attempt 1: high accuracy, longer timeout
+    tryPosition(
+      {
+        enableHighAccuracy: true,
+        timeout: 30000,
+        maximumAge: 0,
+      },
+      (error) => {
+        if (error.code !== error.TIMEOUT) {
+          reject(error);
+          return;
+        }
+
+        // Attempt 2: lower accuracy, allow cached position
+        tryPosition(
+          {
+            enableHighAccuracy: false,
+            timeout: 30000,
+            maximumAge: 60000,
+          },
+          (fallbackError) => {
+            if (fallbackError.code !== fallbackError.TIMEOUT) {
+              reject(fallbackError);
+              return;
+            }
+
+            // Attempt 3: accept older cached position if available
+            tryPosition(
+              {
+                enableHighAccuracy: false,
+                timeout: 15000,
+                maximumAge: 300000,
+              },
+              reject,
+            );
+          },
+        );
+      },
+    );
   });
 }
 

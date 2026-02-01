@@ -18,13 +18,19 @@ export interface RateBreakdown {
   totalCustomerCharge: number;
 }
 
+export interface PlatformFeeConfig {
+  platformFeeFood?: number;
+  platformFeePackage?: number;
+}
+
 /**
  * Calculate rate for a delivery job using courier's rate card
  */
 export function calculateCourierRate(
   rateCard: PackageRateCard | FoodRateCard,
   job: JobInfo,
-  now: Date = new Date()
+  now: Date = new Date(),
+  platformFees: PlatformFeeConfig = {}
 ): RateBreakdown {
   let baseFare = rateCard.baseFare;
   let perMileCharge = job.distance * rateCard.perMile;
@@ -48,7 +54,9 @@ export function calculateCourierRate(
   }
 
   const courierEarnings = Math.round(subtotal * 100) / 100;
-  const platformFee = job.isFoodItem ? 1.50 : 2.50;
+  const platformFee = job.isFoodItem
+    ? platformFees.platformFeeFood ?? 1.5
+    : platformFees.platformFeePackage ?? 2.5;
   const totalCustomerCharge = courierEarnings + platformFee;
 
   return {

@@ -98,6 +98,13 @@ export interface JobPhoto {
   uploadedBy: string;
 }
 
+export interface JobProofPhoto {
+  url: string;
+  location: { lat: number; lng: number };
+  accuracy: number;
+  timestamp: Timestamp;
+}
+
 // Legacy job document for backward compatibility
 export interface JobDoc {
   createdByUid: string;
@@ -108,6 +115,15 @@ export interface JobDoc {
   dropoff: { lat: number; lng: number; label?: string };
   package?: PackageInfo;
   photos?: JobPhoto[];
+  pickupProof?: JobProofPhoto;
+  dropoffProof?: JobProofPhoto;
+  pricing?: {
+    courierRate: number;
+    platformFee: number;
+    totalAmount: number;
+  };
+  paymentStatus?: "pending" | "authorized" | "captured" | "refunded";
+  paymentIntentId?: string | null;
   courierSnapshot?: { displayName?: string; transportMode?: string };
   createdAt: Timestamp;
   updatedAt: Timestamp;

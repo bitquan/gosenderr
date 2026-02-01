@@ -50,10 +50,17 @@ export function AddressAutocomplete({
 
     setLoading(true);
     debounceTimer.current = setTimeout(async () => {
-      const results = await geocodeAddress(query);
-      setSuggestions(results);
-      setLoading(false);
-      setShowSuggestions(true);
+      try {
+        const results = await geocodeAddress(query);
+        setSuggestions(Array.isArray(results) ? results : []);
+        setShowSuggestions(Array.isArray(results) && results.length > 0);
+      } catch (error) {
+        console.error('Geocoding error:', error);
+        setSuggestions([]);
+        setShowSuggestions(false);
+      } finally {
+        setLoading(false);
+      }
     }, 300);
 
     return () => {

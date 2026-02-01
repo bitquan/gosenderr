@@ -94,6 +94,11 @@ export function CourierJobPreview({
             {jobMiles.toFixed(1)} mi route
             {pickupMiles !== undefined && ` • ${pickupMiles.toFixed(1)} mi to pickup`}
           </p>
+          {job.paymentStatus !== "authorized" && (
+            <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-amber-100 text-amber-800 px-2.5 py-0.5 text-[11px] font-semibold">
+              Awaiting payment
+            </div>
+          )}
         </div>
         <div className="text-right">
           <p className="text-xs text-gray-500">

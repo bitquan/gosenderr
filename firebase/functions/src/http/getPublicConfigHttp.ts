@@ -1,16 +1,27 @@
 import * as functions from "firebase-functions/v2";
 import * as admin from "firebase-admin";
 
+const allowedOrigins = [
+  "https://www.gosenderr.com",
+  "https://gosenderr-6773f.web.app",
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+];
+
 export const getPublicConfigHttp = functions.https.onRequest(
   {
-    cors: [
-      "https://www.gosenderr.com",
-      "https://gosenderr-6773f.web.app",
-      "http://localhost:5173",
-      "http://127.0.0.1:5173",
-    ],
+    cors: allowedOrigins,
+    minInstances: 1,
   },
   async (req, res) => {
+    const origin = req.headers.origin || "";
+    if (allowedOrigins.includes(origin)) {
+      res.set("Access-Control-Allow-Origin", origin);
+      res.set("Vary", "Origin");
+    }
+    res.set("Access-Control-Allow-Methods", "GET,OPTIONS");
+    res.set("Access-Control-Allow-Headers", "Content-Type,Authorization");
+
     if (req.method === "OPTIONS") {
       res.status(204).send("");
       return;

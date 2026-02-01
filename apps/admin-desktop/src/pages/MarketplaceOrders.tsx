@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { collection, getDocs, query, orderBy, doc, updateDoc, Timestamp } from 'firebase/firestore'
+import { collection, getDocs, query, orderBy, doc, updateDoc, Timestamp, limit } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { Card, CardHeader, CardTitle, CardContent } from '../components/Card'
 import { formatCurrency } from '../lib/utils'
@@ -42,7 +42,7 @@ export default function MarketplaceOrdersPage() {
 
   const loadOrders = async () => {
     try {
-      const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'))
+      const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(200))
       const snapshot = await getDocs(q)
       const ordersData = snapshot.docs.map(doc => ({
         id: doc.id,
@@ -266,7 +266,8 @@ export default function MarketplaceOrdersPage() {
                           onClick={(e) => {
                             e.preventDefault()
                             e.stopPropagation()
-                            window.open(`#/marketplace-orders/${order.id}`, '_blank', 'noopener,noreferrer')
+                            const base = window.location.href.split('#')[0]
+                            window.open(`${base}#/marketplace-orders/${order.id}`, '_blank', 'noopener,noreferrer')
                           }}
                           className="px-3 py-2 border border-gray-200 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50"
                         >

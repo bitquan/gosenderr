@@ -113,6 +113,16 @@ export function CourierSelector({
           VEHICLE_ICONS[courier.courierProfile?.vehicleType || "car"];
         const equipment = getApprovedEquipment(courier);
         const breakdown = courier.rateBreakdown;
+        const displayName =
+          (courier.courierProfile as any)?.displayName ||
+          (courier.courierProfile as any)?.identity?.legalName ||
+          courier.displayName ||
+          "Anonymous Senderr";
+        const profilePhoto =
+          (courier.courierProfile as any)?.profilePhotoUrl ||
+          courier.profilePhotoUrl ||
+          (courier as any).photoURL ||
+          "";
 
         return (
           <div
@@ -145,10 +155,10 @@ export function CourierSelector({
             <div style={{ display: "flex", gap: "16px", marginBottom: "16px" }}>
               {/* Courier Photo */}
               <div style={{ flexShrink: 0 }}>
-                {courier.profilePhotoUrl ? (
+                {profilePhoto ? (
                   <img
-                    src={courier.profilePhotoUrl}
-                    alt={courier.displayName || "Courier"}
+                    src={profilePhoto}
+                    alt={displayName}
                     style={{
                       width: "64px",
                       height: "64px",
@@ -187,7 +197,7 @@ export function CourierSelector({
                   <h3
                     style={{ fontSize: "18px", fontWeight: "600", margin: 0 }}
                   >
-                    {courier.displayName || "Anonymous Senderr"}
+                    {displayName}
                   </h3>
                   <span style={{ fontSize: "24px" }}>{vehicleIcon}</span>
                 </div>
@@ -201,10 +211,10 @@ export function CourierSelector({
                   }}
                 >
                   <div style={{ display: "flex" }}>
-                    {renderStars(courier.averageRating)}
+                    {renderStars(courier.averageRating ?? 0)}
                   </div>
                   <span style={{ fontSize: "14px", color: "#6b7280" }}>
-                    ({courier.averageRating.toFixed(1)})
+                    ({(courier.averageRating ?? 0).toFixed(1)})
                   </span>
                   <span
                     style={{
@@ -213,7 +223,7 @@ export function CourierSelector({
                       marginLeft: "4px",
                     }}
                   >
-                    • {courier.totalDeliveries} deliveries
+                    • {(courier.totalDeliveries ?? 0)} deliveries
                   </span>
                 </div>
 

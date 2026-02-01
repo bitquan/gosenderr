@@ -42,7 +42,7 @@ export function CreateJobModal({ isOpen, onClose, onJobCreated }: CreateJobModal
   const searchMapbox = async (query: string): Promise<LocationSuggestion[]> => {
     try {
       if (!query.trim()) return []
-      const results = await geocodeAddress(query)
+      const results = (await geocodeAddress(query)) ?? []
       return results.map((feature) => ({
         name: feature.place_name.split(',')[0],
         address: feature.place_name,
@@ -241,9 +241,9 @@ export function CreateJobModal({ isOpen, onClose, onJobCreated }: CreateJobModal
               {/* Pickup Suggestions */}
               {showPickupSuggestions && pickupSuggestions.length > 0 && (
                 <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10">
-                  {pickupSuggestions.map((suggestion) => (
+                  {pickupSuggestions.map((suggestion, index) => (
                     <button
-                      key={suggestion.placeId}
+                      key={`${suggestion.placeId}-${index}`}
                       type="button"
                       onClick={() => handlePickupSelect(suggestion)}
                       className="w-full text-left px-4 py-2 hover:bg-blue-50 border-b border-gray-200 last:border-b-0"
@@ -286,9 +286,9 @@ export function CreateJobModal({ isOpen, onClose, onJobCreated }: CreateJobModal
               {/* Dropoff Suggestions */}
               {showDropoffSuggestions && dropoffSuggestions.length > 0 && (
                 <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10">
-                  {dropoffSuggestions.map((suggestion) => (
+                  {dropoffSuggestions.map((suggestion, index) => (
                     <button
-                      key={suggestion.placeId}
+                      key={`${suggestion.placeId}-${index}`}
                       type="button"
                       onClick={() => handleDropoffSelect(suggestion)}
                       className="w-full text-left px-4 py-2 hover:bg-blue-50 border-b border-gray-200 last:border-b-0"

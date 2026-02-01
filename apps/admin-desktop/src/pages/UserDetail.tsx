@@ -1,6 +1,6 @@
+import { collection, query, where, getDocs, doc, getDoc, updateDoc, deleteDoc, Timestamp, addDoc, getCountFromServer, orderBy, limit } from 'firebase/firestore'
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { doc, getDoc, updateDoc, collection, query, where, getDocs, addDoc, deleteDoc, Timestamp, orderBy } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { Card, CardHeader, CardTitle, CardContent } from '../components/Card'
 import EditRoleModal from '../components/EditRoleModal'
@@ -121,14 +121,16 @@ export default function UserDetailPage() {
       setLogsLoading(true)
       const logsQuery = query(
         collection(db, 'adminLogs'),
-        where('userId', '==', userId),
-        orderBy('timestamp', 'desc')
+        orderBy('timestamp', 'desc'),
+        limit(200)
       )
       const logsSnap = await getDocs(logsQuery)
-      const logs = logsSnap.docs.map(docSnap => ({
-        id: docSnap.id,
-        ...docSnap.data()
-      })) as AdminLog[]
+      const logs = logsSnap.docs
+        .map(docSnap => ({
+          id: docSnap.id,
+          ...docSnap.data()
+        }))
+        .filter((log: any) => log.userId === userId) as AdminLog[]
       setActivityLogs(logs)
     } catch (error) {
       console.error('Error loading activity logs:', error)
@@ -202,29 +204,48 @@ export default function UserDetailPage() {
 
   const loadUserStats = async () => {
     try {
-      // Count orders
-      const ordersSnap = await getDocs(
-        query(collection(db, 'orders'), where('customerId', '==', userId!))
+      const ordersQuery = query(
+        collection(db, 'orders'),
+        where('customerId', '==', userId!)
       )
-      const ordersTotal = ordersSnap.docs.reduce((sum, doc) => sum + (doc.data().total || 0), 0)
+      const itemsQuery = query(
+        collection(db, 'marketplaceItems'),
+        where('sellerId', '==', userId!)
+      )
+      const deliveriesQuery = query(
+        collection(db, 'orders'),
+        where('courierId', '==', userId!)
+      )
 
-      // Count vendor items
-      const itemsSnap = await getDocs(
-        query(collection(db, 'marketplaceItems'), where('sellerId', '==', userId!))
-      )
+      const [
+        ordersCountSnap,
+        itemsCountSnap,
+        deliveriesCountSnap,
+        ordersSnap,
+        deliveriesSnap
+      ] = await Promise.all([
+        getCountFromServer(ordersQuery),
+        getCountFromServer(itemsQuery),
+        getCountFromServer(deliveriesQuery),
+        getDocs(ordersQuery),
+        getDocs(deliveriesQuery)
+      ])
 
-      // Count courier deliveries
-      const deliveriesSnap = await getDocs(
-        query(collection(db, 'orders'), where('courierId', '==', userId!))
+      const totalSpent = ordersSnap.docs.reduce(
+        (sum, docSnap) => sum + ((docSnap.data() as any).total ?? 0),
+        0
       )
-      const deliveriesTotal = deliveriesSnap.docs.reduce((sum, doc) => sum + (doc.data().total || 0), 0)
+      const totalEarned = deliveriesSnap.docs.reduce(
+        (sum, docSnap) => sum + ((docSnap.data() as any).total ?? 0),
+        0
+      )
 
       setUserStats({
-        ordersPlaced: ordersSnap.size,
-        itemsListed: itemsSnap.size,
-        deliveriesMade: deliveriesSnap.size,
-        totalSpent: ordersTotal,
-        totalEarned: deliveriesTotal,
+        ordersPlaced: ordersCountSnap.data().count,
+        itemsListed: itemsCountSnap.data().count,
+        deliveriesMade: deliveriesCountSnap.data().count,
+        totalSpent,
+        totalEarned,
       })
     } catch (error) {
       console.error('Error loading user stats:', error)

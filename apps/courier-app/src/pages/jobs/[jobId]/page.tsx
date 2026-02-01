@@ -63,6 +63,15 @@ export default function CourierJobDetail() {
   }
 
   const visibility = getJobVisibility(job, { uid, role: "courier" });
+  const isPaymentLocked = job.paymentStatus !== "authorized";
+  const canNavigateToPickup = ["assigned", "enroute_pickup", "arrived_pickup"].includes(
+    job.status,
+  );
+  const canNavigateToDropoff = [
+    "picked_up",
+    "enroute_dropoff",
+    "arrived_dropoff",
+  ].includes(job.status);
   
   const handleStartNavigation = async (destination: 'pickup' | 'dropoff') => {
     if (!userDoc?.location) {
@@ -92,10 +101,32 @@ export default function CourierJobDetail() {
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-4 space-y-4">
+        {isPaymentLocked && (
+          <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl p-4">
+            <p className="font-semibold">Awaiting customer payment</p>
+            <p className="text-sm">You can view details, but trip actions are locked until payment is authorized.</p>
+          </div>
+        )}
+        {/* Next Action */}
+        <div className="bg-white rounded-2xl shadow-lg p-6">
+          <h2 className="text-lg font-bold text-gray-900 mb-2">Next action</h2>
+          <p className="text-sm text-gray-600 mb-4">
+            Follow the step-by-step flow to keep the delivery on track.
+          </p>
+          <CourierJobActions
+            job={job}
+            courierUid={uid}
+            onJobUpdated={() => {
+              if (job.status === "arrived_dropoff") {
+                setTimeout(() => navigate("/dashboard"), 1000);
+              }
+            }}
+          />
+        </div>
         {/* Status Timeline */}
         <div className="bg-white rounded-2xl shadow-lg p-6">
           <h2 className="text-lg font-bold text-gray-900 mb-4">Progress</h2>
-          <StatusTimeline currentStatus={job.status} />
+          <StatusTimeline currentStatus={job.status} isPaymentLocked={isPaymentLocked} />
         </div>
 
         {/* Live Map */}
@@ -113,27 +144,24 @@ export default function CourierJobDetail() {
 
         {/* Job Details Panel with Actions */}
         <div className="bg-white rounded-2xl shadow-lg p-6">
-          <JobDetailsPanel job={job} visibility={visibility} showStatus={true}>
-            <CourierJobActions
-              job={job}
-              courierUid={uid}
-              onJobUpdated={() => {
-                // Navigate back to dashboard after completing the job
-                if (job.status === "arrived_dropoff") {
-                  setTimeout(() => navigate("/dashboard"), 1000);
-                }
-              }}
-            />
-          </JobDetailsPanel>
+          <JobDetailsPanel job={job} visibility={visibility} showStatus={true} />
         </div>
 
         {/* Navigation Buttons */}
         <div className="grid grid-cols-2 gap-3">
           <button
             onClick={() => handleStartNavigation('pickup')}
-            disabled={isNavigating || !userDoc?.location}
+            disabled={
+              isNavigating ||
+              !userDoc?.location ||
+              isPaymentLocked ||
+              !canNavigateToPickup
+            }
             className={`py-4 px-4 rounded-xl font-semibold text-white shadow-lg transition-all ${
-              isNavigating || !userDoc?.location
+              isNavigating ||
+              !userDoc?.location ||
+              isPaymentLocked ||
+              !canNavigateToPickup
                 ? "bg-gray-400 cursor-not-allowed"
                 : "bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] hover:shadow-xl active:scale-95"
             }`}
@@ -147,9 +175,17 @@ export default function CourierJobDetail() {
           </button>
           <button
             onClick={() => handleStartNavigation('dropoff')}
-            disabled={isNavigating || !userDoc?.location}
+            disabled={
+              isNavigating ||
+              !userDoc?.location ||
+              isPaymentLocked ||
+              !canNavigateToDropoff
+            }
             className={`py-4 px-4 rounded-xl font-semibold text-white shadow-lg transition-all ${
-              isNavigating || !userDoc?.location
+              isNavigating ||
+              !userDoc?.location ||
+              isPaymentLocked ||
+              !canNavigateToDropoff
                 ? "bg-gray-400 cursor-not-allowed"
                 : "bg-gradient-to-br from-emerald-500 to-emerald-600 hover:shadow-xl active:scale-95"
             }`}

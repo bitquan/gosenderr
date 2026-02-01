@@ -1,4 +1,4 @@
-import { collection, doc, setDoc, addDoc, Timestamp } from 'firebase/firestore';
+import { collection, doc, setDoc, getDoc, Timestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
 // Individual feature flag documents (for admin-desktop)
@@ -40,6 +40,8 @@ const FEATURE_FLAGS = [
   { name: 'Equipment Review', description: 'Review courier equipment submissions', enabled: true, category: 'system' },
   { name: 'Dispute Management', description: 'Handle user disputes', enabled: true, category: 'system' },
   { name: 'Analytics', description: 'Platform analytics dashboard', enabled: true, category: 'system' },
+  { name: 'System Logs', description: 'View local admin-desktop logs', enabled: false, category: 'system' },
+  { name: 'Firebase Explorer', description: 'Read-only Firestore viewer', enabled: false, category: 'system' },
   
   // Notifications
   { name: 'Push Notifications', description: 'Mobile push notifications', enabled: false, category: 'notifications' },
@@ -93,7 +95,9 @@ export const FEATURE_FLAGS_CONFIG = {
     disputeManagement: true,
     analytics: true,
     featureFlagsControl: true,
-    webPortalEnabled: false
+    webPortalEnabled: false,
+    systemLogs: false,
+    firebaseExplorer: false
   },
   advanced: {
     pushNotifications: false,
@@ -108,21 +112,37 @@ export const FEATURE_FLAGS_CONFIG = {
   }
 };
 
+const slugify = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+
 export async function seedFeatureFlags() {
   try {
     console.log('🌱 Seeding feature flags...');
     
     // Add individual flag documents for admin-desktop
     for (const flag of FEATURE_FLAGS) {
-      await addDoc(collection(db, 'featureFlags'), {
-        ...flag,
-        createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now()
-      });
+      const flagId = `${flag.category}_${slugify(flag.name)}`;
+      const flagRef = doc(collection(db, 'featureFlags'), flagId);
+      const existing = await getDoc(flagRef);
+      const existingData = existing.exists() ? (existing.data() as any) : null;
+
+      await setDoc(
+        flagRef,
+        {
+          ...flag,
+          enabled: existingData?.enabled ?? flag.enabled,
+          createdAt: existingData?.createdAt ?? Timestamp.now(),
+          updatedAt: Timestamp.now(),
+        },
+        { merge: true }
+      );
     }
     
     // Also add config document for courier/customer apps
-    await setDoc(doc(db, 'featureFlags', 'config'), FEATURE_FLAGS_CONFIG);
+    await setDoc(doc(db, 'featureFlags', 'config'), FEATURE_FLAGS_CONFIG, { merge: true });
     
     console.log(`✅ Seeded ${FEATURE_FLAGS.length} feature flags + config document`);
     return true;

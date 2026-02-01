@@ -5,6 +5,7 @@ import {
   PaymentElement,
   useStripe,
   useElements,
+  CardElement,
 } from '@stripe/react-stripe-js';
 import { createPaymentIntent } from '@/lib/cloudFunctions';
 import { getStripePromise } from '@/lib/stripeConfig';
@@ -15,18 +16,29 @@ interface PaymentFormProps {
   jobId: string;
   courierRate: number;
   platformFee: number;
-  onSuccess: () => void;
+  onSuccess: (paymentIntentId?: string) => void;
+}
+
+interface CheckoutFormProps extends PaymentFormProps {
+  clientSecret: string | null;
+  useFallback: boolean;
+  onElementReady: () => void;
 }
 
 function CheckoutForm({
+  jobId,
+  clientSecret,
   courierRate,
   platformFee,
   onSuccess,
-}: PaymentFormProps) {
+  useFallback,
+  onElementReady,
+}: CheckoutFormProps) {
   const stripe = useStripe();
   const elements = useElements();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentComplete, setPaymentComplete] = useState(false);
 
   const totalAmount = courierRate + platformFee;
 
@@ -41,31 +53,70 @@ function CheckoutForm({
     setErrorMessage(null);
 
     try {
-      const { error } = await stripe.confirmPayment({
-        elements,
-        confirmParams: {
-          return_url: `${window.location.origin}/payment`,
-        },
-        redirect: 'if_required',
-      });
+      if (useFallback) {
+        const card = elements.getElement(CardElement);
+        if (!card || !clientSecret) {
+          throw new Error('Card form not ready. Please try again.');
+        }
 
-      if (error) {
-        setErrorMessage(error.message || 'An unexpected error occurred.');
-        setIsProcessing(false);
+        const { error } = await stripe.confirmCardPayment(clientSecret, {
+          payment_method: { card },
+          return_url: `${window.location.origin}/payment?jobId=${encodeURIComponent(jobId)}`,
+        });
+
+        if (error) {
+          setErrorMessage(error.message || 'An unexpected error occurred.');
+          setIsProcessing(false);
+          return;
+        }
       } else {
-        onSuccess();
+        const { error } = await stripe.confirmPayment({
+          elements,
+          confirmParams: {
+            return_url: `${window.location.origin}/payment?jobId=${encodeURIComponent(jobId)}`,
+          },
+          redirect: 'if_required',
+        });
+
+        if (error) {
+          setErrorMessage(error.message || 'An unexpected error occurred.');
+          setIsProcessing(false);
+          return;
+        }
       }
+
+      setPaymentComplete(true);
+      onSuccess();
+      setIsProcessing(false);
     } catch (err: any) {
       setErrorMessage(err.message || 'Payment failed. Please try again.');
       setIsProcessing(false);
     }
   };
 
+  if (paymentComplete) {
+    return (
+      <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg">
+        <p className="font-semibold">Payment authorized</p>
+        <p>Your payment method was saved and will be captured after delivery.</p>
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
         <h3 className="text-lg font-semibold mb-4">Payment Details</h3>
-        <PaymentElement />
+        {useFallback ? (
+          <div className="space-y-3">
+            <CardElement />
+            <p className="text-xs text-gray-500">
+              Using basic card entry (Stripe Elements fallback).
+            </p>
+          </div>
+        ) : (
+          <PaymentElement onReady={onElementReady} />
+        )}
       </div>
 
       {errorMessage && (
@@ -96,18 +147,30 @@ export function PaymentForm({
   onSuccess,
 }: PaymentFormProps) {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [stripeReady, setStripeReady] = useState<boolean | null>(null);
+  const [elementReady, setElementReady] = useState(false);
+  const [useFallback, setUseFallback] = useState(true);
 
   useEffect(() => {
     const fetchClientSecret = async () => {
       try {
+        const stripe = await getStripePromise();
+        if (!stripe) {
+          setStripeReady(false);
+          setError("Stripe is not configured. Please contact support.");
+          return;
+        }
+        setStripeReady(true);
         const result = await createPaymentIntent({
           jobId,
           courierRate,
           platformFee,
         });
         setClientSecret(result.clientSecret);
+        setPaymentIntentId(result.paymentIntentId);
       } catch (err: any) {
         console.error('Payment intent creation failed:', err);
         setError(err.message || 'Failed to initialize payment');
@@ -119,6 +182,19 @@ export function PaymentForm({
     fetchClientSecret();
   }, [jobId, courierRate, platformFee]);
 
+  useEffect(() => {
+    if (!clientSecret) return;
+    if (!elementReady && !useFallback) {
+      const timeout = window.setTimeout(() => {
+        if (!elementReady) {
+          setUseFallback(true);
+        }
+      }, 6000);
+
+      return () => window.clearTimeout(timeout);
+    }
+  }, [clientSecret, elementReady, useFallback]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -127,11 +203,11 @@ export function PaymentForm({
     );
   }
 
-  if (error) {
+  if (error || stripeReady === false) {
     return (
       <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
         <p className="font-semibold">Error</p>
-        <p>{error}</p>
+        <p>{error || "Stripe is unavailable. Please try again later."}</p>
       </div>
     );
   }
@@ -151,12 +227,15 @@ export function PaymentForm({
   };
 
   return (
-    <Elements stripe={stripePromise} options={options}>
+    <Elements key={clientSecret} stripe={stripePromise} options={options}>
       <CheckoutForm
         jobId={jobId}
+        clientSecret={clientSecret}
         courierRate={courierRate}
         platformFee={platformFee}
-        onSuccess={onSuccess}
+        onSuccess={() => onSuccess(paymentIntentId || undefined)}
+        useFallback={useFallback}
+        onElementReady={() => setElementReady(true)}
       />
     </Elements>
   );

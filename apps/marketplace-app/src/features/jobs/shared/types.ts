@@ -52,6 +52,13 @@ export interface JobPhoto {
   uploadedBy: string;
 }
 
+export interface JobProofPhoto {
+  url: string;
+  location: { lat: number; lng: number };
+  accuracy: number;
+  timestamp: Timestamp;
+}
+
 // Courier snapshot in job
 export interface CourierSnapshot {
   displayName?: string;
@@ -69,6 +76,15 @@ export interface Job {
   dropoff: GeoPoint;
   package?: JobPackage;  // Optional for backward compatibility
   photos?: JobPhoto[];  // Optional for backward compatibility
+  pickupProof?: JobProofPhoto;
+  dropoffProof?: JobProofPhoto;
+  pricing?: {
+    courierRate: number;
+    platformFee: number;
+    totalAmount: number;
+  };
+  paymentStatus?: "pending" | "authorized" | "captured" | "refunded";
+  paymentIntentId?: string | null;
   courierSnapshot?: CourierSnapshot;
   createdAt: Timestamp;
   updatedAt: Timestamp;

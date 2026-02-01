@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { collection, getDocs, orderBy, query, where, doc, updateDoc } from 'firebase/firestore'
+import { collection, getDocs, orderBy, query, where, doc, updateDoc, limit } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { Card, CardHeader, CardTitle, CardContent } from '../components/Card'
 import { StatusBadge } from '../components/Badge'
@@ -46,7 +46,7 @@ export default function AdminJobsPage() {
 
   const loadJobs = async () => {
     try {
-      const q = query(collection(db, 'jobs'), orderBy('createdAt', 'desc'))
+      const q = query(collection(db, 'jobs'), orderBy('createdAt', 'desc'), limit(200))
       const snapshot = await getDocs(q)
       const jobsData = snapshot.docs.map(doc => ({
         id: doc.id,

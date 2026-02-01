@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { UserDoc, FoodTemperature } from "@gosenderr/shared";
@@ -12,6 +12,7 @@ import {
   calculateCourierRate,
   JobInfo,
 } from "@/lib/pricing/calculateCourierRate";
+import { usePlatformSettings } from "@/hooks/usePlatformSettings";
 import { AddressAutocomplete } from "@/components/v2/AddressAutocomplete";
 import { getRoleDisplay } from "@gosenderr/shared";
 import {
@@ -28,6 +29,7 @@ interface DropoffAddress {
   lat: number;
   lng: number;
 }
+
 
 type DeliveryItem = Omit<MarketplaceItem, "pickupLocation"> & {
   pickupLocation: {
@@ -48,6 +50,7 @@ export default function RequestDeliveryPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user, loading: authLoading } = useAuthUser();
+  const { settings: platformSettings } = usePlatformSettings();
 
   const [item, setItem] = useState<DeliveryItem | null>(null);
   const [itemId, setItemId] = useState<string | null>(null);
@@ -132,6 +135,7 @@ export default function RequestDeliveryPage() {
     );
     setDistance(dist);
 
+
     // Estimate duration: 30 mph average speed
     const minutes = Math.round((dist / 30) * 60);
     setEstimatedMinutes(minutes);
@@ -140,24 +144,23 @@ export default function RequestDeliveryPage() {
   // Step 3: Find available couriers when distance is calculated
   useEffect(() => {
     if (!item || !dropoffAddress || distance === 0) return;
+    setSearchingCouriers(true);
+    setAvailableCouriers([]);
+    setSelectedCourier(null);
 
-    async function findCouriers() {
-      setSearchingCouriers(true);
-      setAvailableCouriers([]);
-      setSelectedCourier(null);
+    const usersRef = collection(db, "users");
+    const courierQuery = query(
+      usersRef,
+      where("role", "==", "courier"),
+      where("courierProfile.isOnline", "==", true),
+    );
 
-      try {
-        const usersRef = collection(db, "users");
-        const courierQuery = query(
-          usersRef,
-          where("courierProfile.status", "==", "approved"),
-          where("courierProfile.isOnline", "==", true),
-        );
-
-        const snapshot = await getDocs(courierQuery);
+    const unsubscribe = onSnapshot(
+      courierQuery,
+      (snapshot) => {
         const couriers: CourierWithRate[] = [];
 
-        for (const docSnap of snapshot.docs) {
+        snapshot.forEach((docSnap) => {
           const courierData = docSnap.data() as UserDoc;
           const courier: CourierWithRate = {
             ...courierData,
@@ -166,17 +169,27 @@ export default function RequestDeliveryPage() {
             rateBreakdown: {} as any, // Will be set below
           };
 
-          if (!courier.courierProfile) continue;
+          if (!courier.courierProfile) return;
+
+          const courierStatus = courier.courierProfile.status as string | undefined;
+          if (
+            courierStatus &&
+            courierStatus !== "approved" &&
+            courierStatus !== "active"
+          ) {
+            return;
+          }
 
           // Check work mode
+          const workModes = courier.courierProfile.workModes;
           const workModeEnabled = item!.isFoodItem
-            ? courier.courierProfile.workModes.foodEnabled
-            : courier.courierProfile.workModes.packagesEnabled;
+            ? workModes?.foodEnabled ?? true
+            : workModes?.packagesEnabled ?? true;
 
-          if (!workModeEnabled) continue;
+          if (!workModeEnabled) return;
 
           // Check service radius
-          if (!courier.courierProfile.currentLocation) continue;
+          if (!courier.courierProfile.currentLocation) return;
 
           const courierToPickup = calcMiles(
             {
@@ -186,7 +199,7 @@ export default function RequestDeliveryPage() {
             { lat: item!.pickupLocation.lat, lng: item!.pickupLocation.lng },
           );
 
-          if (courierToPickup > courier.courierProfile.serviceRadius) continue;
+          if (courierToPickup > courier.courierProfile.serviceRadius) return;
 
           // Update courier distance
           courier.distance = courierToPickup;
@@ -197,18 +210,18 @@ export default function RequestDeliveryPage() {
             const foodDetails = item!.foodDetails;
 
             if (foodDetails.requiresCooler && !equipment.cooler?.approved)
-              continue;
+              return;
             if (
               foodDetails.requiresHotBag &&
               !equipment.hot_bag?.approved &&
               !equipment.insulated_bag?.approved
             )
-              continue;
+              return;
             if (
               foodDetails.requiresDrinkCarrier &&
               !equipment.drink_carrier?.approved
             )
-              continue;
+              return;
           }
 
           // Calculate rate
@@ -222,13 +235,16 @@ export default function RequestDeliveryPage() {
             isFoodItem: item!.isFoodItem,
           };
 
-          const rateBreakdown = calculateCourierRate(rateCard, jobInfo);
+          const rateBreakdown = calculateCourierRate(rateCard, jobInfo, new Date(), {
+            platformFeeFood: platformSettings.platformFeeFood,
+            platformFeePackage: platformSettings.platformFeePackage,
+          });
 
           // Update courier rate breakdown
           courier.rateBreakdown = rateBreakdown;
 
           couriers.push(courier);
-        }
+        });
 
         // Sort by price (cheapest first)
         couriers.sort(
@@ -238,16 +254,17 @@ export default function RequestDeliveryPage() {
         );
 
         setAvailableCouriers(couriers);
-      } catch (err) {
+        setSearchingCouriers(false);
+      },
+      (err) => {
         console.error("Error finding couriers:", err);
         setError("Failed to find available couriers");
-      } finally {
         setSearchingCouriers(false);
-      }
-    }
+      },
+    );
 
-    findCouriers();
-  }, [item, dropoffAddress, distance, estimatedMinutes]);
+    return () => unsubscribe();
+  }, [item, dropoffAddress, distance, estimatedMinutes, platformSettings]);
 
   const handleCourierSelect = (courier: CourierWithRate) => {
     setSelectedCourier(courier);

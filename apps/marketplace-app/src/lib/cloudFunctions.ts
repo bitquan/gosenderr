@@ -1,5 +1,5 @@
 import { httpsCallable } from 'firebase/functions';
-import { functions } from './firebase';
+import { auth, functions } from './firebase';
 
 // Types
 interface CreatePaymentIntentData {
@@ -30,6 +30,16 @@ const createPaymentIntentFn = httpsCallable<CreatePaymentIntentData, CreatePayme
   'createPaymentIntent'
 );
 
+function resolveCreatePaymentIntentUrl(): string {
+  const explicitUrl = import.meta.env.VITE_CREATE_PAYMENT_INTENT_URL || '';
+  if (explicitUrl) return explicitUrl;
+
+  const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID || '';
+  if (!projectId) return '';
+
+  return `https://us-central1-${projectId}.cloudfunctions.net/createPaymentIntentHttp`;
+}
+
 const stripeConnectFn = httpsCallable<StripeConnectData, StripeConnectResult>(
   functions,
   'stripeConnect'
@@ -39,6 +49,36 @@ const stripeConnectFn = httpsCallable<StripeConnectData, StripeConnectResult>(
  * Create a Stripe payment intent for a job
  */
 export async function createPaymentIntent(data: CreatePaymentIntentData): Promise<CreatePaymentIntentResult> {
+  const httpUrl = resolveCreatePaymentIntentUrl();
+
+  try {
+    if (httpUrl) {
+      const currentUser = auth?.currentUser;
+      const idToken = currentUser ? await currentUser.getIdToken() : '';
+      if (!idToken) {
+        throw new Error('User must be authenticated to create payment intent');
+      }
+
+      const response = await fetch(httpUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || `Failed with status ${response.status}`);
+      }
+
+      return (await response.json()) as CreatePaymentIntentResult;
+    }
+  } catch (error: any) {
+    console.error('Error creating payment intent via HTTP:', error);
+  }
+
   try {
     const result = await createPaymentIntentFn(data);
     return result.data;

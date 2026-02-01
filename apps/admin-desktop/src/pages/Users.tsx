@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { collection, getDocs, doc, updateDoc } from 'firebase/firestore'
+import { collection, getDocs, doc, updateDoc, query, orderBy, limit, getCountFromServer } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { Card, CardHeader, CardTitle, CardContent } from '../components/Card'
 import EditRoleModal from '../components/EditRoleModal'
@@ -24,6 +24,7 @@ interface User {
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
+  const [totalUsers, setTotalUsers] = useState(0)
   const [filter, setFilter] = useState<'all' | 'customer' | 'courier' | 'package_runner' | 'seller' | 'admin'>('all')
   const [editRoleUser, setEditRoleUser] = useState<User | null>(null)
   const [banUser, setBanUser] = useState<User | null>(null)
@@ -35,7 +36,15 @@ export default function AdminUsersPage() {
 
   const loadUsers = async () => {
     try {
-      const snapshot = await getDocs(collection(db, 'users'))
+      const totalSnap = await getCountFromServer(collection(db, 'users'))
+      setTotalUsers(totalSnap.data().count)
+
+      const usersQuery = query(
+        collection(db, 'users'),
+        orderBy('createdAt', 'desc'),
+        limit(200)
+      )
+      const snapshot = await getDocs(usersQuery)
       const usersData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
@@ -65,7 +74,9 @@ export default function AdminUsersPage() {
       <div className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] rounded-b-[32px] p-6 text-white shadow-lg">
         <div className="max-w-6xl mx-auto">
           <h1 className="text-3xl font-bold mb-2">👥 User Management</h1>
-          <p className="text-purple-100">{users.length} total users {loading && '(loading...)'}</p>
+          <p className="text-purple-100">
+            Showing {users.length} of {totalUsers} users {loading && '(loading...)'}
+          </p>
           {users.length === 0 && !loading && (
             <p className="text-yellow-200 text-sm mt-2">⚠️ No users found in database</p>
           )}
@@ -241,7 +252,8 @@ export default function AdminUsersPage() {
                         onClick={(e) => {
                           e.preventDefault()
                           e.stopPropagation()
-                          window.open(`#/users/${user.id}`, '_blank', 'noopener,noreferrer')
+                          const base = window.location.href.split('#')[0]
+                          window.open(`${base}#/users/${user.id}`, '_blank', 'noopener,noreferrer')
                         }}
                         className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-semibold"
                       >

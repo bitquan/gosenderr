@@ -13,6 +13,9 @@ import { Job as FeatureJob } from "@/features/jobs/shared/types";
 import { JobDoc } from "@/lib/v2/types";
 import { Link } from "react-router-dom";
 import { NotFoundPage } from "@/components/ui/NotFoundPage";
+import { PaymentForm } from "@/components/v2/PaymentForm";
+import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { db } from "@/lib/firebase/client";
 
 // Convert JobDoc to features Job
 function convertJobDocToJob(jobDoc: JobDoc, id: string): FeatureJob {
@@ -73,6 +76,12 @@ export default function CustomerJobDetail() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
       <div className="max-w-5xl mx-auto px-4 py-8">
+        {job.paymentStatus === "authorized" && (
+          <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl p-4 mb-6">
+            <p className="font-semibold">Payment authorized</p>
+            <p className="text-sm">Your payment method is secured and will be captured after delivery.</p>
+          </div>
+        )}
         {/* Header */}
         <div className="mb-6">
           <Link
@@ -120,6 +129,8 @@ export default function CustomerJobDetail() {
             pickup={job.pickup}
             dropoff={job.dropoff}
             courierLocation={courier?.location || null}
+            pickupProof={job.pickupProof || null}
+            dropoffProof={job.dropoffProof || null}
             height="500px"
           />
           {job.courierUid && !courier?.location && (
@@ -144,6 +155,68 @@ export default function CustomerJobDetail() {
             />
           </JobDetailsPanel>
         </div>
+
+        {(job.pickupProof || job.dropoffProof) && (
+          <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 border border-purple-100">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Proof Photos</h3>
+            <div className="grid gap-4 md:grid-cols-2">
+              {job.pickupProof && (
+                <div className="rounded-xl border border-gray-200 overflow-hidden">
+                  <div className="p-3 border-b border-gray-100">
+                    <p className="text-sm font-semibold text-gray-900">Pickup Photo</p>
+                    <p className="text-xs text-gray-500">
+                      {job.pickupProof.timestamp?.toDate?.()?.toLocaleString() || "Just now"}
+                    </p>
+                  </div>
+                  <img
+                    src={job.pickupProof.url}
+                    alt="Pickup proof"
+                    className="w-full h-48 object-cover"
+                  />
+                  <div className="p-3 text-xs text-gray-600">
+                    📍 {job.pickupProof.location.lat.toFixed(5)}, {job.pickupProof.location.lng.toFixed(5)}
+                  </div>
+                </div>
+              )}
+              {job.dropoffProof && (
+                <div className="rounded-xl border border-gray-200 overflow-hidden">
+                  <div className="p-3 border-b border-gray-100">
+                    <p className="text-sm font-semibold text-gray-900">Dropoff Photo</p>
+                    <p className="text-xs text-gray-500">
+                      {job.dropoffProof.timestamp?.toDate?.()?.toLocaleString() || "Just now"}
+                    </p>
+                  </div>
+                  <img
+                    src={job.dropoffProof.url}
+                    alt="Dropoff proof"
+                    className="w-full h-48 object-cover"
+                  />
+                  <div className="p-3 text-xs text-gray-600">
+                    📍 {job.dropoffProof.location.lat.toFixed(5)}, {job.dropoffProof.location.lng.toFixed(5)}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {job.pricing && job.paymentStatus !== "authorized" && (
+          <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 border border-purple-100">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Checkout</h3>
+            <PaymentForm
+              jobId={job.id}
+              courierRate={job.pricing.courierRate}
+              platformFee={job.pricing.platformFee}
+              onSuccess={async (paymentIntentId) => {
+                await updateDoc(doc(db, "jobs", job.id), {
+                  paymentStatus: "authorized",
+                  paymentIntentId: paymentIntentId || null,
+                  updatedAt: serverTimestamp(),
+                });
+              }}
+            />
+          </div>
+        )}
 
         {/* Delivery Fee */}
         {job.agreedFee && (

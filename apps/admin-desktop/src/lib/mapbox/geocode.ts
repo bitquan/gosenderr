@@ -44,13 +44,14 @@ export async function geocodeAddress(
       return [];
     }
 
-    const data = await response.json();
+    const data = await response.json().catch(() => ({}));
+    const features = Array.isArray((data as any)?.features) ? (data as any).features : [];
 
-    if (!data.features || data.features.length === 0) {
+    if (features.length === 0) {
       return [];
     }
 
-    return data.features.map((feature: any) => ({
+    return features.map((feature: any) => ({
       address: feature.place_name,
       lat: feature.geometry.coordinates[1], // Mapbox returns [lng, lat]
       lng: feature.geometry.coordinates[0],

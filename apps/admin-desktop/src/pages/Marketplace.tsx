@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore'
+import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy, limit } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { Card, CardContent } from '../components/Card'
 import { exportToCSV, formatItemsForExport } from '../lib/csvExport'
@@ -35,7 +35,12 @@ export default function AdminMarketplacePage() {
 
   const loadItems = async () => {
     try {
-      const snapshot = await getDocs(collection(db, 'marketplaceItems'))
+      const itemsQuery = query(
+        collection(db, 'marketplaceItems'),
+        orderBy('createdAt', 'desc'),
+        limit(200)
+      )
+      const snapshot = await getDocs(itemsQuery)
       const itemsData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()

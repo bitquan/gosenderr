@@ -49,6 +49,24 @@ export default function PaymentPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const jobId = searchParams.get("jobId");
+    const paymentIntentId = searchParams.get("payment_intent");
+    if (jobId) {
+      setIsCreatingJob(true);
+      updateDoc(doc(db, "jobs", jobId), {
+        paymentStatus: "authorized",
+        paymentIntentId: paymentIntentId || null,
+        updatedAt: serverTimestamp(),
+      })
+        .then(() => navigate(`/jobs/${jobId}`))
+        .catch((err: any) => {
+          console.error("Error updating job payment:", err);
+          setError(err.message || "Failed to update payment status");
+        })
+        .finally(() => setIsCreatingJob(false));
+      return;
+    }
+
     // Try to get order details from sessionStorage first
     const storedDetails = sessionStorage.getItem("orderDetails");
     if (storedDetails) {
@@ -343,7 +361,7 @@ export default function PaymentPage() {
               jobId={`pending_${Date.now()}`}
               courierRate={orderDetails.courierRate}
               platformFee={orderDetails.platformFee}
-              onSuccess={handlePaymentSuccess}
+              onSuccess={() => handlePaymentSuccess()}
             />
           )}
 

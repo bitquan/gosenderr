@@ -26,12 +26,13 @@ const normalizePhoto = (data: any) => {
 const getUserSummary = async (userId: string) => {
   const userSnap = await getDoc(doc(db, "users", userId));
   if (!userSnap.exists()) {
-    return { displayName: "User", photoURL: undefined };
+    return { displayName: "User" } as { displayName: string; photoURL?: string };
   }
   const data = userSnap.data();
+  const photoURL = normalizePhoto(data);
   return {
     displayName: normalizeName(data),
-    photoURL: normalizePhoto(data),
+    ...(photoURL ? { photoURL } : {}),
   };
 };
 
@@ -109,7 +110,7 @@ export const messagingService = {
       conversationId,
       senderId,
       senderName: senderSummary.displayName,
-      senderPhotoURL: senderSummary.photoURL,
+      ...(senderSummary.photoURL ? { senderPhotoURL: senderSummary.photoURL } : {}),
       recipientId,
       participants,
       text,

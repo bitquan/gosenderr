@@ -1,6 +1,10 @@
 
 import { Job } from '../shared/types';
 import { claimJob, updateJobStatus } from '@/lib/v2/jobs';
+import { captureGPSPhoto } from '@/lib/gpsPhoto';
+import { calcMiles } from '@/lib/v2/pricing';
+import { db } from '@/lib/firebase';
+import { doc, updateDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import type { JobStatus } from '../shared/types';
 
 interface CourierJobActionsProps {
@@ -13,6 +17,8 @@ interface CourierJobActionsProps {
 export function CourierJobActions({ job, courierUid, estimatedFee, onJobUpdated }: CourierJobActionsProps) {
   const isAssignedToCourier = job.courierUid === courierUid;
   const canAccept = job.status === 'open' && !job.courierUid;
+  const MAX_DISTANCE_MILES = 0.2; // ~320 meters
+  const MAX_ACCURACY_METERS = 100;
   
   // Define valid status transitions for courier
   const getNextStatus = (currentStatus: JobStatus): JobStatus | null => {
@@ -54,13 +60,60 @@ export function CourierJobActions({ job, courierUid, estimatedFee, onJobUpdated 
   const handleUpdateStatus = async () => {
     if (!nextStatus) return;
 
+    if (job.paymentStatus !== 'authorized') {
+      alert('Payment not authorized yet. Please wait for customer payment before starting this trip.');
+      return;
+    }
+
     try {
+      if (nextStatus === 'picked_up') {
+        await handleProofCapture('pickup');
+      }
+
+      if (nextStatus === 'completed') {
+        await handleProofCapture('dropoff');
+      }
+
       await updateJobStatus(job.id, nextStatus);
       onJobUpdated?.();
     } catch (error) {
       console.error('Failed to update job status:', error);
-      alert('Failed to update job status. Please try again.');
+      const message = error instanceof Error ? error.message : 'Failed to update job status. Please try again.';
+      alert(message);
     }
+  };
+
+  const handleProofCapture = async (type: 'pickup' | 'dropoff') => {
+    const target = type === 'pickup' ? job.pickup : job.dropoff;
+
+    const proof = await captureGPSPhoto(courierUid, job.id);
+    if (proof.coordinates.accuracy > MAX_ACCURACY_METERS) {
+      throw new Error('Location accuracy too low. Please try again.');
+    }
+
+    const distance = calcMiles(
+      { lat: proof.coordinates.latitude, lng: proof.coordinates.longitude },
+      { lat: target.lat, lng: target.lng },
+    );
+
+    if (distance > MAX_DISTANCE_MILES) {
+      throw new Error('You must be at the delivery location to take this photo.');
+    }
+
+    const proofPayload = {
+      url: proof.url,
+      location: {
+        lat: proof.coordinates.latitude,
+        lng: proof.coordinates.longitude,
+      },
+      accuracy: proof.coordinates.accuracy,
+      timestamp: Timestamp.fromDate(proof.timestamp),
+    };
+
+    await updateDoc(doc(db, 'jobs', job.id), {
+      ...(type === 'pickup' ? { pickupProof: proofPayload } : { dropoffProof: proofPayload }),
+      updatedAt: serverTimestamp(),
+    });
   };
 
   if (canAccept) {

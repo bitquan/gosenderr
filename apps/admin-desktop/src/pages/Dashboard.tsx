@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { collection, getDocs, limit, orderBy, query } from 'firebase/firestore'
+import { collection, getDocs, limit, orderBy, query, where, getCountFromServer } from 'firebase/firestore'
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { db } from '../lib/firebase'
 import { useAuth } from '../hooks/useAuth'
@@ -58,47 +58,128 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     const loadStats = async () => {
       try {
-        // Load users
-        const usersSnap = await getDocs(collection(db, 'users'))
-        const users = usersSnap.docs.map(doc => doc.data())
-        const totalUsers = users.length
+        const usersCollection = collection(db, 'users')
+        const jobsCollection = collection(db, 'jobs')
+        const itemsCollection = collection(db, 'marketplaceItems')
+        const ordersCollection = collection(db, 'orders')
+        const disputesCollection = collection(db, 'disputes')
+        const categoriesCollection = collection(db, 'categories')
 
-        // Count users by role
-        const customers = users.filter(u => u.role === 'customer').length
-        const couriers = users.filter(u => u.role === 'courier').length
-        const runners = users.filter(u => u.packageRunnerProfile?.status === 'approved').length
-        const sellers = users.filter(u => u.sellerProfile?.status === 'active').length
-        const admins = users.filter(u => u.admin === true).length
+        const now = new Date()
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        const sevenDaysAgo = new Date(now)
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+        const fourteenDaysAgo = new Date(now)
+        fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14)
+        const thirtyDaysAgo = new Date(now)
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+        const sixtyDaysAgo = new Date(now)
+        sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60)
+
+        const [
+          totalUsersSnap,
+          totalJobsSnap,
+          pendingJobsSnap,
+          assignedJobsSnap,
+          inProgressJobsSnap,
+          completedJobsSnap,
+          totalItemsSnap,
+          activeItemsSnap,
+          totalOrdersSnap,
+          pendingOrdersSnap,
+          processingOrdersSnap,
+          customersSnap,
+          couriersSnap,
+          runnersSnap,
+          sellersSnap,
+          adminsSnap,
+          usersLast30Snap,
+          usersPrevious30Snap,
+          users30Snap,
+          jobs30Snap,
+          orders30Snap,
+          items30Snap,
+          categoriesSnap,
+          recentOrdersSnap,
+          recentJobsSnap,
+          recentDisputesSnap,
+          completedJobsRevenueSnap,
+          deliveredOrdersSnap,
+          completedOrdersSnap
+        ] = await Promise.all([
+          getCountFromServer(usersCollection),
+          getCountFromServer(jobsCollection),
+          getCountFromServer(query(jobsCollection, where('status', '==', 'pending'))),
+          getCountFromServer(query(jobsCollection, where('status', '==', 'assigned'))),
+          getCountFromServer(query(jobsCollection, where('status', '==', 'in_progress'))),
+          getCountFromServer(query(jobsCollection, where('status', '==', 'completed'))),
+          getCountFromServer(itemsCollection),
+          getCountFromServer(query(itemsCollection, where('status', '==', 'active'))),
+          getCountFromServer(ordersCollection),
+          getCountFromServer(query(ordersCollection, where('status', '==', 'pending'))),
+          getCountFromServer(query(ordersCollection, where('status', '==', 'processing'))),
+          getCountFromServer(query(usersCollection, where('role', '==', 'customer'))),
+          getCountFromServer(query(usersCollection, where('role', '==', 'courier'))),
+          getCountFromServer(query(usersCollection, where('packageRunnerProfile.status', '==', 'approved'))),
+          getCountFromServer(query(usersCollection, where('role', '==', 'seller'))),
+          getCountFromServer(query(usersCollection, where('role', '==', 'admin'))),
+          getCountFromServer(query(usersCollection, where('createdAt', '>=', thirtyDaysAgo))),
+          getCountFromServer(query(usersCollection, where('createdAt', '>=', sixtyDaysAgo), where('createdAt', '<', thirtyDaysAgo))),
+          getDocs(query(usersCollection, where('createdAt', '>=', thirtyDaysAgo))),
+          getDocs(query(jobsCollection, where('createdAt', '>=', thirtyDaysAgo))),
+          getDocs(query(ordersCollection, where('createdAt', '>=', thirtyDaysAgo))),
+          getDocs(query(itemsCollection, where('createdAt', '>=', thirtyDaysAgo))),
+          getDocs(categoriesCollection),
+          getDocs(query(ordersCollection, orderBy('createdAt', 'desc'), limit(5))),
+          getDocs(query(jobsCollection, orderBy('createdAt', 'desc'), limit(5))),
+          getDocs(query(disputesCollection, orderBy('createdAt', 'desc'), limit(5))),
+          getDocs(query(jobsCollection, where('status', '==', 'completed'))),
+          getDocs(query(ordersCollection, where('status', '==', 'delivered'))),
+          getDocs(query(ordersCollection, where('status', '==', 'completed')))
+        ])
+
+        const totalUsers = totalUsersSnap.data().count
+        const totalJobs = totalJobsSnap.data().count
+        const activeJobs = pendingJobsSnap.data().count + assignedJobsSnap.data().count + inProgressJobsSnap.data().count
+        const completedJobs = completedJobsSnap.data().count
+        const totalItems = totalItemsSnap.data().count
+        const activeItems = activeItemsSnap.data().count
+        const totalOrders = totalOrdersSnap.data().count
+        const pendingOrders = pendingOrdersSnap.data().count + processingOrdersSnap.data().count
+        const totalRevenue = completedJobsRevenueSnap.docs.reduce(
+          (sum, doc) => sum + ((doc.data() as any).agreedFee ?? 0),
+          0
+        )
+        const ordersRevenue = [...deliveredOrdersSnap.docs, ...completedOrdersSnap.docs].reduce(
+          (sum, doc) => sum + ((doc.data() as any).total ?? 0),
+          0
+        )
+
+        const users30 = users30Snap.docs.map(doc => doc.data())
+        const jobs30 = jobs30Snap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }))
+        const orders30 = orders30Snap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }))
+        const items30 = items30Snap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }))
+        const categories = categoriesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }))
 
         const usersByRole = [
-          { name: 'Customers', value: customers, color: '#6B7280' },
-          { name: 'Couriers', value: couriers, color: '#6B4EFF' },
-          { name: 'Runners', value: runners, color: '#F97316' },
-          { name: 'Sellers', value: sellers, color: '#6366F1' },
-          { name: 'Admins', value: admins, color: '#EF4444' }
+          { name: 'Customers', value: customersSnap.data().count, color: '#6B7280' },
+          { name: 'Couriers', value: couriersSnap.data().count, color: '#6B4EFF' },
+          { name: 'Runners', value: runnersSnap.data().count, color: '#F97316' },
+          { name: 'Sellers', value: sellersSnap.data().count, color: '#6366F1' },
+          { name: 'Admins', value: adminsSnap.data().count, color: '#EF4444' }
         ]
-
-        // Load jobs
-        const jobsSnap = await getDocs(collection(db, 'jobs'))
-        const jobs = jobsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }))
-        
-        const totalJobs = jobs.length
-        const activeJobs = jobs.filter(j => ['pending', 'assigned', 'in_progress'].includes(j.status)).length
-        const completedJobs = jobs.filter(j => j.status === 'completed').length
-        const totalRevenue = jobs.filter(j => j.status === 'completed').reduce((sum, j) => sum + (j.agreedFee || 0), 0)
 
         // Jobs by status
         const jobsByStatus = [
-          { name: 'Pending', value: jobs.filter(j => j.status === 'pending').length },
-          { name: 'Assigned', value: jobs.filter(j => j.status === 'assigned').length },
-          { name: 'In Progress', value: jobs.filter(j => j.status === 'in_progress').length },
-          { name: 'Completed', value: completedJobs },
-          { name: 'Cancelled', value: jobs.filter(j => j.status === 'cancelled').length }
+          { name: 'Pending', value: jobs30.filter(j => j.status === 'pending').length },
+          { name: 'Assigned', value: jobs30.filter(j => j.status === 'assigned').length },
+          { name: 'In Progress', value: jobs30.filter(j => j.status === 'in_progress').length },
+          { name: 'Completed', value: jobs30.filter(j => j.status === 'completed').length },
+          { name: 'Cancelled', value: jobs30.filter(j => j.status === 'cancelled').length }
         ]
 
-        const today = new Date()
-        today.setHours(0, 0, 0, 0)
-        const todayJobs = jobs.filter(j => {
+        const todayJobs = jobs30.filter(j => {
           const createdAt = j.createdAt?.toDate?.()
           return createdAt && createdAt >= today
         }).length
@@ -112,7 +193,7 @@ export default function AdminDashboardPage() {
           const nextDate = new Date(date)
           nextDate.setDate(nextDate.getDate() + 1)
 
-          const dayJobs = jobs.filter(j => {
+          const dayJobs = jobs30.filter(j => {
             const createdAt = j.createdAt?.toDate?.()
             return createdAt && createdAt >= date && createdAt < nextDate
           })
@@ -128,53 +209,28 @@ export default function AdminDashboardPage() {
           })
         }
 
-        // Load marketplace items
-        const itemsSnap = await getDocs(collection(db, 'marketplaceItems'))
-        const items = itemsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }))
-        const totalItems = items.length
-        const activeItems = items.filter(i => i.status === 'active').length
-
-        // Load marketplace orders
-        const ordersSnap = await getDocs(collection(db, 'orders'))
-        const orders = ordersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }))
-        const totalOrders = orders.length
-        const pendingOrders = orders.filter(o => ['pending', 'processing'].includes(o.status)).length
-        const ordersRevenue = orders.filter(o => o.status === 'completed').reduce((sum, o) => sum + (o.total || 0), 0)
-
         // User growth (last 30 days vs previous 30 days)
-        const thirtyDaysAgo = new Date()
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-        const sixtyDaysAgo = new Date()
-        sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60)
-
-        const usersLast30 = users.filter(u => {
-          const createdAt = u.createdAt?.toDate?.()
-          return createdAt && createdAt >= thirtyDaysAgo
-        }).length
-
-        const usersPrevious30 = users.filter(u => {
-          const createdAt = u.createdAt?.toDate?.()
-          return createdAt && createdAt >= sixtyDaysAgo && createdAt < thirtyDaysAgo
-        }).length
+        const usersLast30 = usersLast30Snap.data().count
+        const usersPrevious30 = usersPrevious30Snap.data().count
 
         const userGrowth = usersPrevious30 > 0 
           ? ((usersLast30 - usersPrevious30) / usersPrevious30) * 100 
           : 0
 
         // Revenue growth (last 7 days vs previous 7 days)
-        const sevenDaysAgo = new Date()
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
-        const fourteenDaysAgo = new Date()
-        fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14)
+        const jobs14 = jobs30.filter(j => {
+          const createdAt = j.createdAt?.toDate?.()
+          return createdAt && createdAt >= fourteenDaysAgo
+        })
 
-        const revenueLast7 = jobs
+        const revenueLast7 = jobs14
           .filter(j => {
             const createdAt = j.createdAt?.toDate?.()
             return createdAt && createdAt >= sevenDaysAgo && j.status === 'completed'
           })
           .reduce((sum, j) => sum + (j.agreedFee || 0), 0)
 
-        const revenuePrevious7 = jobs
+        const revenuePrevious7 = jobs14
           .filter(j => {
             const createdAt = j.createdAt?.toDate?.()
             return createdAt && createdAt >= fourteenDaysAgo && createdAt < sevenDaysAgo && j.status === 'completed'
@@ -194,18 +250,18 @@ export default function AdminDashboardPage() {
           const nextDate = new Date(date)
           nextDate.setDate(nextDate.getDate() + 1)
 
-          const dayUsers = users.filter(u => {
+          const dayUsers = users30.filter(u => {
             const createdAt = u.createdAt?.toDate?.()
             return createdAt && createdAt >= date && createdAt < nextDate
           }).length
 
-          const dayRevenue = jobs
+          const dayRevenue = jobs30
             .filter(j => {
               const createdAt = j.createdAt?.toDate?.()
               return createdAt && createdAt >= date && createdAt < nextDate && j.status === 'completed'
             })
             .reduce((sum, j) => sum + (j.agreedFee || 0), 0) +
-          orders
+          orders30
             .filter(o => {
               const createdAt = o.createdAt?.toDate?.()
               return createdAt && createdAt >= date && createdAt < nextDate && o.status === 'completed'
@@ -219,23 +275,15 @@ export default function AdminDashboardPage() {
           })
         }
 
-        // Recent activity (top 5 each)
-        const recentOrdersSnap = await getDocs(query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(5)))
-        const recentJobsSnap = await getDocs(query(collection(db, 'jobs'), orderBy('createdAt', 'desc'), limit(5)))
-        const recentDisputesSnap = await getDocs(query(collection(db, 'disputes'), orderBy('createdAt', 'desc'), limit(5)))
-
         setRecentOrders(recentOrdersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any })))
         setRecentJobs(recentJobsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any })))
         setRecentDisputes(recentDisputesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any })))
 
         // Top categories by items and sales
-        const categoriesSnap = await getDocs(collection(db, 'categories'))
-        const categories = categoriesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }))
-        
         const topCategories = categories.map(cat => {
-          const categoryItems = items.filter(i => i.category === cat.id).length
-          const categorySales = orders.filter(o => 
-            o.items?.some((item: any) => items.find(i => i.id === item.itemId)?.category === cat.id)
+          const categoryItems = items30.filter(i => i.category === cat.id).length
+          const categorySales = orders30.filter(o => 
+            o.items?.some((item: any) => items30.find(i => i.id === item.itemId)?.category === cat.id)
           ).length
           return {
             name: cat.name,
@@ -505,7 +553,7 @@ export default function AdminDashboardPage() {
                   <CardTitle>👥 Users by Role</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
+                  <ResponsiveContainer width="100%" height={300} minHeight={300} minWidth={300}>
                     <PieChart>
                       <Pie
                         data={stats.usersByRole.filter(r => r.value > 0)}
@@ -534,7 +582,7 @@ export default function AdminDashboardPage() {
                   <CardTitle>📊 Jobs by Status</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
+                  <ResponsiveContainer width="100%" height={300} minHeight={300} minWidth={300}>
                     <BarChart data={stats.jobsByStatus}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="name" />
@@ -553,7 +601,7 @@ export default function AdminDashboardPage() {
                 <CardTitle>📈 Last 7 Days Performance</CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
+                <ResponsiveContainer width="100%" height={300} minHeight={300} minWidth={300}>
                   <LineChart data={stats.last7Days}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" />
@@ -588,7 +636,7 @@ export default function AdminDashboardPage() {
                 <CardTitle>📊 30-Day User Growth & Revenue</CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
+                <ResponsiveContainer width="100%" height={300} minHeight={300} minWidth={300}>
                   <LineChart data={stats.last30Days}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" />
@@ -624,7 +672,7 @@ export default function AdminDashboardPage() {
                   <CardTitle>🏆 Top Categories</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
+                  <ResponsiveContainer width="100%" height={300} minHeight={300} minWidth={300}>
                     <BarChart data={stats.topCategories}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="name" />
