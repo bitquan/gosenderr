@@ -1,7 +1,9 @@
-import { render, screen, waitFor } from '@testing-library/react'
+/* @vitest-environment jsdom */
+import '@testing-library/jest-dom/vitest'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import AdminFlowLogsPage from '../AdminFlowLogs'
-import { describe, test, vi, beforeEach, expect } from 'vitest'
+import { describe, test, vi, beforeEach, afterEach, expect } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import * as axe from 'axe-core'
 
@@ -26,6 +28,10 @@ vi.mock('firebase/firestore', () => ({
 
 beforeEach(() => {
   vi.resetAllMocks()
+})
+
+afterEach(() => {
+  cleanup()
 })
 
 describe('AdminFlowLogs — edge cases & a11y', () => {
@@ -102,7 +108,13 @@ describe('AdminFlowLogs — edge cases & a11y', () => {
 
     // mock clipboard
     const writeText = vi.fn()
-    ;(global as any).navigator.clipboard = { writeText }
+    if (!globalThis.navigator) {
+      Object.defineProperty(globalThis, 'navigator', {
+        value: {},
+        configurable: true,
+      })
+    }
+    ;(globalThis.navigator as any).clipboard = { writeText }
 
     render(<MemoryRouter><AdminFlowLogsPage /></MemoryRouter>)
 

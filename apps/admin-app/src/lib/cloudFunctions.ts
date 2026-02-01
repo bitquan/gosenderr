@@ -67,7 +67,7 @@ interface CreateUserRequest {
   email: string
   password: string
   displayName?: string
-  role: 'courier' | 'admin' | 'customer' | 'seller' | 'package_runner'
+  role: 'courier' | 'admin' | 'customer' | 'seller' | 'vendor' | 'package_runner'
 }
 
 interface CreateUserResult {
