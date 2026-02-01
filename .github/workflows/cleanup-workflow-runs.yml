@@ -1,0 +1,99 @@
+name: Cleanup old workflow runs
+
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: 'Delete workflow runs older than this many days (0 = delete all)'
+        required: false
+        default: '30'
+      workflow_id:
+        description: 'Optional: limit to a specific workflow ID (numeric)'
+        required: false
+        default: ''
+      branch:
+        description: 'Optional: only consider runs from this branch (leave empty for all)'
+        required: false
+        default: ''
+      preview:
+        description: 'If true, only preview runs to delete (no deletion)'
+        required: false
+        default: 'true'
+
+permissions:
+  actions: write
+  issues: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cleanup or preview old workflow runs
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const daysInput = core.getInput('days') || '30'
+            const days = parseInt(daysInput, 10)
+            if (isNaN(days) || days < 0) throw new Error(`Invalid 'days' input: ${daysInput}. Provide 0 or a positive integer.`)
+            const workflowId = (core.getInput('workflow_id') || '').trim()
+            const branch = core.getInput('branch') || ''
+            const preview = (core.getInput('preview') || 'true') === 'true'
+            const cutoff = days === 0 ? null : new Date(Date.now() - days * 24 * 60 * 60 * 1000)
+            core.info(cutoff ? `Cutoff date: ${cutoff.toISOString()}` : 'Cutoff date: none (delete all)')
+
+            const owner = context.repo.owner
+            const repo = context.repo.repo
+
+            // Paginate through workflow runs
+            let page = 1
+            let runsToConsider = []
+            while (true) {
+              const res = workflowId
+                ? await github.rest.actions.listWorkflowRuns({ owner, repo, workflow_id: workflowId, per_page: 100, page })
+                : await github.rest.actions.listWorkflowRunsForRepo({ owner, repo, per_page: 100, page })
+              const runs = res.data.workflow_runs || []
+              if (!runs.length) break
+              for (const run of runs) {
+                const createdAt = new Date(run.created_at)
+                if (!cutoff || createdAt < cutoff) {
+                  if (branch && run.head_branch !== branch) continue
+                  runsToConsider.push({ id: run.id, name: run.name, event: run.event, branch: run.head_branch, created_at: run.created_at, url: run.html_url })
+                }
+              }
+              page++
+            }
+
+            core.info(`Found ${runsToConsider.length} runs${days === 0 ? '' : ` older than ${days} days`}${branch ? ` on branch ${branch}` : ''}${workflowId ? ` for workflow ${workflowId}` : ''}`)
+
+            if (!runsToConsider.length) {
+              await github.rest.issues.create({ owner, repo, title: `Cleanup runs: none found`, body: `No workflow runs${days === 0 ? '' : ` older than ${days} days`}${branch ? ` on branch ${branch}` : ''}${workflowId ? ` for workflow ${workflowId}` : ''} were found.` })
+              core.setOutput('deleted', '0')
+              return
+            }
+
+            const listBody = runsToConsider.map(r => `- ${r.name} (branch: ${r.branch}) created: ${r.created_at}  ${r.url}  id=${r.id}`).join('\n')
+
+            if (preview) {
+              const title = `Preview: ${runsToConsider.length} workflow runs${days === 0 ? '' : ` older than ${days} days`}${branch ? ` on ${branch}` : ''}${workflowId ? ` for workflow ${workflowId}` : ''}`
+              await github.rest.issues.create({ owner, repo, title, body: `This is a preview of workflow runs that would be deleted:\n\n${listBody}` })
+              core.setOutput('deleted', '0')
+              return
+            }
+
+            // Proceed to delete runs
+            let deleted = 0
+            let failed = 0
+            for (const r of runsToConsider) {
+              try {
+                await github.rest.actions.deleteWorkflowRun({ owner, repo, run_id: r.id })
+                deleted++
+                core.info(`Deleted run ${r.id}`)
+              } catch (err) {
+                failed++
+                core.warning(`Failed to delete run ${r.id}: ${err}`)
+              }
+            }
+
+            const summary = `Cleanup complete: deleted ${deleted} runs, failed ${failed}.` + '\n\n' + listBody
+            await github.rest.issues.create({ owner, repo, title: `Cleanup completed: deleted ${deleted} runs`, body: summary })
+            core.setOutput('deleted', `${deleted}`)
