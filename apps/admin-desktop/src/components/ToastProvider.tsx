@@ -14,11 +14,25 @@ interface ToastContextValue {
 
 const ToastContext = createContext<ToastContextValue | undefined>(undefined)
 
+const createToastId = () => {
+  const cryptoObj = globalThis.crypto
+  if (cryptoObj?.randomUUID) {
+    return `toast_${cryptoObj.randomUUID()}`
+  }
+  if (!cryptoObj?.getRandomValues) {
+    throw new Error('Secure random generator unavailable')
+  }
+  const bytes = new Uint32Array(2)
+  cryptoObj.getRandomValues(bytes)
+  const suffix = Array.from(bytes, (value) => value.toString(36)).join('')
+  return `toast_${suffix}`
+}
+
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([])
 
   const showToast = (message: string, type: ToastType = 'info') => {
-    const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`
+    const id = createToastId()
     setToasts((prev: Toast[]) => [...prev, { id, message, type }])
     setTimeout(() => {
       setToasts((prev: Toast[]) => prev.filter((t: Toast) => t.id !== id))

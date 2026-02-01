@@ -26,6 +26,20 @@ interface OrderDetails {
   itemDescription?: string;
 }
 
+const createTempJobId = () => {
+  const cryptoObj = globalThis.crypto;
+  if (cryptoObj?.randomUUID) {
+    return `temp_${Date.now()}_${cryptoObj.randomUUID()}`;
+  }
+  if (!cryptoObj?.getRandomValues) {
+    throw new Error("Secure random generator unavailable");
+  }
+  const bytes = new Uint32Array(2);
+  cryptoObj.getRandomValues(bytes);
+  const suffix = Array.from(bytes, (value) => value.toString(36)).join("");
+  return `temp_${Date.now()}_${suffix}`;
+};
+
 export default function PaymentPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -88,7 +102,7 @@ export default function PaymentPage() {
 
     try {
       // Generate a temporary job ID for payment
-      const tempJobId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const tempJobId = createTempJobId();
 
       // Create delivery job in Firestore
       const deliveryJobData = {
