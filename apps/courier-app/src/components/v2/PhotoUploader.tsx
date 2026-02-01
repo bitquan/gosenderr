@@ -3,7 +3,14 @@ import { useState, useRef, ChangeEvent, useEffect } from 'react';
 import { uploadJobPhoto, UploadProgress } from '@/lib/storage/uploadJobPhoto';
 
 let photoCounter = 0;
-const createPhotoId = () => `photo_${Date.now().toString(36)}_${(photoCounter++).toString(36)}`;
+const createPhotoId = () => {
+  if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+    const bytes = new Uint32Array(2);
+    crypto.getRandomValues(bytes);
+    return `photo_${bytes[0].toString(36)}_${bytes[1].toString(36)}`;
+  }
+  return `photo_${Date.now().toString(36)}_${(photoCounter++).toString(36)}`;
+};
 
 export interface PhotoFile {
   id: string;
