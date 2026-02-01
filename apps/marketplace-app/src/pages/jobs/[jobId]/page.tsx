@@ -1,6 +1,6 @@
 
 import { useParams } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { useJob } from "@/hooks/v2/useJob";
 import { useCourierById } from "@/hooks/v2/useCourierById";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
@@ -22,11 +22,11 @@ function convertJobDocToJob(jobDoc: JobDoc, id: string): FeatureJob {
 export default function CustomerJobDetail() {
   const { jobId } = useParams<{ jobId: string }>();
   const navigate = useNavigate();
-  const { uid } = useAuthUser();
+  const { uid, loading: authLoading } = useAuthUser();
   const { job: jobDoc, loading: jobLoading } = useJob(jobId || '');
   const { courier } = useCourierById(jobDoc?.courierUid || null);
 
-  if (jobLoading) {
+  if (authLoading || jobLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
@@ -37,7 +37,11 @@ export default function CustomerJobDetail() {
     );
   }
 
-  if (!jobDoc || !uid) {
+  if (!uid) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!jobDoc) {
     return (
       <NotFoundPage
         title="Send not found"

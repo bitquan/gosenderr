@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, updateDoc, Timestamp, serverTimestamp } from "firebase/firestore";
 import { LoadingState } from "@gosenderr/ui";
 
 import { db } from "@/lib/firebase";
@@ -24,6 +24,7 @@ export default function CourierDashboardMobile() {
   const courierStatus = (userDoc?.courierProfile as any)?.status || "none";
   const isApproved = courierStatus === "approved";
   const rejectionReason = (userDoc?.courierProfile as any)?.rejectionReason || null;
+  const isOnline = Boolean(userDoc?.courierProfile?.isOnline);
 
   const activeJobs = useMemo(() => {
     return jobs.filter(
@@ -67,11 +68,31 @@ export default function CourierDashboardMobile() {
     }
   };
 
+  const handleDeclineOffer = async (job: Job) => {
+    if (!uid) return;
+    try {
+      const offerQueue: string[] = (job as any).offerQueue || [];
+      const remaining = offerQueue.filter((id) => id !== uid);
+      const nextCourierUid = remaining[0] || null;
+      await updateDoc(doc(db, "jobs", job.id), {
+        offerQueue: remaining,
+        offerCourierUid: nextCourierUid,
+        offerStatus: nextCourierUid ? "pending" : "open",
+        offerExpiresAt: nextCourierUid
+          ? Timestamp.fromDate(new Date(Date.now() + 90 * 1000))
+          : null,
+        updatedAt: serverTimestamp(),
+      });
+    } catch (error) {
+      console.error("Failed to decline offer:", error);
+      alert("Failed to decline offer. Please try again.");
+    }
+  };
+
   const handleToggleOnline = async () => {
-    if (!uid || !userDoc || togglingOnline) return;
+    if (!uid || !userDoc || togglingOnline || !isApproved) return;
     setTogglingOnline(true);
     try {
-      const isOnline = Boolean(userDoc.courierProfile?.isOnline);
       await updateDoc(doc(db, "users", uid), {
         "courierProfile.isOnline": !isOnline,
       });
@@ -186,7 +207,15 @@ export default function CourierDashboardMobile() {
 
         <div className="space-y-3">
           <h2 className="text-xl font-semibold text-gray-900">Open Jobs</h2>
-          {openJobs.length === 0 ? (
+          {!isApproved ? (
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 text-center text-gray-600">
+              Approval required before going online or viewing jobs.
+            </div>
+          ) : !isOnline ? (
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 text-center text-gray-600">
+              Go online to see available jobs.
+            </div>
+          ) : openJobs.length === 0 ? (
             <div className="bg-white border border-gray-200 rounded-2xl p-8 text-center text-gray-600">
               No open jobs right now. Check back soon.
             </div>
@@ -200,15 +229,11 @@ export default function CourierDashboardMobile() {
                   courierLocation={courierLocation}
                   transportMode={transportMode}
                   viewerUid={uid || undefined}
-                  onAccept={isApproved ? handleAccept : undefined}
+                  onAccept={handleAccept}
+                  onDecline={(job as any).offerCourierUid === uid ? handleDeclineOffer : undefined}
                   loading={acceptingJobId === job.id}
-                  enableRoute={false}
-                  showAcceptButton={isApproved}
-                  footer={!isApproved ? (
-                    <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-2">
-                      Approval required before accepting jobs.
-                    </div>
-                  ) : undefined}
+                  enableRoute={true}
+                  showAcceptButton={true}
                 />
               ))}
             </div>

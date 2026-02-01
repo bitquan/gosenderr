@@ -24,6 +24,7 @@ interface CourierJobPreviewProps {
   transportMode: TransportMode | VehicleType;
   viewerUid?: string;
   onAccept?: (jobId: string, fee: number) => void;
+  onDecline?: (job: Job) => void;
   loading?: boolean;
   showAcceptButton?: boolean;
   footer?: React.ReactNode;
@@ -42,6 +43,7 @@ export function CourierJobPreview({
   transportMode,
   viewerUid,
   onAccept,
+  onDecline,
   loading = false,
   showAcceptButton = true,
   footer,
@@ -115,12 +117,18 @@ export function CourierJobPreview({
         </div>
 
         <div className="space-y-2">
-          <AddressBlock label="Pickup" location={job.pickup} canSeeExact={visibility.canSeeExactAddresses} />
+          <AddressBlock
+            label="Pickup"
+            location={job.pickup}
+            canSeeExact={visibility.canSeeExactAddresses}
+            addressOverride={(job as any).pickupAddress || job.pickup?.label}
+          />
           <AddressBlock
             label="Dropoff"
             location={job.dropoff}
             canSeeExact={visibility.canSeeExactAddresses}
             icon="🎯"
+            addressOverride={(job as any).deliveryAddress || job.dropoff?.label}
           />
           {!visibility.canSeeExactAddresses && (
             <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5">
@@ -170,24 +178,53 @@ export function CourierJobPreview({
         showAcceptButton &&
         onAccept && (
           <div className="p-3 border-t border-gray-100">
-            <button
-              onClick={() => onAccept(job.id, fee)}
-              disabled={loading || !eligible || !hasRateCard}
-              title={!eligible ? "You are not eligible for this job" : ""}
-              className={`w-full py-2.5 rounded-xl text-white font-semibold transition-colors ${
-                loading || !eligible || !hasRateCard
-                  ? "bg-gray-300 cursor-not-allowed"
-                  : "bg-emerald-600 hover:bg-emerald-700"
-              }`}
-            >
-              {loading
-                ? "Accepting..."
-                : !hasRateCard
-                  ? "Set Rate Card to Accept"
-                  : !eligible
-                    ? "Cannot Accept"
-                    : "Accept Job"}
-            </button>
+            {onDecline ? (
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => onAccept(job.id, fee)}
+                  disabled={loading || !eligible || !hasRateCard}
+                  title={!eligible ? "You are not eligible for this job" : ""}
+                  className={`w-full py-2.5 rounded-xl text-white font-semibold transition-colors ${
+                    loading || !eligible || !hasRateCard
+                      ? "bg-gray-300 cursor-not-allowed"
+                      : "bg-emerald-600 hover:bg-emerald-700"
+                  }`}
+                >
+                  {loading
+                    ? "Accepting..."
+                    : !hasRateCard
+                      ? "Set Rate Card"
+                      : !eligible
+                        ? "Cannot Accept"
+                        : "Accept Offer"}
+                </button>
+                <button
+                  onClick={() => onDecline(job)}
+                  className="w-full py-2.5 rounded-xl bg-gray-100 text-gray-700 font-semibold hover:bg-gray-200"
+                >
+                  Decline
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => onAccept(job.id, fee)}
+                disabled={loading || !eligible || !hasRateCard}
+                title={!eligible ? "You are not eligible for this job" : ""}
+                className={`w-full py-2.5 rounded-xl text-white font-semibold transition-colors ${
+                  loading || !eligible || !hasRateCard
+                    ? "bg-gray-300 cursor-not-allowed"
+                    : "bg-emerald-600 hover:bg-emerald-700"
+                }`}
+              >
+                {loading
+                  ? "Accepting..."
+                  : !hasRateCard
+                    ? "Set Rate Card to Accept"
+                    : !eligible
+                      ? "Cannot Accept"
+                      : "Accept Job"}
+              </button>
+            )}
           </div>
         )
       )}

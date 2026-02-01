@@ -49,13 +49,19 @@ export function useRole(): UseRoleReturn {
           const userPrimaryRole = data.primaryRole || data.role || null
           const userRoles = data.roles || (userRole ? [userRole] : [])
 
-          setRole(userRole)
-          setPrimaryRole(userPrimaryRole)
-          setRoles(userRoles)
+          if (!userRole && userRoles.length === 0) {
+            setRole('customer')
+            setPrimaryRole('customer')
+            setRoles(['customer'])
+          } else {
+            setRole(userRole)
+            setPrimaryRole(userPrimaryRole)
+            setRoles(userRoles)
+          }
         } else {
-          setRole(null)
-          setPrimaryRole(null)
-          setRoles([])
+          setRole('customer')
+          setPrimaryRole('customer')
+          setRoles(['customer'])
         }
         setLoading(false)
       },

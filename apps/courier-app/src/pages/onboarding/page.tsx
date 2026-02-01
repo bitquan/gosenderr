@@ -319,7 +319,7 @@ export default function CourierOnboarding() {
   ];
 
   return (
-    <div className="fixed inset-0 w-screen h-screen overflow-y-auto bg-[#F8F9FF]" style={{ padding: "20px" }}>
+    <div className="min-h-screen w-full bg-[#F8F9FF]" style={{ padding: "20px" }}>
       <div style={{ maxWidth: "800px", margin: "0 auto", paddingBottom: "40px" }}>
         {/* Progress Bar */}
         <div style={{ marginBottom: "30px" }}>

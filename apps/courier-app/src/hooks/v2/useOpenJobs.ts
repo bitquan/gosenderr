@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { collection, query, where, onSnapshot, or } from "firebase/firestore";
+import { collection, query, where, onSnapshot, or, and } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Job } from "@/lib/v2/types";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
@@ -24,11 +24,12 @@ export function useOpenJobs() {
     const jobsRef = collection(db, "jobs");
     // Show both open jobs AND jobs accepted by this courier
     const q = query(
-      jobsRef, 
+      jobsRef,
       or(
-        where("status", "==", "open"),
-        where("courierUid", "==", uid)
-      )
+        and(where("status", "==", "open"), where("offerCourierUid", "==", uid)),
+        and(where("status", "==", "open"), where("offerCourierUid", "==", null)),
+        where("courierUid", "==", uid),
+      ),
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {

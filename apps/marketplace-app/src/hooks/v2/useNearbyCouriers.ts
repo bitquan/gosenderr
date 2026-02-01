@@ -1,6 +1,6 @@
 
-import { useState, useEffect } from "react";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { useState, useEffect, useRef } from "react";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { UserDoc, GeoPoint } from "@/lib/v2/types";
 import { calcMiles, calcFee } from "@/lib/v2/pricing";
@@ -9,7 +9,8 @@ import geohash from "ngeohash";
 
 export interface NearbyCourier {
   uid: string;
-  email: string;
+  name: string;
+  email?: string;
   transportMode: string;
   pickupMiles: number;
   jobMiles: number;
@@ -17,6 +18,9 @@ export interface NearbyCourier {
   eligible: boolean;
   reason?: string;
   rateCard: any;
+  equipmentBadges: Array<
+    "dolly" | "blankets" | "straps" | "cooler" | "insulated_bag"
+  >;
 }
 
 export function useNearbyCouriers(
@@ -25,6 +29,9 @@ export function useNearbyCouriers(
 ) {
   const [couriers, setCouriers] = useState<NearbyCourier[]>([]);
   const [loading, setLoading] = useState(false);
+  const hashDocsRef = useRef<Map<string, Map<string, UserDoc & { email?: string }>>>(
+    new Map(),
+  );
 
   useEffect(() => {
     if (!pickup || !dropoff) {
@@ -32,88 +39,120 @@ export function useNearbyCouriers(
       return;
     }
 
-    const fetchNearbyCouriers = async () => {
-      setLoading(true);
-      try {
-        // Get geohash prefix for pickup location (precision 5 for broader area)
-        const pickupHash = geohash.encode(pickup.lat, pickup.lng, 5);
+    setLoading(true);
 
-        // Query online Senderrs within geohash range - use courierProfile
-        const usersRef = collection(db, "users");
-        const q = query(
-          usersRef,
-          where("role", "==", "courier"),
-          where("courierProfile.isOnline", "==", true),
-          where("location.geohash", ">=", pickupHash),
-          where("location.geohash", "<=", pickupHash + "\uf8ff"),
-        );
+    const precision = 4;
+    const pickupHash = geohash.encode(pickup.lat, pickup.lng, precision);
+    const neighborHashes = geohash.neighbors(pickupHash);
+    const hashPrefixes = Array.from(new Set([pickupHash, ...neighborHashes]));
 
-        const snapshot = await getDocs(q);
-        const jobMiles = calcMiles(pickup, dropoff);
+    const usersRef = collection(db, "users");
+    const unsubscribes = hashPrefixes.map((hashPrefix) => {
+      const q = query(
+        usersRef,
+        where("role", "==", "courier"),
+        where("courierProfile.status", "==", "approved"),
+        where("courierProfile.isOnline", "==", true),
+        where("courierProfile.currentLocation.geohash", ">=", hashPrefix),
+        where("courierProfile.currentLocation.geohash", "<=", hashPrefix + "\uf8ff"),
+      );
 
-        const results: NearbyCourier[] = [];
-
-        snapshot.forEach((doc) => {
-          const data = doc.data() as UserDoc & { email?: string };
-
-          // Skip if no location or courierProfile rate card
-          if (!data.location || !data.courierProfile?.packageRateCard) return;
-
-          const courierLocation: GeoPoint = {
-            lat: data.location.lat,
-            lng: data.location.lng,
-          };
-
-          const pickupMiles = calcMiles(courierLocation, pickup);
-          const rateCard = data.courierProfile.packageRateCard;
-
-          // Check eligibility using new helper
-          const eligibilityResult = getEligibilityReason(
-            rateCard,
-            jobMiles,
-            pickupMiles,
-          );
-          const eligible = eligibilityResult.eligible;
-          const reason = eligibilityResult.reason;
-
-          // Calculate estimated fee using courierProfile vehicleType
-          const estimatedFee = calcFee(
-            rateCard,
-            jobMiles,
-            pickupMiles,
-            data.courierProfile.vehicleType || "car",
-          );
-
-          results.push({
-            uid: doc.id,
-            email: data.email || "Senderr",
-            transportMode: data.courierProfile.vehicleType || "car",
-            pickupMiles,
-            jobMiles,
-            estimatedFee,
-            eligible,
-            reason,
-            rateCard,
+      return onSnapshot(
+        q,
+        (snapshot) => {
+          const docsForHash = new Map<string, UserDoc & { email?: string }>();
+          snapshot.forEach((docSnap) => {
+            docsForHash.set(docSnap.id, docSnap.data() as UserDoc & { email?: string });
           });
-        });
 
-        // Sort: eligible first, then by lowest fee
-        results.sort((a, b) => {
-          if (a.eligible && !b.eligible) return -1;
-          if (!a.eligible && b.eligible) return 1;
-          return a.estimatedFee - b.estimatedFee;
-        });
+          hashDocsRef.current.set(hashPrefix, docsForHash);
 
-        setCouriers(results);
-      } catch (error) {
-        console.error("Failed to fetch nearby couriers:", error);
-        setCouriers([]);
-      } finally {
-        setLoading(false);
-      }
+          const merged = new Map<string, UserDoc & { email?: string }>();
+          hashDocsRef.current.forEach((bucket) => {
+            bucket.forEach((data, id) => merged.set(id, data));
+          });
+
+          const jobMiles = calcMiles(pickup, dropoff);
+          const results: NearbyCourier[] = [];
+
+          merged.forEach((data, id) => {
+            if (!data.courierProfile?.currentLocation || !data.courierProfile?.packageRateCard) return;
+
+            const equipmentBadges: Array<
+              "dolly" | "blankets" | "straps" | "cooler" | "insulated_bag"
+            > = [];
+            const equipment = data.courierProfile.equipment as any;
+            if (equipment?.dolly?.approved) equipmentBadges.push("dolly");
+            if (equipment?.straps?.approved) equipmentBadges.push("straps");
+            if (equipment?.furniture_blankets?.approved) equipmentBadges.push("blankets");
+            if (equipment?.cooler?.approved) equipmentBadges.push("cooler");
+            if (equipment?.insulated_bag?.approved || equipment?.hot_bag?.approved) {
+              equipmentBadges.push("insulated_bag");
+            }
+
+            const courierLocation: GeoPoint = {
+              lat: data.courierProfile.currentLocation.lat,
+              lng: data.courierProfile.currentLocation.lng,
+            };
+
+            const pickupMiles = calcMiles(courierLocation, pickup);
+            const rateCard = data.courierProfile.packageRateCard;
+            const eligibilityResult = getEligibilityReason(
+              rateCard,
+              jobMiles,
+              pickupMiles,
+            );
+            const eligible = eligibilityResult.eligible;
+            const reason = eligibilityResult.reason;
+            const estimatedFee = calcFee(
+              rateCard,
+              jobMiles,
+              pickupMiles,
+              data.courierProfile.vehicleType || "car",
+            );
+
+            const name =
+              (data.courierProfile as any)?.displayName ||
+              (data.courierProfile as any)?.identity?.legalName ||
+              data.displayName ||
+              `Senderr ${id.slice(0, 4)}`;
+
+            results.push({
+              uid: id,
+              name,
+              email: data.email,
+              transportMode: data.courierProfile.vehicleType || "car",
+              pickupMiles,
+              jobMiles,
+              estimatedFee,
+              eligible,
+              reason,
+              rateCard,
+              equipmentBadges,
+            });
+          });
+
+          results.sort((a, b) => {
+            if (a.eligible && !b.eligible) return -1;
+            if (!a.eligible && b.eligible) return 1;
+            return a.estimatedFee - b.estimatedFee;
+          });
+
+          setCouriers(results);
+          setLoading(false);
+        },
+        (error) => {
+          console.error("Failed to fetch nearby couriers:", error);
+          setCouriers([]);
+          setLoading(false);
+        },
+      );
+    });
+
+    return () => {
+      unsubscribes.forEach((unsubscribe) => unsubscribe());
+      hashDocsRef.current.clear();
     };
-
-    fetchNearbyCouriers();
   }, [pickup, dropoff]);
 
   return { couriers, loading };
