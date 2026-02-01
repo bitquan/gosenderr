@@ -2,8 +2,8 @@ name: Landing/Marketing bug
 description: Report a bug on the landing/marketing site
 title: "[Landing Bug]: "
 labels:
-  - bug
-  - landing
+  - type:bug
+  - scope:landing
 body:
   - type: dropdown
     id: environment
@@ -13,6 +13,27 @@ body:
         - Production
         - Staging
         - Local dev
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - P0 - Critical
+        - P1 - High
+        - P2 - Medium
+        - P3 - Low
+    validations:
+      required: true
+  - type: dropdown
+    id: risk
+    attributes:
+      label: Risk
+      options:
+        - High
+        - Medium
+        - Low
     validations:
       required: true
   - type: input

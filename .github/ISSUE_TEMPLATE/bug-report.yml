@@ -2,7 +2,7 @@ name: Bug report
 description: Report a bug in any GoSenderr app
 title: "[Bug]: "
 labels:
-  - bug
+  - type:bug
 body:
   - type: dropdown
     id: app
@@ -15,6 +15,27 @@ body:
         - Courier (courier-app)
         - Landing/Marketing
         - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - P0 - Critical
+        - P1 - High
+        - P2 - Medium
+        - P3 - Low
+    validations:
+      required: true
+  - type: dropdown
+    id: risk
+    attributes:
+      label: Risk
+      options:
+        - High
+        - Medium
+        - Low
     validations:
       required: true
   - type: dropdown
