@@ -2,6 +2,9 @@
 import { useState, useRef, ChangeEvent, useEffect } from 'react';
 import { uploadJobPhoto, UploadProgress } from '@/lib/storage/uploadJobPhoto';
 
+let photoCounter = 0;
+const createPhotoId = () => `photo_${Date.now().toString(36)}_${(photoCounter++).toString(36)}`;
+
 export interface PhotoFile {
   id: string;
   file: File;
@@ -66,7 +69,7 @@ export function PhotoUploader({
       }
 
       const photoFile: PhotoFile = {
-        id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id: createPhotoId(),
         file,
         preview: URL.createObjectURL(file),
         uploading: false,
