@@ -24,10 +24,39 @@
           "source": "**",
           "destination": "/index.html"
         }
+      ],
+      "headers": [
+        {
+          "source": "**/*.@(jpg|jpeg|gif|png|svg|webp)",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "public, max-age=31536000, immutable"
+            }
+          ]
+        },
+        {
+          "source": "**/*.@(js|css)",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "public, max-age=31536000, immutable"
+            }
+          ]
+        },
+        {
+          "source": "**",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, no-store, must-revalidate"
+            }
+          ]
+        }
       ]
     },
     {
-      "site": "gosenderr-customer",
+      "site": "gosenderr-marketplace",
       "public": "apps/marketplace-app/dist",
       "ignore": ["firebase.json", "**/node_modules/**"],
       "rewrites": [
@@ -147,7 +176,7 @@
       ]
     },
     {
-      "site": "gosenderr-shifter",
+      "site": "gosenderr-landing",
       "public": "apps/landing",
       "ignore": ["firebase.json", "**/node_modules/**"],
       "rewrites": [

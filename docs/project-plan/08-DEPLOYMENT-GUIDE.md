@@ -444,7 +444,7 @@ du -sh dist/
 
 ```bash
 # From root directory
-pnpm deploy:customer
+pnpm deploy:marketplace
 
 # Or manually
 cd apps/marketplace-app

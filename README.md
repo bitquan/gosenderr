@@ -32,11 +32,11 @@ See the rollout checklist in [docs/project-plan/09-DAILY-CHECKLIST.md](docs/proj
 
 | App | Port | Hosting URL | Purpose |
 |-----|------|-------------|---------|
-| Marketplace | 5173 | gosenderr-marketplace.web.app | Browse and purchase items |
+| Marketplace | 5173 | gosenderr.com (gosenderr-6773f.web.app) | Browse and purchase items |
 | Courier | 5174 | gosenderr-courier.web.app | Accept and complete jobs |
 | Admin (Web) | 3000 | gosenderr-admin.web.app | Platform management |
 | Admin Desktop | 5176 | — | Native admin tooling |
-| Landing | - | gosenderr-6773f.web.app | Marketing / entry point |
+| Landing | - | gosenderr-landing.web.app | Marketing / entry point |
 
 ## 🚀 Quick Start
 
@@ -169,10 +169,11 @@ pnpm deploy:all
 ```
 
 Firebase Hosting sites:
-- Marketplace: `gosenderr-marketplace`
+- Marketplace: `gosenderr-6773f` (default site, gosenderr.com)
+- Marketplace (alt): `gosenderr-marketplace`
 - Courier: `gosenderr-courier`
 - Admin: `gosenderr-admin`
-- Landing: `gosenderr-6773f` (default site)
+- Landing: `gosenderr-landing`
 
 ## 📱 Features
 
@@ -300,7 +301,7 @@ pnpm dev        # Watch mode for development
 
 ## 🔐 Authentication Flow
 
-1. User visits landing page at https://gosenderr-6773f.web.app
+1. User visits marketplace at https://gosenderr.com (https://gosenderr-6773f.web.app)
 2. Selects role (Marketplace, Courier, or Admin)
 3. Redirected to role-specific app login page
 4. Authenticates via Phone Auth (or Email fallback)

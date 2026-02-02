@@ -47,6 +47,7 @@ import OrderDetailPage from './pages/orders/[orderId]/page'
 import MessagesPage from './pages/messages/page'
 import ConversationPage from './pages/messages/[conversationId]/page'
 import { useFeatureFlags } from './hooks/useFeatureFlags'
+import { StripeModeBanner } from './components/StripeModeBanner'
 
 // Seller pages
 import SellerApplicationPage from './pages/seller/apply/page'
@@ -81,6 +82,7 @@ function App() {
       <AuthProvider>
         <CartProvider>
           <CartSidebar />
+          <StripeModeBanner />
           {flagsLoading ? (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
               <div className="text-gray-600">Loading...</div>
