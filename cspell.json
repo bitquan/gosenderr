@@ -108,7 +108,11 @@
     "mgmt",
     "Authenticode",
     "iphoneos",
-    "backgrounding"
+    "backgrounding",
+    "Prereqs",
+    "SARIF",
+    "scrapile",
+    "subprofiles"
   ],
   "ignoreRegExpList": [
     "[A-Za-z0-9_-]{16,}"
