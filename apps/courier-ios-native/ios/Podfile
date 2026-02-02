@@ -5,6 +5,11 @@ require Pod::Executable.execute_command('node', ['-p',
     {paths: [process.argv[1]]},
   )', __dir__]).strip
 
+ENV['RCT_NEW_ARCH_ENABLED'] = '0'
+ENV['RCT_BRIDGELESS_ENABLED'] = '0'
+
+$RNMapboxMapsVersion = '~> 11.16.2'
+
 platform :ios, min_ios_version_supported
 prepare_react_native_project!
 
@@ -30,5 +35,9 @@ target 'CourierNative' do
       :mac_catalyst_enabled => false,
       # :ccache_enabled => true
     )
+
+    if defined?($RNMapboxMaps) && $RNMapboxMaps.respond_to?(:post_install)
+      $RNMapboxMaps.post_install(installer)
+    end
   end
 end

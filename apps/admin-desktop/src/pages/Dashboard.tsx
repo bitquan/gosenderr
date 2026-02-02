@@ -54,6 +54,8 @@ export default function AdminDashboardPage() {
   const [recentOrders, setRecentOrders] = useState<any[]>([])
   const [recentJobs, setRecentJobs] = useState<any[]>([])
   const [recentDisputes, setRecentDisputes] = useState<any[]>([])
+  
+  const getEffectiveStatus = (job: any) => job.statusDetail || job.status
 
   useEffect(() => {
     const loadStats = async () => {
@@ -508,7 +510,7 @@ export default function AdminDashboardPage() {
                   <Link key={job.id} to={`/jobs?jobId=${job.id}`} className="block p-2 rounded-lg hover:bg-gray-50">
                     <div className="flex justify-between">
                       <span className="text-sm font-semibold">{job.id.slice(0, 6)}</span>
-                      <span className="text-xs text-gray-500">{job.status}</span>
+                      <span className="text-xs text-gray-500">{getEffectiveStatus(job)}</span>
                     </div>
                     <p className="text-xs text-gray-500">{job.createdByEmail || job.createdByUid || 'Job'}</p>
                   </Link>

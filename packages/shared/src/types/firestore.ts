@@ -505,6 +505,7 @@ export interface FeatureFlags {
     rateCards: boolean;
     equipmentBadges: boolean;
     workModes: boolean;
+    nativeV2: boolean;
   };
 
   seller: {

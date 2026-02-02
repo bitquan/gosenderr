@@ -34,6 +34,36 @@ This is a monorepo with Vite + React apps, Electron desktop app, and Firebase ba
 - **Review Suggestions**: Always review Copilot’s suggestions for accuracy and relevance.
 - **Contextual Use**: Copilot works best when given clear tasks within the context of your file.
 
+## Troubleshooting Playbook (Prevent Conflicts & Regressions)
+
+### 1) Determine the Source of Truth (avoid split-brain)
+- **Jobs data exists in multiple models**: legacy `jobs` and v2 `deliveryJobs`. Confirm which collection the UI uses before debugging.
+- **Status fields**: some UIs read `status`, others use `statusDetail`. Always update both when evolving job state.
+
+### 2) Verify Which App Owns the UI
+- **Admin Desktop vs Admin Web**: they have separate code paths. Confirm which app the user is in before making changes.
+- **Routes**: Admin Desktop only has `/jobs` (no `/jobs/:id`). If clicking a card yields a blank page, validate routing first.
+
+### 3) Real-time vs Snapshot
+- If a UI doesn’t update after a write, verify it uses `onSnapshot`. If it uses `getDocs`, switch to a live subscription.
+
+### 4) Data Ownership and Permissions
+- **Admin access** is enforced via `adminProfiles` and claims. If admin views are blank, confirm the user has admin access.
+- **Firestore rules**: make sure status transitions comply with `validJobStatus` and allowed transitions.
+
+### 5) Common Local Dev Conflicts
+- **Electron binary issues**: missing framework symlinks can break the admin desktop app. Reinstall Electron and restore framework symlinks if dyld errors appear.
+- **Firestore persistence**: if you see `initializeFirestore` conflicts or repeated internal assertion errors, prefer `getFirestore()` with no custom local cache.
+
+### 6) Mapbox & Config Dependencies
+- **Mapbox geocoding** errors often indicate missing/invalid public config or token. Verify `getPublicConfig` and Mapbox token sources.
+- **CORS errors** from `getPublicConfigHttp` can block features. Prefer callable fallback or local config during dev.
+
+### 7) Diagnose Before Changing Code
+- Identify the exact screen, collection, and status fields.
+- Confirm real-time subscription or cache behavior.
+- Capture the job ID and verify the document in Firestore before changing UI logic.
+
 ## Task Focus & Proactive Guidance
 - **Stay on task**: If troubleshooting is needed, keep it scoped to the current task and return to the main goal immediately after the fix.
 - **Checkpoint before detours**: Restate the goal and what will be done next before any troubleshooting steps.

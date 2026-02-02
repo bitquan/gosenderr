@@ -12,6 +12,8 @@ interface JobDetailsPanelProps {
 }
 
 export function JobDetailsPanel({ job, visibility, showStatus = true, children }: JobDetailsPanelProps) {
+  const effectiveStatus = (job as any).statusDetail ?? job.status;
+
   return (
     <div
       style={{
@@ -25,7 +27,7 @@ export function JobDetailsPanel({ job, visibility, showStatus = true, children }
       {/* Status */}
       {showStatus && (
         <div style={{ marginBottom: '16px' }}>
-          <JobStatusPills status={job.status} />
+          <JobStatusPills status={effectiveStatus} />
         </div>
       )}
 

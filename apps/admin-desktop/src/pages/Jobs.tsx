@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
-import { collection, getDocs, orderBy, query, where, doc, updateDoc, limit } from 'firebase/firestore'
+import { useNavigate, Link, useSearchParams } from 'react-router-dom'
+import { collection, getDocs, orderBy, query, where, doc, updateDoc, limit, onSnapshot } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { Card, CardHeader, CardTitle, CardContent } from '../components/Card'
 import { StatusBadge } from '../components/Badge'
@@ -12,6 +12,7 @@ import { CreateJobModal } from '../components/CreateJobModal'
 interface Job {
   id: string
   status: string
+  statusDetail?: string
   pickupAddress?: string
   deliveryAddress?: string
   agreedFee?: number
@@ -29,6 +30,7 @@ interface Job {
 
 export default function AdminJobsPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [jobs, setJobs] = useState<Job[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'pending' | 'active' | 'completed' | 'cancelled'>('all')
@@ -39,10 +41,59 @@ export default function AdminJobsPage() {
   const [cancellingJobId, setCancellingJobId] = useState<string | null>(null)
   const [cancelReason, setCancelReason] = useState('')
   const [processing, setProcessing] = useState<string | null>(null)
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null)
+  const [selectedJobLoading, setSelectedJobLoading] = useState(false)
+
+  const getEffectiveStatus = (job: Job) => job.statusDetail || job.status
+  const getDisplayStatus = (job: Job) => {
+    const status = getEffectiveStatus(job)
+    if (['completed', 'cancelled', 'pending', 'open', 'assigned', 'in_progress'].includes(status)) {
+      return status
+    }
+    return 'in_progress'
+  }
 
   useEffect(() => {
-    loadJobs()
+    const q = query(collection(db, 'jobs'), orderBy('createdAt', 'desc'), limit(200))
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const jobsData = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Job[]
+        setJobs(jobsData)
+        setLoading(false)
+      },
+      (error) => {
+        console.error('Error loading jobs:', error)
+        setLoading(false)
+      }
+    )
+
+    return () => unsubscribe()
   }, [])
+
+  useEffect(() => {
+    const jobId = searchParams.get('jobId')
+    if (!jobId) {
+      setSelectedJob(null)
+      return
+    }
+
+    setSelectedJobLoading(true)
+    const jobRef = doc(db, 'jobs', jobId)
+    const unsubscribe = onSnapshot(
+      jobRef,
+      (snapshot) => {
+        setSelectedJob(snapshot.exists() ? ({ id: snapshot.id, ...snapshot.data() } as Job) : null)
+        setSelectedJobLoading(false)
+      },
+      () => setSelectedJobLoading(false)
+    )
+
+    return () => unsubscribe()
+  }, [searchParams])
 
   const loadJobs = async () => {
     try {
@@ -88,7 +139,7 @@ export default function AdminJobsPage() {
     const headers = ['ID', 'Status', 'Customer', 'Courier', 'Pickup', 'Delivery', 'Fee', 'Created']
     const rows = filteredJobs.map(job => [
       job.id,
-      job.status,
+      getEffectiveStatus(job),
       job.createdByEmail || job.createdByUid || 'N/A',
       job.courierEmail || job.courierUid || 'Unassigned',
       job.pickupAddress || 'N/A',
@@ -107,11 +158,12 @@ export default function AdminJobsPage() {
 
   const filteredJobs = jobs
     .filter(job => {
+      const effectiveStatus = getDisplayStatus(job)
       if (filter === 'all') return true
-      if (filter === 'pending') return job.status === 'pending' && !job.courierUid
-      if (filter === 'active') return ['assigned', 'in_progress'].includes(job.status)
-      if (filter === 'completed') return job.status === 'completed'
-      if (filter === 'cancelled') return job.status === 'cancelled'
+      if (filter === 'pending') return effectiveStatus === 'pending' && !job.courierUid
+      if (filter === 'active') return ['assigned', 'in_progress'].includes(effectiveStatus)
+      if (filter === 'completed') return effectiveStatus === 'completed'
+      if (filter === 'cancelled') return effectiveStatus === 'cancelled'
       return true
     })
     .filter(job => {
@@ -154,6 +206,28 @@ export default function AdminJobsPage() {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 -mt-6 space-y-4">
+        {(selectedJobLoading || selectedJob) && (
+          <Card variant="elevated">
+            <CardHeader>
+              <CardTitle>Selected Job Status</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {selectedJobLoading && <div className="text-sm text-gray-500">Loading job…</div>}
+              {!selectedJobLoading && !selectedJob && (
+                <div className="text-sm text-gray-500">Job not found or access denied.</div>
+              )}
+              {!selectedJobLoading && selectedJob && (
+                <div className="space-y-2 text-sm">
+                  <div><strong>ID:</strong> {selectedJob.id}</div>
+                  <div><strong>Status:</strong> {getEffectiveStatus(selectedJob)}</div>
+                  <div><strong>Display:</strong> {getDisplayStatus(selectedJob)}</div>
+                  <div><strong>Courier:</strong> {selectedJob.courierUid || 'Unassigned'}</div>
+                  <div><strong>Updated:</strong> {selectedJob.updatedAt?.toDate ? formatDate(selectedJob.updatedAt.toDate()) : '—'}</div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
         {/* Search and Export and Create */}
         <div className="bg-white rounded-2xl shadow-lg p-4 flex gap-3 flex-wrap">
           <input
@@ -235,7 +309,7 @@ export default function AdminJobsPage() {
                 key={job.id}
                 variant="elevated"
                 className="hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer"
-                onClick={() => navigate(`/jobs/${job.id}`)}
+                onClick={() => navigate(`/jobs?jobId=${job.id}`)}
               >
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">
@@ -244,11 +318,11 @@ export default function AdminJobsPage() {
                         <span className="text-sm font-mono text-gray-500">#{job.id.slice(0, 8)}</span>
                         <StatusBadge
                           status={
-                            job.status === 'completed'
+                            getDisplayStatus(job) === 'completed'
                               ? 'completed'
-                              : ['in_progress', 'assigned'].includes(job.status)
+                              : ['in_progress', 'assigned'].includes(getDisplayStatus(job))
                               ? 'in_progress'
-                              : job.status === 'cancelled'
+                              : getDisplayStatus(job) === 'cancelled'
                               ? 'cancelled'
                               : 'pending'
                           }
@@ -288,7 +362,7 @@ export default function AdminJobsPage() {
                   </div>
 
                   {/* Admin Actions */}
-                  {!['completed', 'cancelled'].includes(job.status) && (
+                  {!['completed', 'cancelled'].includes(getDisplayStatus(job)) && (
                     <div className="mt-3 pt-3 border-t border-gray-100 flex gap-2" onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={() => {

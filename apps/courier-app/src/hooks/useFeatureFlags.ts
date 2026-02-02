@@ -34,6 +34,7 @@ export function useFeatureFlags() {
               rateCards: true,
               equipmentBadges: true,
               workModes: true,
+              nativeV2: false,
             },
             seller: {
               stripeConnect: true,
