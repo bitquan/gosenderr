@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { collection, getDocs, doc, updateDoc, Timestamp, addDoc } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { Card, CardHeader, CardTitle, CardContent } from '../components/Card'
-import { seedFeatureFlags } from '../lib/seedData'
+import { seedFeatureFlags, seedStateTaxRates } from '../lib/seedData'
 
 interface Setting {
   id: string
@@ -102,6 +102,19 @@ export default function SettingsPage() {
       alert('✅ Feature flags seeded successfully!');
     } catch (error) {
       alert('❌ Failed to seed feature flags: ' + (error as Error).message);
+    }
+  }
+
+  const handleSeedStateTaxRates = async () => {
+    if (!confirm('This will create/overwrite the state tax rates. Continue?')) {
+      return
+    }
+
+    try {
+      await seedStateTaxRates()
+      alert('✅ State tax rates seeded successfully!')
+    } catch (error) {
+      alert('❌ Failed to seed state tax rates: ' + (error as Error).message)
     }
   }
 
@@ -255,9 +268,15 @@ export default function SettingsPage() {
               >
                 🎚️ Seed Feature Flags
               </button>
+              <button
+                onClick={handleSeedStateTaxRates}
+                className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium"
+              >
+                🧾 Seed State Tax Rates
+              </button>
             </div>
             <p className="text-xs text-gray-500 mt-2">
-              Initialize or reset feature flags configuration for all apps
+              Initialize or reset feature flags and state tax rates for courier estimates
             </p>
           </div>
         </CardContent>

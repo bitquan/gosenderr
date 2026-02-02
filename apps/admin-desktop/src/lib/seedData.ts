@@ -54,6 +54,61 @@ const FEATURE_FLAGS = [
   { name: 'Dark Mode', description: 'Enable dark mode UI', enabled: false, category: 'system' }
 ];
 
+// Top marginal single-filer state income tax rates (as of 2026-01-17; source: Wikipedia)
+const STATE_TAX_RATES: Record<string, number> = {
+  AK: 0.0,
+  AL: 0.05,
+  AR: 0.039,
+  AZ: 0.025,
+  CA: 0.133,
+  CO: 0.044,
+  CT: 0.0699,
+  DC: 0.1075,
+  DE: 0.066,
+  FL: 0.0,
+  GA: 0.0539,
+  HI: 0.11,
+  IA: 0.038,
+  ID: 0.05695,
+  IL: 0.0495,
+  IN: 0.03,
+  KS: 0.0558,
+  KY: 0.04,
+  LA: 0.03,
+  MA: 0.09,
+  MD: 0.0575,
+  ME: 0.0715,
+  MI: 0.0425,
+  MN: 0.0985,
+  MO: 0.047,
+  MS: 0.044,
+  MT: 0.059,
+  NC: 0.0425,
+  ND: 0.025,
+  NE: 0.052,
+  NH: 0.0,
+  NJ: 0.1075,
+  NM: 0.059,
+  NV: 0.0,
+  NY: 0.109,
+  OH: 0.035,
+  OK: 0.0475,
+  OR: 0.099,
+  PA: 0.0307,
+  RI: 0.0599,
+  SC: 0.062,
+  SD: 0.0,
+  TN: 0.0,
+  TX: 0.0,
+  UT: 0.0455,
+  VA: 0.0575,
+  VT: 0.0875,
+  WA: 0.0,
+  WI: 0.0765,
+  WV: 0.0482,
+  WY: 0.0,
+};
+
 // Nested config (for courier/customer apps compatibility)
 export const FEATURE_FLAGS_CONFIG = {
   marketplace: {
@@ -148,6 +203,29 @@ export async function seedFeatureFlags() {
     return true;
   } catch (error) {
     console.error('❌ Error seeding feature flags:', error);
+    throw error;
+  }
+}
+
+export async function seedStateTaxRates() {
+  try {
+    console.log('🌱 Seeding state tax rates...');
+
+    await setDoc(
+      doc(db, 'platformSettings', 'stateTaxRates'),
+      {
+        rates: STATE_TAX_RATES,
+        source: 'Wikipedia (State income tax)',
+        sourceUpdatedAt: '2026-01-17',
+        updatedAt: Timestamp.now(),
+      },
+      { merge: true }
+    );
+
+    console.log('✅ Seeded state tax rates');
+    return true;
+  } catch (error) {
+    console.error('❌ Error seeding state tax rates:', error);
     throw error;
   }
 }

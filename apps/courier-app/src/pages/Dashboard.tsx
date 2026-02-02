@@ -453,6 +453,184 @@ export default function CourierDashboardPage() {
               </Card>
             )}
 
+            {/* KPI Row */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              <Card variant="elevated">
+                <CardContent className="p-4">
+                  <p className="text-xs text-gray-500">Today’s Earnings</p>
+                  <p className="text-2xl font-bold text-green-600">$0.00</p>
+                  <p className="text-xs text-gray-400">+0% vs yesterday</p>
+                </CardContent>
+              </Card>
+              <Card variant="elevated">
+                <CardContent className="p-4">
+                  <p className="text-xs text-gray-500">Week-to-Date</p>
+                  <p className="text-2xl font-bold text-purple-600">$0.00</p>
+                  <p className="text-xs text-gray-400">0 deliveries</p>
+                </CardContent>
+              </Card>
+              <Card variant="elevated">
+                <CardContent className="p-4">
+                  <p className="text-xs text-gray-500">Acceptance Rate</p>
+                  <p className="text-2xl font-bold text-blue-600">0%</p>
+                  <p className="text-xs text-gray-400">Last 30 days</p>
+                </CardContent>
+              </Card>
+              <Card variant="elevated">
+                <CardContent className="p-4">
+                  <p className="text-xs text-gray-500">On-Time</p>
+                  <p className="text-2xl font-bold text-orange-600">0%</p>
+                  <p className="text-xs text-gray-400">Last 30 days</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Live Status + Quick Actions */}
+            <div className="grid lg:grid-cols-3 gap-4">
+              <Card variant="elevated" className="lg:col-span-2">
+                <CardHeader>
+                  <CardTitle>🚚 Current Job Status</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between gap-4 flex-wrap">
+                    <div>
+                      <p className="text-sm text-gray-600">No active job</p>
+                      <p className="text-xl font-semibold text-gray-900">You’re ready for the next delivery</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button className="px-4 py-2 rounded-lg bg-purple-600 text-white text-sm font-semibold">Open Navigation</button>
+                      <button className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-semibold">Contact Support</button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card variant="elevated">
+                <CardHeader>
+                  <CardTitle>🕒 Online Time</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-3xl font-bold text-gray-900">0h 00m</p>
+                  <p className="text-xs text-gray-500">Current shift</p>
+                  <div className="mt-3 flex gap-2">
+                    <button className="flex-1 px-3 py-2 rounded-lg bg-gray-100 text-sm font-semibold">Pause</button>
+                    <button className="flex-1 px-3 py-2 rounded-lg bg-gray-100 text-sm font-semibold">End</button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Earnings & Payouts */}
+            <div className="grid lg:grid-cols-3 gap-4">
+              <Card variant="elevated" className="lg:col-span-2">
+                <CardHeader>
+                  <CardTitle>💸 Earnings Trend</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-36 rounded-xl bg-gradient-to-br from-purple-50 to-white border border-purple-100 flex items-center justify-center text-sm text-gray-500">
+                    Earnings chart (7/30 days)
+                  </div>
+                </CardContent>
+              </Card>
+              <Card variant="elevated">
+                <CardHeader>
+                  <CardTitle>🏦 Payouts</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-gray-600">Next payout</p>
+                  <p className="text-2xl font-bold text-green-600">$0.00</p>
+                  <p className="text-xs text-gray-500">Scheduled: —</p>
+                  <div className="mt-3 text-xs text-gray-500">Pending tips: $0.00</div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Performance + Quality */}
+            <div className="grid md:grid-cols-2 gap-4">
+              <Card variant="elevated">
+                <CardHeader>
+                  <CardTitle>⭐ Ratings</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between">
+                    <p className="text-3xl font-bold">4.9</p>
+                    <p className="text-sm text-gray-500">Last 30 days</p>
+                  </div>
+                  <div className="mt-3 text-sm text-gray-600">“Great service!” — Recent feedback</div>
+                </CardContent>
+              </Card>
+              <Card variant="elevated">
+                <CardHeader>
+                  <CardTitle>📈 Reliability</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="p-3 rounded-lg bg-green-50">
+                      <p className="text-xs text-gray-500">Completion</p>
+                      <p className="text-xl font-bold text-green-600">100%</p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-orange-50">
+                      <p className="text-xs text-gray-500">Cancellations</p>
+                      <p className="text-xl font-bold text-orange-600">0%</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Opportunities */}
+            <Card variant="elevated">
+              <CardHeader>
+                <CardTitle>🔥 Opportunities</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid md:grid-cols-3 gap-3">
+                  <div className="p-4 rounded-xl bg-red-50 border border-red-100">
+                    <p className="text-sm font-semibold">Hot Zone</p>
+                    <p className="text-xs text-gray-500">Downtown • +$2.00</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-blue-50 border border-blue-100">
+                    <p className="text-sm font-semibold">Peak Hours</p>
+                    <p className="text-xs text-gray-500">5:00–8:00 PM</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-purple-50 border border-purple-100">
+                    <p className="text-sm font-semibold">Suggested Shift</p>
+                    <p className="text-xs text-gray-500">Sat 11:00 AM–2:00 PM</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Schedule + Compliance + Inbox */}
+            <div className="grid lg:grid-cols-3 gap-4">
+              <Card variant="elevated">
+                <CardHeader>
+                  <CardTitle>🗓️ Availability</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-gray-600">No schedule set</p>
+                  <button className="mt-3 px-4 py-2 rounded-lg bg-gray-100 text-sm font-semibold">Set Availability</button>
+                </CardContent>
+              </Card>
+              <Card variant="elevated">
+                <CardHeader>
+                  <CardTitle>🧾 Compliance</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-gray-600">All documents up to date</p>
+                  <p className="text-xs text-gray-500 mt-1">No actions required</p>
+                </CardContent>
+              </Card>
+              <Card variant="elevated">
+                <CardHeader>
+                  <CardTitle>💬 Inbox</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-gray-600">No new messages</p>
+                  <button className="mt-3 px-4 py-2 rounded-lg bg-gray-100 text-sm font-semibold">Open Messages</button>
+                </CardContent>
+              </Card>
+            </div>
+
             {/* My Active Jobs */}
             {myActiveJobs.length > 0 && (
           <Card variant="elevated" className="animate-slide-up">

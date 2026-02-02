@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { collection, query, where, orderBy, getDocs } from 'firebase/firestore'
+import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { useAuth } from '../hooks/useAuth'
 import { useAdmin } from '../hooks/useAdmin'
@@ -18,6 +18,10 @@ interface Job {
   acceptedAt?: any
   completedAt?: any
   description?: string
+  pricing?: {
+    courierRate?: number
+    totalAmount?: number
+  }
 }
 
 export default function CourierJobsPage() {
@@ -38,45 +42,96 @@ export default function CourierJobsPage() {
   useEffect(() => {
     if (!user) return
 
-    const loadJobs = async () => {
-      setLoading(true)
-      try {
-        const q = query(
-          collection(db, 'jobs'),
-          where('courierUid', '==', user.uid),
-          orderBy('createdAt', 'desc')
-        )
-        
-        const snapshot = await getDocs(q)
-        const jobsData = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as Job[]
-        
-        setJobs(jobsData)
-      } catch (error) {
-        console.error('Error loading jobs:', error)
-      } finally {
-        setLoading(false)
-      }
+    setLoading(true)
+
+    const jobsRef = collection(db, 'jobs')
+    const primaryQuery = query(jobsRef, where('courierUid', '==', user.uid))
+    const legacyQuery = query(jobsRef, where('courierId', '==', user.uid))
+
+    const mergeJobs = (lists: Job[][]) => {
+      const map = new Map<string, Job>()
+      lists.flat().forEach((job) => {
+        map.set(job.id, job)
+      })
+      const merged = Array.from(map.values())
+      merged.sort((a, b) => {
+        const aDate = a.createdAt?.toDate?.() ?? a.completedAt?.toDate?.() ?? new Date(0)
+        const bDate = b.createdAt?.toDate?.() ?? b.completedAt?.toDate?.() ?? new Date(0)
+        return bDate.getTime() - aDate.getTime()
+      })
+      return merged
     }
 
-    loadJobs()
+    let primaryJobs: Job[] = []
+    let legacyJobs: Job[] = []
+
+    const updateState = () => {
+      setJobs(mergeJobs([primaryJobs, legacyJobs]))
+      setLoading(false)
+    }
+
+    const unsubPrimary = onSnapshot(
+      primaryQuery,
+      (snapshot) => {
+        primaryJobs = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Job[]
+        updateState()
+      },
+      (error) => {
+        console.error('Error loading jobs:', error)
+        setLoading(false)
+      }
+    )
+
+    const unsubLegacy = onSnapshot(
+      legacyQuery,
+      (snapshot) => {
+        legacyJobs = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Job[]
+        updateState()
+      },
+      (error) => {
+        console.error('Error loading legacy jobs:', error)
+        setLoading(false)
+      }
+    )
+
+    return () => {
+      unsubPrimary()
+      unsubLegacy()
+    }
   }, [user])
+
+  const activeStatuses = new Set([
+    'assigned',
+    'accepted',
+    'in_progress',
+    'enroute_pickup',
+    'arrived_pickup',
+    'picked_up',
+    'enroute_dropoff',
+    'arrived_dropoff',
+  ])
+
+  const completedStatuses = new Set(['completed', 'delivered'])
 
   const filteredJobs = jobs.filter(job => {
     if (filter === 'all') return true
-    if (filter === 'active') return ['assigned', 'in_progress'].includes(job.status)
-    if (filter === 'completed') return job.status === 'completed'
+    if (filter === 'active') return activeStatuses.has(job.status)
+    if (filter === 'completed') return completedStatuses.has(job.status)
     return true
   })
 
   const totalEarnings = jobs
-    .filter(job => job.status === 'completed')
-    .reduce((sum, job) => sum + (job.agreedFee || 0), 0)
+    .filter(job => completedStatuses.has(job.status))
+    .reduce((sum, job) => sum + (job.agreedFee || job.pricing?.courierRate || job.pricing?.totalAmount || 0), 0)
 
-  const completedCount = jobs.filter(job => job.status === 'completed').length
-  const activeCount = jobs.filter(job => ['assigned', 'in_progress'].includes(job.status)).length
+  const completedCount = jobs.filter(job => completedStatuses.has(job.status)).length
+  const activeCount = jobs.filter(job => activeStatuses.has(job.status)).length
 
   return (
     <div className="min-h-screen bg-[#F8F9FF]">
