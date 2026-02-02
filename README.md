@@ -12,6 +12,7 @@ A modern on-demand delivery platform with web apps (Vite + React + TypeScript) t
 ├── apps/
 │   ├── marketplace-app/  # Vite Marketplace Web App (Port 5173)
 │   ├── courier-app/      # Vite Courier Web App (Port 5174)
+│   ├── courier-ios-native/ # Native Courier iOS App (React Native)
 │   ├── admin-app/        # Vite Admin Dashboard (Port 3000)
 │   ├── admin-desktop/    # Electron Admin Desktop App (Port 5176)
 │   └── landing/          # Landing / Marketing Page
