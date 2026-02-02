@@ -28,6 +28,8 @@ A modern on-demand delivery platform with web apps (Vite + React + TypeScript) t
 
 See the rollout checklist in [docs/project-plan/09-DAILY-CHECKLIST.md](docs/project-plan/09-DAILY-CHECKLIST.md).
 
+Courier v2 native plan (Plan D): [docs/project-plan/12-COURIER-V2-NATIVE-BLUEPRINT.md](docs/project-plan/12-COURIER-V2-NATIVE-BLUEPRINT.md).
+
 ## 📱 Active Applications
 
 | App | Port | Hosting URL | Purpose |

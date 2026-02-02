@@ -137,6 +137,11 @@ Start here to understand the project vision and plan:
 - Payments: Stripe with Stripe Connect
 - Version numbers, installation commands, best practices
 
+**[12-COURIER-V2-NATIVE-BLUEPRINT.md](12-COURIER-V2-NATIVE-BLUEPRINT.md)**
+- Full native courier v2 plan (Plan D)
+- Dual-track rollout with feature flags
+- Step-by-step phases and exit criteria
+
 ---
 
 ## 🎯 How to Use This Documentation

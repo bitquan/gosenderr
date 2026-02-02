@@ -12,6 +12,7 @@
   - [07 - Cloud Functions](project-plan/07-CLOUD-FUNCTIONS.md)
   - [08 - Deployment Guide](project-plan/08-DEPLOYMENT-GUIDE.md)
   - [09 - Daily Checklist](project-plan/09-DAILY-CHECKLIST.md)
+  - [12 - Courier V2 Native Blueprint](project-plan/12-COURIER-V2-NATIVE-BLUEPRINT.md)
 
 - Core Docs
   - [Architecture](ARCHITECTURE.md)
