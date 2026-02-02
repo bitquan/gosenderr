@@ -2,7 +2,10 @@
   {
     "origin": [
       "https://www.gosenderr.com",
-      "https://gosenderr-6773f.web.app"
+      "https://gosenderr-6773f.web.app",
+      "https://gosenderr-marketplace.web.app",
+      "https://gosenderr-courier.web.app",
+      "https://gosenderr-admin.web.app"
     ],
     "method": ["GET"],
     "maxAgeSeconds": 3600

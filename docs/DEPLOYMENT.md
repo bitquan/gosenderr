@@ -112,7 +112,7 @@ pnpm list
 ### 2. Build Web Applications
 
 ```bash
-# Build customer app (main marketplace)
+# Build marketplace app (main customer experience)
 pnpm --filter @gosenderr/marketplace-app build
 
 # Build admin app
@@ -192,11 +192,20 @@ curl https://us-central1-gosenderr-6773f.cloudfunctions.net/getSystemStats
 ### Step 4: Deploy Web Apps to Firebase Hosting
 
 ```bash
-# Deploy customer app
-firebase deploy --only hosting:customer
+# Deploy marketplace app (default site)
+firebase deploy --only hosting:gosenderr-6773f
+
+# Deploy marketplace app (alt site)
+firebase deploy --only hosting:gosenderr-marketplace
+
+# Deploy courier app
+firebase deploy --only hosting:gosenderr-courier
 
 # Deploy admin app
-firebase deploy --only hosting:admin
+firebase deploy --only hosting:gosenderr-admin
+
+# Deploy landing app
+firebase deploy --only hosting:gosenderr-landing
 
 # Deploy all hosting
 firebase deploy --only hosting
@@ -464,7 +473,7 @@ See [.github/workflows/ci-and-deploy.yml](../.github/workflows/ci-and-deploy.yml
 pnpm deploy:all
 
 # Deploy specific app
-pnpm deploy:customer
+pnpm deploy:marketplace
 
 # Deploy functions only
 pnpm deploy:functions

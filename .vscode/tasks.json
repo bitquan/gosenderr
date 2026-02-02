@@ -4,7 +4,7 @@
     // ==================== MARKETPLACE DEV (NEW) ====================
     {
       "label": "🛍️ Marketplace: Dev Mode",
-      "dependsOn": ["🔥 Firebase Emulators", "📦 Customer App (Port 5173)"],
+      "dependsOn": ["🔥 Firebase Emulators", "📦 Marketplace App (Port 5173)"],
       "problemMatcher": [],
       "group": {
         "kind": "build",
@@ -76,7 +76,7 @@
     },
 
     {
-      "label": "📦 Customer App (Port 5173)",
+      "label": "📦 Marketplace App (Port 5173)",
       "type": "shell",
       "command": "pnpm --filter @gosenderr/marketplace-app dev",
       "isBackground": true,
@@ -103,7 +103,7 @@
       }
     },
     {
-      "label": "📦 Customer App (Port 5180)",
+      "label": "📦 Marketplace App (Port 5180)",
       "type": "shell",
       "command": "PORT=5180 VITE_PORT=5180 pnpm --filter @gosenderr/marketplace-app dev -- --host 127.0.0.1",
       "isBackground": true,
@@ -227,7 +227,7 @@
       "label": "🚀 All Vite Apps",
       "dependsOn": [
         "🔧 Admin App (Port 3000)",
-        "📦 Customer App (Port 5173)",
+        "📦 Marketplace App (Port 5173)",
         "⚡ Courier App (Port 5174)"
       ],
       "problemMatcher": []
@@ -308,17 +308,7 @@
       }
     },
     {
-      "label": "Build: Customer App",
-      "type": "shell",
-      "command": "pnpm --filter @gosenderr/marketplace-app build",
-      "problemMatcher": ["$tsc"],
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared"
-      }
-    },
-    {
-      "label": "Build: Customer App",
+      "label": "Build: Marketplace App",
       "type": "shell",
       "command": "pnpm --filter @gosenderr/marketplace-app build",
       "problemMatcher": ["$tsc"],
@@ -340,9 +330,9 @@
 
     // ==================== DEPLOYMENT ====================
     {
-      "label": "Deploy: Firebase Hosting",
+      "label": "Deploy: Marketplace Hosting",
       "type": "shell",
-      "command": "firebase deploy --only hosting:gosenderr-6773f --project gosenderr-6773f",
+      "command": "firebase deploy --only hosting:gosenderr-marketplace --project gosenderr-6773f",
       "problemMatcher": [],
       "presentation": {
         "reveal": "always",

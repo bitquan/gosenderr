@@ -27,6 +27,7 @@ import EquipmentPage from './pages/equipment/page'
 import SetupPage from './pages/setup/page'
 import EarningsPage from './pages/earnings/page'
 import ProfilePage from './pages/Profile'
+import { StripeModeBanner } from './components/StripeModeBanner'
 
 function ProtectedRoute() {
   const { user, loading } = useAuth()
@@ -79,6 +80,7 @@ function App() {
     <ErrorBoundary>
       <AuthProvider>
         <NavigationProvider>
+        <StripeModeBanner />
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />

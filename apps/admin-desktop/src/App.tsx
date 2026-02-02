@@ -10,6 +10,7 @@ import GlobalSearchModal from './components/GlobalSearchModal'
 import PageHeader from './components/PageHeader'
 import { ToastProvider } from './components/ToastProvider'
 import { db } from './lib/firebase'
+import { StripeModeBanner } from './components/StripeModeBanner'
 
 // Pages (lazy-loaded)
 const DashboardPage = lazy(() => import('./pages/Dashboard'))
@@ -137,6 +138,7 @@ function App() {
     <ErrorBoundary>
       <ToastProvider>
         <AuthProvider>
+          <StripeModeBanner />
           <GlobalSearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
           <Suspense
             fallback={

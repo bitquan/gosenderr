@@ -32,6 +32,7 @@ import RateCardsComparison from './pages/RateCardsComparison'
 import AdminFlowLogsPage from './pages/AdminFlowLogs'
 import SecretsPage from './pages/Secrets'
 import { useFeatureFlags } from './hooks/useFeatureFlags'
+import { StripeModeBanner } from './components/StripeModeBanner'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
@@ -84,6 +85,7 @@ function App() {
     <ErrorBoundary>
       <AuthProvider>
         <AdminWebAccessGate>
+          <StripeModeBanner />
           <Routes>
           <Route path="/login" element={<LoginPage />} />
           
