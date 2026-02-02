@@ -5,10 +5,9 @@ const config: CapacitorConfig = {
   appName: 'GoSenderr',
   webDir: 'dist',
   server: {
-    // For development: point to local Vite server
-    // Comment out for production builds
-    url: 'http://localhost:5173',
-    cleartext: true
+    // Live hosted marketplace app
+    url: 'https://gosenderr-marketplace.web.app',
+    cleartext: false
   },
   plugins: {
     PushNotifications: {
