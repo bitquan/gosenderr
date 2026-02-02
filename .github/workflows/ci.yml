@@ -283,7 +283,7 @@ jobs:
         run: pnpm --filter @gosenderr/admin-desktop build
 
       - name: Package admin desktop (dir)
-        run: pnpm --filter @gosenderr/admin-desktop pack
+        run: pnpm --filter @gosenderr/admin-desktop run pack
 
       - name: Verify packaging output
         run: node -e "const fs=require('fs');const path=require('path');const dir=path.join(process.cwd(),'apps','admin-desktop','dist-electron');if(!fs.existsSync(dir)) {console.error('dist-electron missing');process.exit(1);}const files=fs.readdirSync(dir);if(!files.length){console.error('dist-electron empty');process.exit(1);}console.log('dist-electron contents:', files.join(', '));"
