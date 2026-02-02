@@ -14,5 +14,14 @@ module.exports = {
     '@typescript-eslint/no-unused-vars': ['warn', { 'argsIgnorePattern': '^_' }],
     '@typescript-eslint/ban-ts-comment': 'warn'
   },
-  ignorePatterns: ['dist', 'build', 'node_modules'],
+  ignorePatterns: [
+    'dist',
+    'build',
+    'node_modules',
+    'android',
+    'ios',
+    '**/android/**',
+    '**/ios/**',
+    '**/public/**'
+  ],
 };
