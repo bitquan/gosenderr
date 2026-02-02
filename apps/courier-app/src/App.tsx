@@ -13,6 +13,7 @@ import CourierLayout from './layouts/CourierLayout'
 import DashboardPage from './pages/dashboard/page'
 import LoginPage from './pages/Login'
 import SignupPage from './pages/Signup'
+import JobsPage from './pages/Jobs'
 import JobDetailPage from './pages/jobs/[jobId]/page'
 import ActiveNavigationPage from './pages/navigation/active'
 import RoutesPage from './pages/routes/page'
@@ -89,7 +90,7 @@ function App() {
               <Route path="/routes" element={<RoutesPage />} />
               <Route path="/active-route" element={<ActiveRoutePage />} />
               <Route path="/jobs/:jobId" element={<JobDetailPage />} />
-              <Route path="/jobs" element={<DashboardPage />} />
+              <Route path="/jobs" element={<JobsPage />} />
               <Route path="/navigation/active" element={<ActiveNavigationPage />} />
               <Route path="/earnings" element={<EarningsPage />} />
               <Route path="/rate-cards" element={<RateCardsPage />} />

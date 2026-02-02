@@ -9,6 +9,60 @@ import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db, storage } from "@/lib/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
+const STATE_OPTIONS = [
+  { code: "AL", name: "Alabama" },
+  { code: "AK", name: "Alaska" },
+  { code: "AZ", name: "Arizona" },
+  { code: "AR", name: "Arkansas" },
+  { code: "CA", name: "California" },
+  { code: "CO", name: "Colorado" },
+  { code: "CT", name: "Connecticut" },
+  { code: "DE", name: "Delaware" },
+  { code: "FL", name: "Florida" },
+  { code: "GA", name: "Georgia" },
+  { code: "HI", name: "Hawaii" },
+  { code: "ID", name: "Idaho" },
+  { code: "IL", name: "Illinois" },
+  { code: "IN", name: "Indiana" },
+  { code: "IA", name: "Iowa" },
+  { code: "KS", name: "Kansas" },
+  { code: "KY", name: "Kentucky" },
+  { code: "LA", name: "Louisiana" },
+  { code: "ME", name: "Maine" },
+  { code: "MD", name: "Maryland" },
+  { code: "MA", name: "Massachusetts" },
+  { code: "MI", name: "Michigan" },
+  { code: "MN", name: "Minnesota" },
+  { code: "MS", name: "Mississippi" },
+  { code: "MO", name: "Missouri" },
+  { code: "MT", name: "Montana" },
+  { code: "NE", name: "Nebraska" },
+  { code: "NV", name: "Nevada" },
+  { code: "NH", name: "New Hampshire" },
+  { code: "NJ", name: "New Jersey" },
+  { code: "NM", name: "New Mexico" },
+  { code: "NY", name: "New York" },
+  { code: "NC", name: "North Carolina" },
+  { code: "ND", name: "North Dakota" },
+  { code: "OH", name: "Ohio" },
+  { code: "OK", name: "Oklahoma" },
+  { code: "OR", name: "Oregon" },
+  { code: "PA", name: "Pennsylvania" },
+  { code: "RI", name: "Rhode Island" },
+  { code: "SC", name: "South Carolina" },
+  { code: "SD", name: "South Dakota" },
+  { code: "TN", name: "Tennessee" },
+  { code: "TX", name: "Texas" },
+  { code: "UT", name: "Utah" },
+  { code: "VT", name: "Vermont" },
+  { code: "VA", name: "Virginia" },
+  { code: "WA", name: "Washington" },
+  { code: "WV", name: "West Virginia" },
+  { code: "WI", name: "Wisconsin" },
+  { code: "WY", name: "Wyoming" },
+  { code: "DC", name: "District of Columbia" },
+];
+
 export default function CourierSettingsPage() {
   const navigate = useNavigate();
   const { user, loading } = useAuthUser();
@@ -17,6 +71,12 @@ export default function CourierSettingsPage() {
   const [signingOut, setSigningOut] = useState(false);
   const [availability, setAvailability] = useState(false);
   const [serviceRadius, setServiceRadius] = useState(10);
+  const [taxState, setTaxState] = useState('');
+  const [notificationPrefs, setNotificationPrefs] = useState({
+    jobOffers: true,
+    payoutUpdates: true,
+    reminders: true,
+  });
   const [savingPreferences, setSavingPreferences] = useState(false);
   const [uploadingDocs, setUploadingDocs] = useState(false);
   const [documents, setDocuments] = useState<{
@@ -40,6 +100,12 @@ export default function CourierSettingsPage() {
             if (profile) {
               setAvailability(Boolean(profile.isOnline));
               setServiceRadius(Number(profile.serviceRadius || 10));
+              setTaxState(profile.taxState || userDoc.data().taxState || '');
+              setNotificationPrefs({
+                jobOffers: profile.notificationPrefs?.jobOffers ?? true,
+                payoutUpdates: profile.notificationPrefs?.payoutUpdates ?? true,
+                reminders: profile.notificationPrefs?.reminders ?? true,
+              });
             }
           }
         } finally {
@@ -75,6 +141,8 @@ export default function CourierSettingsPage() {
       await updateDoc(doc(db, 'users', user.uid), {
         'courierProfile.isOnline': availability,
         'courierProfile.serviceRadius': serviceRadius,
+        'courierProfile.taxState': taxState,
+        'courierProfile.notificationPrefs': notificationPrefs,
         updatedAt: serverTimestamp(),
       });
     } catch (error) {
@@ -334,6 +402,123 @@ export default function CourierSettingsPage() {
                 </div>
                 <span className="text-2xl group-hover:translate-x-1 transition-transform">→</span>
               </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* Tax & Payout Settings */}
+        <div className="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden">
+          <div className="p-6 sm:p-8 border-b border-gray-200">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              🧾 Taxes & Payouts
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="bg-gray-50 rounded-xl p-4">
+                <p className="text-xs text-gray-600 font-medium mb-1">Tax State</p>
+                <select
+                  value={taxState}
+                  onChange={(e) => setTaxState(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                >
+                  <option value="">Select state</option>
+                  {STATE_OPTIONS.map((state) => (
+                    <option key={state.code} value={state.code}>
+                      {state.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-2">
+                  Used for tax estimates in Earnings.
+                </p>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-4">
+                <p className="text-xs text-gray-600 font-medium mb-1">Payouts</p>
+                <Link
+                  to="/earnings"
+                  className="inline-flex items-center gap-2 mt-1 text-sm font-semibold text-indigo-600"
+                >
+                  View earnings & payouts →
+                </Link>
+                <p className="text-xs text-gray-500 mt-2">
+                  Update your Stripe Connect details in Earnings.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Notification Preferences */}
+        <div className="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden">
+          <div className="p-6 sm:p-8 border-b border-gray-200">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              🔔 Notifications
+            </h2>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3">
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">Job Offers</p>
+                  <p className="text-xs text-gray-500">Get notified when new jobs are available.</p>
+                </div>
+                <button
+                  onClick={() =>
+                    setNotificationPrefs((prev) => ({
+                      ...prev,
+                      jobOffers: !prev.jobOffers,
+                    }))
+                  }
+                  className={`px-4 py-2 rounded-full text-xs font-semibold border transition-colors ${
+                    notificationPrefs.jobOffers
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      : "bg-white text-gray-600 border-gray-200"
+                  }`}
+                >
+                  {notificationPrefs.jobOffers ? "On" : "Off"}
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3">
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">Payout Updates</p>
+                  <p className="text-xs text-gray-500">Get notified about payout status.</p>
+                </div>
+                <button
+                  onClick={() =>
+                    setNotificationPrefs((prev) => ({
+                      ...prev,
+                      payoutUpdates: !prev.payoutUpdates,
+                    }))
+                  }
+                  className={`px-4 py-2 rounded-full text-xs font-semibold border transition-colors ${
+                    notificationPrefs.payoutUpdates
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      : "bg-white text-gray-600 border-gray-200"
+                  }`}
+                >
+                  {notificationPrefs.payoutUpdates ? "On" : "Off"}
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3">
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">Reminders</p>
+                  <p className="text-xs text-gray-500">Get reminders for documents and tasks.</p>
+                </div>
+                <button
+                  onClick={() =>
+                    setNotificationPrefs((prev) => ({
+                      ...prev,
+                      reminders: !prev.reminders,
+                    }))
+                  }
+                  className={`px-4 py-2 rounded-full text-xs font-semibold border transition-colors ${
+                    notificationPrefs.reminders
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      : "bg-white text-gray-600 border-gray-200"
+                  }`}
+                >
+                  {notificationPrefs.reminders ? "On" : "Off"}
+                </button>
+              </div>
             </div>
           </div>
         </div>

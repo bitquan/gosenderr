@@ -145,6 +145,18 @@ service firebase.storage {
       );
     }
 
+    // Courier expense receipts: courier-expenses/{courierId}/{year}/{receiptFile}
+    match /courier-expenses/{courierId}/{year}/{receiptFile} {
+      allow write: if isSignedIn()
+        && uid() == courierId
+        && isValidCourierDocument();
+
+      allow read: if isSignedIn() && (
+        uid() == courierId
+        || get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      );
+    }
+
     // Default deny
     match /{allPaths=**} {
       allow read, write: if false;

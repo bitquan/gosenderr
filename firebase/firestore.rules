@@ -291,6 +291,19 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // ========== COURIER EXPENSE RECEIPTS ==========
+    match /courierExpenseReceipts/{receiptId} {
+      allow read: if signedIn() && (
+        request.auth.uid == resource.data.courierUid || isAdmin()
+      );
+      allow create: if signedIn()
+        && request.resource.data.courierUid == request.auth.uid;
+      allow update: if signedIn()
+        && request.auth.uid == resource.data.courierUid;
+      allow delete: if signedIn()
+        && request.auth.uid == resource.data.courierUid;
+    }
+
     // ========== LEGACY JOBS (backward compatibility) ==========
     match /jobs/{jobId} {
       function isCreator() {
@@ -641,6 +654,10 @@ service cloud.firestore {
     }
 
     // ========== PLATFORM SETTINGS ==========
+    match /platformSettings/stateTaxRates {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
     match /platformSettings/{settingId} {
       // Only admins can read and write platform settings
       allow read, write: if isAdmin();

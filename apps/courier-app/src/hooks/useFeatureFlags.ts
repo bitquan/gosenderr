@@ -58,6 +58,8 @@ export function useFeatureFlags() {
               analytics: true,
               featureFlagsControl: true,
               webPortalEnabled: false,
+              systemLogs: false,
+              firebaseExplorer: false,
             },
             advanced: {
               pushNotifications: true,
