@@ -34,6 +34,20 @@ This is a monorepo with Vite + React apps, Electron desktop app, and Firebase ba
 - **Review Suggestions**: Always review Copilot’s suggestions for accuracy and relevance.
 - **Contextual Use**: Copilot works best when given clear tasks within the context of your file.
 
+## Task Focus & Proactive Guidance
+- **Stay on task**: If troubleshooting is needed, keep it scoped to the current task and return to the main goal immediately after the fix.
+- **Checkpoint before detours**: Restate the goal and what will be done next before any troubleshooting steps.
+- **Catch missed steps**: Proactively verify common prerequisites (build/sync, emulator status, config URLs, signing, and feature flags) and call out anything missing.
+- **Prefer action**: If a reasonable default exists, do it; avoid asking for details unless required to proceed.
+- **Summarize outcomes**: End with a short status update and next concrete action.
+
+## iOS Simulator & Capacitor Findings (Keep in Mind)
+- **Live hosting in Capacitor**: If the app must load from a live URL (no localhost/port), set `server.url` to the hosted domain in `capacitor.config.ts` and run `cap sync ios`.
+- **Xcode + SwiftPM local package conflict**: Opening two Capacitor iOS workspaces that reference local `node_modules` can cause “Missing package product” errors. To run two apps simultaneously:
+  - Keep only one Xcode workspace open at a time **or**
+  - Use a **second repo copy** so each workspace resolves local packages independently.
+- **Two simulators are fine**: You can boot iPhone 17 and iPhone 17 Pro simultaneously; the conflict is the workspace/package resolution, not the simulators.
+
 ## Security, Quality, and CI
 - Treat security alerts as blocking for production changes.
 - Prefer deterministic, secure IDs; avoid `Math.random()` in app logic.
