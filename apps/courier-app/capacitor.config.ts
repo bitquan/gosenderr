@@ -4,11 +4,11 @@ const config: CapacitorConfig = {
   appId: 'com.gosenderr.courier',
   appName: 'Gosenderr Courier',
   webDir: 'dist',
-  // Use bundled files for development/testing
-  // server: {
-  //   url: 'https://gosenderr-courier.web.app',
-  //   cleartext: false
-  // },
+  // Live hosted courier app
+  server: {
+    url: 'https://gosenderr-courier.web.app',
+    cleartext: false
+  },
   ios: {
     contentInset: 'automatic',
     // Required for navigation and location tracking
