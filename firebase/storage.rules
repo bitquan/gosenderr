@@ -129,6 +129,12 @@ service firebase.storage {
       );
     }
 
+    // Courier avatars: courier-avatars/{userId}/{photoFile}
+    match /courier-avatars/{userId}/{photoFile} {
+      allow write: if isSignedIn() && uid() == userId && isValidImage();
+      allow read: if true;
+    }
+
     // Delivery proof photos: delivery-photos/{courierId}/{jobId}/{photoFile}
     match /delivery-photos/{courierId}/{jobId}/{photoFile} {
       // Assigned courier can upload proof photos for the job

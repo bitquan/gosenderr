@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, onAuthStateChanged } from 'firebase/auth';
+type User = any;
+const { onAuthStateChanged } = require('firebase/auth');
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { db, getAuthSafe, signInWithEmail, signOut as signOutHelper } from '../lib/firebase';
 
@@ -23,7 +24,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const unsubscribe = onAuthStateChanged(authInstance, async (nextUser) => {
+    const unsubscribe = onAuthStateChanged(authInstance, async (nextUser: User | null) => {
       if (nextUser) {
         try {
           const userRef = doc(db, 'users', nextUser.uid);
@@ -39,6 +40,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 workModes: {
                   packagesEnabled: false,
                   foodEnabled: false,
+                },
+                packageRateCard: {
+                  baseFare: 3,
+                  perMile: 0.5,
+                  perMinute: 0.1,
+                  optionalFees: [],
+                },
+                foodRateCard: {
+                  baseFare: 2.5,
+                  perMile: 0.75,
+                  restaurantWaitPay: 0.15,
+                  optionalFees: [],
                 },
                 stats: {
                   totalDeliveries: 0,
