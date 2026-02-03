@@ -186,6 +186,20 @@ export function MapShell({ onSignOut }: MapShellProps) {
       location: { lat: number; lng: number };
     }>;
   } | null>(null);
+  const [routeOptions, setRouteOptions] = useState<Array<{
+    geojson: any;
+    distance: number;
+    duration: number;
+    targetLabel: string;
+    targetCoord: { lat: number; lng: number };
+    steps?: Array<{
+      instruction: string;
+      distance: number;
+      duration: number;
+      location: { lat: number; lng: number };
+    }>;
+  }>>([]);
+  const [selectedRouteIndex, setSelectedRouteIndex] = useState(0);
   const [routeLoading, setRouteLoading] = useState(false);
   const lastRouteRef = useRef<{ key: string; at: number }>({ key: '', at: 0 });
   const pulseAnim = useRef(new Animated.Value(0)).current;
@@ -1525,6 +1539,7 @@ export function MapShell({ onSignOut }: MapShellProps) {
   useEffect(() => {
     if (!currentLocation || !liveActiveJob) {
       setRouteData(null);
+      setRouteOptions([]);
       return;
     }
 
@@ -1548,35 +1563,40 @@ export function MapShell({ onSignOut }: MapShellProps) {
       try {
         const url = `https://api.mapbox.com/directions/v5/mapbox/driving/` +
           `${currentLocation.lng},${currentLocation.lat};${target.lng},${target.lat}` +
-          `?geometries=geojson&overview=full&access_token=${mapboxConfig.accessToken}`;
+          `?geometries=geojson&overview=full&steps=true&alternatives=true&access_token=${mapboxConfig.accessToken}`;
         const res = await fetch(url, { signal: controller.signal });
         if (!res.ok) throw new Error(`Route fetch failed: ${res.status}`);
         const data = await res.json();
-        const route = data?.routes?.[0];
-        if (!route?.geometry) throw new Error('No route geometry');
+        const routes = (data?.routes || []).filter((route: any) => route?.geometry);
+        if (routes.length === 0) throw new Error('No route geometry');
 
-        const steps = route.legs?.[0]?.steps?.map((step: any) => ({
-          instruction: step.maneuver?.instruction || 'Continue',
-          distance: step.distance || 0,
-          duration: step.duration || 0,
-          location: {
-            lat: step.maneuver?.location?.[1],
-            lng: step.maneuver?.location?.[0],
-          },
-        })) || [];
+        const nextRoutes = routes.map((route: any) => {
+          const steps = route.legs?.[0]?.steps?.map((step: any) => ({
+            instruction: step.maneuver?.instruction || 'Continue',
+            distance: step.distance || 0,
+            duration: step.duration || 0,
+            location: {
+              lat: step.maneuver?.location?.[1],
+              lng: step.maneuver?.location?.[0],
+            },
+          })) || [];
 
-        setRouteData({
-          geojson: {
-            type: 'Feature',
-            geometry: route.geometry,
-            properties: {},
-          },
-          distance: route.distance || 0,
-          duration: route.duration || 0,
-          targetLabel: target.label || 'Target',
-          targetCoord: { lat: target.lat, lng: target.lng },
-          steps: steps.filter((step: any) => typeof step.location.lat === 'number' && typeof step.location.lng === 'number'),
+          return {
+            geojson: {
+              type: 'Feature',
+              geometry: route.geometry,
+              properties: {},
+            },
+            distance: route.distance || 0,
+            duration: route.duration || 0,
+            targetLabel: target.label || 'Target',
+            targetCoord: { lat: target.lat, lng: target.lng },
+            steps: steps.filter((step: any) => typeof step.location.lat === 'number' && typeof step.location.lng === 'number'),
+          };
         });
+
+        setRouteOptions(nextRoutes);
+        setSelectedRouteIndex((prev) => (prev < nextRoutes.length ? prev : 0));
         lastRouteRef.current = { key, at: Date.now() };
       } catch (err) {
         if ((err as any)?.name !== 'AbortError') {
@@ -1590,6 +1610,15 @@ export function MapShell({ onSignOut }: MapShellProps) {
     void fetchRoute();
     return () => controller.abort();
   }, [currentLocation, liveActiveJob]);
+
+  useEffect(() => {
+    if (routeOptions.length === 0) {
+      setRouteData(null);
+      return;
+    }
+    const index = Math.min(selectedRouteIndex, routeOptions.length - 1);
+    setRouteData(routeOptions[index]);
+  }, [routeOptions, selectedRouteIndex]);
 
   useEffect(() => {
     if (!hasActiveJob) {
@@ -1661,6 +1690,13 @@ export function MapShell({ onSignOut }: MapShellProps) {
             </View>
           </MapboxGL.MarkerView>
         )}
+        {routeOptions.length > 1 && routeOptions.map((route, index) => (
+          index !== selectedRouteIndex && route?.geojson ? (
+            <MapboxGL.ShapeSource key={`route-alt-${index}`} id={`route-alt-${index}`} shape={route.geojson}>
+              <MapboxGL.LineLayer id={`route-alt-line-${index}`} style={styles.routeLineAlt} />
+            </MapboxGL.ShapeSource>
+          ) : null
+        ))}
         {routeData?.geojson && (
           <MapboxGL.ShapeSource id="active-route" shape={routeData.geojson}>
             <MapboxGL.LineLayer id="active-route-line-glow" style={styles.routeLineGlow} />
@@ -2738,6 +2774,21 @@ export function MapShell({ onSignOut }: MapShellProps) {
                 <Text style={styles.navMeta}>
                   {routeData.targetLabel} • {formatMiles(routeData.distance)} • {Math.round(routeData.duration / 60)} min
                 </Text>
+                {routeOptions.length > 1 && (
+                  <View style={styles.navRouteOptions}>
+                    {routeOptions.map((route, index) => (
+                      <Pressable
+                        key={`route-option-${index}`}
+                        style={[styles.navRouteChip, index === selectedRouteIndex && styles.navRouteChipActive]}
+                        onPress={() => setSelectedRouteIndex(index)}
+                      >
+                        <Text style={styles.navRouteChipText}>
+                          Route {index + 1} • {Math.round(route.duration / 60)} min
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                )}
               </>
             ) : (
               <Text style={styles.navMeta}>Preparing route…</Text>
@@ -3823,6 +3874,13 @@ const styles = StyleSheet.create({
     lineJoin: 'round',
     lineCap: 'round',
   },
+  routeLineAlt: {
+    lineColor: '#94a3b8',
+    lineWidth: 4,
+    lineOpacity: 0.35,
+    lineJoin: 'round',
+    lineCap: 'round',
+  },
   routeRow: {
     marginTop: 6,
     paddingVertical: 6,
@@ -3910,6 +3968,29 @@ const styles = StyleSheet.create({
   },
   navEndButton: {
     backgroundColor: '#ef4444',
+  },
+  navRouteOptions: {
+    marginTop: 8,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  navRouteChip: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#1f2937',
+    backgroundColor: 'rgba(15, 23, 42, 0.7)',
+  },
+  navRouteChipActive: {
+    borderColor: '#38bdf8',
+    backgroundColor: 'rgba(56, 189, 248, 0.2)',
+  },
+  navRouteChipText: {
+    color: '#e2e8f0',
+    fontSize: 10,
+    fontWeight: '700',
   },
   jobActions: {
     marginTop: 8,
