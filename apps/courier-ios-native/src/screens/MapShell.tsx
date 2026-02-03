@@ -1215,7 +1215,7 @@ export function MapShell({ onSignOut }: MapShellProps) {
       if (navActive && routeData?.targetCoord) {
         cameraRef.current?.setCamera({
           centerCoordinate: [longitude, latitude],
-          zoomLevel: 15,
+          zoomLevel: 16,
           pitch: 55,
           heading: nextHeading ?? 0,
           animationDuration: 350,
@@ -1675,7 +1675,7 @@ export function MapShell({ onSignOut }: MapShellProps) {
           centerCoordinate={currentLocation ? [currentLocation.lng, currentLocation.lat] : [-96.797, 32.7767]}
           animationDuration={0}
           followUserLocation={navActive || (!previewBounds && followUser)}
-          followZoomLevel={navActive ? 15 : 12}
+          followZoomLevel={navActive ? 16 : 12}
           followPitch={navActive ? 55 : 0}
           followHeading={navActive ? (currentHeading ?? 0) : 0}
           followUserMode={navActive ? MapboxGL.UserTrackingMode.FollowWithCourse : MapboxGL.UserTrackingMode.Follow}
@@ -3358,24 +3358,24 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   courierMarkerWrap: {
-    width: 36,
-    height: 36,
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },
   courierPulse: {
     position: 'absolute',
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: 'rgba(37, 99, 235, 0.45)',
   },
   courierDot: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     backgroundColor: '#2563eb',
-    borderWidth: 3,
+    borderWidth: 4,
     borderColor: '#e2e8f0',
   },
   overlay: {
