@@ -189,6 +189,7 @@ export function MapShell({ onSignOut }: MapShellProps) {
   const [routeLoading, setRouteLoading] = useState(false);
   const lastRouteRef = useRef<{ key: string; at: number }>({ key: '', at: 0 });
   const pulseAnim = useRef(new Animated.Value(0)).current;
+  const [pulseValue, setPulseValue] = useState(0.6);
   const proofEnabled = Boolean(flags?.customer?.proofPhotos);
   const jobDetailsEnabled = Boolean(flags?.courier?.jobDetails ?? true);
   const jobAlertsEnabled = Boolean(flags?.courier?.jobAlerts ?? true);
@@ -409,6 +410,15 @@ export function MapShell({ onSignOut }: MapShellProps) {
     );
     loop.start();
     return () => loop.stop();
+  }, [pulseAnim]);
+
+  useEffect(() => {
+    const sub = pulseAnim.addListener(({ value }: { value: number }) => {
+      setPulseValue(0.6 + value * 0.8);
+    });
+    return () => {
+      pulseAnim.removeListener(sub);
+    };
   }, [pulseAnim]);
 
   useEffect(() => {
@@ -1703,7 +1713,7 @@ export function MapShell({ onSignOut }: MapShellProps) {
                 type: 'Point',
                 coordinates: [currentLocation.lng, currentLocation.lat],
               },
-              properties: {},
+              properties: { pulse: pulseValue },
             }}
           >
             <MapboxGL.CircleLayer id="courier-location-glow" style={styles.courierCircleGlow} />
@@ -3345,13 +3355,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   courierCircleGlow: {
-    circleRadius: 14,
+    circleRadius: ['interpolate', ['linear'], ['get', 'pulse'], 0.6, 10, 1.4, 18],
     circleColor: 'rgba(37, 99, 235, 0.45)',
     circleBlur: 0.8,
     circleOpacity: 0.9,
   },
   courierCircleDot: {
-    circleRadius: 6,
+    circleRadius: 7,
     circleColor: '#2563eb',
     circleStrokeColor: '#e2e8f0',
     circleStrokeWidth: 3,
