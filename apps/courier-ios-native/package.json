@@ -22,7 +22,6 @@
     "react": "19.2.4",
     "react-native": "0.83.1",
     "react-native-image-picker": "^7.2.3",
-    "react-native-mapbox-navigation": "^0.1.1",
     "react-native-safe-area-context": "^5.5.2"
   },
   "devDependencies": {

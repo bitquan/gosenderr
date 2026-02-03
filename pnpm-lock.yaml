@@ -362,9 +362,6 @@ importers:
       react-native-image-picker:
         specifier: ^7.2.3
         version: 7.2.3(react-native@0.83.1)(react@19.2.4)
-      react-native-mapbox-navigation:
-        specifier: ^0.1.1
-        version: 0.1.1(react-native@0.83.1)(react@19.2.4)
       react-native-safe-area-context:
         specifier: ^5.5.2
         version: 5.6.2(react-native@0.83.1)(react@19.2.4)
@@ -12634,16 +12631,6 @@ packages:
     peerDependencies:
       react: '*'
       react-native: '*'
-    dependencies:
-      react: 19.2.4
-      react-native: 0.83.1(@babel/core@7.28.6)(@react-native-community/cli@20.0.0)(@react-native/metro-config@0.83.1)(@types/react@19.2.2)(react@19.2.4)
-    dev: false
-
-  /react-native-mapbox-navigation@0.1.1(react-native@0.83.1)(react@19.2.4):
-    resolution: {integrity: sha512-4e3CCY0VCsjQ0aRKpt0Hlcqa4iDKPEINbiP4VjruzmryxTbQ9cxZpYvJbqDqHeLlGltiNgUJsO7BxeV3pdpaog==}
-    peerDependencies:
-      react: ^16.8.1
-      react-native: '>=0.60.0-rc.0 <1.0.x'
     dependencies:
       react: 19.2.4
       react-native: 0.83.1(@babel/core@7.28.6)(@react-native-community/cli@20.0.0)(@react-native/metro-config@0.83.1)(@types/react@19.2.2)(react@19.2.4)

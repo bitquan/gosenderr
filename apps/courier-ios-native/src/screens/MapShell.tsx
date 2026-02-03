@@ -14,15 +14,7 @@ import {
   View,
   Vibration,
 } from 'react-native';
-const { Alert, AppState, Platform } = require('react-native');
-const MapboxNavigation = (() => {
-  try {
-    const mod = require('react-native-mapbox-navigation');
-    return mod?.default ?? mod;
-  } catch {
-    return null;
-  }
-})();
+const { Alert, AppState } = require('react-native');
 import { useCallback, useEffect, useRef, useState } from 'react';
 import messaging from '@react-native-firebase/messaging';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -186,6 +178,12 @@ export function MapShell({ onSignOut }: MapShellProps) {
     duration: number;
     targetLabel: string;
     targetCoord: { lat: number; lng: number };
+    steps?: Array<{
+      instruction: string;
+      distance: number;
+      duration: number;
+      location: { lat: number; lng: number };
+    }>;
   } | null>(null);
   const [routeLoading, setRouteLoading] = useState(false);
   const lastRouteRef = useRef<{ key: string; at: number }>({ key: '', at: 0 });
@@ -1073,25 +1071,18 @@ export function MapShell({ onSignOut }: MapShellProps) {
     return null;
   };
 
-  const openNavigation = async (job: Job) => {
-    const target = getRouteTarget(job);
-    if (!target) return;
-    const label = encodeURIComponent(target.label || 'Destination');
-    const lat = target.lat;
-    const lng = target.lng;
-    const url = Platform.OS === 'ios'
-      ? `maps://?daddr=${lat},${lng}&q=${label}`
-      : `google.navigation:q=${lat},${lng}`;
-    try {
-      const supported = await Linking.canOpenURL(url);
-      if (supported) {
-        await Linking.openURL(url);
-      } else {
-        await Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`);
-      }
-    } catch (err) {
-      console.warn('Failed to open navigation', err);
-    }
+  const getNextStep = (
+    steps: Array<{ instruction: string; distance: number; duration: number; location: { lat: number; lng: number } }>,
+    location: { lat: number; lng: number }
+  ) => {
+    if (!steps.length) return null;
+    const next = steps
+      .map((step) => ({
+        step,
+        remaining: getDistanceMeters(location.lat, location.lng, step.location.lat, step.location.lng),
+      }))
+      .sort((a, b) => a.remaining - b.remaining)[0];
+    return next?.step ?? null;
   };
 
   const handleStartNavigation = (job: Job) => {
@@ -1099,9 +1090,6 @@ export function MapShell({ onSignOut }: MapShellProps) {
     setShowProfile(false);
     setShowRateCards(false);
     setNavActive(true);
-    if (!MapboxNavigation) {
-      void openNavigation(job);
-    }
   };
 
   const getBoundsForGeojson = (geojson?: any) => {
@@ -1540,6 +1528,16 @@ export function MapShell({ onSignOut }: MapShellProps) {
         const route = data?.routes?.[0];
         if (!route?.geometry) throw new Error('No route geometry');
 
+        const steps = route.legs?.[0]?.steps?.map((step: any) => ({
+          instruction: step.maneuver?.instruction || 'Continue',
+          distance: step.distance || 0,
+          duration: step.duration || 0,
+          location: {
+            lat: step.maneuver?.location?.[1],
+            lng: step.maneuver?.location?.[0],
+          },
+        })) || [];
+
         setRouteData({
           geojson: {
             type: 'Feature',
@@ -1550,6 +1548,7 @@ export function MapShell({ onSignOut }: MapShellProps) {
           duration: route.duration || 0,
           targetLabel: target.label || 'Target',
           targetCoord: { lat: target.lat, lng: target.lng },
+          steps: steps.filter((step: any) => typeof step.location.lat === 'number' && typeof step.location.lng === 'number'),
         });
         lastRouteRef.current = { key, at: Date.now() };
       } catch (err) {
@@ -1717,22 +1716,6 @@ export function MapShell({ onSignOut }: MapShellProps) {
           </MapboxGL.MarkerView>
         ))}
       </MapboxGL.MapView>
-
-      {navActive && MapboxNavigation && currentLocation && liveActiveJob && (() => {
-        const target = getRouteTarget(liveActiveJob);
-        if (!target) return null;
-        return (
-          <View style={styles.navSdkContainer}>
-            <MapboxNavigation
-              origin={[currentLocation.lat, currentLocation.lng]}
-              destination={[target.lat, target.lng]}
-              shouldSimulateRoute={false}
-              onCancelNavigation={() => setNavActive(false)}
-              onArrive={() => setNavActive(false)}
-            />
-          </View>
-        );
-      })()}
 
       {!navActive && (
         <View style={styles.topBar}>
@@ -2717,12 +2700,19 @@ export function MapShell({ onSignOut }: MapShellProps) {
 
       {navActive && liveActiveJob && (
         <View style={styles.navOverlay}>
-          <View>
+          <View style={styles.navInfo}>
             <Text style={styles.navTitle}>Navigation</Text>
             {routeData ? (
-              <Text style={styles.navMeta}>
-                {routeData.targetLabel} • {Math.round(routeData.distance / 100) / 10} km • {Math.round(routeData.duration / 60)} min
-              </Text>
+              <>
+                <Text style={styles.navInstruction}>
+                  {currentLocation && routeData.steps?.length
+                    ? (getNextStep(routeData.steps, currentLocation)?.instruction ?? 'Continue')
+                    : 'Continue'}
+                </Text>
+                <Text style={styles.navMeta}>
+                  {routeData.targetLabel} • {Math.round(routeData.distance / 100) / 10} km • {Math.round(routeData.duration / 60)} min
+                </Text>
+              </>
             ) : (
               <Text style={styles.navMeta}>Preparing route…</Text>
             )}
@@ -3882,10 +3872,19 @@ const styles = StyleSheet.create({
     gap: 10,
     zIndex: 30,
   },
+  navInfo: {
+    flex: 1,
+  },
   navTitle: {
     color: '#e2e8f0',
     fontSize: 13,
     fontWeight: '700',
+  },
+  navInstruction: {
+    color: '#f8fafc',
+    fontSize: 13,
+    fontWeight: '700',
+    marginTop: 4,
   },
   navMeta: {
     color: '#94a3b8',
@@ -3894,10 +3893,6 @@ const styles = StyleSheet.create({
   },
   navEndButton: {
     backgroundColor: '#ef4444',
-  },
-  navSdkContainer: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 5,
   },
   jobActions: {
     marginTop: 8,
