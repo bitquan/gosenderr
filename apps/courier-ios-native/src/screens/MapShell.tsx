@@ -79,6 +79,7 @@ export function MapShell({ onSignOut }: MapShellProps) {
   const lastJobIdsRef = useRef<string[]>([]);
   const [showTimeline, setShowTimeline] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [currentHeading, setCurrentHeading] = useState<number | null>(null);
   const [showEarnings, setShowEarnings] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showRateCards, setShowRateCards] = useState(false);
@@ -1206,14 +1207,17 @@ export function MapShell({ onSignOut }: MapShellProps) {
       const { latitude, longitude, heading, speed, accuracy } = location.coords;
       if (typeof latitude !== 'number' || typeof longitude !== 'number') return;
       setCurrentLocation({ lat: latitude, lng: longitude });
+      if (typeof heading === 'number') {
+        setCurrentHeading(heading);
+      }
 
       if (navActive && routeData?.targetCoord) {
         cameraRef.current?.setCamera({
           centerCoordinate: [longitude, latitude],
-          zoomLevel: 14,
-          pitch: 45,
+          zoomLevel: 15,
+          pitch: 55,
           heading: typeof heading === 'number' ? heading : 0,
-          animationDuration: 500,
+          animationDuration: 350,
         });
       }
 
@@ -1669,8 +1673,10 @@ export function MapShell({ onSignOut }: MapShellProps) {
           zoomLevel={11}
           centerCoordinate={currentLocation ? [currentLocation.lng, currentLocation.lat] : [-96.797, 32.7767]}
           animationDuration={0}
-          followUserLocation={!previewBounds && followUser}
-          followZoomLevel={12}
+          followUserLocation={navActive || (!previewBounds && followUser)}
+          followZoomLevel={navActive ? 15 : 12}
+          pitch={navActive ? 55 : 0}
+          heading={navActive && currentHeading != null ? currentHeading : 0}
           bounds={previewBounds ? {
             ne: previewBounds.ne,
             sw: previewBounds.sw,
