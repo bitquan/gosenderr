@@ -1204,11 +1204,12 @@ export function MapShell({ onSignOut }: MapShellProps) {
   const handleLocationUpdate = useCallback(
     (location: any) => {
       if (!user?.uid || !location?.coords) return;
-      const { latitude, longitude, heading, speed, accuracy } = location.coords;
+      const { latitude, longitude, heading, speed, accuracy, course } = location.coords;
       if (typeof latitude !== 'number' || typeof longitude !== 'number') return;
       setCurrentLocation({ lat: latitude, lng: longitude });
-      if (typeof heading === 'number') {
-        setCurrentHeading(heading);
+      const nextHeading = typeof heading === 'number' ? heading : typeof course === 'number' ? course : null;
+      if (nextHeading != null) {
+        setCurrentHeading(nextHeading);
       }
 
       if (navActive && routeData?.targetCoord) {
@@ -1216,7 +1217,7 @@ export function MapShell({ onSignOut }: MapShellProps) {
           centerCoordinate: [longitude, latitude],
           zoomLevel: 15,
           pitch: 55,
-          heading: typeof heading === 'number' ? heading : 0,
+          heading: nextHeading ?? 0,
           animationDuration: 350,
         });
       }
@@ -1675,8 +1676,10 @@ export function MapShell({ onSignOut }: MapShellProps) {
           animationDuration={0}
           followUserLocation={navActive || (!previewBounds && followUser)}
           followZoomLevel={navActive ? 15 : 12}
-          pitch={navActive ? 55 : 0}
-          heading={navActive && currentHeading != null ? currentHeading : 0}
+          followPitch={navActive ? 55 : 0}
+          followHeading={navActive ? (currentHeading ?? 0) : 0}
+          followUserMode={navActive ? MapboxGL.UserTrackingMode.FollowWithCourse : MapboxGL.UserTrackingMode.Follow}
+          heading={!navActive && currentHeading != null ? currentHeading : 0}
           bounds={previewBounds ? {
             ne: previewBounds.ne,
             sw: previewBounds.sw,
