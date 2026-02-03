@@ -1695,34 +1695,20 @@ export function MapShell({ onSignOut }: MapShellProps) {
           showsUserHeadingIndicator
         />
         {currentLocation && (
-          <MapboxGL.MarkerView
-            id="courier-location"
-            coordinate={[currentLocation.lng, currentLocation.lat]}
+          <MapboxGL.ShapeSource
+            id="courier-location-source"
+            shape={{
+              type: 'Feature',
+              geometry: {
+                type: 'Point',
+                coordinates: [currentLocation.lng, currentLocation.lat],
+              },
+              properties: {},
+            }}
           >
-            <View style={styles.courierMarkerWrap}>
-              <Animated.View
-                style={[
-                  styles.courierPulse,
-                  {
-                    transform: [
-                      {
-                        scale: pulseAnim.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [0.6, 1.4],
-                        }),
-                      },
-                    ],
-                    opacity: pulseAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0.6, 0],
-                    }),
-                  },
-                ]}
-              />
-              <View style={styles.courierRing} />
-              <View style={styles.courierDot} />
-            </View>
-          </MapboxGL.MarkerView>
+            <MapboxGL.CircleLayer id="courier-location-glow" style={styles.courierCircleGlow} />
+            <MapboxGL.CircleLayer id="courier-location-dot" style={styles.courierCircleDot} />
+          </MapboxGL.ShapeSource>
         )}
         {displayJobs.map((job) => (
           <MapboxGL.MarkerView
@@ -3358,35 +3344,17 @@ const styles = StyleSheet.create({
   markerText: {
     fontSize: 14,
   },
-  courierMarkerWrap: {
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
+  courierCircleGlow: {
+    circleRadius: 14,
+    circleColor: 'rgba(37, 99, 235, 0.45)',
+    circleBlur: 0.8,
+    circleOpacity: 0.9,
   },
-  courierPulse: {
-    position: 'absolute',
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: 'rgba(37, 99, 235, 0.45)',
-  },
-  courierRing: {
-    position: 'absolute',
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    borderWidth: 4,
-    borderColor: 'rgba(226, 232, 240, 0.9)',
-    backgroundColor: 'rgba(15, 23, 42, 0.35)',
-  },
-  courierDot: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: '#2563eb',
-    borderWidth: 4,
-    borderColor: '#e2e8f0',
+  courierCircleDot: {
+    circleRadius: 6,
+    circleColor: '#2563eb',
+    circleStrokeColor: '#e2e8f0',
+    circleStrokeWidth: 3,
   },
   overlay: {
     position: 'absolute',
