@@ -648,6 +648,8 @@ export function MapShell({ onSignOut }: MapShellProps) {
       : getDropoffLabel(job);
 
   const formatMoney = (value: number) => `$${value.toFixed(2)}`;
+  const metersToMiles = (meters: number) => meters / 1609.34;
+  const formatMiles = (meters: number) => `${metersToMiles(meters).toFixed(1)} mi`;
 
   const getFilteredCompletedJobs = () => {
     const now = new Date();
@@ -1205,6 +1207,16 @@ export function MapShell({ onSignOut }: MapShellProps) {
       if (typeof latitude !== 'number' || typeof longitude !== 'number') return;
       setCurrentLocation({ lat: latitude, lng: longitude });
 
+      if (navActive && routeData?.targetCoord) {
+        cameraRef.current?.setCamera({
+          centerCoordinate: [longitude, latitude],
+          zoomLevel: 14,
+          pitch: 45,
+          heading: typeof heading === 'number' ? heading : 0,
+          animationDuration: 500,
+        });
+      }
+
       const now = Date.now();
       const timeSinceLast = now - lastLocationWriteRef.current;
       let shouldWrite = timeSinceLast >= 5000;
@@ -1222,7 +1234,7 @@ export function MapShell({ onSignOut }: MapShellProps) {
       const isPreviewing = Boolean(previewBounds || previewRoute || selectedJob || previewLocked);
 
       if (!shouldWrite) {
-        if (followUser && !isPreviewing) {
+        if (followUser && !isPreviewing && !navActive) {
           cameraRef.current?.setCamera({
             centerCoordinate: [longitude, latitude],
             zoomLevel: 12,
@@ -1232,7 +1244,7 @@ export function MapShell({ onSignOut }: MapShellProps) {
         return;
       }
 
-      if (followUser && !isPreviewing) {
+      if (followUser && !isPreviewing && !navActive) {
         cameraRef.current?.setCamera({
           centerCoordinate: [longitude, latitude],
           zoomLevel: 12,
@@ -1265,7 +1277,7 @@ export function MapShell({ onSignOut }: MapShellProps) {
           });
         });
     },
-    [user?.uid, followUser, previewBounds, previewRoute, selectedJob, previewLocked]
+    [user?.uid, followUser, previewBounds, previewRoute, selectedJob, previewLocked, navActive, routeData]
   );
 
 
@@ -2704,13 +2716,21 @@ export function MapShell({ onSignOut }: MapShellProps) {
             <Text style={styles.navTitle}>Navigation</Text>
             {routeData ? (
               <>
-                <Text style={styles.navInstruction}>
-                  {currentLocation && routeData.steps?.length
-                    ? (getNextStep(routeData.steps, currentLocation)?.instruction ?? 'Continue')
-                    : 'Continue'}
-                </Text>
+                {currentLocation && routeData.steps?.length ? (() => {
+                  const nextStep = getNextStep(routeData.steps, currentLocation);
+                  const distanceToTurn = nextStep
+                    ? getDistanceMeters(currentLocation.lat, currentLocation.lng, nextStep.location.lat, nextStep.location.lng)
+                    : 0;
+                  return (
+                    <Text style={styles.navInstruction}>
+                      {nextStep?.instruction ?? 'Continue'}{distanceToTurn ? ` • ${formatMiles(distanceToTurn)}` : ''}
+                    </Text>
+                  );
+                })() : (
+                  <Text style={styles.navInstruction}>Continue</Text>
+                )}
                 <Text style={styles.navMeta}>
-                  {routeData.targetLabel} • {Math.round(routeData.distance / 100) / 10} km • {Math.round(routeData.duration / 60)} min
+                  {routeData.targetLabel} • {formatMiles(routeData.distance)} • {Math.round(routeData.duration / 60)} min
                 </Text>
               </>
             ) : (
