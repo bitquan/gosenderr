@@ -17,6 +17,7 @@ export { onUserCreate } from "./triggers/onUserCreate";
 
 // HTTP Callable Functions
 export { setPackageRunnerClaim } from "./http/setPackageRunnerClaim";
+export { sendTestPush } from "./http/sendTestPush";
 export { setAdminClaim } from "./http/setAdminClaim";
 export { banUser } from "./http/banUser";
 export { createUserForAdmin } from "./http/createUserForAdmin";

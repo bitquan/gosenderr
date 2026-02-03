@@ -54,6 +54,7 @@ export default function AdminSidebar() {
     {
       title: 'Communications',
       items: [
+        { label: 'Messaging', path: '/messaging', icon: '💬' },
         { label: 'Disputes', path: '/disputes', icon: '⚖️' }
       ]
     },

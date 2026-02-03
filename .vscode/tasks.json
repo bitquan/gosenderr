@@ -157,6 +157,31 @@
       }
     },
     {
+      "label": "📱 Courier iOS Native: Metro",
+      "type": "shell",
+      "command": "pnpm -C apps/courier-ios-native start -- --reset-cache",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^.*$",
+          "file": 1,
+          "location": 2,
+          "message": 3
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*Starting dev server.*|.*Starting Metro.*",
+          "endsPattern": ".*Dev server ready.*|.*Welcome to Metro.*"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": false,
+        "clear": true
+      }
+    },
+    {
       "label": "�️ Admin Desktop: Vite Dev Server (Port 5176)",
       "type": "shell",
       "command": "pnpm --filter @gosenderr/admin-desktop dev",

@@ -50,7 +50,7 @@ export function MapShell({ onSignOut }: MapShellProps) {
   const { user } = useAuth();
   const { flags } = useFeatureFlags();
   const { jobs, completedJobs, loading } = useOpenJobs(user?.uid ?? null);
-  const [useMockJobs, setUseMockJobs] = useState(true);
+  const [useMockJobs, setUseMockJobs] = useState(false);
   const canUseMock = jobs.length === 0;
   const usingMockJobs = useMockJobs && canUseMock;
   const displayJobs: Array<Job | MockJob> = usingMockJobs ? mockJobs : jobs;
@@ -63,6 +63,9 @@ export function MapShell({ onSignOut }: MapShellProps) {
   >('assigned');
   const lastLocationWriteRef = useRef(0);
   const lastLocationRef = useRef<{ lat: number; lng: number } | null>(null);
+  const shouldShareLocationRef = useRef(false);
+  const locationClearedRef = useRef(false);
+  const notificationIdRef = useRef(0);
   const cameraRef = useRef<MapboxGL.Camera>(null);
   const [isOnline, setIsOnline] = useState<boolean>(true);
   const [onlineBusy, setOnlineBusy] = useState(false);
@@ -70,8 +73,10 @@ export function MapShell({ onSignOut }: MapShellProps) {
   const [showJobsPanel, setShowJobsPanel] = useState(true);
   const [proofJob, setProofJob] = useState<Job | null>(null);
   const [proofMode, setProofMode] = useState<'pickup' | 'dropoff'>('dropoff');
+  const [proofLocation, setProofLocation] = useState<{ lat: number; lng: number; accuracy?: number | null } | null>(null);
   const [detailJob, setDetailJob] = useState<Job | null>(null);
   const [jobAlert, setJobAlert] = useState<string | null>(null);
+  const [jobAlertBody, setJobAlertBody] = useState<string | null>(null);
   const [jobAlertActive, setJobAlertActive] = useState(false);
   const [jobAlertFlash, setJobAlertFlash] = useState(false);
   const [pushDebugLog, setPushDebugLog] = useState<string[]>([]);
@@ -80,9 +85,18 @@ export function MapShell({ onSignOut }: MapShellProps) {
   const [showTimeline, setShowTimeline] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [currentHeading, setCurrentHeading] = useState<number | null>(null);
+  const [currentAccuracy, setCurrentAccuracy] = useState<number | null>(null);
   const [showEarnings, setShowEarnings] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showRateCards, setShowRateCards] = useState(false);
+  const [showInbox, setShowInbox] = useState(false);
+  const [inboxItems, setInboxItems] = useState<Array<{
+    id: string;
+    title: string;
+    body: string;
+    createdAt: number;
+    read: boolean;
+  }>>([]);
   const [actionsOpen, setActionsOpen] = useState(true);
   const [navActive, setNavActive] = useState(false);
   const [stripeStatus, setStripeStatus] = useState({
@@ -212,6 +226,7 @@ export function MapShell({ onSignOut }: MapShellProps) {
   const rateCardsEnabled = Boolean(flags?.courier?.rateCards ?? true);
   const modernUiEnabled = Boolean(flags?.ui?.modernStyling ?? true);
   const presentLocalNotification = useCallback((title: string, body: string) => {
+    if (AppState?.currentState === 'active') return;
     if ((NativeModules as any)?.PushNotificationManager) {
       const push = PushNotificationIOS as any;
       push?.presentLocalNotification?.({
@@ -230,10 +245,28 @@ export function MapShell({ onSignOut }: MapShellProps) {
     });
   }, []);
 
-  const togglePanel = useCallback((panel: 'earnings' | 'profile' | 'rateCards') => {
+  const addInboxItem = useCallback((title: string, body: string) => {
+    const createdAt = Date.now();
+    notificationIdRef.current += 1;
+    const id = `${createdAt}-${notificationIdRef.current}`;
+    setInboxItems((prev) => [{ id, title, body, createdAt, read: false }, ...prev].slice(0, 50));
+  }, []);
+
+  const formatInboxTime = (value: number) => {
+    try {
+      return new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return 'Now';
+    }
+  };
+
+  const unreadCount = inboxItems.filter((item) => !item.read).length;
+
+  const togglePanel = useCallback((panel: 'earnings' | 'profile' | 'rateCards' | 'inbox') => {
     setShowEarnings((prev) => (panel === 'earnings' ? !prev : false));
     setShowProfile((prev) => (panel === 'profile' ? !prev : false));
     setShowRateCards((prev) => (panel === 'rateCards' ? !prev : false));
+    setShowInbox((prev) => (panel === 'inbox' ? !prev : false));
   }, []);
 
   useEffect(() => {
@@ -368,16 +401,17 @@ export function MapShell({ onSignOut }: MapShellProps) {
       addPushLog(`Foreground push: ${title}`);
 
       setJobAlert(title);
+      setJobAlertBody(body);
+      addInboxItem(title, body);
       setJobAlertActive(true);
       setJobAlertFlash(true);
-
-      presentLocalNotification(title, body);
 
       const flash = setInterval(() => setJobAlertFlash((prev) => !prev), 400);
       const timeout = setTimeout(() => {
         setJobAlertActive(false);
         setJobAlertFlash(false);
         setJobAlert(null);
+        setJobAlertBody(null);
         clearInterval(flash);
       }, 3500);
 
@@ -405,7 +439,7 @@ export function MapShell({ onSignOut }: MapShellProps) {
     });
 
     return () => unsubscribe();
-  }, [pushEnabled, user?.uid, addPushLog]);
+  }, [pushEnabled, user?.uid, addPushLog, addInboxItem]);
 
   useEffect(() => {
     const loop = Animated.loop(
@@ -446,11 +480,10 @@ export function MapShell({ onSignOut }: MapShellProps) {
 
     if (added.length > 0) {
       setJobAlert('New job available');
+      setJobAlertBody('Tap to view details or claim the job.');
+      addInboxItem('New job available', 'Tap to view details or claim the job.');
       setJobAlertActive(true);
       Vibration.vibrate(400);
-      if (pushEnabled) {
-        presentLocalNotification('GoSenderr Courier', 'New job available');
-      }
       if (user?.uid) {
         void logCourierEvent({
           courierUid: user.uid,
@@ -463,6 +496,7 @@ export function MapShell({ onSignOut }: MapShellProps) {
         setJobAlertActive(false);
         setJobAlertFlash(false);
         setJobAlert(null);
+        setJobAlertBody(null);
         clearInterval(flash);
       }, 3500);
       return () => {
@@ -475,8 +509,9 @@ export function MapShell({ onSignOut }: MapShellProps) {
       setJobAlertActive(false);
       setJobAlertFlash(false);
       setJobAlert(null);
+      setJobAlertBody(null);
     }
-  }, [jobs, jobAlertsEnabled, usingMockJobs, jobAlertActive, user?.uid]);
+  }, [jobs, jobAlertsEnabled, usingMockJobs, jobAlertActive, user?.uid, addInboxItem]);
 
   useEffect(() => {
     let isMounted = true;
@@ -734,24 +769,28 @@ export function MapShell({ onSignOut }: MapShellProps) {
     if (!user?.uid || flushBusyRef.current) return;
     flushBusyRef.current = true;
     try {
-      const locationQueue = await loadQueue<any>(LOCATION_QUEUE_KEY);
-      const remainingLocations: any[] = [];
-      for (const item of locationQueue) {
-        try {
-          await updateDoc(doc(db, 'users', user.uid), {
-            'courierProfile.currentLocation.lat': item.lat,
-            'courierProfile.currentLocation.lng': item.lng,
-            ...(item.heading != null ? { 'courierProfile.currentLocation.heading': item.heading } : {}),
-            ...(item.speed != null ? { 'courierProfile.currentLocation.speed': item.speed } : {}),
-            ...(item.accuracy != null ? { 'courierProfile.currentLocation.accuracy': item.accuracy } : {}),
-            'courierProfile.currentLocation.timestamp': serverTimestamp(),
-            updatedAt: serverTimestamp(),
-          });
-        } catch {
-          remainingLocations.push(item);
+      if (shouldShareLocationRef.current) {
+        const locationQueue = await loadQueue<any>(LOCATION_QUEUE_KEY);
+        const remainingLocations: any[] = [];
+        for (const item of locationQueue) {
+          try {
+            await updateDoc(doc(db, 'users', user.uid), {
+              'courierProfile.currentLocation.lat': item.lat,
+              'courierProfile.currentLocation.lng': item.lng,
+              ...(item.heading != null ? { 'courierProfile.currentLocation.heading': item.heading } : {}),
+              ...(item.speed != null ? { 'courierProfile.currentLocation.speed': item.speed } : {}),
+              ...(item.accuracy != null ? { 'courierProfile.currentLocation.accuracy': item.accuracy } : {}),
+              'courierProfile.currentLocation.timestamp': serverTimestamp(),
+              updatedAt: serverTimestamp(),
+            });
+          } catch {
+            remainingLocations.push(item);
+          }
         }
+        await saveQueue(LOCATION_QUEUE_KEY, remainingLocations);
+      } else {
+        await saveQueue(LOCATION_QUEUE_KEY, []);
       }
-      await saveQueue(LOCATION_QUEUE_KEY, remainingLocations);
 
       const statusQueue = await loadQueue<any>(STATUS_QUEUE_KEY);
       const remainingStatuses: any[] = [];
@@ -763,7 +802,8 @@ export function MapShell({ onSignOut }: MapShellProps) {
         }
       }
       await saveQueue(STATUS_QUEUE_KEY, remainingStatuses);
-      setPendingSyncCount(remainingLocations.length + remainingStatuses.length);
+      const locationQueue = await loadQueue<any>(LOCATION_QUEUE_KEY);
+      setPendingSyncCount(locationQueue.length + remainingStatuses.length);
     } finally {
       flushBusyRef.current = false;
     }
@@ -1235,6 +1275,9 @@ export function MapShell({ onSignOut }: MapShellProps) {
       if (nextHeading != null) {
         setCurrentHeading(nextHeading);
       }
+      if (typeof accuracy === 'number') {
+        setCurrentAccuracy(accuracy);
+      }
 
       if (navActive && routeData?.targetCoord) {
         cameraRef.current?.setCamera({
@@ -1279,6 +1322,10 @@ export function MapShell({ onSignOut }: MapShellProps) {
           zoomLevel: 12,
           animationDuration: 500,
         });
+      }
+
+      if (!shouldShareLocationRef.current) {
+        return;
       }
 
       void updateDoc(doc(db, 'users', user.uid), {
@@ -1522,6 +1569,30 @@ export function MapShell({ onSignOut }: MapShellProps) {
   const [jobsView, setJobsView] = useState<'active' | 'jobs'>('active');
 
   useEffect(() => {
+    const status = liveActiveJob ? getEffectiveStatus(liveActiveJob) : null;
+    const shouldShare = Boolean(liveActiveJob && status !== 'completed' && status !== 'cancelled');
+    shouldShareLocationRef.current = shouldShare;
+
+    if (shouldShare) {
+      locationClearedRef.current = false;
+      return;
+    }
+
+    if (!user?.uid || locationClearedRef.current) return;
+    locationClearedRef.current = true;
+    lastLocationRef.current = null;
+    void saveQueue(LOCATION_QUEUE_KEY, []).then(() => {
+      void loadQueue<any>(STATUS_QUEUE_KEY).then((statusQueue) => {
+        setPendingSyncCount(statusQueue.length);
+      });
+    });
+    void updateDoc(doc(db, 'users', user.uid), {
+      'courierProfile.currentLocation': null,
+      updatedAt: serverTimestamp(),
+    }).catch(() => undefined);
+  }, [liveActiveJob, user?.uid]);
+
+  useEffect(() => {
     if (!liveActiveJob) {
       setNavActive(false);
       return;
@@ -1625,6 +1696,7 @@ export function MapShell({ onSignOut }: MapShellProps) {
       setJobsView('jobs');
     }
   }, [hasActiveJob]);
+
   const showPickupProofButton = !!liveActiveJob && needsPickupProof(liveActiveJob);
   const showDropoffProofButton = !!liveActiveJob && needsDropoffProof(liveActiveJob);
   const advanceMockStatus = () => {
@@ -1774,7 +1846,7 @@ export function MapShell({ onSignOut }: MapShellProps) {
       {!navActive && (
         <View style={styles.topBar}>
           <View>
-            <Text style={styles.title}>Courier V2</Text>
+            <Text style={styles.title}>GoSenderr</Text>
             <Text style={styles.subtitle}>On‑demand deliveries</Text>
           </View>
           <View style={styles.topActions}>
@@ -1803,6 +1875,14 @@ export function MapShell({ onSignOut }: MapShellProps) {
                   onPress={() => togglePanel('profile')}
                 >
                   <Text style={styles.earningsButtonText}>{showProfile ? 'Map' : 'Profile'}</Text>
+                </Pressable>
+                <Pressable
+                  style={styles.earningsButton}
+                  onPress={() => togglePanel('inbox')}
+                >
+                  <Text style={styles.earningsButtonText}>
+                    {showInbox ? 'Map' : `Inbox${unreadCount ? ` (${unreadCount})` : ''}`}
+                  </Text>
                 </Pressable>
                 {rateCardsEnabled && (
                   <Pressable
@@ -1842,6 +1922,11 @@ export function MapShell({ onSignOut }: MapShellProps) {
               <Pressable style={styles.actionItem} onPress={() => togglePanel('profile')}>
                 <Text style={styles.actionItemText}>{showProfile ? 'Map' : 'Profile'}</Text>
               </Pressable>
+              <Pressable style={styles.actionItem} onPress={() => togglePanel('inbox')}>
+                <Text style={styles.actionItemText}>
+                  {showInbox ? 'Map' : `Inbox${unreadCount ? ` (${unreadCount})` : ''}`}
+                </Text>
+              </Pressable>
               {rateCardsEnabled && (
                 <Pressable style={styles.actionItem} onPress={() => togglePanel('rateCards')}>
                   <Text style={styles.actionItemText}>{showRateCards ? 'Map' : 'Rate Cards'}</Text>
@@ -1864,15 +1949,25 @@ export function MapShell({ onSignOut }: MapShellProps) {
       )}
 
       {!navActive && jobAlert && (
-        <View
+        <Pressable
           style={[
             styles.jobAlert,
             jobAlertFlash && styles.jobAlertFlash,
             !jobAlertActive && styles.jobAlertHidden,
           ]}
+          onPress={() => {
+            setShowInbox(true);
+            setJobAlertActive(false);
+            setJobAlertFlash(false);
+          }}
         >
-          <Text style={styles.jobAlertText}>{jobAlert}</Text>
-        </View>
+          <View style={styles.jobAlertTextWrap}
+          >
+            <Text style={styles.jobAlertTitle}>{jobAlert}</Text>
+            {jobAlertBody && <Text style={styles.jobAlertBody}>{jobAlertBody}</Text>}
+          </View>
+          <Text style={styles.jobAlertAction}>Inbox</Text>
+        </Pressable>
       )}
 
       {__DEV__ && showPushDebug && !navActive && (
@@ -1887,6 +1982,46 @@ export function MapShell({ onSignOut }: MapShellProps) {
               </Text>
             ))
           )}
+        </View>
+      )}
+
+      {showInbox && !navActive && (
+        <View style={styles.inboxPanel}>
+          <ScrollView contentContainerStyle={styles.inboxScrollContent}>
+            <View style={styles.panelHeaderRow}>
+              <Text style={styles.inboxTitle}>Inbox</Text>
+              <Pressable style={styles.panelCloseButton} onPress={() => setShowInbox(false)}>
+                <Text style={styles.panelCloseText}>Close</Text>
+              </Pressable>
+            </View>
+            {inboxItems.length === 0 ? (
+              <View style={styles.inboxEmpty}>
+                <Text style={styles.inboxEmptyText}>No notifications yet.</Text>
+              </View>
+            ) : (
+              <View style={styles.inboxList}>
+                {inboxItems.map((item) => (
+                  <Pressable
+                    key={item.id}
+                    style={[styles.inboxItem, !item.read && styles.inboxItemUnread]}
+                    onPress={() =>
+                      setInboxItems((prev) =>
+                        prev.map((entry) =>
+                          entry.id === item.id ? { ...entry, read: true } : entry
+                        )
+                      )
+                    }
+                  >
+                    <View style={styles.inboxItemHeader}>
+                      <Text style={styles.inboxItemTitle}>{item.title}</Text>
+                      <Text style={styles.inboxItemTime}>{formatInboxTime(item.createdAt)}</Text>
+                    </View>
+                    <Text style={styles.inboxItemBody}>{item.body}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            )}
+          </ScrollView>
         </View>
       )}
 
@@ -2389,7 +2524,7 @@ export function MapShell({ onSignOut }: MapShellProps) {
                 disabled={!canUseMock}
               >
                 <Text style={styles.toggleButtonText}>
-                  {usingMockJobs ? 'Mock on' : 'Mock off'}
+                  {canUseMock ? (usingMockJobs ? 'Mock on' : 'Mock off') : 'Live'}
                 </Text>
               </Pressable>
             )}
@@ -2402,7 +2537,11 @@ export function MapShell({ onSignOut }: MapShellProps) {
           </View>
         </View>
         {showJobsPanel && (
-          <>
+          <ScrollView
+            style={styles.overlayBody}
+            contentContainerStyle={styles.overlayBodyContent}
+            showsVerticalScrollIndicator={false}
+          >
             {hasActiveJob && jobsView === 'active' ? (
               <>
                 {mockJob && (
@@ -2516,6 +2655,11 @@ export function MapShell({ onSignOut }: MapShellProps) {
                           onPress={() => {
                             setProofJob(liveActiveJob);
                             setProofMode('pickup');
+                            setProofLocation(
+                              currentLocation
+                                ? { lat: currentLocation.lat, lng: currentLocation.lng, accuracy: currentAccuracy ?? null }
+                                : null
+                            );
                           }}
                         >
                           <Text style={styles.actionButtonText}>Confirm pickup (photo)</Text>
@@ -2527,6 +2671,11 @@ export function MapShell({ onSignOut }: MapShellProps) {
                           onPress={() => {
                             setProofJob(liveActiveJob);
                             setProofMode('dropoff');
+                            setProofLocation(
+                              currentLocation
+                                ? { lat: currentLocation.lat, lng: currentLocation.lng, accuracy: currentAccuracy ?? null }
+                                : null
+                            );
                           }}
                         >
                           <Text style={styles.actionButtonText}>Complete delivery (photo)</Text>
@@ -2672,7 +2821,12 @@ export function MapShell({ onSignOut }: MapShellProps) {
                             onPress={() =>
                               needsPickupProof(job) || needsDropoffProof(job)
                                 ? (setProofJob(job),
-                                  setProofMode(needsPickupProof(job) ? 'pickup' : 'dropoff'))
+                                  setProofMode(needsPickupProof(job) ? 'pickup' : 'dropoff'),
+                                  setProofLocation(
+                                    currentLocation
+                                      ? { lat: currentLocation.lat, lng: currentLocation.lng, accuracy: currentAccuracy ?? null }
+                                      : null
+                                  ))
                                 : handleAdvance(job)
                             }
                             disabled={busyJobId === job.id}
@@ -2736,18 +2890,18 @@ export function MapShell({ onSignOut }: MapShellProps) {
                 <Text style={styles.completedTitle}>Completed</Text>
                 {completedJobs.map((job) => (
                   <View key={job.id} style={styles.completedCard}>
-                    <Text style={styles.jobTitle}>Delivery job</Text>
-                    <Text style={styles.jobMeta}>
+                    <Text style={styles.completedJobTitle}>Delivery job</Text>
+                    <Text style={styles.completedJobMeta}>
                       {getPickupLabel(job)} → {getDropoffLabel(job)}
                     </Text>
-                    <Text style={styles.jobMeta}>
+                    <Text style={styles.completedJobMeta}>
                       {job.completedAt?.toDate ? `Completed at ${job.completedAt.toDate().toLocaleTimeString()}` : 'Completed'}
                     </Text>
                   </View>
                 ))}
               </View>
             )}
-          </>
+          </ScrollView>
         )}
         </View>
       )}
@@ -2808,7 +2962,11 @@ export function MapShell({ onSignOut }: MapShellProps) {
         job={proofJob}
         courierUid={user?.uid ?? null}
         mode={proofMode}
-        onClose={() => setProofJob(null)}
+        location={proofLocation}
+        onClose={() => {
+          setProofJob(null);
+          setProofLocation(null);
+        }}
         onCompleted={() => {
           if (user?.uid && proofJob?.id) {
             void logCourierEvent({
@@ -2818,6 +2976,7 @@ export function MapShell({ onSignOut }: MapShellProps) {
             });
           }
           setProofJob(null);
+          setProofLocation(null);
         }}
       />
       <JobDetailSheet
@@ -2850,7 +3009,7 @@ const styles = StyleSheet.create({
   },
   actionCard: {
     position: 'absolute',
-    top: 120,
+    top: 160,
     left: 16,
     padding: 10,
     borderRadius: 16,
@@ -2993,6 +3152,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#1d4ed8',
     zIndex: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
   jobAlertFlash: {
     backgroundColor: 'rgba(99, 102, 241, 0.98)',
@@ -3001,11 +3163,87 @@ const styles = StyleSheet.create({
   jobAlertHidden: {
     opacity: 0.4,
   },
-  jobAlertText: {
+  jobAlertTextWrap: {
+    flex: 1,
+  },
+  jobAlertTitle: {
     color: '#e2e8f0',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  jobAlertBody: {
+    color: '#dbeafe',
+    fontSize: 11,
+    marginTop: 2,
+  },
+  jobAlertAction: {
+    color: '#bfdbfe',
     fontSize: 12,
-    fontWeight: '600',
-    textAlign: 'center',
+    fontWeight: '700',
+  },
+  inboxPanel: {
+    position: 'absolute',
+    top: 140,
+    left: 16,
+    right: 16,
+    bottom: 120,
+    backgroundColor: 'rgba(15, 23, 42, 0.97)',
+    borderRadius: 18,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.35)',
+    zIndex: 25,
+  },
+  inboxScrollContent: {
+    paddingBottom: 20,
+  },
+  inboxTitle: {
+    color: '#e2e8f0',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  inboxEmpty: {
+    paddingVertical: 30,
+    alignItems: 'center',
+  },
+  inboxEmptyText: {
+    color: '#94a3b8',
+    fontSize: 13,
+  },
+  inboxList: {
+    gap: 10,
+  },
+  inboxItem: {
+    backgroundColor: 'rgba(30, 41, 59, 0.9)',
+    borderRadius: 14,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(51, 65, 85, 0.8)',
+  },
+  inboxItemUnread: {
+    borderColor: '#60a5fa',
+    backgroundColor: 'rgba(30, 64, 175, 0.25)',
+  },
+  inboxItemHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  inboxItemTitle: {
+    color: '#e2e8f0',
+    fontSize: 13,
+    fontWeight: '700',
+    flex: 1,
+    paddingRight: 8,
+  },
+  inboxItemTime: {
+    color: '#94a3b8',
+    fontSize: 11,
+  },
+  inboxItemBody: {
+    color: '#cbd5f5',
+    fontSize: 12,
+    marginTop: 6,
   },
   debugPanel: {
     position: 'absolute',
@@ -3419,15 +3657,24 @@ const styles = StyleSheet.create({
   },
   overlay: {
     position: 'absolute',
-    left: 20,
-    right: 20,
-    bottom: 24,
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: '#111827',
     padding: 16,
-    borderRadius: 16,
+    paddingBottom: 18,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '70%',
   },
   overlayCollapsed: {
     paddingBottom: 10,
+  },
+  overlayBody: {
+    marginTop: 6,
+  },
+  overlayBodyContent: {
+    paddingBottom: 24,
   },
   activePanel: {
     position: 'absolute',
@@ -4014,6 +4261,17 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderBottomWidth: 1,
     borderBottomColor: '#1f2937',
+  },
+  completedJobTitle: {
+    color: '#e2e8f0',
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  completedJobMeta: {
+    color: '#9ca3af',
+    fontSize: 10,
+    marginBottom: 3,
   },
   actionButton: {
     backgroundColor: '#6B4EFF',

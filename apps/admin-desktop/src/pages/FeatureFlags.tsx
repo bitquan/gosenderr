@@ -206,6 +206,32 @@ export default function FeatureFlagsPage() {
     }
   }
 
+  const handleTogglePushNotifications = async (currentValue: boolean) => {
+    try {
+      await setDoc(
+        doc(db, 'featureFlags', 'config'),
+        { advanced: { pushNotifications: !currentValue } },
+        { merge: true }
+      )
+    } catch (error) {
+      console.error('Error updating push notifications flag:', error)
+      alert('Failed to update push notifications flag')
+    }
+  }
+
+  const handleToggleCourierNativeV2 = async (currentValue: boolean) => {
+    try {
+      await setDoc(
+        doc(db, 'featureFlags', 'config'),
+        { courier: { nativeV2: !currentValue } },
+        { merge: true }
+      )
+    } catch (error) {
+      console.error('Error updating courier native v2 flag:', error)
+      alert('Failed to update courier native v2 flag')
+    }
+  }
+
   const handleToggleAdminTool = async (key: 'systemLogs' | 'firebaseExplorer', currentValue: boolean) => {
     try {
       await setDoc(
@@ -338,6 +364,56 @@ export default function FeatureFlagsPage() {
                   {configFlags?.admin?.firebaseExplorer ? 'Enabled' : 'Disabled'}
                 </button>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card variant="elevated">
+          <CardHeader>
+            <CardTitle>Advanced Notifications</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium text-gray-900">Push Notifications</p>
+                <p className="text-xs text-gray-500">Enable admin test push and courier push rollouts.</p>
+              </div>
+              <button
+                type="button"
+                disabled={configLoading}
+                onClick={() => handleTogglePushNotifications(Boolean(configFlags?.advanced?.pushNotifications))}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                  configFlags?.advanced?.pushNotifications
+                    ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {configFlags?.advanced?.pushNotifications ? 'Enabled' : 'Disabled'}
+              </button>
+            </div>
+          </CardContent>
+        </Card>
+        <Card variant="elevated">
+          <CardHeader>
+            <CardTitle>Courier Native V2</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium text-gray-900">Enable Courier Native V2</p>
+                <p className="text-xs text-gray-500">Turn on to enable the new native courier app experience.</p>
+              </div>
+              <button
+                type="button"
+                disabled={configLoading}
+                onClick={() => handleToggleCourierNativeV2(Boolean(configFlags?.courier?.nativeV2))}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                  configFlags?.courier?.nativeV2
+                    ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {configFlags?.courier?.nativeV2 ? 'Enabled' : 'Disabled'}
+              </button>
             </div>
           </CardContent>
         </Card>

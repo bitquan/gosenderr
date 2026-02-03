@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { collection, getDocs, doc, updateDoc, query, orderBy, limit, getCountFromServer } from 'firebase/firestore'
+import { collection, getDocs, doc, updateDoc, query, orderBy, limit, getCountFromServer, onSnapshot } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { Card, CardHeader, CardTitle, CardContent } from '../components/Card'
 import EditRoleModal from '../components/EditRoleModal'
@@ -16,6 +16,7 @@ interface User {
   banned?: boolean
   courierProfile?: {
     online?: boolean
+    isOnline?: boolean
     vehicleType?: string
   }
   createdAt?: any
@@ -32,6 +33,22 @@ export default function AdminUsersPage() {
 
   useEffect(() => {
     loadUsers()
+
+    const usersQuery = query(
+      collection(db, 'users'),
+      orderBy('createdAt', 'desc'),
+      limit(200)
+    )
+
+    const unsubscribe = onSnapshot(usersQuery, (snapshot) => {
+      const usersData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as User[]
+      setUsers(usersData)
+    })
+
+    return () => unsubscribe()
   }, [])
 
   const loadUsers = async () => {
@@ -217,7 +234,7 @@ export default function AdminUsersPage() {
                               <span className="px-2 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-semibold">
                                 Courier
                               </span>
-                              {user.courierProfile?.online && (
+                              {(user.courierProfile?.isOnline ?? user.courierProfile?.online) && (
                                 <span className="px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold">
                                   Online
                                 </span>

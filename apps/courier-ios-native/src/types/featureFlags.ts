@@ -18,6 +18,8 @@ export interface FeatureFlags {
     equipmentBadges: boolean;
     workModes: boolean;
     nativeV2: boolean;
+    jobDetails: boolean;
+    jobAlerts: boolean;
   };
 
   seller: {
@@ -52,6 +54,7 @@ export interface FeatureFlags {
 
   advanced: {
     pushNotifications: boolean;
+    backgroundLocation: boolean;
     ratingEnforcement: boolean;
     autoCancel: boolean;
     refunds: boolean;

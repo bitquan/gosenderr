@@ -21,6 +21,7 @@ const SettingsPage = lazy(() => import('./pages/Settings'))
 const AuditLogsPage = lazy(() => import('./pages/AuditLogs'))
 const FeatureFlagsPage = lazy(() => import('./pages/FeatureFlags'))
 const DisputesPage = lazy(() => import('./pages/Disputes'))
+const MessagingPage = lazy(() => import('./pages/Messaging'))
 const CourierApprovalPage = lazy(() => import('./pages/CourierApproval'))
 const SellerApprovalPage = lazy(() => import('./pages/SellerApproval'))
 const MarketplacePage = lazy(() => import('./pages/Marketplace'))
@@ -164,6 +165,7 @@ function App() {
                           <Route path="/users" element={<UsersPage />} />
                           <Route path="/users/:userId" element={<UserDetailPage />} />
                           <Route path="/jobs" element={<JobsPage />} />
+                          <Route path="/messaging" element={<MessagingPage />} />
                           <Route path="/disputes" element={<DisputesPage />} />
                           <Route path="/courier-approval" element={<CourierApprovalPage />} />
                           <Route path="/seller-approval" element={<SellerApprovalPage />} />

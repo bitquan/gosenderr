@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { collection, getDocs, orderBy, query, where, doc, updateDoc, limit, onSnapshot } from 'firebase/firestore'
 import { db } from '../lib/firebase'
@@ -8,6 +8,7 @@ import { formatCurrency, formatDate } from '../lib/utils'
 import { getFunctions, httpsCallable } from 'firebase/functions'
 import { exportToCSV, formatJobsForExport } from '../lib/csvExport'
 import { CreateJobModal } from '../components/CreateJobModal'
+import { LiveTripStatus } from '../components/v2/LiveTripStatus'
 
 interface Job {
   id: string
@@ -15,6 +16,11 @@ interface Job {
   statusDetail?: string
   pickupAddress?: string
   deliveryAddress?: string
+  pickup?: { lat: number; lng: number; label?: string; address?: string }
+  dropoff?: { lat: number; lng: number; label?: string; address?: string }
+  pickupProof?: any
+  dropoffProof?: any
+  deliveryProof?: any
   agreedFee?: number
   createdAt?: any
   courierUid?: string
@@ -43,14 +49,36 @@ export default function AdminJobsPage() {
   const [processing, setProcessing] = useState<string | null>(null)
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [selectedJobLoading, setSelectedJobLoading] = useState(false)
+  const [selectedCourier, setSelectedCourier] = useState<any | null>(null)
 
-  const getEffectiveStatus = (job: Job) => job.statusDetail || job.status
   const getDisplayStatus = (job: Job) => {
     const status = getEffectiveStatus(job)
     if (['completed', 'cancelled', 'pending', 'open', 'assigned', 'in_progress'].includes(status)) {
       return status
     }
     return 'in_progress'
+  }
+
+  const getEffectiveTripStatus = (job: Job) => {
+    const status = getEffectiveStatus(job)
+    if (status === 'pending') return 'open'
+    if (status === 'in_progress') return 'enroute_pickup'
+    return status
+  }
+
+  const getEffectiveStatus = (job: Job) => job.statusDetail || job.status
+
+  const buildProofPhoto = (proof: any) => {
+    if (!proof) return undefined
+    const url = proof.url || proof.photoUrl || proof.photoDataUrl
+    if (!url) return undefined
+    return {
+      url,
+      timestamp: proof.timestamp || proof.createdAt || proof.updatedAt,
+      gpsVerified: Boolean(proof.location),
+      accuracy: proof.accuracy,
+      location: proof.location || undefined,
+    }
   }
 
   useEffect(() => {
@@ -78,6 +106,7 @@ export default function AdminJobsPage() {
     const jobId = searchParams.get('jobId')
     if (!jobId) {
       setSelectedJob(null)
+      setSelectedCourier(null)
       return
     }
 
@@ -94,6 +123,54 @@ export default function AdminJobsPage() {
 
     return () => unsubscribe()
   }, [searchParams])
+
+  useEffect(() => {
+    if (!selectedJob?.courierUid) {
+      setSelectedCourier(null)
+      return
+    }
+
+    const courierRef = doc(db, 'users', selectedJob.courierUid)
+    const unsubscribe = onSnapshot(
+      courierRef,
+      (snapshot) => {
+        setSelectedCourier(snapshot.exists() ? snapshot.data() : null)
+      },
+      () => undefined
+    )
+
+    return () => unsubscribe()
+  }, [selectedJob?.courierUid])
+
+  const courierLocation = useMemo(() => {
+    const location = selectedCourier?.courierProfile?.currentLocation || selectedCourier?.location
+    if (!location?.lat || !location?.lng) return null
+    return {
+      lat: location.lat,
+      lng: location.lng,
+      heading: location.heading,
+      speed: location.speed,
+      accuracy: location.accuracy,
+      updatedAt: location.timestamp || location.updatedAt,
+    }
+  }, [selectedCourier])
+
+  const estimatedArrivalMinutes = useMemo(() => {
+    if (!courierLocation || !selectedJob?.dropoff) return undefined
+    const toRad = (value: number) => (value * Math.PI) / 180
+    const R = 6371
+    const dLat = toRad(selectedJob.dropoff.lat - courierLocation.lat)
+    const dLon = toRad(selectedJob.dropoff.lng - courierLocation.lng)
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRad(courierLocation.lat)) * Math.cos(toRad(selectedJob.dropoff.lat)) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2)
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+    const distanceKm = R * c
+    const mph = 20
+    const minutes = (distanceKm / 1.609) / mph * 60
+    return Math.max(1, Math.round(minutes))
+  }, [courierLocation, selectedJob?.dropoff])
 
   const loadJobs = async () => {
     try {
@@ -225,6 +302,39 @@ export default function AdminJobsPage() {
                   <div><strong>Updated:</strong> {selectedJob.updatedAt?.toDate ? formatDate(selectedJob.updatedAt.toDate()) : '—'}</div>
                 </div>
               )}
+            </CardContent>
+          </Card>
+        )}
+
+        {selectedJob && selectedJob.pickup && selectedJob.dropoff && (
+          <Card variant="elevated">
+            <CardHeader>
+              <CardTitle>Trip Status</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <LiveTripStatus
+                jobId={selectedJob.id}
+                status={getEffectiveTripStatus(selectedJob)}
+                pickup={{
+                  lat: selectedJob.pickup.lat,
+                  lng: selectedJob.pickup.lng,
+                  address: selectedJob.pickup.address || selectedJob.pickup.label || selectedJob.pickupAddress || 'Pickup',
+                }}
+                dropoff={{
+                  lat: selectedJob.dropoff.lat,
+                  lng: selectedJob.dropoff.lng,
+                  address: selectedJob.dropoff.address || selectedJob.dropoff.label || selectedJob.deliveryAddress || 'Dropoff',
+                }}
+                courierInfo={{
+                  displayName: selectedCourier?.displayName || selectedCourier?.courierProfile?.displayName,
+                  vehicleType: selectedCourier?.courierProfile?.vehicleType,
+                  averageRating: selectedCourier?.averageRating,
+                }}
+                courierLocation={courierLocation}
+                pickupPhoto={buildProofPhoto(selectedJob.pickupProof)}
+                dropoffPhoto={buildProofPhoto(selectedJob.dropoffProof || selectedJob.deliveryProof)}
+                estimatedArrivalMinutes={estimatedArrivalMinutes}
+              />
             </CardContent>
           </Card>
         )}

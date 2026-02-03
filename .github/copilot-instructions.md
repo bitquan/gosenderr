@@ -69,6 +69,7 @@ This is a monorepo with Vite + React apps, Electron desktop app, and Firebase ba
 - **Checkpoint before detours**: Restate the goal and what will be done next before any troubleshooting steps.
 - **Catch missed steps**: Proactively verify common prerequisites (build/sync, emulator status, config URLs, signing, and feature flags) and call out anything missing.
 - **Prefer action**: If a reasonable default exists, do it; avoid asking for details unless required to proceed.
+- **Use docs, avoid freestyle**: Align work with canonical docs and checklists in `docs/` (e.g., `docs/CHECKLIST_COURIER_V2.md`). Update docs and `CHANGELOG.md` when behavior changes.
 - **Summarize outcomes**: End with a short status update and next concrete action.
 
 ## iOS Simulator & Capacitor Findings (Keep in Mind)

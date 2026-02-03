@@ -1,5 +1,6 @@
 import { initializeApp, getApp, getApps, FirebaseApp } from 'firebase/app';
 import { getFirestore, Firestore } from 'firebase/firestore';
+import { FirebaseStorage, getStorage } from 'firebase/storage';
 import {
   Auth,
   getAuth,
@@ -19,11 +20,13 @@ const isValidConfig = Boolean(
 let app: FirebaseApp | undefined;
 let dbInstance: Firestore | undefined;
 let authInstance: Auth | undefined;
+let storageInstance: FirebaseStorage | undefined;
 
 if (isValidConfig) {
   try {
     app = getApps().length ? getApp() : initializeApp(firebaseConfig);
     dbInstance = getFirestore(app);
+    storageInstance = getStorage(app);
 
     try {
       authInstance = initializeAuth(app, {
@@ -46,6 +49,7 @@ if (isValidConfig) {
 export { app };
 export const db = dbInstance as Firestore;
 export const auth = authInstance as Auth;
+export const storage = storageInstance as FirebaseStorage;
 export const isFirebaseReady = () => Boolean(dbInstance && authInstance);
 
 export const getAuthSafe = () => authInstance ?? null;

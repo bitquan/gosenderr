@@ -1,4 +1,4 @@
-import { collection, query, where, getDocs, doc, getDoc, updateDoc, deleteDoc, Timestamp, addDoc, getCountFromServer, orderBy, limit } from 'firebase/firestore'
+import { collection, query, where, getDocs, doc, getDoc, updateDoc, deleteDoc, Timestamp, addDoc, getCountFromServer, orderBy, limit, onSnapshot } from 'firebase/firestore'
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { db } from '../lib/firebase'
@@ -34,6 +34,7 @@ interface User {
   suspensionReason?: string
   courierProfile?: {
     online?: boolean
+    isOnline?: boolean
     vehicleType?: string
     approved?: boolean
     rating?: number
@@ -88,10 +89,20 @@ export default function UserDetailPage() {
   const { showToast } = useToast()
 
   useEffect(() => {
-    if (userId) {
-      loadUser()
-      loadActivityLogs()
-    }
+    if (!userId) return
+
+    const userRef = doc(db, 'users', userId)
+    const unsubscribe = onSnapshot(userRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = { id: snapshot.id, ...snapshot.data() } as User
+        setUser(data)
+      }
+      setLoading(false)
+    })
+
+    loadActivityLogs()
+
+    return () => unsubscribe()
   }, [userId])
 
   const loadUser = async () => {
@@ -673,10 +684,10 @@ export default function UserDetailPage() {
                       {user.courierProfile?.rating?.toFixed(1) || 'N/A'} ⭐
                     </p>
                   </div>
-                  <div className={`p-4 rounded-lg ${user.courierProfile?.online ? 'bg-green-50' : 'bg-gray-50'}`}>
+                  <div className={`p-4 rounded-lg ${(user.courierProfile?.isOnline ?? user.courierProfile?.online) ? 'bg-green-50' : 'bg-gray-50'}`}>
                     <p className="text-sm text-gray-600 font-semibold">Status</p>
-                    <p className={`text-lg font-bold mt-1 ${user.courierProfile?.online ? 'text-green-600' : 'text-gray-600'}`}>
-                      {user.courierProfile?.online ? '🟢 Online' : '⚪ Offline'}
+                    <p className={`text-lg font-bold mt-1 ${(user.courierProfile?.isOnline ?? user.courierProfile?.online) ? 'text-green-600' : 'text-gray-600'}`}>
+                      {(user.courierProfile?.isOnline ?? user.courierProfile?.online) ? '🟢 Online' : '⚪ Offline'}
                     </p>
                   </div>
                 </div>

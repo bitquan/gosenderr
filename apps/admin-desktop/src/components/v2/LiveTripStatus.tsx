@@ -59,6 +59,7 @@ export function LiveTripStatus({
   onMessageCourier,
 }: LiveTripStatusProps) {
   const [lastUpdateSeconds, setLastUpdateSeconds] = useState(0);
+  const showLiveTracking = status !== "completed" && status !== "cancelled";
 
   // Calculate time since last location update
   useEffect(() => {
@@ -77,9 +78,12 @@ export function LiveTripStatus({
   const getStatusEmoji = () => {
     switch (status) {
       case "open":
+      case "pending":
         return "🔍";
       case "assigned":
         return "👍";
+      case "in_progress":
+        return "🚗";
       case "enroute_pickup":
         return "🚗";
       case "picked_up":
@@ -97,9 +101,12 @@ export function LiveTripStatus({
   const getStatusText = () => {
     switch (status) {
       case "open":
+      case "pending":
         return "Finding Senderr";
       case "assigned":
         return "Senderr Assigned";
+      case "in_progress":
+        return "In Progress";
       case "enroute_pickup":
         return "Heading to Pickup";
       case "arrived_pickup":
@@ -197,7 +204,9 @@ export function LiveTripStatus({
         <MapboxMap
           pickup={pickup}
           dropoff={dropoff}
-          courierLocation={courierLocation || null}
+          courierLocation={showLiveTracking ? courierLocation || null : null}
+          pickupProof={pickupPhoto?.location ? { url: pickupPhoto.url, location: pickupPhoto.location } : null}
+          dropoffProof={dropoffPhoto?.location ? { url: dropoffPhoto.url, location: dropoffPhoto.location } : null}
           height="400px"
         />
       </div>
@@ -413,7 +422,7 @@ export function LiveTripStatus({
               status === "enroute_dropoff" || status === "arrived_dropoff"
             }
             lastUpdate={
-              courierLocation
+              showLiveTracking && courierLocation
                 ? `Last updated: ${lastUpdateSeconds}s ago`
                 : undefined
             }

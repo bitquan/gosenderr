@@ -21,6 +21,8 @@ const defaultFlags: FeatureFlags = {
     equipmentBadges: true,
     workModes: true,
     nativeV2: false,
+    jobDetails: true,
+    jobAlerts: true,
   },
   seller: {
     stripeConnect: true,
@@ -50,6 +52,7 @@ const defaultFlags: FeatureFlags = {
   },
   advanced: {
     pushNotifications: true,
+    backgroundLocation: false,
     ratingEnforcement: true,
     autoCancel: true,
     refunds: true,

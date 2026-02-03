@@ -17,6 +17,7 @@ import { useFeatureFlags } from './src/hooks/useFeatureFlags';
 import { isFirebaseReady } from './src/lib/firebase';
 import { MapShell } from './src/screens/MapShell';
 
+
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
 

@@ -16,6 +16,7 @@ const ACTIVE_STATUSES = new Set([
 export function useOpenJobs(uid: string | null) {
   const [openJobs, setOpenJobs] = useState<Job[]>([]);
   const [myJobs, setMyJobs] = useState<Job[]>([]);
+  const [completedJobs, setCompletedJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -45,6 +46,7 @@ export function useOpenJobs(uid: string | null) {
     );
 
     let unsubscribeMine: () => void = () => undefined;
+    let unsubscribeCompleted: () => void = () => undefined;
     if (uid) {
       const myQuery = query(jobsRef, where('courierUid', '==', uid));
       unsubscribeMine = onSnapshot(
@@ -60,11 +62,29 @@ export function useOpenJobs(uid: string | null) {
         },
         () => undefined
       );
+
+      const completedQuery = query(
+        jobsRef,
+        where('courierUid', '==', uid),
+        where('status', '==', 'completed')
+      );
+      unsubscribeCompleted = onSnapshot(
+        completedQuery,
+        (snapshot) => {
+          const jobs = snapshot.docs.map((doc) => ({
+            ...(doc.data() as Job),
+            id: doc.id,
+          }));
+          setCompletedJobs(jobs);
+        },
+        () => undefined
+      );
     }
 
     return () => {
       unsubscribeOpen();
       unsubscribeMine();
+      unsubscribeCompleted();
     };
   }, [uid]);
 
@@ -75,5 +95,5 @@ export function useOpenJobs(uid: string | null) {
     return Array.from(map.values());
   }, [openJobs, myJobs]);
 
-  return { jobs, loading };
+  return { jobs, completedJobs, loading };
 }

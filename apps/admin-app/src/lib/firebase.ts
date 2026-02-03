@@ -29,8 +29,9 @@ if (isValidConfig) {
     storageInstance = getStorage(app)
     functionsInstance = getFunctions(app)
     
-    // Connect to emulators in development
-    if (import.meta.env.DEV) {
+    // Connect to emulators only when explicitly enabled
+    const useEmulators = import.meta.env.VITE_ADMIN_APP_USE_EMULATORS === 'true'
+    if (useEmulators) {
       const { connectFirestoreEmulator } = await import('firebase/firestore')
       const { connectAuthEmulator } = await import('firebase/auth')
       const { connectStorageEmulator } = await import('firebase/storage')
@@ -41,7 +42,7 @@ if (isValidConfig) {
         connectAuthEmulator(authInstance, 'http://127.0.0.1:9099', { disableWarnings: true })
         connectStorageEmulator(storageInstance, '127.0.0.1', 9199)
         connectFunctionsEmulator(functionsInstance, '127.0.0.1', 5001)
-        console.log('Connected to Firebase Emulators')
+        console.log('Connected to Firebase Emulators (admin-app)')
       } catch (e) {
         console.log('Emulators already connected or not available')
       }

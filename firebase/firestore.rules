@@ -368,6 +368,33 @@ service cloud.firestore {
 
       allow delete: if false;
     }
+
+    // ========== JOB PHOTOS (Proof of Delivery) ==========
+    match /jobPhotos/{photoId} {
+      function isJobCourier(jobId) {
+        return signedIn()
+          && get(/databases/$(database)/documents/jobs/$(jobId)).data.courierUid == request.auth.uid;
+      }
+
+      allow read: if signedIn() && (
+        isAdmin()
+        || request.auth.uid == resource.data.courierUid
+      );
+
+      allow create: if signedIn()
+        && request.resource.data.courierUid == request.auth.uid
+        && request.resource.data.jobId is string
+        && isJobCourier(request.resource.data.jobId);
+
+      allow update, delete: if isAdmin();
+    }
+
+    // ========== COURIER EVENTS (Analytics) ==========
+    match /courierEvents/{eventId} {
+      allow create: if signedIn();
+      allow read: if isAdmin();
+      allow update, delete: if false;
+    }
     
     // ========== RATINGS ==========
     match /ratings/{ratingId} {

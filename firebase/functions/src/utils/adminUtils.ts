@@ -10,6 +10,12 @@ import * as admin from "firebase-admin";
  */
 export async function verifyAdmin(uid: string): Promise<boolean> {
   try {
+    // Check adminProfiles collection (admin desktop uses this)
+    const adminProfileDoc = await admin.firestore().doc(`adminProfiles/${uid}`).get();
+    if (adminProfileDoc.exists) {
+      return true;
+    }
+
     // Check Firestore role
     const userDoc = await admin.firestore().doc(`users/${uid}`).get();
 

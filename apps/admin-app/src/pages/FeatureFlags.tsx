@@ -3,6 +3,7 @@ import { collection, getDocs, doc, updateDoc, Timestamp } from 'firebase/firesto
 import { db } from '../lib/firebase'
 import { useAuth } from '../hooks/useAuth'
 import { Card, CardHeader, CardTitle, CardContent } from '../components/Card'
+import { useFeatureFlags } from '../hooks/useFeatureFlags'
 
 interface FeatureFlag {
   id: string
@@ -16,9 +17,11 @@ interface FeatureFlag {
 
 export default function FeatureFlagsPage() {
   const { user } = useAuth()
+  const { flags: configFlags, loading: configLoading } = useFeatureFlags()
   const [flags, setFlags] = useState<FeatureFlag[]>([])
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState<string | null>(null)
+  const [configUpdating, setConfigUpdating] = useState(false)
 
   useEffect(() => {
     loadFlags()
@@ -70,6 +73,22 @@ export default function FeatureFlagsPage() {
     }
   }
 
+  const toggleConfigPushNotifications = async () => {
+    if (!configFlags) return
+    setConfigUpdating(true)
+    try {
+      await updateDoc(doc(db, 'featureFlags', 'config'), {
+        'advanced.pushNotifications': !configFlags.advanced?.pushNotifications,
+        updatedAt: Timestamp.now(),
+      })
+    } catch (error) {
+      console.error('Error toggling config pushNotifications flag:', error)
+      alert('Failed to update config flag')
+    } finally {
+      setConfigUpdating(false)
+    }
+  }
+
   // Group flags by category
   const flagsByCategory = flags.reduce((acc, flag) => {
     if (!acc[flag.category]) {
@@ -97,6 +116,60 @@ export default function FeatureFlagsPage() {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 -mt-8 space-y-6">
+        {configLoading ? (
+          <Card variant="elevated">
+            <CardContent className="p-8 text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+              <p className="mt-4 text-gray-600">Loading config flags...</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card variant="elevated">
+            <CardHeader>
+              <CardTitle>🧩 Config Flags</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between p-4 border-2 border-gray-200 rounded-xl hover:border-purple-200 transition-colors">
+                <div className="flex-1">
+                  <h3 className="font-semibold text-gray-900">Advanced: Push Notifications</h3>
+                  <p className="text-sm text-gray-600 mt-1">Controls admin test push UI and push feature rollouts.</p>
+                </div>
+
+                <button
+                  onClick={toggleConfigPushNotifications}
+                  disabled={configUpdating}
+                  className={`
+                    relative inline-flex h-8 w-16 items-center rounded-full transition-colors
+                    ${configFlags?.advanced?.pushNotifications ? 'bg-green-500' : 'bg-gray-300'}
+                    ${configUpdating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                  `}
+                >
+                  <span
+                    className={`
+                      inline-block h-6 w-6 transform rounded-full bg-white transition-transform
+                      ${configFlags?.advanced?.pushNotifications ? 'translate-x-9' : 'translate-x-1'}
+                    `}
+                  />
+                </button>
+
+                <div className="ml-4 text-right">
+                  <span
+                    className={`
+                      inline-block px-3 py-1 rounded-full text-sm font-medium
+                      ${configFlags?.advanced?.pushNotifications
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-gray-100 text-gray-800'
+                      }
+                    `}
+                  >
+                    {configFlags?.advanced?.pushNotifications ? 'Enabled' : 'Disabled'}
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {loading ? (
           <Card variant="elevated">
             <CardContent className="p-8 text-center">
