@@ -1719,6 +1719,7 @@ export function MapShell({ onSignOut }: MapShellProps) {
                   },
                 ]}
               />
+              <View style={styles.courierRing} />
               <View style={styles.courierDot} />
             </View>
           </MapboxGL.MarkerView>
@@ -3369,6 +3370,15 @@ const styles = StyleSheet.create({
     height: 64,
     borderRadius: 32,
     backgroundColor: 'rgba(37, 99, 235, 0.45)',
+  },
+  courierRing: {
+    position: 'absolute',
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    borderWidth: 4,
+    borderColor: 'rgba(226, 232, 240, 0.9)',
+    backgroundColor: 'rgba(15, 23, 42, 0.35)',
   },
   courierDot: {
     width: 26,
