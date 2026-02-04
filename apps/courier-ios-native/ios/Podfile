@@ -21,6 +21,7 @@ target 'Senderrappios' do
   pod 'Firebase/Auth', :modular_headers => true
   pod 'Firebase/Firestore', :modular_headers => true
   pod 'Firebase/Functions', :modular_headers => true
+  pod 'Firebase/Messaging', :modular_headers => true
   pod 'FirebaseCore', :modular_headers => true
   pod 'FirebaseCoreExtension', :modular_headers => true
   pod 'FirebaseCoreInternal', :modular_headers => true

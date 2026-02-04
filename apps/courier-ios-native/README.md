@@ -1,3 +1,104 @@
+# GoSenderr Courier iOS Native App
+
+This is the native iOS courier application built with [React Native](https://reactnative.dev).
+
+## 🚀 Quick Start
+
+For detailed setup instructions and building in Xcode, see **[SETUP.md](./SETUP.md)**.
+
+### Quick Setup (iOS)
+
+```bash
+# From the monorepo root
+pnpm install
+
+# Navigate to iOS directory
+cd apps/courier-ios-native/ios
+
+# Install CocoaPods dependencies
+bundle install
+bundle exec pod install
+
+# Open in Xcode (always use .xcworkspace)
+open Senderrappios.xcworkspace
+```
+
+### Quick Run
+
+```bash
+# Start Metro bundler
+pnpm start
+
+# In another terminal, run on iOS simulator
+pnpm ios
+```
+
+## 📚 Documentation
+
+- **[SETUP.md](./SETUP.md)** - Complete Xcode setup and build guide
+- **[DEVELOPMENT.md](../../docs/DEVELOPMENT.md)** - General development guide
+- **[DEPLOYMENT.md](../../docs/DEPLOYMENT.md)** - Deployment instructions
+
+## 🏗️ Architecture
+
+This app uses:
+- **React Native 0.76.5** with New Architecture enabled
+- **Firebase** (Web SDK + Native SDK) for authentication and data
+- **Mapbox** for maps and navigation
+- **TypeScript** for type safety
+
+## ⚙️ Key Features
+
+- Real-time job tracking and updates
+- Turn-by-turn navigation with Mapbox
+- Proof of delivery with camera integration
+- Background location tracking
+- Push notifications for job updates
+- Feature flag control (courier.nativeV2)
+
+## 📱 Requirements
+
+- macOS with Xcode 15+
+- Node.js 18+
+- CocoaPods
+- iOS 15.1+
+
+## 🔧 Common Commands
+
+```bash
+# Install dependencies
+pnpm install
+
+# Start Metro bundler
+pnpm start
+
+# Run on iOS
+pnpm ios
+
+# Run tests
+pnpm test
+
+# Type check
+npx tsc --noEmit
+```
+
+## 🐛 Troubleshooting
+
+See [SETUP.md](./SETUP.md#common-build-issues) for common build issues and solutions.
+
+Quick fixes:
+```bash
+# Clean and reinstall pods
+cd ios
+bundle exec pod deintegrate
+bundle exec pod install
+
+# Clean Xcode derived data
+rm -rf ~/Library/Developer/Xcode/DerivedData
+```
+
+---
+
 This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
 
 # Getting Started
