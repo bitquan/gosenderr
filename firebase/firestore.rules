@@ -680,6 +680,18 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // ========== ADMIN ACTION LOG (Notification Debug) ==========
+    match /adminActionLog/{logId} {
+      // Only admins and system can create logs (typically via cloud function)
+      allow create: if isAdmin();
+
+      // Admins can read all logs
+      allow read: if isAdmin();
+
+      // No updates or deletes - immutable audit trail
+      allow update, delete: if false;
+    }
+
     // ========== PLATFORM SETTINGS ==========
     match /platformSettings/stateTaxRates {
       allow read: if signedIn();

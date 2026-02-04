@@ -536,6 +536,7 @@ export interface FeatureFlags {
     webPortalEnabled: boolean;
     systemLogs: boolean;
     firebaseExplorer: boolean;
+    notificationDebug: boolean;
   };
 
   advanced: {

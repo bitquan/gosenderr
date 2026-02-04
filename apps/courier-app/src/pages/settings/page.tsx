@@ -77,7 +77,13 @@ export default function CourierSettingsPage() {
     payoutUpdates: true,
     reminders: true,
   });
+  const [notificationSettings, setNotificationSettings] = useState({
+    deliveryUpdates: true,
+    nearbyCourierAlerts: true,
+    marketing: false,
+  });
   const [savingPreferences, setSavingPreferences] = useState(false);
+  const [savingNotifications, setSavingNotifications] = useState(false);
   const [uploadingDocs, setUploadingDocs] = useState(false);
   const [documents, setDocuments] = useState<{
     governmentId: File | null;
@@ -107,6 +113,13 @@ export default function CourierSettingsPage() {
                 reminders: profile.notificationPrefs?.reminders ?? true,
               });
             }
+
+            const prefs = userDoc.data().notificationPreferences || {};
+            setNotificationSettings({
+              deliveryUpdates: prefs.deliveryUpdates ?? true,
+              nearbyCourierAlerts: prefs.nearbyCourierAlerts ?? true,
+              marketing: prefs.marketing ?? false,
+            });
           }
         } finally {
           setDataLoading(false);
@@ -149,6 +162,22 @@ export default function CourierSettingsPage() {
       console.error("Error saving courier preferences:", error);
     } finally {
       setSavingPreferences(false);
+    }
+  };
+
+  const handleSaveNotificationSettings = async () => {
+    if (!user) return;
+
+    setSavingNotifications(true);
+    try {
+      await updateDoc(doc(db, 'users', user.uid), {
+        notificationPreferences: notificationSettings,
+        updatedAt: serverTimestamp(),
+      });
+    } catch (error) {
+      console.error("Error saving notification preferences:", error);
+    } finally {
+      setSavingNotifications(false);
     }
   };
 
@@ -454,6 +483,84 @@ export default function CourierSettingsPage() {
               🔔 Notifications
             </h2>
             <div className="space-y-4">
+              <div className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3">
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">Delivery Updates</p>
+                  <p className="text-xs text-gray-500">Get notified about job status changes.</p>
+                </div>
+                <button
+                  onClick={() =>
+                    setNotificationSettings((prev) => ({
+                      ...prev,
+                      deliveryUpdates: !prev.deliveryUpdates,
+                    }))
+                  }
+                  className={`px-4 py-2 rounded-full text-xs font-semibold border transition-colors ${
+                    notificationSettings.deliveryUpdates
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      : "bg-white text-gray-600 border-gray-200"
+                  }`}
+                >
+                  {notificationSettings.deliveryUpdates ? "On" : "Off"}
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3">
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">Nearby Courier Alerts</p>
+                  <p className="text-xs text-gray-500">Get notified about nearby job opportunities.</p>
+                </div>
+                <button
+                  onClick={() =>
+                    setNotificationSettings((prev) => ({
+                      ...prev,
+                      nearbyCourierAlerts: !prev.nearbyCourierAlerts,
+                    }))
+                  }
+                  className={`px-4 py-2 rounded-full text-xs font-semibold border transition-colors ${
+                    notificationSettings.nearbyCourierAlerts
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      : "bg-white text-gray-600 border-gray-200"
+                  }`}
+                >
+                  {notificationSettings.nearbyCourierAlerts ? "On" : "Off"}
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3">
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">Marketing</p>
+                  <p className="text-xs text-gray-500">Opt in to promos and product updates.</p>
+                </div>
+                <button
+                  onClick={() =>
+                    setNotificationSettings((prev) => ({
+                      ...prev,
+                      marketing: !prev.marketing,
+                    }))
+                  }
+                  className={`px-4 py-2 rounded-full text-xs font-semibold border transition-colors ${
+                    notificationSettings.marketing
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      : "bg-white text-gray-600 border-gray-200"
+                  }`}
+                >
+                  {notificationSettings.marketing ? "On" : "Off"}
+                </button>
+              </div>
+
+              <button
+                onClick={handleSaveNotificationSettings}
+                disabled={savingNotifications}
+                className="w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
+              >
+                {savingNotifications ? "Saving..." : "Save Notification Preferences"}
+              </button>
+
+              <div className="text-xs text-gray-500">
+                These settings control push notifications sent to your device.
+              </div>
+
               <div className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3">
                 <div>
                   <p className="text-sm font-semibold text-gray-900">Job Offers</p>

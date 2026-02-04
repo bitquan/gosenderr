@@ -88,6 +88,8 @@ logs/
 # Keys / credentials
 **/*.pem
 **/*serviceAccount*.json
+**/*firebase-adminsdk-*.json
+gosenderr-*-firebase-adminsdk-*.json
 # Playwright
 test-results/
 playwright-report/

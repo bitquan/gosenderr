@@ -5,8 +5,17 @@
  * @format
  */
 
-import { ActivityIndicator, Pressable, StatusBar, StyleSheet, Text, TextInput, useColorScheme, View } from 'react-native';
 import { useState } from 'react';
+import {
+  ActivityIndicator,
+  Pressable,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  useColorScheme,
+  View,
+} from 'react-native';
 import {
   SafeAreaProvider,
   useSafeAreaInsets,
@@ -16,7 +25,6 @@ import { useAuth } from './src/hooks/useAuth';
 import { useFeatureFlags } from './src/hooks/useFeatureFlags';
 import { isFirebaseReady } from './src/lib/firebase';
 import { MapShell } from './src/screens/MapShell';
-
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
@@ -61,7 +69,7 @@ function AppContent() {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: safeAreaInsets.top + 24 }]}>
+    <View style={[styles.container, { paddingTop: safeAreaInsets.top + 24 }]}> 
       <Text style={styles.title}>GoSenderr Courier V2</Text>
       <Text style={styles.subtitle}>Native iOS app (Plan D)</Text>
 

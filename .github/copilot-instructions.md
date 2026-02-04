@@ -54,10 +54,15 @@ This is a monorepo with Vite + React apps, Electron desktop app, and Firebase ba
 ### 5) Common Local Dev Conflicts
 - **Electron binary issues**: missing framework symlinks can break the admin desktop app. Reinstall Electron and restore framework symlinks if dyld errors appear.
 - **Firestore persistence**: if you see `initializeFirestore` conflicts or repeated internal assertion errors, prefer `getFirestore()` with no custom local cache.
+- **iOS build cleanup**: if an iOS build fails, delete `apps/courier-ios-native/ios/build` and clear DerivedData before retrying.
 
 ### 6) Mapbox & Config Dependencies
 - **Mapbox geocoding** errors often indicate missing/invalid public config or token. Verify `getPublicConfig` and Mapbox token sources.
 - **CORS errors** from `getPublicConfigHttp` can block features. Prefer callable fallback or local config during dev.
+
+### 6.1) External SSD workflow
+- When disk pressure slows the Mac, move repos to a fast external SSD (APFS recommended) and set Xcode DerivedData to the external drive.
+- Keep `node_modules`, `Pods`, and build artifacts off the external repo copy unless needed; reinstall when working from the SSD.
 
 ### 7) Diagnose Before Changing Code
 - Identify the exact screen, collection, and status fields.

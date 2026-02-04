@@ -19,7 +19,10 @@ const config = {
 			react: path.join(appNodeModules, 'react'),
 			'react-native': path.join(appNodeModules, 'react-native'),
 			invariant: path.join(appNodeModules, 'invariant'),
-			'@react-native/virtualized-lists': path.join(appNodeModules, '@react-native/virtualized-lists'),
+			'@react-native/virtualized-lists': path.join(
+				appNodeModules,
+				'@react-native/virtualized-lists'
+			),
 			'@rnmapbox/maps': path.join(appNodeModules, '@rnmapbox/maps'),
 		},
 		nodeModulesPaths: [

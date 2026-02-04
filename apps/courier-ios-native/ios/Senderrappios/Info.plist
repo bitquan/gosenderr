@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>GoSenderr Courier</string>
+	<string>Senderrappios</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -36,24 +36,20 @@
 		<true/>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>We use the camera to capture delivery proof photos.</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>We use your location to show nearby delivery jobs and navigation.</string>
+	<string>Senderrappios needs camera access to take delivery proof photos.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>We use your location in the background to keep delivery tracking active.</string>
-	<key>NSLocationAlwaysUsageDescription</key>
-	<string>We use your location in the background to keep delivery tracking active.</string>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>We save delivery proof photos to your library when requested.</string>
+	<string>Senderrappios needs background location access to track deliveries in progress and update your location for customers.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Senderrappios needs your location to show nearby delivery jobs and navigate to pickup/dropoff locations.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>We use your photo library to attach delivery proof photos.</string>
+	<string>Senderrappios needs photo library access to save delivery proof photos.</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>
-		<string>remote-notification</string>
 		<string>fetch</string>
+		<string>remote-notification</string>
 	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>

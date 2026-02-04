@@ -1,4 +1,4 @@
-package com.couriernative
+package com.senderrappios
 
 import android.app.Application
 import com.facebook.react.PackageList

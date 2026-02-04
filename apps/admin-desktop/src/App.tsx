@@ -35,6 +35,7 @@ const PaymentSettingsPage = lazy(() => import('./pages/PaymentSettings'))
 const EmailSettingsPage = lazy(() => import('./pages/EmailSettings'))
 const SecuritySettingsPage = lazy(() => import('./pages/SecuritySettings'))
 const SecretsPage = lazy(() => import('./pages/Secrets'))
+const NotificationDebugPage = lazy(() => import('./pages/NotificationDebug'))
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
@@ -194,6 +195,14 @@ function App() {
                               flags?.admin?.firebaseExplorer
                                 ? <FirebaseExplorerPage />
                                 : <FeatureDisabled title="Firebase Explorer" />
+                            }
+                          />
+                          <Route
+                            path="/notification-debug"
+                            element={
+                              flags?.admin?.notificationDebug
+                                ? <NotificationDebugPage />
+                                : <FeatureDisabled title="Notification Debug" />
                             }
                           />
                         </Routes>

@@ -13,16 +13,19 @@ export const sendNotifications = functions.firestore
     const after = change.after.data();
     const jobId = context.params.jobId;
 
-    // Check if status changed
-    if (before.status === after.status) {
+    const beforeStatus = (before.statusDetail || before.status) as string;
+    const afterStatus = (after.statusDetail || after.status) as string;
+
+    // Check if effective status changed
+    if (beforeStatus === afterStatus) {
       return null;
     }
 
-    console.log(`Job ${jobId} status changed: ${before.status} -> ${after.status}`);
+    console.log(`Job ${jobId} status changed: ${beforeStatus} -> ${afterStatus}`);
 
     try {
       // Send notification based on new status
-      switch (after.status) {
+      switch (afterStatus) {
       case "assigned":
         await notifyCustomerJobAssigned(jobId, after);
         await notifyCourierJobAssigned(jobId, after);
@@ -52,7 +55,7 @@ export const sendNotifications = functions.firestore
         break;
 
       default:
-        console.log(`No notification handler for status: ${after.status}`);
+        console.log(`No notification handler for status: ${afterStatus}`);
       }
 
       return {success: true};
@@ -151,7 +154,7 @@ async function sendNotification(uid: string, message: {
       return;
     }
 
-    const fcmToken = userData.fcmToken;
+    const fcmToken = userData?.courierProfile?.fcmToken || userData?.fcmToken;
 
     if (!fcmToken) {
       console.log(`No FCM token for user ${uid}`);

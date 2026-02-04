@@ -36,6 +36,10 @@ export default function AdminSidebar() {
     systemItems.push({ label: 'Firebase Explorer', path: '/firebase-explorer', icon: '🧭' })
   }
 
+  if (flags?.admin?.notificationDebug) {
+    systemItems.push({ label: 'Notification Debug', path: '/notification-debug', icon: '🧪' })
+  }
+
   const navGroups: NavGroup[] = [
     {
       title: 'Overview',

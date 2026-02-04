@@ -61,6 +61,7 @@ export function useFeatureFlags() {
               webPortalEnabled: false,
               systemLogs: false,
               firebaseExplorer: false,
+              notificationDebug: false,
             },
             advanced: {
               pushNotifications: true,

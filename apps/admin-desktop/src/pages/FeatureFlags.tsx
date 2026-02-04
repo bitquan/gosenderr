@@ -232,7 +232,7 @@ export default function FeatureFlagsPage() {
     }
   }
 
-  const handleToggleAdminTool = async (key: 'systemLogs' | 'firebaseExplorer', currentValue: boolean) => {
+  const handleToggleAdminTool = async (key: 'systemLogs' | 'firebaseExplorer' | 'notificationDebug', currentValue: boolean) => {
     try {
       await setDoc(
         doc(db, 'featureFlags', 'config'),
@@ -362,6 +362,24 @@ export default function FeatureFlagsPage() {
                   }`}
                 >
                   {configFlags?.admin?.firebaseExplorer ? 'Enabled' : 'Disabled'}
+                </button>
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-900">Notification Debug</p>
+                  <p className="text-xs text-gray-500">Inspect tokens, preferences, and test push delivery.</p>
+                </div>
+                <button
+                  type="button"
+                  disabled={configLoading}
+                  onClick={() => handleToggleAdminTool('notificationDebug', Boolean(configFlags?.admin?.notificationDebug))}
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                    configFlags?.admin?.notificationDebug
+                      ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {configFlags?.admin?.notificationDebug ? 'Enabled' : 'Disabled'}
                 </button>
               </div>
             </div>

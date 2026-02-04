@@ -1,39 +1,79 @@
-# Resolve react_native_pods.rb with node to allow for hoisting
-require Pod::Executable.execute_command('node', ['-p',
-  'require.resolve(
-    "react-native/scripts/react_native_pods.rb",
-    {paths: [process.argv[1]]},
-  )', __dir__]).strip
+require_relative '../node_modules/react-native/scripts/react_native_pods'
+require_relative '../node_modules/@react-native-community/cli-platform-ios/native_modules'
 
-$RNMapboxMapsVersion = '~> 11.16.2'
-$RNFirebaseAsStaticFramework = true
-
-platform :ios, min_ios_version_supported
+platform :ios, '15.1'
 prepare_react_native_project!
 
-linkage = ENV['USE_FRAMEWORKS'] || 'static'
-Pod::UI.puts "Configuring Pod with #{linkage}ally linked Frameworks".green
-use_frameworks! :linkage => linkage.to_sym
+react_native_path = '../node_modules/react-native'
 
-target 'CourierNative' do
+target 'Senderrappios' do
   config = use_native_modules!
 
   use_react_native!(
     :path => config[:reactNativePath],
+    :hermes_enabled => true,
+    :fabric_enabled => false,
     # An absolute path to your application root.
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
 
-  post_install do |installer|
-    react_native_post_install(
-      installer,
-      config[:reactNativePath],
-      :mac_catalyst_enabled => false,
-      # :ccache_enabled => true
-    )
+  # Firebase pods
+  pod 'Firebase/Auth', :modular_headers => true
+  pod 'Firebase/Firestore', :modular_headers => true
+  pod 'Firebase/Functions', :modular_headers => true
+  pod 'FirebaseCore', :modular_headers => true
+  pod 'FirebaseCoreExtension', :modular_headers => true
+  pod 'FirebaseCoreInternal', :modular_headers => true
+  pod 'FirebaseAppCheckInterop', :modular_headers => true
+  pod 'FirebaseAuthInterop', :modular_headers => true
+  pod 'FirebaseMessagingInterop', :modular_headers => true
+  pod 'FirebaseFirestoreInternal', :modular_headers => true
+  pod 'GoogleUtilities', :modular_headers => true
+  pod 'RecaptchaInterop', :modular_headers => true
+  
+end
 
-    if defined?($RNMapboxMaps) && $RNMapboxMaps.respond_to?(:post_install)
-      $RNMapboxMaps.post_install(installer)
+post_install do |installer|
+  # https://github.com/facebook/react-native/blob/main/packages/react-native/scripts/react_native_pods.rb#L197-L202
+  react_native_post_install(
+    installer,
+    react_native_path,
+    :mac_catalyst_enabled => false
+  )
+
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.1'
     end
+  end
+
+  installer.pods_project.targets.each do |target|
+    if target.name == 'Turf'
+      target.build_configurations.each do |config|
+        config.build_settings['SWIFT_SUPPRESS_WARNINGS'] = 'YES'
+      end
+    end
+  end
+
+  installer.aggregate_targets.each do |aggregate_target|
+    aggregate_target.user_project.native_targets.each do |native_target|
+      native_target.build_configurations.each do |config|
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.1'
+      end
+    end
+  end
+
+end
+
+post_integrate do |installer|
+  require 'fileutils'
+  pods_root = File.join(Pod::Config.instance.installation_root.to_s, 'Pods')
+  grpc_modulemap = File.join(pods_root, 'Target Support Files', 'gRPC-Core', 'gRPC-Core.modulemap')
+  grpc_private_dir = File.join(pods_root, 'Headers', 'Private', 'grpc')
+  grpc_private_modulemap = File.join(grpc_private_dir, 'gRPC-Core.modulemap')
+
+  if File.exist?(grpc_modulemap)
+    FileUtils.mkdir_p(grpc_private_dir)
+    FileUtils.ln_sf(grpc_modulemap, grpc_private_modulemap)
   end
 end
