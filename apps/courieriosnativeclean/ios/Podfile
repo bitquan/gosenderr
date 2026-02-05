@@ -1,9 +1,8 @@
 # Resolve react_native_pods.rb robustly to handle pnpm hoisting and various checkouts
+# Walk up parent directories from the ios dir and look for node_modules/react-native/scripts/react_native_pods.rb
 require Pod::Executable.execute_command('node', ['-p',
-  '(function(){ const fs=require("fs"), path=require("path"); const cwd=process.argv[1];
-      // Candidate locations to search for node_modules/react-native/scripts/react_native_pods.rb
-      const candidates=[cwd, path.resolve(cwd, "../.."), path.resolve(cwd, "../../..")];
-      for(const c of candidates){ const p=path.join(c, "node_modules", "react-native", "scripts", "react_native_pods.rb"); if(fs.existsSync(p)){ return p; } }
+  '(function(){ const fs=require("fs"), path=require("path"); let dir=process.argv[1];
+      while(true){ const p=path.join(dir, "node_modules", "react-native", "scripts", "react_native_pods.rb"); if(fs.existsSync(p)){ return p; } const parent=path.dirname(dir); if(parent===dir) break; dir=parent; }
       // Last effort: rely on Node module resolution (may succeed in some layouts)
       try{ return require.resolve("react-native/scripts/react_native_pods.rb"); }catch(e){}
       throw new Error("react-native/scripts/react_native_pods.rb not found");
