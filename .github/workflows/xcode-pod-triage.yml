@@ -29,10 +29,16 @@ jobs:
           sudo gem install cocoapods --no-document
           pod --version
 
+      - name: Install pnpm (Corepack)
+        run: |
+          corepack enable
+          corepack prepare pnpm@latest --activate
+          pnpm -v
+
       - name: Install node deps
         run: |
-          pnpm -v || npm -v
-          pnpm install --frozen-lockfile || npm ci
+          pnpm install --frozen-lockfile
+        # run in repo root so pnpm workspace uses root pnpm-lock.yaml
 
       - name: Pod install (clean app)
         working-directory: apps/courieriosnativeclean/ios
