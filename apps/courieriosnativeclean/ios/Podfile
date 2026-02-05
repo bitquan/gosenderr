@@ -1,11 +1,13 @@
-# Resolve react_native_pods.rb with node to allow for hoisting
-# Try both the ios dir (process.argv[1]) and the repo root (../..) so pnpm hoisting
-# does not break require.resolve on CI.
+# Resolve react_native_pods.rb robustly to handle pnpm hoisting and various checkouts
 require Pod::Executable.execute_command('node', ['-p',
-  'require.resolve(
-    "react-native/scripts/react_native_pods.rb",
-    {paths: [process.argv[1], process.argv[1] + "/../.."]},
-  )', __dir__]).strip
+  '(function(){ const fs=require("fs"), path=require("path"); const cwd=process.argv[1];
+      // Candidate locations to search for node_modules/react-native/scripts/react_native_pods.rb
+      const candidates=[cwd, path.resolve(cwd, "../.."), path.resolve(cwd, "../../..")];
+      for(const c of candidates){ const p=path.join(c, "node_modules", "react-native", "scripts", "react_native_pods.rb"); if(fs.existsSync(p)){ return p; } }
+      // Last effort: rely on Node module resolution (may succeed in some layouts)
+      try{ return require.resolve("react-native/scripts/react_native_pods.rb"); }catch(e){}
+      throw new Error("react-native/scripts/react_native_pods.rb not found");
+  })()', __dir__]).strip
 
 platform :ios, min_ios_version_supported
 prepare_react_native_project!
