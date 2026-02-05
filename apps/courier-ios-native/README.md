@@ -108,7 +108,14 @@ If you see errors about `FIRFunctions` or `FIRHTTPSCallable` being unknown:
 
 ### Missing GoogleService-Info.plist
 
-The app requires Firebase configuration. Ensure `GoogleService-Info.plist` is present in the iOS project (do not commit this file to git).
+The app requires Firebase configuration. The repository includes a development `GoogleService-Info.plist` file for the project `gosenderr-6773f`.
+
+**For Production:**
+- Replace with your production Firebase configuration
+- Do not commit production secrets to git
+- Use environment-specific configuration management
+
+**Security Note:** The existing file is for development/staging. For production, use secrets management via CI/CD or App Store Connect.
 
 ### Metro Bundler Issues
 

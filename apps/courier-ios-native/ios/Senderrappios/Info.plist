@@ -43,8 +43,6 @@
 	<string>Senderrappios needs your location to show nearby delivery jobs and navigate to pickup/dropoff locations.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Senderrappios needs photo library access to save delivery proof photos.</string>
-	<key>RCTNewArchEnabled</key>
-	<true/>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>

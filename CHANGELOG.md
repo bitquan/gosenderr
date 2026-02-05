@@ -6,6 +6,13 @@
 - Push notifications for courier iOS still failing via FCM; APNs credentialing needs fix.
 - Courier route preview works but can be slow to load after repeated toggles; needs performance tuning.
 
+### Fixed
+- apps/courier-ios-native: Fix RNFBFunctions build failure by removing redundant Firebase pod declarations and pinning Firebase SDK version to 11.11.0.
+- apps/courier-ios-native: Improve post_integrate hook error handling to prevent permission-related build failures.
+
+### Docs
+- apps/courier-ios-native: Add comprehensive iOS build documentation (README.md and BUILD.md) with troubleshooting, TestFlight deployment, and configuration details.
+
 ### Added
 - test: Add Firestore snapshot test helper and update tests to reduce flakiness in UI tests. (PR #61)
 - apps/courier-ios-native: Scaffold native courier v2 app shell (Plan D).
