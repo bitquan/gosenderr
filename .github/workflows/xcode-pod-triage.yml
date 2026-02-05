@@ -1,0 +1,71 @@
+name: Xcode Pod Triage
+
+on:
+  push:
+    branches:
+      - "ci/xcode-pods-triage-2"
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  pod-triage:
+    name: Pod triage (macOS)
+    runs-on: macos-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Print environment
+        run: |
+          xcodebuild -version
+          ruby --version || true
+          brew --version || true
+
+      - name: Install CocoaPods
+        run: |
+          sudo gem install cocoapods --no-document
+          pod --version
+
+      - name: Install node deps
+        run: |
+          pnpm -v || npm -v
+          pnpm install --frozen-lockfile || npm ci
+
+      - name: Pod install (clean app)
+        working-directory: apps/courieriosnativeclean/ios
+        run: |
+          pod install --verbose
+
+      - name: Run pods target triage (build)
+        working-directory: apps/courieriosnativeclean/ios
+        env:
+          BUILD_ACTIVE_ARCH_ONLY: "YES"
+          ONLY_ACTIVE_ARCH: "YES"
+        run: |
+          mkdir -p /tmp/pods-target-triage
+          ../../scripts/test-pods-targets.sh --build --targets="gRPC-Core,rnmapbox-maps" 2>&1 | tee /tmp/pods-target-triage/run.log || true
+
+      - name: Archive and upload logs
+        run: |
+          ts=$(date +%s)
+          tar -czf /tmp/pods-target-triage-$ts.tar.gz /tmp/pods-target-test-* 2>/dev/null || true
+          ls -la /tmp/pods-target-test-* 2>/dev/null || true
+        continue-on-error: true
+
+      - name: Upload triage artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcode-pod-triage-logs
+          path: |
+            /tmp/pods-target-triage-$ts.tar.gz
+            /tmp/pods-target-test-*
+            /tmp/pods-target-triage/run.log
+
+      - name: Save podfile.lock
+        uses: actions/upload-artifact@v4
+        with:
+          name: podfile-lock
+          path: apps/courieriosnativeclean/ios/Podfile.lock

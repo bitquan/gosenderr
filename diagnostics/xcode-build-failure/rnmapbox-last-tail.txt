@@ -1,0 +1,5 @@
+(tail of rnmapbox-maps per-target run)
+
+- Many Objective-C++ files compiled successfully until the build was manually interrupted.
+- Warnings present: "ONLY_ACTIVE_ARCH=YES requested with multiple ARCHS and no active architecture could be computed".
+- In other runs `rnmapbox-maps` was missing from the Pods project, indicating inconsistent Pod target presence between workspaces.
