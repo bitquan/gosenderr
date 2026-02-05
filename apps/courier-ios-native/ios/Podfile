@@ -1,6 +1,9 @@
 require_relative '../node_modules/react-native/scripts/react_native_pods'
 require_relative '../node_modules/@react-native-community/cli-platform-ios/native_modules'
 
+# Set Firebase SDK version to match @react-native-firebase packages
+$FirebaseSDKVersion = '11.11.0'
+
 platform :ios, '15.1'
 prepare_react_native_project!
 
@@ -17,19 +20,8 @@ target 'Senderrappios' do
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
 
-  # Firebase pods
-  pod 'Firebase/Auth', :modular_headers => true
-  pod 'Firebase/Firestore', :modular_headers => true
-  pod 'Firebase/Functions', :modular_headers => true
-  pod 'FirebaseCore', :modular_headers => true
-  pod 'FirebaseCoreExtension', :modular_headers => true
-  pod 'FirebaseCoreInternal', :modular_headers => true
-  pod 'FirebaseAppCheckInterop', :modular_headers => true
-  pod 'FirebaseAuthInterop', :modular_headers => true
-  pod 'FirebaseMessagingInterop', :modular_headers => true
-  pod 'FirebaseFirestoreInternal', :modular_headers => true
-  pod 'GoogleUtilities', :modular_headers => true
-  pod 'RecaptchaInterop', :modular_headers => true
+  # No need to manually add Firebase pods - they come from @react-native-firebase dependencies
+  # The $FirebaseSDKVersion variable above ensures version consistency
   
 end
 
@@ -72,8 +64,13 @@ post_integrate do |installer|
   grpc_private_dir = File.join(pods_root, 'Headers', 'Private', 'grpc')
   grpc_private_modulemap = File.join(grpc_private_dir, 'gRPC-Core.modulemap')
 
-  if File.exist?(grpc_modulemap)
-    FileUtils.mkdir_p(grpc_private_dir)
-    FileUtils.ln_sf(grpc_modulemap, grpc_private_modulemap)
+  # Only create the symlink if the source exists and we can write to the destination
+  if File.exist?(grpc_modulemap) && File.writable?(pods_root)
+    begin
+      FileUtils.mkdir_p(grpc_private_dir)
+      FileUtils.ln_sf(grpc_modulemap, grpc_private_modulemap)
+    rescue => e
+      Pod::UI.warn "Failed to create gRPC modulemap symlink: #{e.message}"
+    end
   end
 end
