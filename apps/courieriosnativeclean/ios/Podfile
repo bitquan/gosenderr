@@ -1,8 +1,10 @@
 # Resolve react_native_pods.rb with node to allow for hoisting
+# Try both the ios dir (process.argv[1]) and the repo root (../..) so pnpm hoisting
+# does not break require.resolve on CI.
 require Pod::Executable.execute_command('node', ['-p',
   'require.resolve(
     "react-native/scripts/react_native_pods.rb",
-    {paths: [process.argv[1]]},
+    {paths: [process.argv[1], process.argv[1] + "/../.."]},
   )', __dir__]).strip
 
 platform :ios, min_ios_version_supported
