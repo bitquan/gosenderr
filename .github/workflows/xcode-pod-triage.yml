@@ -40,16 +40,16 @@ jobs:
           pnpm install --frozen-lockfile
         # run in repo root so pnpm workspace uses root pnpm-lock.yaml
 
-      - name: Pod install (clean app or fallback)
+      - name: Pod install (primary or fallback)
         run: |
           mkdir -p /tmp/pods-target-triage
-          if [ -d "apps/courieriosnativeclean/ios" ]; then
-            echo "Using apps/courieriosnativeclean/ios"
-            cd apps/courieriosnativeclean/ios
-            pod install --verbose
-          elif [ -d "apps/courier-ios-native/ios" ]; then
-            echo "Fallback: using apps/courier-ios-native/ios"
+          if [ -d "apps/courier-ios-native/ios" ]; then
+            echo "Using apps/courier-ios-native/ios"
             cd apps/courier-ios-native/ios
+            pod install --verbose
+          elif [ -d "apps/courieriosnativeclean/ios" ]; then
+            echo "Fallback: using apps/courieriosnativeclean/ios"
+            cd apps/courieriosnativeclean/ios
             pod install --verbose
           else
             echo "PATH_MISSING: no ios dir found for triage" > /tmp/pods-target-triage/missing-path.txt
@@ -62,10 +62,10 @@ jobs:
           ONLY_ACTIVE_ARCH: "YES"
         run: |
           mkdir -p /tmp/pods-target-triage
-          if [ -d "apps/courieriosnativeclean/ios" ]; then
-            (cd apps/courieriosnativeclean/ios && ../../scripts/test-pods-targets.sh --build --targets="gRPC-Core,rnmapbox-maps") 2>&1 | tee /tmp/pods-target-triage/run.log || true
-          elif [ -d "apps/courier-ios-native/ios" ]; then
+          if [ -d "apps/courier-ios-native/ios" ]; then
             (cd apps/courier-ios-native/ios && ../../scripts/test-pods-targets.sh --build --targets="gRPC-Core,rnmapbox-maps") 2>&1 | tee /tmp/pods-target-triage/run.log || true
+          elif [ -d "apps/courieriosnativeclean/ios" ]; then
+            (cd apps/courieriosnativeclean/ios && ../../scripts/test-pods-targets.sh --build --targets="gRPC-Core,rnmapbox-maps") 2>&1 | tee /tmp/pods-target-triage/run.log || true
           else
             echo "PATH_MISSING: no ios dir found for triage" > /tmp/pods-target-triage/missing-path.txt
             echo "Skipping build triage — no ios directory available" | tee /tmp/pods-target-triage/run.log
@@ -87,8 +87,19 @@ jobs:
             /tmp/pods-target-test-*
             /tmp/pods-target-triage/run.log
 
-      - name: Save podfile.lock
+      - name: Save Podfile.lock (if present)
+        run: |
+          if [ -f apps/courier-ios-native/ios/Podfile.lock ]; then
+            cp apps/courier-ios-native/ios/Podfile.lock /tmp/Podfile.lock || true
+          elif [ -f apps/courieriosnativeclean/ios/Podfile.lock ]; then
+            cp apps/courieriosnativeclean/ios/Podfile.lock /tmp/Podfile.lock || true
+          else
+            echo "No Podfile.lock found" > /tmp/Podfile.lock
+          fi
+        continue-on-error: true
+
+      - name: Upload podfile.lock artifact
         uses: actions/upload-artifact@v4
         with:
           name: podfile-lock
-          path: apps/courieriosnativeclean/ios/Podfile.lock
+          path: /tmp/Podfile.lock
