@@ -6,3 +6,18 @@
 /Users/.../src/ssl/tls_record.cc:109:10: fatal error: 'openssl/ssl.h' file not found
 
 Notes: missing OpenSSL headers for BoringSSL-GRPC during iOS build; likely header search paths or missing generated include.
+
+Actions taken locally:
+- Added the following to `apps/courieriosnativeclean/ios/Podfile` post_install hook for `BoringSSL-GRPC`:
+  - `${PODS_ROOT}/BoringSSL-GRPC/src/include`
+  - `${PODS_ROOT}/BoringSSL-GRPC/src/include/openssl`
+- Re-ran `pod install` and rebuilt the `gRPC-Core` pod.
+
+Result after change:
+- Missing `<openssl/...>` errors resolved; compiler got further.
+- New first failures now appear in system C++ headers (e.g., incomplete type `timespec` / `tm`) during compilation of BoringSSL sources. See `/tmp/gRPC-Core-build3.log` for full output.
+
+Next steps:
+1. Triage the new "incomplete type" errors (likely include order or macro interaction). Try limiting changes to only `${PODS_ROOT}/BoringSSL-GRPC/src/include/openssl` and rebuild; if still present, inspect precompiled headers (prefix.pch) and macro defines that may affect system headers.
+2. If confirmed, propose a minimal PR with the Podfile post_install change and diagnostic notes, enabling CI triage to validate on macOS runners.
+3. Iterate until gRPC-Core quick build passes; then re-run per-pod triage for `rnmapbox-maps`.
