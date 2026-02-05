@@ -1,97 +1,226 @@
 This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
 
-# Getting Started
+# GoSenderr Courier iOS Native App
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+This is the native iOS app for GoSenderr couriers, built with React Native 0.76.5.
 
-## Step 1: Start Metro
+## Prerequisites
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+- **macOS** (required for iOS development)
+- **Xcode 15.4+** (download from Mac App Store)
+- **Node.js 18+** (check with `node --version`)
+- **CocoaPods** (for iOS dependency management)
+- **Ruby 2.7+** (comes with macOS)
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+## Initial Setup
+
+### 1. Install Node Dependencies
+
+From the repository root:
 
 ```sh
-# Using npm
-npm start
-
-# OR using Yarn
-yarn start
+pnpm install
 ```
 
-## Step 2: Build and run your app
-
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
-
-### Android
+### 2. Install CocoaPods (if not already installed)
 
 ```sh
-# Using npm
-npm run android
-
-# OR using Yarn
-yarn android
+sudo gem install cocoapods
 ```
 
-### iOS
+### 3. Install iOS Dependencies
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
+Navigate to the iOS directory and install CocoaPods dependencies:
 
 ```sh
-bundle install
+cd apps/courier-ios-native/ios
+pod install --repo-update
 ```
 
-Then, and every time you update your native dependencies, run:
+This will:
+- Download and install all iOS native dependencies
+- Create/update `Podfile.lock`
+- Generate `Senderrappios.xcworkspace`
+
+**Important:** Always open `Senderrappios.xcworkspace` in Xcode, NOT `Senderrappios.xcodeproj`
+
+## Building and Running
+
+### Development (Debug) Build
+
+#### Option 1: Using React Native CLI
+
+From `apps/courier-ios-native` directory:
 
 ```sh
-bundle exec pod install
-```
-
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
-
-```sh
-# Using npm
 npm run ios
-
-# OR using Yarn
+# or
 yarn ios
 ```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+#### Option 2: Using Xcode
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+1. Open `apps/courier-ios-native/ios/Senderrappios.xcworkspace` in Xcode
+2. Select a simulator or connected device
+3. Press `Cmd+R` to build and run
+4. The app will launch in the selected simulator/device
 
-## Step 3: Modify your app
+### Release Build
 
-Now that you have successfully run the app, let's make changes!
+For TestFlight or App Store submission:
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+1. Open `apps/courier-ios-native/ios/Senderrappios.xcworkspace` in Xcode
+2. Select "Any iOS Device (arm64)" from the device menu
+3. Go to **Product > Archive**
+4. Once archived, the Organizer window will open
+5. Click **Distribute App** and follow the TestFlight/App Store workflow
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
+## Troubleshooting
 
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
+### Build Failures
 
-## Congratulations! :tada:
+If you encounter build errors, try cleaning and reinstalling:
 
-You've successfully run and modified your React Native App. :partying_face:
+```sh
+# 1. Clean iOS build artifacts
+cd apps/courier-ios-native/ios
+rm -rf Pods Podfile.lock
+rm -rf ~/Library/Developer/Xcode/DerivedData/*
 
-### Now what?
+# 2. Reinstall dependencies
+pod install --repo-update
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
+# 3. Clean and build in Xcode
+# Open workspace, then: Product > Clean Build Folder (Shift+Cmd+K)
+# Then: Product > Build (Cmd+B)
+```
 
-# Troubleshooting
+### Firebase/RNFBFunctions Build Errors
 
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+If you see errors about `FIRFunctions` or `FIRHTTPSCallable` being unknown:
 
-# Learn More
+1. Ensure you've run `pod install` after updating dependencies
+2. Verify the Firebase SDK version in `Podfile` matches the `@react-native-firebase` packages
+3. Clean DerivedData and rebuild:
+   ```sh
+   rm -rf ~/Library/Developer/Xcode/DerivedData/*
+   ```
 
-To learn more about React Native, take a look at the following resources:
+### Missing GoogleService-Info.plist
 
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+The app requires Firebase configuration. Ensure `GoogleService-Info.plist` is present in the iOS project (do not commit this file to git).
+
+### Metro Bundler Issues
+
+If Metro bundler has issues:
+
+```sh
+# Reset Metro cache
+npm start -- --reset-cache
+```
+
+## Configuration
+
+### Firebase SDK Version
+
+The Podfile is configured to use Firebase SDK v11.11.0 to match the `@react-native-firebase` packages (v21.3.0).
+
+This is set via the `$FirebaseSDKVersion` variable at the top of the Podfile.
+
+### iOS Deployment Target
+
+- Minimum: iOS 15.1
+- Target: iOS 15.1+
+
+### Hermes Engine
+
+Hermes is **enabled** by default for better performance:
+- Faster app startup
+- Reduced memory usage
+- Smaller binary size
+
+Configuration is in `Podfile`: `:hermes_enabled => true`
+
+### Environment Variables
+
+The `.xcode.env` file configures the Node.js binary path for Xcode build phases. You can create `.xcode.env.local` for local customizations (not versioned).
+
+## Testing on Simulator
+
+1. Start the Metro bundler:
+   ```sh
+   npm start
+   ```
+
+2. In a new terminal, run on simulator:
+   ```sh
+   npm run ios
+   # or specify a device:
+   npm run ios -- --simulator="iPhone 17 Pro"
+   ```
+
+3. List available simulators:
+   ```sh
+   xcrun simctl list devices
+   ```
+
+## Testing on Physical Device
+
+1. Connect your iPhone via USB
+2. Open `Senderrappios.xcworkspace` in Xcode
+3. Select your device from the device menu
+4. Ensure you have a valid signing certificate configured in Xcode
+5. Press `Cmd+R` to build and run
+
+## TestFlight Deployment
+
+### Prerequisites
+
+- Apple Developer Program membership
+- App Store Connect access
+- Valid distribution certificate and provisioning profile
+
+### Steps
+
+1. **Archive the app** (see Release Build section above)
+2. In the Organizer, select the archive
+3. Click **Distribute App**
+4. Choose **App Store Connect**
+5. Select **Upload**
+6. Configure app options (bitcode, symbols, etc.)
+7. Complete the upload
+8. In App Store Connect:
+   - Add the build to TestFlight
+   - Configure internal/external testing groups
+   - Submit for review if needed
+
+### Required Info
+
+- **Bundle ID**: `com.gosenderr.courier` (or as configured in Xcode)
+- **Version**: Check `Info.plist` (CFBundleShortVersionString)
+- **Build Number**: Check `Info.plist` (CFBundleVersion)
+
+## Development Workflow
+
+1. Make code changes in `apps/courier-ios-native/src/`
+2. Changes hot reload automatically via Fast Refresh
+3. For native code changes (Swift/Objective-C/Podfile):
+   - Stop the app
+   - Run `pod install` if Podfile changed
+   - Rebuild in Xcode or `npm run ios`
+
+## Architecture
+
+- **Framework**: React Native 0.76.5
+- **Language**: TypeScript 5.0.4
+- **Navigation**: React Navigation 7.x
+- **Maps**: Mapbox (@rnmapbox/maps)
+- **Backend**: Firebase (Auth, Firestore, Functions)
+- **State**: Shared from `@gosenderr/shared` package
+
+## Additional Resources
+
+- [React Native Documentation](https://reactnative.dev/docs/getting-started)
+- [React Native Firebase](https://rnfirebase.io/)
+- [Xcode Documentation](https://developer.apple.com/documentation/xcode)
+- [CocoaPods Guides](https://guides.cocoapods.org/)
