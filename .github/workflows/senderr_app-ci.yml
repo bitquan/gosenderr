@@ -1,0 +1,35 @@
+name: Senderr App CI
+
+on:
+  pull_request:
+    branches: [senderr_app]
+
+jobs:
+  checks:
+    name: Lint, Type-check, Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Enable corepack and install pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@8.0.0 --activate
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm -w turbo run lint --filter '!courieriosnativeclean'
+
+      - name: Type check
+        run: pnpm -r --if-present type-check
+
+      - name: Run tests
+        run: pnpm -w test --if-present

@@ -103,7 +103,7 @@ jobs:
         run: pnpm --filter @gosenderr/shared build
 
       - name: Lint
-        run: pnpm lint
+        run: pnpm -w turbo run lint --filter '!courieriosnativeclean'
 
       - name: Verify docs
         run: pnpm verify:docs

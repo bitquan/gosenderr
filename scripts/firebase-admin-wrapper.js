@@ -1,8 +1,21 @@
-// Wrapper to load firebase-admin from functions directory
+// Wrapper to load firebase-admin from workspace root, with fallback to functions install.
 const path = require("path");
-const admin = require(
-  path.join(__dirname, "../firebase/functions/node_modules/firebase-admin"),
-);
+const { createRequire } = require("module");
+
+const requireFromRepoRoot = createRequire(path.join(__dirname, "../package.json"));
+let admin;
+try {
+  admin = requireFromRepoRoot("firebase-admin");
+} catch (rootError) {
+  try {
+    admin = require(path.join(
+      __dirname,
+      "../firebase/functions/node_modules/firebase-admin",
+    ));
+  } catch (fallbackError) {
+    throw rootError.code === "MODULE_NOT_FOUND" ? fallbackError : rootError;
+  }
+}
 
 const PROJECT_ID =
   process.env.FIREBASE_PROJECT_ID ||

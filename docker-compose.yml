@@ -99,7 +99,7 @@ services:
     ports:
       - "5173:5173"
 
-  courier-app:
+  senderr-app:
     build:
       context: .
       dockerfile: Dockerfile.dev
@@ -114,7 +114,7 @@ services:
       - HOST=0.0.0.0
       - PORT=5174
       - DEBUG=vite:server
-    command: sh -lc "pnpm install --frozen-lockfile && pnpm --filter @gosenderr/courier-app dev -- --host 0.0.0.0"
+    command: sh -lc "pnpm install --frozen-lockfile && pnpm --filter @gosenderr/senderr-app dev -- --host 0.0.0.0"
     healthcheck:
       test: ["CMD", "sh", "-c", "curl -sSf http://localhost:5174/ || exit 1"]
       interval: 10s

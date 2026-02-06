@@ -64,7 +64,7 @@ updates:
   # COURIER APP (Courier-facing app)
   # ============================================
   - package-ecosystem: "npm"
-    directory: "/apps/courier-app"
+    directory: "/apps/senderr-app"
     schedule:
       interval: "weekly"
       day: "tuesday"
@@ -72,11 +72,11 @@ updates:
     open-pull-requests-limit: 5
     labels:
       - "dependencies"
-      - "courier-app"
+      - "senderr-app"
     commit-message:
-      prefix: "chore(courier-app)"
+      prefix: "chore(senderr-app)"
     groups:
-      courier-app-minor-patch:
+      senderr-app-minor-patch:
         patterns:
           - "*"
         update-types:

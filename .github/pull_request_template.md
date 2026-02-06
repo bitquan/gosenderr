@@ -9,6 +9,12 @@ Please include a summary of the change and which issue is fixed. Include any rel
 - [ ] Documentation change
 - [ ] CI / tooling change
 
+## Docs impact
+
+- [ ] `docs-impact: yes` (canonical docs updated in this PR)
+- [ ] `docs-impact: no` (no docs updates required)
+- [ ] Branch delta doc updated when behavior differs from canonical docs (`.github/copilot/branches/*`)
+
 ## Checklist
 
 - [ ] PR is targeted at `senderr_app`
@@ -17,6 +23,8 @@ Please include a summary of the change and which issue is fixed. Include any rel
 - [ ] Lint and type checks pass locally
 - [ ] CI checks (lint/type/test) are passing
 - [ ] Docs updated if behavior changed (`docs/*` or README)
+- [ ] If the change affects developer setup or onboarding, update `docs/dev/MINIMAL-SETUP.md` and relevant `apps/*/copilot-instructions.md`
+- [ ] For workspace-sized changes, confirm `pnpm -w turbo run type-check` and `pnpm -w turbo run lint` pass locally
 - [ ] At least one reviewer assigned
 
 ## How to test

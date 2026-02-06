@@ -8,12 +8,31 @@ These instructions cover the full GoSenderr monorepo: web apps, desktop app, sha
 
 You are the dedicated developer for the entire project and should take end-to-end ownership of implementation, cleanup, and maintenance tasks.
 
+## Branch-Aware Workflow (Required)
+
+Copilot and coding agents must be branch-aware at all times.
+
+- Always detect the current branch first: `git rev-parse --abbrev-ref HEAD`
+- Load the branch profile from: `.github/copilot/branches/<branch-name-with-slashes-replaced-by-dashes>.md`
+- Work only in the current branch unless the user explicitly asks to switch.
+- Keep changes scoped to the branch purpose (do not mix marketplace, senderr, and ios work in one branch unless requested).
+- Before finishing work, run:
+  - `bash scripts/git-branch-assist.sh status`
+  - `bash scripts/git-branch-assist.sh save "<type(scope): summary>"`
+
+If a branch profile does not exist yet, initialize it with:
+
+- `bash scripts/setup-branch-copilot.sh`
+- `bash scripts/enable-git-hooks.sh` (one-time per clone, auto-runs setup on branch checkout)
+
+This guarantees every new branch gets the same Copilot setup.
+
 ## Project Structure
 
 This is a monorepo with Vite + React apps, Electron desktop app, and Firebase backend.
 
 - **apps/marketplace-app**: Customer marketplace (browse, buy, sell)
-- **apps/courier-app**: Courier workflow (jobs, navigation)
+- **apps/senderr-app**: Senderr workflow (jobs, navigation)
 - **apps/admin-app**: Web admin portal
 - **apps/admin-desktop**: Electron admin desktop app
 - **apps/landing**: Marketing / entry point

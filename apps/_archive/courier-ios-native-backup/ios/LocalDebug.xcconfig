@@ -1,0 +1,9 @@
+// Local debug config - recommended to set this to Debug build configuration
+// Include Pods generated debug config so pods settings are preserved
+#include "Pods/Target Support Files/Pods-Senderrappios/Pods-Senderrappios.debug.xcconfig"
+
+ONLY_ACTIVE_ARCH = YES
+GCC_PREPROCESSOR_DEFINITIONS = $(inherited) DEBUG=1
+
+// Place Clang module cache on fast internal disk to speed up module compilation
+CLANG_MODULE_CACHE_PATH = $(HOME)/Library/Caches/clang-module-cache/Senderrappios

@@ -137,7 +137,7 @@
     },
     {
       "site": "gosenderr-courier",
-      "public": "apps/courier-app/dist",
+      "public": "apps/senderr-app/dist",
       "ignore": ["firebase.json", "**/node_modules/**"],
       "rewrites": [
         {

@@ -31,7 +31,7 @@ bash scripts/dev-docker-down.sh
   - Emulator UI: `localhost:4000`
 - `admin-app` — Admin app dev server on `localhost:3000`
 - `marketplace-app` — Marketplace app dev server on `localhost:5173`
-- `courier-app` — Courier app dev server on `localhost:5174`
+- `senderr-app` — Courier app dev server on `localhost:5174`
 - `admin-desktop` — Vite renderer dev server on `localhost:5176`
 
 ## Notes & troubleshooting

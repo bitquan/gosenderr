@@ -11,7 +11,7 @@ A modern on-demand delivery platform with web apps (Vite + React + TypeScript) t
 /
 ├── apps/
 │   ├── marketplace-app/  # Vite Marketplace Web App (Port 5173)
-│   ├── courier-app/      # Vite Courier Web App (Port 5174)
+│   ├── senderr-app/      # Vite Senderr Web App (Port 5174)
 │   ├── admin-app/        # Vite Admin Dashboard (Port 3000)
 │   ├── admin-desktop/    # Electron Admin Desktop App (Port 5176)
 │   └── landing/          # Landing / Marketing Page
@@ -27,6 +27,12 @@ A modern on-demand delivery platform with web apps (Vite + React + TypeScript) t
 ## ✅ Testing & Deployment
 
 See the rollout checklist in [docs/project-plan/09-DAILY-CHECKLIST.md](docs/project-plan/09-DAILY-CHECKLIST.md).
+
+## 📚 Documentation System
+
+- Global source of truth: [docs/BLUEPRINT.md](docs/BLUEPRINT.md)
+- App docs registry: [docs/apps/README.md](docs/apps/README.md)
+- Branch-specific delta docs: `.github/copilot/branches/*.md`
 
 ## 📱 Active Applications
 
@@ -56,6 +62,8 @@ See the rollout checklist in [docs/project-plan/09-DAILY-CHECKLIST.md](docs/proj
 pnpm install
 ```
 
+> **Minimal developer setup:** If you want a disk-conservative, focused setup (shallow + sparse git checkout and install only a single app), see `docs/dev/MINIMAL-SETUP.md`. App-specific developer notes are available at `apps/marketplace-app/copilot-instructions.md` and `apps/senderr-app/copilot-instructions.md`.
+
 2. **Configure environment variables:**
 
 Each app needs its own `.env.local` file:
@@ -64,8 +72,8 @@ Each app needs its own `.env.local` file:
 # Marketplace App
 cp apps/marketplace-app/.env.example apps/marketplace-app/.env.local
 
-# Courier App
-cp apps/courier-app/.env.example apps/courier-app/.env.local
+# Senderr App
+cp apps/senderr-app/.env.example apps/senderr-app/.env.local
 
 # Admin App
 cp apps/admin-app/.env.example apps/admin-app/.env.local
@@ -133,7 +141,7 @@ pnpm dev
 
 # Or run individual apps
 cd apps/marketplace-app && pnpm dev   # Port 5173
-cd apps/courier-app && pnpm dev       # Port 5174
+cd apps/senderr-app && pnpm dev       # Port 5174
 cd apps/admin-app && pnpm dev         # Port 3000
 cd apps/admin-desktop && pnpm dev     # Port 5176 (renderer)
 ```
@@ -186,7 +194,7 @@ Firebase Hosting sites:
 - **Rating System**: Rate couriers after delivery completion
 - **Bottom Navigation**: Home, Jobs, Settings tabs
 
-### Courier App (`apps/courier-app`)
+### Senderr App (`apps/senderr-app`)
 
 - **Map Shell Dashboard**: Full-screen map with floating controls and swipeable bottom sheet
 - **Job Discovery**: See available jobs on map with distance and payout info
@@ -366,7 +374,7 @@ Each app can be configured for mobile deployment:
 
 ```bash
 # Install Capacitor
-cd apps/courier-app
+cd apps/senderr-app
 npm install @capacitor/core @capacitor/cli
 npm install @capacitor/ios @capacitor/android
 
