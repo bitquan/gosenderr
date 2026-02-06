@@ -22,6 +22,9 @@ cleanup() {
 # Set up trap to catch exit signals
 trap cleanup EXIT INT TERM
 
+# Resolve script directory (so calling from subdirectories works)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
 # Start emulators in background
 # Use docker-specific config when running inside the container (IN_DOCKER=1)
 if [ "${IN_DOCKER:-}" = "1" ] || [ -f "/.dockerenv" ]; then
@@ -41,9 +44,9 @@ fi
 EMULATOR_PID=$!
 
 # Wait for emulators to be ready (check if Firestore port is open)
-echo "⏳ Waiting for emulators to be ready..."
-for i in {1..30}; do
-    if lsof -ti:8080 > /dev/null 2>&1; then
+echo "⏳ Waiting for emulators (Firestore & Auth) to be ready..."
+for i in {1..60}; do
+    if lsof -ti:8080 > /dev/null 2>&1 && lsof -ti:9099 > /dev/null 2>&1; then
         echo "✅ Emulators are ready!"
         sleep 2  # Give it a moment to fully initialize
         break
@@ -64,9 +67,9 @@ fi
 
 if [ "$SHOULD_SEED" = true ]; then
     echo "🌱 Seeding demo users..."
-    FIREBASE_PROJECT_ID=gosenderr-6773f node scripts/seed-role-simulation.js
+    FIREBASE_PROJECT_ID=gosenderr-6773f node "$SCRIPT_DIR/seed-role-simulation.js"
     echo "🌱 Seeding marketplace data..."
-    npx tsx scripts/seed-marketplace.ts
+    npx tsx "$SCRIPT_DIR/seed-marketplace.ts"
 fi
 
 echo ""
