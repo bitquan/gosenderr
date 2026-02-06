@@ -1,5 +1,14 @@
 # CODEOWNERS
 
+# Ownership strategy
+# - Current mode: single maintainer ownership.
+# - Deadlock prevention: branch protection should run in solo mode
+#   (required approvals = 0, code-owner review = false).
+# - Second approver rollout: when a second write collaborator is added,
+#   uncomment the "dual-approval templates" section and replace
+#   @SECOND_APPROVER with the real GitHub handle, then turn required
+#   approvals and code-owner review back on in branch protection.
+
 # Docs and Senderr docs
 
 /docs/ @bitquan
@@ -24,3 +33,17 @@
 # GitHub config
 
 /.github/ @bitquan
+
+# Dual-approval templates (activate when second maintainer is available)
+# /docs/ @bitquan @SECOND_APPROVER
+# /apps/admin-app/ @bitquan @SECOND_APPROVER
+# /apps/admin-desktop/ @bitquan @SECOND_APPROVER
+# /apps/marketplace-app/ @bitquan @SECOND_APPROVER
+# /apps/senderr-app/ @bitquan @SECOND_APPROVER
+# /apps/courieriosnativeclean/ @bitquan @SECOND_APPROVER
+# /apps/vendor-app/ @bitquan @SECOND_APPROVER
+# /apps/landing/ @bitquan @SECOND_APPROVER
+# /apps/_archive/ @bitquan @SECOND_APPROVER
+# /packages/shared/ @bitquan @SECOND_APPROVER
+# /packages/ui/ @bitquan @SECOND_APPROVER
+# /.github/ @bitquan @SECOND_APPROVER
