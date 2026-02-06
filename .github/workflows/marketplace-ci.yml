@@ -30,4 +30,5 @@ jobs:
           node-version: 18
       - run: corepack enable && corepack prepare pnpm@8.0.0 --activate
       - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @gosenderr/marketplace-app build
       - run: pnpm --filter @gosenderr/marketplace-app test:e2e
