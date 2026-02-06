@@ -29,7 +29,7 @@ jobs:
         run: pnpm -w turbo run lint --filter '!courieriosnativeclean'
 
       - name: Type check
-        run: pnpm type-check
+        run: pnpm -r --if-present type-check
 
       - name: Run tests
         run: pnpm -w test --if-present
