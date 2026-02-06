@@ -3,7 +3,7 @@
 This file documents the exact local steps, env variables, test accounts and branch/PR rules for the Marketplace app so contributors and Copilot have the app-level context.
 
 ## Purpose
-Marketplace is the customer-facing web app (also used for vendor/admin flows in previews). Keep these instructions short and actionable for local development and PRs.
+Marketplace is the customer-facing web app with seller flows in previews. Keep these instructions short and actionable for local development and PRs.
 
 ## Environment variables (placeholders only)
 - VITE_MAPBOX_TOKEN (Mapbox token used in local dev)
@@ -13,9 +13,7 @@ Marketplace is the customer-facing web app (also used for vendor/admin flows in 
 
 ## Test accounts (local emulators)
 - customer@example.com / DemoPass123!
-- vendor@example.com / DemoPass123!
-- courier@example.com / DemoPass123!
-- admin@example.com / DemoPass123!
+- seller@example.com / DemoPass123!
 
 ## Local development
 - Start emulators & seed data (root script):
