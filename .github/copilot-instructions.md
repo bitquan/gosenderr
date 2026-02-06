@@ -1,12 +1,15 @@
 # Copilot Instructions for the GoSenderr Monorepo
 
 ## Overview
+
 These instructions cover the full GoSenderr monorepo: web apps, desktop app, shared packages, Firebase backend, scripts, and documentation. Use this file as the single source of truth for Copilot behavior and project scope.
 
 ## Project Ownership
+
 You are the dedicated developer for the entire project and should take end-to-end ownership of implementation, cleanup, and maintenance tasks.
 
 ## Project Structure
+
 This is a monorepo with Vite + React apps, Electron desktop app, and Firebase backend.
 
 - **apps/marketplace-app**: Customer marketplace (browse, buy, sell)
@@ -16,7 +19,7 @@ This is a monorepo with Vite + React apps, Electron desktop app, and Firebase ba
 - **apps/landing**: Marketing / entry point
 - **apps/vendor-app**: Vendor portal (suppliers, inventory, orders)
 - **apps/web**: Marketing / public web (legacy or alternate entry)
-- **apps/_archive**: Archived/legacy app snapshots (do not modify on main)
+- **apps/\_archive**: Archived/legacy app snapshots (do not modify on main)
 - **packages/shared**: Shared types, utils, state machine
 - **firebase/**: Functions, rules, emulators, local configs
 - **docs/**: Canonical docs, project plan, architecture, deployment
@@ -24,6 +27,7 @@ This is a monorepo with Vite + React apps, Electron desktop app, and Firebase ba
 - **test_data/**, **test-results/**, **logs/**: Local testing artifacts
 
 ## Using GitHub Copilot
+
 1. **Setup**: Ensure that GitHub Copilot is enabled in your IDE.
 2. **Context Awareness**: Write clear comments and code to provide context for Copilot.
 3. **Write Functions**: When writing functions in the User Service, for example, include comments that describe what the function is supposed to do.
@@ -53,12 +57,23 @@ This is a monorepo with Vite + React apps, Electron desktop app, and Firebase ba
 
 > See `docs/senderr_app/BRANCHING.md` for the full guide and exact commands.
 
+## Docs & Flow Audits — keep code and docs in sync ✅
+- **Audit flows periodically:** Schedule regular audits (monthly or quarterly) for critical user flows (e.g., onboarding, job creation, payments) to find regressions or inconsistencies.
+- **Verify docs-code parity:** Always check that documentation, README steps, and code samples match actual behavior; when a change affects behavior, update docs in the same PR.
+- **Include docs verification in PRs:** Add a short ``Docs updated`` checklist item in PRs (see PR template). If docs are not updated and behavior changed, create a follow-up task and flag `CODEOWNERS`.
+- **Automate where possible:** Use `pnpm run verify:docs`, `npx -y cspell "docs/**/*.md"`, and link-checkers in CI to catch broken links and missing references.
+- **Ownership & cadence:** Assign `CODEOWNERS` to lead audits and create GitHub issues for any drift found; track audits as recurring issues or a lightweight kanban workflow.
+
+> Tip: If Copilot suggests code changes that affect behavior, prompt it to also update or propose documentation changes so the PR includes both code and docs updates.
+
 ## Best Practices
+
 - **Be Descriptive**: The more descriptive your comments and variable names, the better suggestions you'll receive.
 - **Review Suggestions**: Always review Copilot’s suggestions for accuracy and relevance.
 - **Contextual Use**: Copilot works best when given clear tasks within the context of your file.
 
 ## Task Focus & Proactive Guidance
+
 - **Stay on task**: If troubleshooting is needed, keep it scoped to the current task and return to the main goal immediately after the fix.
 - **Checkpoint before detours**: Restate the goal and what will be done next before any troubleshooting steps.
 - **Catch missed steps**: Proactively verify common prerequisites (build/sync, emulator status, config URLs, signing, and feature flags) and call out anything missing.
@@ -66,6 +81,7 @@ This is a monorepo with Vite + React apps, Electron desktop app, and Firebase ba
 - **Summarize outcomes**: End with a short status update and next concrete action.
 
 ## iOS Simulator & Capacitor Findings (Keep in Mind)
+
 - **Live hosting in Capacitor**: If the app must load from a live URL (no localhost/port), set `server.url` to the hosted domain in `capacitor.config.ts` and run `cap sync ios`.
 - **Xcode + SwiftPM local package conflict**: Opening two Capacitor iOS workspaces that reference local `node_modules` can cause “Missing package product” errors. To run two apps simultaneously:
   - Keep only one Xcode workspace open at a time **or**
@@ -73,6 +89,7 @@ This is a monorepo with Vite + React apps, Electron desktop app, and Firebase ba
 - **Two simulators are fine**: You can boot iPhone 17 and iPhone 17 Pro simultaneously; the conflict is the workspace/package resolution, not the simulators.
 
 ## Security, Quality, and CI
+
 - Treat security alerts as blocking for production changes.
 - Prefer deterministic, secure IDs; avoid `Math.random()` in app logic.
 - Keep build artifacts out of git; ensure `dist/` is ignored.
@@ -80,15 +97,17 @@ This is a monorepo with Vite + React apps, Electron desktop app, and Firebase ba
 - Keep workflows in `.github/workflows/` up to date; do not delete active scan workflows.
 
 ## Delivery Targets
+
 - Web apps: Vite + Firebase Hosting
 - Backend: Firebase Functions + Firestore rules
 - Desktop: Electron (admin-desktop) with packaging + smoke tests
 
 ## Example Usage
+
 ```javascript
 // Function to create a new user
 function createUser(data) {
-    // Copilot can suggest relevant implementation here
+  // Copilot can suggest relevant implementation here
 }
 ```
 
@@ -109,6 +128,7 @@ When adding or updating high-level project-plan documentation (e.g. `docs/projec
   - Update `CODEOWNERS` for new docs areas if reviewer responsibilities change.
 
 **Legacy content policy**
+
 - If a file/app does not align with the current project plan, archive it on the `scrapile` branch under `scrapile/legacy/*`.
 - Keep main branch lean: only active apps and canonical docs.
 
@@ -119,21 +139,24 @@ When adding or updating high-level project-plan documentation (e.g. `docs/projec
   - Document Docker cross-arch caveats and smoke-test usage in `docs/DEVELOPMENT.md`.
 
 ## Conclusion
-Follow the Phase 1 Admin Desktop checklist in `docs/project-plan/03-PHASE-1-ADMIN-DESKTOP.md` and keep `docs/project-plan/*` as the single source of truth. Use Copilot to scaffold, draft docs, and propose code changes, but always run the repository verification steps (`pnpm run verify:docs`, `npx -y cspell "docs/**/*.md" --exclude "docs/archive/**"`, `pnpm smoke:docker`) and test packaging on relevant platforms before merging.
----
+
+## Follow the Phase 1 Admin Desktop checklist in `docs/project-plan/03-PHASE-1-ADMIN-DESKTOP.md` and keep `docs/project-plan/*` as the single source of truth. Use Copilot to scaffold, draft docs, and propose code changes, but always run the repository verification steps (`pnpm run verify:docs`, `npx -y cspell "docs/**/*.md" --exclude "docs/archive/**"`, `pnpm smoke:docker`) and test packaging on relevant platforms before merging.
 
 ## Feature Flags & Progressive Rollout Strategy
 
 ### Overview
+
 All new features MUST be wrapped in feature flags to enable safe deployment, gradual rollouts, and instant rollbacks without code changes.
 
 ### Feature Flag Architecture
 
 **Storage**: Firestore collection `featureFlags`
+
 - Individual flag documents for admin UI management
 - Single `config` document for app compatibility
 
 **Admin Interface**: `apps/admin-desktop` Feature Flags page
+
 - Toggle flags on/off globally
 - Add new flags via UI (no code deploy needed)
 - Real-time updates across all apps
@@ -142,17 +165,17 @@ All new features MUST be wrapped in feature flags to enable safe deployment, gra
 
 ```typescript
 // Always check flags before showing new features
-import { useFeatureFlags } from '../hooks/useFeatureFlags'
+import { useFeatureFlags } from "../hooks/useFeatureFlags";
 
 export default function Dashboard() {
-  const { flags } = useFeatureFlags()
-  
+  const { flags } = useFeatureFlags();
+
   // New version behind flag
-  if (flags?.['dashboard_v2']) {
-    return <DashboardV2 />  // New experimental version
+  if (flags?.["dashboard_v2"]) {
+    return <DashboardV2 />; // New experimental version
   }
-  
-  return <DashboardV1 />  // Stable fallback
+
+  return <DashboardV1 />; // Stable fallback
 }
 ```
 
@@ -186,6 +209,7 @@ export default function Dashboard() {
 ### Advanced Patterns (Future)
 
 When needed, implement:
+
 - **Percentage Rollouts** - `rolloutPercent: 25` (25% of users)
 - **User Targeting** - `allowedUsers: ['uid1', 'uid2']` (beta testers only)
 - **Environment Flags** - `environments: ['staging']` (not in prod)
@@ -204,8 +228,9 @@ When needed, implement:
 ### Example Scenarios
 
 **New Payment Provider**
+
 ```typescript
-if (flags?.['stripe_payment_v2']) {
+if (flags?.["stripe_payment_v2"]) {
   // New Stripe integration
 } else {
   // Old payment flow
@@ -213,22 +238,26 @@ if (flags?.['stripe_payment_v2']) {
 ```
 
 **Redesigned UI**
+
 ```typescript
-if (flags?.['modern_dashboard']) {
-  return <ModernDashboard />  // New design
+if (flags?.["modern_dashboard"]) {
+  return <ModernDashboard />; // New design
 }
-return <ClassicDashboard />  // Old design
+return <ClassicDashboard />; // Old design
 ```
 
 **Experimental Algorithm**
+
 ```typescript
-const results = flags?.['smart_matching_v2']
+const results = flags?.["smart_matching_v2"]
   ? await newMatchingAlgorithm(params)
-  : await oldMatchingAlgorithm(params)
+  : await oldMatchingAlgorithm(params);
 ```
 
 ## Issues & Support Workflow
+
 Use GitHub issue templates to triage bugs by app:
+
 - Admin Desktop: `.github/ISSUE_TEMPLATE/admin-desktop-bug.yml`
 - Admin Web: `.github/ISSUE_TEMPLATE/admin-web-bug.yml`
 - Marketplace: `.github/ISSUE_TEMPLATE/marketplace-bug.yml`
