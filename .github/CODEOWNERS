@@ -1,5 +1,7 @@
 # CODEOWNERS
 /docs/ @bitquan
+/docs/senderr_app/ @bitquan
 /apps/_archive/ @bitquan
+/apps/courieriosnativeclean/ @bitquan
 /apps/* @bitquan
 /.github/ @bitquan
