@@ -40,6 +40,16 @@ This document describes the branch strategy, naming conventions, and PR workflow
 - Make `senderr_app` a protected branch in GitHub (require PR reviews, require status checks like lint/test, prevent direct pushes).
 - Create a GitHub issue/PR to set `senderr_app` as the default branch for senderr-related CI if needed (this may be a repo-wide change).
 
+## Review policy modes
+
+- Solo-maintainer mode (use when only one write collaborator exists):
+  - `required_approving_review_count = 0`
+  - `require_code_owner_reviews = false`
+- Team mode (use when at least two write collaborators exist):
+  - `required_approving_review_count = 1`
+  - `require_code_owner_reviews = true`
+  - Enable dual-approval lines in `.github/CODEOWNERS`
+
 ## Next steps I can take for you
 
 - Add a PR template and checklist file (`.github/pull_request_template.md`).
