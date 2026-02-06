@@ -20,19 +20,9 @@ const demoUsers = [
     displayName: "Demo Customer",
   },
   {
-    email: "courier@example.com",
-    role: "courier",
-    displayName: "Demo Courier",
-  },
-  {
-    email: "vendor@example.com",
-    role: "vendor",
-    displayName: "Demo Vendor",
-  },
-  {
-    email: "admin@example.com",
-    role: "admin",
-    displayName: "Demo Admin",
+    email: "seller@example.com",
+    role: "seller",
+    displayName: "Demo Seller",
   },
 ];
 
@@ -203,10 +193,10 @@ async function run() {
       console.log(`✅ ${user.role} ready: ${user.email}`);
     }
 
-    const itemId = await createDemoItem(userRecords.vendor.uid);
+    const itemId = await createDemoItem(userRecords.seller.uid);
     const orderId = await createDemoOrder({
       itemId,
-      sellerUid: userRecords.vendor.uid,
+      sellerUid: userRecords.seller.uid,
       buyerUid: userRecords.customer.uid,
       buyerEmail: userRecords.customer.email,
     });

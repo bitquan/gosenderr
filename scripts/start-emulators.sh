@@ -78,9 +78,7 @@ echo "📦 Customer App running at http://127.0.0.1:5173"
 echo ""
 echo "👤 Demo Users:"
 echo "   customer@example.com / DemoPass123!"
-echo "   vendor@example.com / DemoPass123!"
-echo "   courier@example.com / DemoPass123!"
-echo "   admin@example.com / DemoPass123!"
+echo "   seller@example.com / DemoPass123!"
 echo ""
 
 # Wait for emulator process
