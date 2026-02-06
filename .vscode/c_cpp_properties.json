@@ -1,0 +1,22 @@
+{
+  "version": 4,
+  "configurations": [
+    {
+      "name": "macOS",
+      "intelliSenseMode": "macos-clang-arm64",
+      "compilerPath": "/usr/bin/clang",
+      "cStandard": "c17",
+      "cppStandard": "c++17",
+      "includePath": [
+        "${workspaceFolder}/**",
+        "${workspaceFolder}/node_modules/react-native/**",
+        "${workspaceFolder}/node_modules/**",
+        "${workspaceFolder}/apps/courier-ios-native/ios/Pods/Headers/Public/**",
+        "${workspaceFolder}/apps/courier-ios-native/ios/Pods/Headers/Private/**",
+        "${workspaceFolder}/apps/courier-ios-native/ios/Pods/**",
+        "${workspaceFolder}/apps/courier-ios-native/ios/**",
+        "${workspaceFolder}/apps/**/ios/**"
+      ]
+    }
+  ]
+}
