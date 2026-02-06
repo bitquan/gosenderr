@@ -9,6 +9,7 @@
     "lint": "eslint . --ext ts,tsx",
     "test:e2e": "bash ../../scripts/start-emulators.sh && playwright test tests/e2e --config=playwright.config.ts",
     "test:e2e:ui": "playwright test --ui",
+    "test": "vitest",
     "cap:sync": "pnpm build && npx cap sync",
     "cap:open:ios": "npx cap open ios",
     "cap:open:android": "npx cap open android",
@@ -52,6 +53,8 @@
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.7.2",
-    "vite": "^6.0.7"
+    "vite": "^6.0.7",
+    "vitest": "^0.34.7",
+    "@testing-library/react": "^14.0.0"
   }
 }

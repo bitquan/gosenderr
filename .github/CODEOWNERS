@@ -1,5 +1,26 @@
 # CODEOWNERS
+
+# Docs and Senderr docs
+
 /docs/ @bitquan
-/apps/_archive/ @bitquan
-/apps/* @bitquan
+/docs/senderr_app/ @bitquan
+
+# App owners (per-app)
+
+/apps/admin-app/ @bitquan
+/apps/admin-desktop/ @bitquan
+/apps/marketplace-app/ @bitquan
+/apps/courier-app/ @bitquan
+/apps/courieriosnativeclean/ @bitquan
+/apps/vendor-app/ @bitquan
+/apps/landing/ @bitquan
+/apps/\_archive/ @bitquan
+
+# Packages
+
+/packages/shared/ @bitquan
+/packages/ui/ @bitquan
+
+# GitHub config
+
 /.github/ @bitquan
