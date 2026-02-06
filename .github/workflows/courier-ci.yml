@@ -1,9 +1,9 @@
-name: Courier App CI
+name: Senderr App CI
 
 on:
   pull_request:
     paths:
-      - "apps/courier-app/**"
+      - "apps/senderr-app/**"
       - "packages/**"
       - "docs/**"
 
@@ -17,5 +17,5 @@ jobs:
           node-version: 18
       - run: corepack enable && corepack prepare pnpm@8.0.0 --activate
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @gosenderr/courier-app lint
-      - run: pnpm --filter @gosenderr/courier-app build
+      - run: pnpm --filter @gosenderr/senderr-app lint
+      - run: pnpm --filter @gosenderr/senderr-app build

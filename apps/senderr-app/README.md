@@ -1,6 +1,6 @@
-# Courier App - Local Development
+# Senderr App - Local Development
 
-## 🚚 Access Courier Portal
+## 🚚 Access Senderr Portal
 
 **Local Development Server:** http://localhost:5174
 
@@ -10,7 +10,7 @@ Already running in your terminal!
 
 ## 🔐 Login Options
 
-### Option 1: Create New Courier Account
+### Option 1: Create New Senderr Account
 1. Open http://localhost:3001
 2. You'll see the login page
 3. Use the same email/password you used for marketplace app
@@ -42,7 +42,7 @@ Already running in your terminal!
 
 ### Start Dev Server
 \`\`\`bash
-cd apps/courier-app
+cd apps/senderr-app
 pnpm dev
 \`\`\`
 
@@ -60,11 +60,11 @@ pnpm build
 ## 📂 Project Structure
 
 \`\`\`
-apps/courier-app/
+apps/senderr-app/
 ├── src/
 │   ├── pages/
 │   │   ├── Login.tsx        # Auth page
-│   │   └── Dashboard.tsx    # Main courier dashboard
+│   │   └── Dashboard.tsx    # Main senderr dashboard
 │   ├── components/         # Shared UI components
 │   ├── lib/                # Firebase, utils
 │   ├── contexts/           # Auth context

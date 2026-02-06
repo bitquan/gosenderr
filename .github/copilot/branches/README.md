@@ -1,6 +1,12 @@
 # Branch Copilot Profiles
 
-This directory stores branch-specific Copilot instruction files.
+This directory stores branch-specific documentation profiles.
+
+## Source-of-truth model
+
+- Canonical docs live in `docs/` (start at `docs/BLUEPRINT.md`).
+- Branch profile docs are delta docs only.
+- Do not duplicate full canonical setup/process content inside branch docs.
 
 ## Naming
 
@@ -9,14 +15,14 @@ This directory stores branch-specific Copilot instruction files.
   - Branch: `marketplace/main`
   - Profile file: `.github/copilot/branches/marketplace-main.md`
 
-## Current branch profiles
+## Required sections
 
-- `marketplace/main` -> `marketplace-main.md`
-- `marketplace/clone` -> `marketplace-clone.md`
-- `senderr/main` -> `senderr-main.md`
-- `senderr/clone` -> `senderr-clone.md`
-- `senderr-ios/main` -> `senderr-ios-main.md`
-- `senderr-ios/clone` -> `senderr-ios-clone.md`
+- Intent
+- Scope
+- Canonical references
+- Branch deltas
+- Build and test commands
+- Done criteria
 
 ## New branch setup
 
@@ -26,17 +32,13 @@ For every new branch, run:
 bash scripts/setup-branch-copilot.sh
 ```
 
-This creates a branch profile in this folder using the same structure.
-
-To make this automatic on branch create/switch, enable hooks once per clone:
+To auto-create profiles on checkout/create, enable hooks once per clone:
 
 ```bash
 bash scripts/enable-git-hooks.sh
 ```
 
 ## Optional git workflow helper
-
-Use the branch-aware helper script:
 
 ```bash
 bash scripts/git-branch-assist.sh setup

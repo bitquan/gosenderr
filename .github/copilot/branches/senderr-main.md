@@ -3,21 +3,21 @@
 ## Intent
 
 - Branch mode: `mainline`
-- Product area: `Senderr Courier App`
-- Role: stable delivery branch for senderr web courier workflows.
+- Product area: `Senderr Web App`
+- Role: stable delivery branch for the Senderr web app.
 
 ## Scope
 
 - Primary paths:
-  - `apps/courier-app`
+  - `apps/senderr-app`
   - `packages/shared` (only when needed by senderr features)
 - Keep iOS-native work in `senderr-ios/*` unless requested.
 
 ## Build and test commands
 
-- `pnpm --filter @gosenderr/courier-app dev`
-- `pnpm --filter @gosenderr/courier-app build`
-- `pnpm --filter @gosenderr/courier-app preview`
+- `pnpm --filter @gosenderr/senderr-app dev`
+- `pnpm --filter @gosenderr/senderr-app build`
+- `pnpm --filter @gosenderr/senderr-app preview`
 
 ## Git workflow for this branch
 
@@ -29,6 +29,5 @@
 
 ## Done criteria
 
-- Courier workflow changes are verified locally.
+- Senderr workflow changes are verified locally.
 - Branch stays focused on senderr web app scope.
-

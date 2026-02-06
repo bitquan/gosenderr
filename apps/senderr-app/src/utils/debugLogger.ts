@@ -30,7 +30,7 @@ class DebugLogger {
   generateMarkdownReport(): string {
     const uptime = Date.now() - this.startTime
     
-    let md = `# Courier App Debug Report\n\n`
+    let md = `# Senderr App Debug Report\n\n`
     md += `**Generated:** ${new Date().toISOString()}\n`
     md += `**Uptime:** ${(uptime / 1000).toFixed(2)}s\n`
     md += `**URL:** ${window.location.href}\n`
@@ -70,7 +70,7 @@ class DebugLogger {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `courier-debug-${Date.now()}.md`
+    a.download = `senderr-debug-${Date.now()}.md`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)

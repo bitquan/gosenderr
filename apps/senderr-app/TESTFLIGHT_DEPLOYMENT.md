@@ -1,4 +1,4 @@
-# TestFlight Deployment Guide - Gosenderr Courier App
+# TestFlight Deployment Guide - Gosenderr Senderr App
 
 ## ✅ Setup Complete
 
@@ -31,7 +31,7 @@ All Capacitor configuration and iOS setup is complete! The app is ready to build
 
 ### Step 1: Open Xcode
 ```bash
-cd /Users/papadev/dev/apps/gosenderr/apps/courier-app
+cd /Users/papadev/dev/apps/gosenderr/apps/senderr-app
 open ios/App/App.xcworkspace
 ```
 
@@ -133,7 +133,7 @@ When you need to deploy a new version:
 ```bash
 # 1. Make your code changes
 # 2. Build the React app
-cd /Users/papadev/dev/apps/gosenderr/apps/courier-app
+cd /Users/papadev/dev/apps/gosenderr/apps/senderr-app
 pnpm exec vite build
 
 # 3. Sync to iOS

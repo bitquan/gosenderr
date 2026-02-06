@@ -51,15 +51,15 @@ case "${prefix}" in
     ;;
   senderr-app)
     product_area="Senderr Workspace"
-    primary_paths=".github docs apps/courier-app apps/marketplace-app apps/courieriosnativeclean"
+    primary_paths=".github docs apps/senderr-app apps/marketplace-app apps/courieriosnativeclean"
     cmd_1="bash scripts/git-branch-assist.sh status"
     cmd_2="pnpm lint"
     ;;
   senderr)
-    product_area="Senderr Courier App"
-    primary_paths="apps/courier-app"
-    cmd_1="pnpm --filter @gosenderr/courier-app dev"
-    cmd_2="pnpm --filter @gosenderr/courier-app build"
+    product_area="Senderr Web App"
+    primary_paths="apps/senderr-app"
+    cmd_1="pnpm --filter @gosenderr/senderr-app dev"
+    cmd_2="pnpm --filter @gosenderr/senderr-app build"
     ;;
   senderr-ios)
     product_area="Senderr iOS Native"

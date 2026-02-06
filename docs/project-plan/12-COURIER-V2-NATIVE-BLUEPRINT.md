@@ -26,7 +26,7 @@
 ---
 
 ## 🧱 Architecture (Dual-Track)
-- **Keep:** apps/courier-app (Vite + Capacitor) stable for production
+- **Keep:** apps/senderr-app (Vite + Capacitor) stable for production
 - **Add:** apps/courier-ios-native (React Native)
 - **Shared:** packages/shared for types, firestore models, and utilities
 - **Backend:** Firebase Auth + Firestore + Functions

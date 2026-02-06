@@ -14,8 +14,17 @@
   - [09 - Daily Checklist](project-plan/09-DAILY-CHECKLIST.md)
 
 - Core Docs
+  - [Docs Blueprint](BLUEPRINT.md)
   - [Architecture](ARCHITECTURE.md)
   - [Development](DEVELOPMENT.md)
   - [Deployment guide](DEPLOYMENT.md)
   - [Production monitoring](PRODUCTION_MONITORING.md)
   - [API Reference](API_REFERENCE.md)
+
+- Developer Setup
+  - [Minimal Setup](dev/MINIMAL-SETUP.md)
+
+- App Guides
+  - [App Docs Registry](apps/README.md)
+  - [Marketplace App Guide](../apps/marketplace-app/copilot-instructions.md)
+  - [Senderr App Guide](../apps/senderr-app/copilot-instructions.md)

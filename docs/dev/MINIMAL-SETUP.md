@@ -42,6 +42,19 @@ scripts/bootstrap-minimal.sh ./gosenderr-minimal "apps/marketplace-app packages/
 - Use `pnpm --filter <pkg>` to install or build only what you need.
 - Keep large caches off your internal disk (move pnpm store to external drive when needed).
 
+## Per-app Developer Guides
+
+- `apps/marketplace-app/copilot-instructions.md` — Marketplace app: env vars, common debug commands, e2e instructions, and build hints.
+- `apps/senderr-app/copilot-instructions.md` — Courier app: env vars, iOS build notes, and emulator seeding tips.
+
+Quick example: to add the courier app to your minimal checkout:
+
+```bash
+# add courier app to your sparse checkout
+git sparse-checkout set apps/marketplace-app apps/senderr-app packages/shared
+pnpm --filter @gosenderr/senderr-app install
+```
+
 ## Scripts & Safety
 
 - `scripts/clean-environment.sh` (stops emulators and clears caches)

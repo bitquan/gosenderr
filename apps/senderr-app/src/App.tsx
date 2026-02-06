@@ -60,7 +60,7 @@ function ProtectedRoute() {
 
 function App() {
   useEffect(() => {
-    debugLogger.log('info', 'Courier App mounted', {
+    debugLogger.log('info', 'Senderr App mounted', {
       url: window.location.href,
       timestamp: new Date().toISOString(),
       userAgent: navigator.userAgent

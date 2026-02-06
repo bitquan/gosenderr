@@ -1,23 +1,19 @@
-# Branch Profile: `senderr-app/quick-wins/readme-ci-tests`
+# Branch Profile: `main`
 
 ## Intent
 
-- Branch mode: `feature`
-- Product area: `Senderr Workspace`
+- Branch mode: `mainline`
+- Product area: `General`
 
 ## Scope
 
 - Primary paths:
-  - `.github`
-  - `docs`
-  - `apps/senderr-app`
-  - `apps/marketplace-app`
-  - `apps/courieriosnativeclean`
+  - `.`
 
 ## Build and test commands
 
-- `bash scripts/git-branch-assist.sh status`
 - `pnpm lint`
+- `pnpm test`
 
 ## Git workflow for this branch
 

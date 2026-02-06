@@ -1,29 +1,29 @@
-# Copilot Instructions — `apps/courier-app`
+# Copilot Instructions — `apps/senderr-app`
 
-Short, app-specific guidance for Copilot and contributors working on the Courier app.
+Short, app-specific guidance for Copilot and contributors working on the Senderr app.
 
 ## Purpose
-This app contains the Courier workflow (jobs, navigation, job details, delivery flow). Use this file for app-level instructions that are specific to building, running, and testing the Courier app locally.
+This app contains the Senderr workflow (jobs, navigation, job details, delivery flow). Use this file for app-level instructions that are specific to building, running, and testing the Senderr app locally.
 
 ## Quick commands
 - Start dev server (web):
-  - pnpm --filter @gosenderr/courier-app dev
+  - pnpm --filter @gosenderr/senderr-app dev
 - Build (web):
-  - pnpm --filter @gosenderr/courier-app build
+  - pnpm --filter @gosenderr/senderr-app build
 - Preview production build:
-  - pnpm --filter @gosenderr/courier-app preview
+  - pnpm --filter @gosenderr/senderr-app preview
 
 ## Mobile / Capacitor (iOS)
 - Sync & run (iOS):
-  - pnpm --filter @gosenderr/courier-app build && npx cap sync ios && npx cap open ios
+  - pnpm --filter @gosenderr/senderr-app build && npx cap sync ios && npx cap open ios
 - For Xcode-related issues: clean DerivedData and ensure you have the correct CocoaPods installed.
 
 ## E2E & Emulators
 - Use the root `scripts/start-emulators.sh` to start Firebase emulators and seed demo data.
-- Local e2e tests live in `apps/courier-app/tests/e2e` — run via the marketplace app or per-app playwright config where applicable.
+- Local e2e tests live in `apps/senderr-app/tests/e2e` — run via the marketplace app or per-app playwright config where applicable.
 
 ## Developer tips
-- Use `pnpm --filter @gosenderr/courier-app install` to install only courier dependencies when working in a sparse checkout.
+- Use `pnpm --filter @gosenderr/senderr-app install` to install only senderr dependencies when working in a sparse checkout.
 - If building for iOS locally, prefer using a RAM disk for `DerivedData` during heavy iteration (see `scripts/ramdisk-deriveddata.sh`).
 
 ## Copilot behavior & heuristics (short)
@@ -49,12 +49,12 @@ The seed script creates demo users you can use in local dev:
 - Start Firebase emulators and seed data (root script):
   - bash ../../scripts/start-emulators.sh
 - Run dev server (web):
-  - pnpm --filter @gosenderr/courier-app dev
+  - pnpm --filter @gosenderr/senderr-app dev
 - Build & preview production build:
-  - pnpm --filter @gosenderr/courier-app build
-  - pnpm --filter @gosenderr/courier-app preview
+  - pnpm --filter @gosenderr/senderr-app build
+  - pnpm --filter @gosenderr/senderr-app preview
 - Mobile (Capacitor) quick commands:
-  - pnpm --filter @gosenderr/courier-app build && npx cap sync ios
+  - pnpm --filter @gosenderr/senderr-app build && npx cap sync ios
   - npx cap open ios
 - Run e2e tests (Playwright):
   - Start emulators (see above) then `pnpm --filter @gosenderr/marketplace-app test:e2e` (marketplace runs common seeds)
@@ -62,7 +62,7 @@ The seed script creates demo users you can use in local dev:
 ## Debugging tips
 - If emulator auth fails, re-run `bash scripts/start-emulators.sh` and inspect `firestore-debug.log` and `firebase-debug.log` in the app root.
 - For Xcode / iOS build issues: clean DerivedData `rm -rf ~/Library/Developer/Xcode/DerivedData` and run `pod install` from `ios/`.
-- For JS runtime issues, use `pnpm --filter @gosenderr/courier-app dev` and inspect console/network logs in the browser.
+- For JS runtime issues, use `pnpm --filter @gosenderr/senderr-app dev` and inspect console/network logs in the browser.
 
 ## Branching & PR checklist (app-specific)
 - Branch naming: `senderr-app/courier/<issue-number>-<short-desc>` (e.g., `senderr-app/courier/123-fix-job-listing`).
@@ -74,7 +74,7 @@ The seed script creates demo users you can use in local dev:
   - Does it include a short summary + issue link? ✅
   - Do tests pass locally (unit/lint/e2e) for the changed scope? ✅
   - Add a short `How to test` section in the PR description. ✅
-  - Update `apps/courier-app/copilot-instructions.md` if changes require new local steps. ✅
+  - Update `apps/senderr-app/copilot-instructions.md` if changes require new local steps. ✅
 
 ## Making per-branch instructions (how we keep work discoverable)
 - Add a short file `docs/branches/COUR-123.md` describing the feature or migration (what was done, how to test, env vars required, follow-ups). Keep it in the same branch and reference it in the PR.

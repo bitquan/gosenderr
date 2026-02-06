@@ -313,7 +313,7 @@ https://gosenderr.com/vendor/stripe-connect/callback
 #### 1. Build iOS App
 
 ```bash
-cd apps/courier-app
+cd apps/senderr-app
 
 # Sync with Capacitor
 pnpm build
@@ -342,7 +342,7 @@ npx cap open ios
 #### 1. Build Android App
 
 ```bash
-cd apps/courier-app
+cd apps/senderr-app
 
 # Sync with Capacitor
 pnpm build

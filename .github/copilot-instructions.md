@@ -32,7 +32,7 @@ This guarantees every new branch gets the same Copilot setup.
 This is a monorepo with Vite + React apps, Electron desktop app, and Firebase backend.
 
 - **apps/marketplace-app**: Customer marketplace (browse, buy, sell)
-- **apps/courier-app**: Courier workflow (jobs, navigation)
+- **apps/senderr-app**: Senderr workflow (jobs, navigation)
 - **apps/admin-app**: Web admin portal
 - **apps/admin-desktop**: Electron admin desktop app
 - **apps/landing**: Marketing / entry point

@@ -960,8 +960,8 @@ pnpm dev
    ```bash
    cd apps
    npx react-native@latest init CourierApp --template react-native-template-typescript
-   mv CourierApp courier-app
-   cd courier-app
+   mv CourierApp senderr-app
+   cd senderr-app
    ```
    - Initialize with TypeScript template
    - Add to workspace if using pnpm
@@ -1039,7 +1039,7 @@ pnpm dev
 
 **End of Day Check:**
 ```bash
-cd apps/courier-app
+cd apps/senderr-app
 pnpm ios
 # App opens on simulator
 ```

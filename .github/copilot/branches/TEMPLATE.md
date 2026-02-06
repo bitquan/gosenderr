@@ -12,6 +12,19 @@
   - `<path-2>`
 - Avoid touching unrelated app areas unless explicitly requested.
 
+## Canonical references
+
+- `docs/BLUEPRINT.md`
+- `docs/apps/README.md`
+- `<app-doc-1>`
+- `<app-doc-2>`
+
+## Branch deltas (this branch only)
+
+- `<delta-1>`
+- `<delta-2>`
+- Target cleanup date: `<yyyy-mm-dd or before-merge>`
+
 ## Build and test commands
 
 - `<command-1>`
@@ -28,4 +41,4 @@
 
 - Changes are implemented and validated for this branch scope.
 - Branch profile remains accurate when scope or workflow changes.
-
+- Any lasting behavior/process changes are promoted into canonical docs in `docs/`.

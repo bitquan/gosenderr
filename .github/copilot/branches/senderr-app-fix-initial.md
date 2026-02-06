@@ -1,4 +1,4 @@
-# Branch Profile: `senderr-app/quick-wins/readme-ci-tests`
+# Branch Profile: `senderr-app/fix/initial`
 
 ## Intent
 
@@ -8,11 +8,7 @@
 ## Scope
 
 - Primary paths:
-  - `.github`
-  - `docs`
-  - `apps/senderr-app`
-  - `apps/marketplace-app`
-  - `apps/courieriosnativeclean`
+  - `.github docs apps/senderr-app apps/marketplace-app apps/courieriosnativeclean`
 
 ## Build and test commands
 
