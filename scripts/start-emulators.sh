@@ -2,12 +2,15 @@
 
 # Script to start Firebase emulators with proper cleanup on exit and auto-seed
 
+SEED_READY_FILE="${TMPDIR:-/tmp}/gosenderr-marketplace-seed-ready"
+
 echo "🔥 Starting Firebase Emulators..."
 
 # Function to cleanup on exit
 cleanup() {
     echo ""
     echo "🛑 Shutting down Firebase Emulators..."
+    rm -f "$SEED_READY_FILE" 2>/dev/null || true
     
     # Kill all firebase processes
     pkill -f firebase 2>/dev/null
@@ -24,6 +27,7 @@ trap cleanup EXIT INT TERM
 
 # Resolve script directory (so calling from subdirectories works)
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+rm -f "$SEED_READY_FILE"
 
 # Start emulators in background
 # Use docker-specific config when running inside the container (IN_DOCKER=1)
@@ -56,6 +60,7 @@ done
 
 echo "🌱 Seeding demo users and seller marketplace data..."
 FIREBASE_PROJECT_ID=gosenderr-6773f node "$SCRIPT_DIR/seed-role-simulation.js"
+touch "$SEED_READY_FILE"
 
 echo ""
 echo "🎉 Ready! View Emulator UI at http://127.0.0.1:4000"

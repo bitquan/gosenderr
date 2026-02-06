@@ -4,6 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 MARKETPLACE_DIR="$REPO_ROOT/apps/marketplace-app"
+SEED_READY_FILE="${TMPDIR:-/tmp}/gosenderr-marketplace-seed-ready"
 
 cleanup() {
   if [ -n "${STARTER_PID:-}" ]; then
@@ -38,8 +39,25 @@ if [ "$READY" != "true" ]; then
   exit 1
 fi
 
-echo "🌱 Ensuring demo customer/seller users are seeded..."
-FIREBASE_PROJECT_ID=gosenderr-6773f node "$SCRIPT_DIR/seed-role-simulation.js"
+echo "⏳ Waiting for startup seed completion..."
+SEED_DONE=false
+for i in {1..120}; do
+  if [ -f "$SEED_READY_FILE" ]; then
+    SEED_DONE=true
+    echo "✅ Seed completion marker detected"
+    break
+  fi
+  if ! kill -0 "$STARTER_PID" >/dev/null 2>&1; then
+    echo "❌ Emulator starter exited before seed completed"
+    exit 1
+  fi
+  sleep 1
+done
+
+if [ "$SEED_DONE" != "true" ]; then
+  echo "❌ Timed out waiting for seed completion"
+  exit 1
+fi
 
 cd "$MARKETPLACE_DIR"
 echo "🧪 Running Playwright e2e..."

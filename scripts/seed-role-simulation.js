@@ -34,11 +34,20 @@ async function upsertAuthUser(email, displayName) {
     if (error.code !== "auth/user-not-found") {
       throw error;
     }
-    return auth.createUser({
+  }
+
+  try {
+    return await auth.createUser({
       email,
       password: DEMO_PASSWORD,
       displayName,
     });
+  } catch (error) {
+    // Another seed process may have created the user between getUserByEmail and createUser.
+    if (error.code === "auth/email-already-exists") {
+      return auth.getUserByEmail(email);
+    }
+    throw error;
   }
 }
 
