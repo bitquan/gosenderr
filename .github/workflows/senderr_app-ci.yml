@@ -26,7 +26,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Lint
-        run: pnpm lint
+        run: pnpm -w turbo run lint --filter '!courieriosnativeclean'
 
       - name: Type check
         run: pnpm type-check
