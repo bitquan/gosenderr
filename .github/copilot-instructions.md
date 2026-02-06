@@ -29,6 +29,30 @@ This is a monorepo with Vite + React apps, Electron desktop app, and Firebase ba
 3. **Write Functions**: When writing functions in the User Service, for example, include comments that describe what the function is supposed to do.
 4. **Iterate**: Use Copilot suggestions as a starting point, and iterate on them to fit your specific needs.
 
+## Senderr App — Branching & PR Guidance
+
+**Quick reference for Senderr work (branching, PRs, CI)**
+
+- **Main app branch:** `senderr_app` — treat as protected and target for all Senderr PRs.
+- **Sub-branch convention:** `senderr-app/<type>/<short-desc>` (use hyphen, lowercase). Examples:
+  - `senderr-app/feature/auth-flow`
+  - `senderr-app/fix/login-crash`
+  - `senderr-app/upgrade/react-native`
+  - `senderr-app/docs/update-guides`
+- **Branch rules:**
+  - Branch from latest `senderr_app` (fetch + rebase/merge before starting work).
+  - Keep branches small, single-purpose, and short lived.
+  - Include an issue id in the branch name when available (e.g., `senderr-app/feature/123-login-flow`).
+- **PR expectations:**
+  - Target branch **must** be `senderr_app`.
+  - PRs should include a clear summary, linked issue, test instructions, and follow the PR checklist (see `.github/pull_request_template.md`).
+  - Use **Squash and merge** to keep history concise.
+- **CI & code ownership:**
+  - PRs should pass `senderr_app-ci` (lint, type-check, unit tests) before merging.
+  - `CODEOWNERS` contains owners for `docs/senderr_app/` and `apps/courieriosnativeclean/` — add reviewers accordingly.
+
+> See `docs/senderr_app/BRANCHING.md` for the full guide and exact commands.
+
 ## Best Practices
 - **Be Descriptive**: The more descriptive your comments and variable names, the better suggestions you'll receive.
 - **Review Suggestions**: Always review Copilot’s suggestions for accuracy and relevance.
