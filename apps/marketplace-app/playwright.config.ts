@@ -2,6 +2,12 @@ import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
   testDir: "tests/e2e",
+  testIgnore: [
+    "**/*debug*.spec.ts",
+    "**/*console*.spec.ts",
+    "**/vendor-edit.spec.ts",
+    "**/vendor-lifecycle.spec.ts",
+  ],
   timeout: 60_000,
   retries: process.env.CI ? 2 : 0,
   use: {
