@@ -19,9 +19,11 @@ bash "$SCRIPT_DIR/start-emulators.sh" &
 STARTER_PID=$!
 
 echo "⏳ Waiting for emulator ports..."
+READY=false
 for i in {1..120}; do
-  if lsof -ti:8080 >/dev/null 2>&1 && lsof -ti:9099 >/dev/null 2>&1; then
-    echo "✅ Emulator ports are ready"
+  if lsof -ti:8080 >/dev/null 2>&1 && lsof -ti:9099 >/dev/null 2>&1 && lsof -ti:5000 >/dev/null 2>&1; then
+    echo "✅ Emulator ports are ready (firestore, auth, hosting)"
+    READY=true
     break
   fi
   if ! kill -0 "$STARTER_PID" >/dev/null 2>&1; then
@@ -31,6 +33,11 @@ for i in {1..120}; do
   sleep 1
 done
 
+if [ "$READY" != "true" ]; then
+  echo "❌ Timed out waiting for emulator ports"
+  exit 1
+fi
+
 cd "$MARKETPLACE_DIR"
 echo "🧪 Running Playwright e2e..."
-pnpm exec playwright test tests/e2e --config=playwright.config.ts
+pnpm exec playwright test tests/e2e --config=playwright.config.ts "$@"

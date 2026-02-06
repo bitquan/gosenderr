@@ -54,23 +54,8 @@ for i in {1..60}; do
     sleep 1
 done
 
-# Check if there's any data already (simple check if port 8080 returns data)
-echo "🔍 Checking for existing marketplace data..."
-sleep 1
-
-# Try to get documents, if it fails or returns empty, seed
-SHOULD_SEED=true
-if curl -s "http://127.0.0.1:8080/v1/projects/gosenderr-6773f/databases/(default)/documents/marketplaceItems" 2>/dev/null | grep -q "documents"; then
-    echo "✓ Marketplace data found, skipping seed"
-    SHOULD_SEED=false
-fi
-
-if [ "$SHOULD_SEED" = true ]; then
-    echo "🌱 Seeding demo users..."
-    FIREBASE_PROJECT_ID=gosenderr-6773f node "$SCRIPT_DIR/seed-role-simulation.js"
-    echo "🌱 Seeding marketplace data..."
-    npx tsx "$SCRIPT_DIR/seed-marketplace.ts"
-fi
+echo "🌱 Seeding demo users and seller marketplace data..."
+FIREBASE_PROJECT_ID=gosenderr-6773f node "$SCRIPT_DIR/seed-role-simulation.js"
 
 echo ""
 echo "🎉 Ready! View Emulator UI at http://127.0.0.1:4000"
