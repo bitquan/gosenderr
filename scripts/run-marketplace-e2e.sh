@@ -38,6 +38,9 @@ if [ "$READY" != "true" ]; then
   exit 1
 fi
 
+echo "🌱 Ensuring demo customer/seller users are seeded..."
+FIREBASE_PROJECT_ID=gosenderr-6773f node "$SCRIPT_DIR/seed-role-simulation.js"
+
 cd "$MARKETPLACE_DIR"
 echo "🧪 Running Playwright e2e..."
 pnpm exec playwright test tests/e2e --config=playwright.config.ts "$@"
