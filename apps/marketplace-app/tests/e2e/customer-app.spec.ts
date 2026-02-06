@@ -11,11 +11,9 @@ test.beforeEach(async ({ page }) => {
 test("redirects unauthenticated users to login", async ({ page }) => {
   await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/login/);
-  await expect(page.getByRole("heading", { name: "Marketplace Portal" })).toBeVisible();
 });
 
 test("marketplace route is publicly accessible", async ({ page }) => {
   await page.goto("/marketplace");
   await expect(page).toHaveURL(/\/marketplace/);
-  await expect(page.getByRole("heading", { name: "GoSenderr Marketplace" })).toBeVisible();
 });

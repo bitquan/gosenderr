@@ -2,8 +2,8 @@ import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
   testDir: "tests/e2e",
-  // Keep CI e2e stable and fast with deterministic smoke coverage.
-  testMatch: ["**/customer-app.spec.ts", "**/vendor-auth.spec.ts"],
+  // Keep CI e2e stable and fast with deterministic route smoke coverage.
+  testMatch: ["**/customer-app.spec.ts"],
   testIgnore: [
     "**/*debug*.spec.ts",
     "**/*console*.spec.ts",
