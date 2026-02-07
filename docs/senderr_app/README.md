@@ -77,6 +77,7 @@ Native precedence:
 
 ## Supporting docs
 - Roadmap/progress tracker: `docs/senderr_app/ROADMAP.md`
+- Repo-wide playbook: `docs/DEVELOPER_PLAYBOOK.md`
 - Navigation map: `docs/senderr_app/NAVIGATION_MAP.md`
 - MVP criteria: `docs/senderr_app/MVP_ACCEPTANCE.md`
 - Signing/provisioning: `docs/senderr_app/IOS_SIGNING.md`
