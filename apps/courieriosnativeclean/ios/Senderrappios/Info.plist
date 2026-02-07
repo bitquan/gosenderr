@@ -44,7 +44,7 @@
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Senderr needs photo library access to save delivery proof photos.</string>
 	<key>RCTNewArchEnabled</key>
-	<true/>
+	<false/>
 	<key>SenderrApiBaseUrl</key>
 	<string>$(SENDERR_API_BASE_URL)</string>
 	<key>SenderrEnvName</key>
