@@ -26,7 +26,7 @@ Multiple iOS app directories create drift in Podfiles, scripts, and docs. This c
 - Add CI guard that fails when more than one active iOS root is detected.
 
 3. Archive legacy directories:
-- Move legacy iOS directories under `apps/_archive/ios/`.
+- Move legacy iOS directories under `apps/_archive/legacy-ios-workspaces/`.
 - Leave short README stubs at old paths with redirect instructions.
 
 4. Align naming:

@@ -17,9 +17,9 @@
 
 - `cd apps/courieriosnativeclean/ios && pod install`
 - Open and build:
-  - `apps/courieriosnativeclean/ios/courieriosnativeclean.xcworkspace`
+  - `apps/courieriosnativeclean/ios/Senderrappios.xcworkspace`
 - Optional CLI build check:
-  - `xcodebuild -workspace courieriosnativeclean.xcworkspace -scheme courieriosnativeclean -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build`
+  - `xcodebuild -workspace Senderrappios.xcworkspace -scheme Senderr -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build`
 
 ## Git workflow for this branch
 
@@ -32,4 +32,3 @@
 
 - Pod install succeeds.
 - Xcode build path is verified for current change.
-
