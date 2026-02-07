@@ -30,7 +30,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
       return false
     }
 
-    let rootView = RCTRootView(bridge: bridge, moduleName: "Senderrappios", initialProperties: nil)
+    let rootView = RCTRootView(bridge: bridge, moduleName: "Senderr", initialProperties: nil)
     let rootViewController = UIViewController()
     rootViewController.view = rootView
     window?.rootViewController = rootViewController
@@ -48,7 +48,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
       FirebaseApp.configure()
     } else {
       NSLog(
-        "Firebase disabled: GoogleService-Info.plist is missing from app bundle for target Senderrappios."
+        "Firebase disabled: GoogleService-Info.plist is missing from app bundle for target Senderr."
       )
     }
   }
