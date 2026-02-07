@@ -76,6 +76,7 @@ Native precedence:
 3. Environment defaults (`dev` / `staging` / `prod`)
 
 ## Supporting docs
+- Roadmap/progress tracker: `docs/senderr_app/ROADMAP.md`
 - Device test matrix: `docs/senderr_app/DEVICE_TEST_MATRIX.md`
 - Navigation map: `docs/senderr_app/NAVIGATION_MAP.md`
 - MVP criteria: `docs/senderr_app/MVP_ACCEPTANCE.md`
