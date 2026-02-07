@@ -45,6 +45,22 @@
 	<string>Senderr needs photo library access to save delivery proof photos.</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
+	<key>SenderrApiBaseUrl</key>
+	<string>$(SENDERR_API_BASE_URL)</string>
+	<key>SenderrEnvName</key>
+	<string>$(SENDERR_ENV_NAME)</string>
+	<key>SenderrFirebaseApiKey</key>
+	<string>$(SENDERR_FIREBASE_API_KEY)</string>
+	<key>SenderrFirebaseAppId</key>
+	<string>$(SENDERR_FIREBASE_APP_ID)</string>
+	<key>SenderrFirebaseAuthDomain</key>
+	<string>$(SENDERR_FIREBASE_AUTH_DOMAIN)</string>
+	<key>SenderrFirebaseMessagingSenderId</key>
+	<string>$(SENDERR_FIREBASE_MESSAGING_SENDER_ID)</string>
+	<key>SenderrFirebaseProjectId</key>
+	<string>$(SENDERR_FIREBASE_PROJECT_ID)</string>
+	<key>SenderrFirebaseStorageBucket</key>
+	<string>$(SENDERR_FIREBASE_STORAGE_BUCKET)</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>

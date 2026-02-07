@@ -7,6 +7,7 @@ import {JobDetailScreen} from './src/screens/JobDetailScreen';
 import {JobsScreen} from './src/screens/JobsScreen';
 import {LoginScreen} from './src/screens/LoginScreen';
 import {SettingsScreen} from './src/screens/SettingsScreen';
+import {configureRuntime, type NativeRuntimeConfig} from './src/config/runtime';
 import {fetchJobs} from './src/services/jobsService';
 import type {Job} from './src/types/jobs';
 
@@ -127,7 +128,13 @@ const TabButton = ({
   );
 };
 
-function App(): React.JSX.Element {
+type AppProps = {
+  runtimeConfig?: NativeRuntimeConfig;
+};
+
+function App({runtimeConfig}: AppProps): React.JSX.Element {
+  configureRuntime(runtimeConfig);
+
   return (
     <AuthProvider>
       <AppShell />

@@ -40,7 +40,19 @@ pnpm run ios:build:verify
 - Release device compile build
 
 ## Runtime configuration
-Set Firebase values as env vars when you want real backend auth/data in RN runtime:
+### Build-time environment profiles (`dev` / `staging` / `prod`)
+- Profile files:
+  - `apps/courieriosnativeclean/ios/config/env/dev.xcconfig`
+  - `apps/courieriosnativeclean/ios/config/env/staging.xcconfig`
+  - `apps/courieriosnativeclean/ios/config/env/prod.xcconfig`
+- Build with a profile:
+  - `bash scripts/ios-build-env.sh dev`
+  - `bash scripts/ios-build-env.sh staging`
+  - `bash scripts/ios-build-env.sh prod Release`
+
+The app receives these build-time values via `Info.plist` keys and injects them into RN at startup:
+- `SENDERR_ENV_NAME`
+- `SENDERR_API_BASE_URL`
 - `SENDERR_FIREBASE_API_KEY`
 - `SENDERR_FIREBASE_AUTH_DOMAIN`
 - `SENDERR_FIREBASE_PROJECT_ID`
@@ -48,7 +60,11 @@ Set Firebase values as env vars when you want real backend auth/data in RN runti
 - `SENDERR_FIREBASE_MESSAGING_SENDER_ID`
 - `SENDERR_FIREBASE_APP_ID`
 
-If these are missing, app falls back to local mock auth/jobs for development.
+Defaults:
+- `Debug` builds default to `dev`
+- `Release` builds default to `prod`
+
+If Firebase keys are blank, the app safely falls back to local mock auth/jobs.
 
 ## Related issues
 - `#123` Stabilize pod install and clean build workflow
