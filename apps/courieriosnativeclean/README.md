@@ -117,6 +117,10 @@ For environment profile builds:
 - `Firebase auth is required` on login:
   - Ensure `SENDERR_FIREBASE_*` values are present and valid for current profile.
   - For local-only fallback testing, explicitly set `SENDERR_ALLOW_MOCK_AUTH = 1` in a non-production config.
+- `Unable to verify courier access while offline` immediately after sign-in:
+  - Confirm `GoogleService-Info.plist` matches the active app and Firebase project.
+  - Confirm target bundle ID matches the plist bundle ID (or replace plist with one for the current bundle ID).
+  - Run `pnpm run ios:clean:install`, then rebuild from `Senderrappios.xcworkspace`.
 
 ## Links
 

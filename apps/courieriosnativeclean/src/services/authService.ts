@@ -6,10 +6,10 @@ import {
   type IdTokenResult,
   type Unsubscribe,
 } from 'firebase/auth';
-import {doc, getDoc} from 'firebase/firestore';
+import {doc, getDoc, setDoc} from 'firebase/firestore';
 
 import {getFirebaseServices, isFirebaseReady} from './firebase';
-import {isMockAuthEnabled} from '../config/runtime';
+import {isMockAuthEnabled, runtimeConfig} from '../config/runtime';
 import type {AuthSession} from '../types/auth';
 
 const SESSION_KEY = '@senderr/auth/session';
@@ -140,7 +140,7 @@ const isTransientRoleLookupError = (error: unknown): boolean => {
 
 const assertCourierRole = async (
   uid: string,
-  options: {idTokenClaims?: Record<string, unknown> | null} = {},
+  options: {idTokenClaims?: Record<string, unknown> | null; email?: string | null} = {},
 ): Promise<void> => {
   const services = getFirebaseServices();
   if (!services) {
@@ -150,14 +150,47 @@ const assertCourierRole = async (
   try {
     const userRef = doc(services.db, 'users', uid);
     const userSnap = await getDoc(userRef);
+    const roleFromClaims = options.idTokenClaims
+      ? getCourierRoleFromClaims(options.idTokenClaims)
+      : null;
 
     if (!userSnap.exists()) {
+      if (runtimeConfig.envName !== 'prod') {
+        const bootstrapRole: CourierRole = roleFromClaims ?? 'courier';
+        await setDoc(
+          userRef,
+          {
+            role: bootstrapRole,
+            email: options.email ?? null,
+            createdBy: 'courier-ios-bootstrap',
+            updatedAt: new Date().toISOString(),
+          },
+          {merge: true},
+        );
+        await writeRoleCache(uid, bootstrapRole);
+        return;
+      }
+
       await clearRoleCache(uid);
       throw new Error('No courier profile found for this account.');
     }
 
     const role = normalizeCourierRole((userSnap.data() as {role?: unknown}).role);
     if (!role) {
+      if (runtimeConfig.envName !== 'prod') {
+        const bootstrapRole: CourierRole = roleFromClaims ?? 'courier';
+        await setDoc(
+          userRef,
+          {
+            role: bootstrapRole,
+            updatedAt: new Date().toISOString(),
+          },
+          {merge: true},
+        );
+        await writeRoleCache(uid, bootstrapRole);
+        return;
+      }
+
       await clearRoleCache(uid);
       throw new Error('This account does not have courier access.');
     }
@@ -199,7 +232,7 @@ export const restoreSession = async (): Promise<AuthSession | null> => {
       const user = services.auth.currentUser;
       const idTokenClaims = await getClaims(() => user.getIdTokenResult());
       try {
-        await assertCourierRole(user.uid, {idTokenClaims});
+        await assertCourierRole(user.uid, {idTokenClaims, email: user.email ?? null});
       } catch {
         await firebaseSignOut(services.auth);
         await persistSession(null);
@@ -253,7 +286,10 @@ export const signIn = async (email: string, password: string): Promise<AuthSessi
     const credential = await signInWithEmailAndPassword(services.auth, normalizedEmail, password);
     const idTokenClaims = await getClaims(() => credential.user.getIdTokenResult());
     try {
-      await assertCourierRole(credential.user.uid, {idTokenClaims});
+      await assertCourierRole(credential.user.uid, {
+        idTokenClaims,
+        email: credential.user.email ?? normalizedEmail,
+      });
     } catch (error) {
       await firebaseSignOut(services.auth);
       throw error;

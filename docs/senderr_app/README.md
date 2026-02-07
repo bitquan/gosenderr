@@ -77,9 +77,11 @@ Defaults:
 - `Release` => `prod`
 
 Native precedence:
-1. Values injected through `Info.plist` build settings (`SENDERR_*`)
-2. `GoogleService-Info.plist` values for Firebase keys/project/bucket/app ID/sender ID
+1. `GoogleService-Info.plist` values for Firebase keys/project/bucket/app ID/sender ID
+2. Values injected through `Info.plist` build settings (`SENDERR_*`)
 3. Environment defaults (`dev` / `staging` / `prod`)
+
+This ordering prevents mixed Firebase runtime config (for example, API key from plist + projectId from xcconfig), which can cause Firestore role checks to fail as "offline" even when network is available.
 
 Auth mode rules:
 - Firebase auth is the default and required path.
