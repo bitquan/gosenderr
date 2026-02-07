@@ -1,38 +1,54 @@
 # GoSenderr Docs Blueprint
 
-This file defines how documentation is organized and kept in sync across branches.
+This file defines the repo documentation hierarchy, precedence, and archive policy.
 
-## Goals
+## Canonical hierarchy
 
-- Keep one canonical source of truth.
-- Keep branch docs focused on differences only.
-- Make docs updates part of normal PR flow.
+Use the following order of truth when docs conflict:
 
-## Documentation model
+1. App-level operational docs in `apps/*/README.md`
+- Source of truth for app setup, run, test, deploy, and troubleshooting.
 
-1. Canonical docs (source of truth)
-- Location: `docs/`
-- Purpose: stable product, architecture, setup, and process rules.
-- Key files:
+2. Canonical repo docs in `docs/`
+- Source of truth for shared architecture, development workflow, deployment, and process rules.
+- Key docs:
   - `docs/BLUEPRINT.md`
   - `docs/ARCHITECTURE.md`
   - `docs/DEVELOPMENT.md`
   - `docs/DEPLOYMENT.md`
-  - `docs/apps/README.md` (app docs registry)
+  - `docs/apps/README.md`
+  - `docs/DEVELOPER_PLAYBOOK.md`
 
-2. Branch docs (delta layer)
-- Location: `.github/copilot/branches/*.md`
-- Purpose: branch-specific scope, commands, and temporary deviations.
-- Rule: branch docs never duplicate canonical docs; they only capture deltas.
+3. Branch delta docs in `.github/copilot/branches/*.md`
+- Only branch-specific differences from canonical docs.
+- Must not restate or fork canonical guidance.
 
-## Branching documentation policy
+4. Legacy planning docs in `docs/project-plan/`
+- Historical planning artifacts and references.
+- Not authoritative for current operational setup unless explicitly promoted.
+
+## Legacy archive policy
+
+`docs/project-plan/` is a legacy planning archive.
+
+- Allowed:
+  - Historical context
+  - Prior plans and design snapshots
+  - Migration notes
+- Not allowed:
+  - Overriding current setup/build/run/release instructions
+  - Declaring itself as current global source of truth
+
+When legacy guidance becomes current policy, copy it into canonical docs under `docs/` or `apps/*/README.md` and link the promoted section.
+
+## Branch documentation policy
 
 - Every active branch must have one branch profile doc.
-- New branch setup command:
+- Initialize with:
   - `bash scripts/setup-branch-copilot.sh`
-- Branch profile file name format:
+- Branch profile file naming:
   - `<branch-with-slashes-replaced-by-dashes>.md`
-- Required sections in branch profile:
+- Required sections:
   - Intent
   - Scope
   - Canonical references
@@ -42,23 +58,22 @@ This file defines how documentation is organized and kept in sync across branche
 
 ## PR documentation policy
 
-- Every PR must explicitly declare docs impact:
-  - `docs-impact: yes` when behavior/process/setup changed
+- Every PR must set docs impact:
+  - `docs-impact: yes` when behavior/process/setup changes
   - `docs-impact: no` when no docs are affected
-- If `docs-impact: yes`, update canonical docs first.
-- If a branch introduces temporary behavior, record it in the branch profile delta section.
+- If `docs-impact: yes`, update canonical docs in the same PR.
+- If behavior is temporary to a branch, add it only to the branch profile delta section.
 
-## Ownership
+## Ownership and review
 
-- Canonical docs are owned in `CODEOWNERS`.
-- Branch profile docs are maintained by the developer working on that branch.
-- Before merge, deltas should either:
-  - be promoted into canonical docs, or
-  - be removed if no longer needed.
+- Canonical docs are owned by `CODEOWNERS`.
+- Branch profile docs are owned by the branch author.
+- Before merge, branch deltas must be:
+  - promoted into canonical docs, or
+  - removed if no longer needed.
 
-## Review checklist
-
-- Is the change reflected in canonical docs (if needed)?
-- Is branch delta documented (if needed)?
-- Are links in docs and sidebar still valid?
+Review checklist:
+- Is the change reflected in canonical docs when required?
+- Is branch-only behavior recorded in branch delta docs?
+- Are links still valid?
 - Are setup and verification commands still accurate?

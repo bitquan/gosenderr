@@ -412,4 +412,4 @@ This planning documentation is organized as follows:
 
 ---
 
-*This document serves as the single source of truth for the GoSenderr v2 project. Update as the project evolves.*
+*Legacy planning note: this document is a historical project-plan reference. For current operational guidance, use canonical docs listed in `docs/BLUEPRINT.md`.*

@@ -159,7 +159,7 @@ When adding or updating high-level project-plan documentation (e.g. `docs/projec
 
 ## Conclusion
 
-## Follow the Phase 1 Admin Desktop checklist in `docs/project-plan/03-PHASE-1-ADMIN-DESKTOP.md` and keep `docs/project-plan/*` as the single source of truth. Use Copilot to scaffold, draft docs, and propose code changes, but always run the repository verification steps (`pnpm run verify:docs`, `npx -y cspell "docs/**/*.md" --exclude "docs/archive/**"`, `pnpm smoke:docker`) and test packaging on relevant platforms before merging.
+## Follow the Phase 1 Admin Desktop checklist in `docs/project-plan/03-PHASE-1-ADMIN-DESKTOP.md` as planning context. Treat `docs/project-plan/*` as legacy planning references, and use canonical docs defined in `docs/BLUEPRINT.md` for current operational truth. Use Copilot to scaffold, draft docs, and propose code changes, but always run repository verification steps (`pnpm run verify:docs`, `npx -y cspell "docs/**/*.md" --exclude "docs/archive/**"`, `pnpm smoke:docker`) and test packaging on relevant platforms before merging.
 
 ## Feature Flags & Progressive Rollout Strategy
 
