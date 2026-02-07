@@ -3,6 +3,7 @@ import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
+  type IdTokenResult,
   type Unsubscribe,
 } from 'firebase/auth';
 import {doc, getDoc} from 'firebase/firestore';
@@ -13,10 +14,12 @@ import type {AuthSession} from '../types/auth';
 
 const SESSION_KEY = '@senderr/auth/session';
 const ROLE_CACHE_KEY = '@senderr/auth/role-cache';
-const ROLE_CACHE_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 7;
+const ROLE_CACHE_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30;
+
+type CourierRole = 'courier' | 'driver';
 
 type CachedRole = {
-  role: 'courier' | 'driver';
+  role: CourierRole;
   validatedAt: string;
 };
 
@@ -41,7 +44,7 @@ const readRoleCache = async (): Promise<Record<string, CachedRole>> => {
   }
 };
 
-const writeRoleCache = async (uid: string, role: 'courier' | 'driver'): Promise<void> => {
+const writeRoleCache = async (uid: string, role: CourierRole): Promise<void> => {
   const cache = await readRoleCache();
   cache[uid] = {
     role,
@@ -74,6 +77,55 @@ const hasRecentRoleCache = async (uid: string): Promise<boolean> => {
   return Date.now() - validatedAtMs <= ROLE_CACHE_MAX_AGE_MS;
 };
 
+const hasAnyRoleCache = async (uid: string): Promise<boolean> => {
+  const cache = await readRoleCache();
+  const entry = cache[uid];
+  return Boolean(entry?.role);
+};
+
+const normalizeCourierRole = (value: unknown): CourierRole | null => {
+  const normalized = String(value ?? '').trim().toLowerCase();
+  if (normalized === 'courier' || normalized === 'driver') {
+    return normalized;
+  }
+  return null;
+};
+
+const getCourierRoleFromClaims = (claims: Record<string, unknown>): CourierRole | null => {
+  const directRole = normalizeCourierRole(claims.role);
+  if (directRole) {
+    return directRole;
+  }
+
+  if (claims.courier === true) {
+    return 'courier';
+  }
+
+  if (claims.driver === true) {
+    return 'driver';
+  }
+
+  if (Array.isArray(claims.roles)) {
+    for (const role of claims.roles) {
+      const normalized = normalizeCourierRole(role);
+      if (normalized) {
+        return normalized;
+      }
+    }
+  }
+
+  return null;
+};
+
+const getClaims = async (getTokenResult: () => Promise<IdTokenResult>): Promise<Record<string, unknown> | null> => {
+  try {
+    const tokenResult = await getTokenResult();
+    return (tokenResult.claims ?? {}) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+};
+
 const isTransientRoleLookupError = (error: unknown): boolean => {
   const code = String((error as {code?: unknown})?.code ?? '').toLowerCase();
   const message = String((error as {message?: unknown})?.message ?? '').toLowerCase();
@@ -86,7 +138,10 @@ const isTransientRoleLookupError = (error: unknown): boolean => {
   );
 };
 
-const assertCourierRole = async (uid: string): Promise<void> => {
+const assertCourierRole = async (
+  uid: string,
+  options: {idTokenClaims?: Record<string, unknown> | null} = {},
+): Promise<void> => {
   const services = getFirebaseServices();
   if (!services) {
     throw new Error('Firebase services are not ready.');
@@ -101,19 +156,27 @@ const assertCourierRole = async (uid: string): Promise<void> => {
       throw new Error('No courier profile found for this account.');
     }
 
-    const role = String((userSnap.data() as {role?: unknown}).role ?? '').trim().toLowerCase();
-    if (role !== 'courier' && role !== 'driver') {
+    const role = normalizeCourierRole((userSnap.data() as {role?: unknown}).role);
+    if (!role) {
       await clearRoleCache(uid);
       throw new Error('This account does not have courier access.');
     }
 
     await writeRoleCache(uid, role);
   } catch (error) {
-    if (isTransientRoleLookupError(error) && (await hasRecentRoleCache(uid))) {
-      return;
-    }
-
     if (isTransientRoleLookupError(error)) {
+      const roleFromClaims = options.idTokenClaims
+        ? getCourierRoleFromClaims(options.idTokenClaims)
+        : null;
+      if (roleFromClaims) {
+        await writeRoleCache(uid, roleFromClaims);
+        return;
+      }
+
+      if ((await hasRecentRoleCache(uid)) || (await hasAnyRoleCache(uid))) {
+        return;
+      }
+
       throw new Error('Unable to verify courier access while offline. Reconnect and try again.');
     }
 
@@ -134,8 +197,9 @@ export const restoreSession = async (): Promise<AuthSession | null> => {
     const services = getFirebaseServices();
     if (services?.auth.currentUser) {
       const user = services.auth.currentUser;
+      const idTokenClaims = await getClaims(() => user.getIdTokenResult());
       try {
-        await assertCourierRole(user.uid);
+        await assertCourierRole(user.uid, {idTokenClaims});
       } catch {
         await firebaseSignOut(services.auth);
         await persistSession(null);
@@ -187,8 +251,9 @@ export const signIn = async (email: string, password: string): Promise<AuthSessi
     }
 
     const credential = await signInWithEmailAndPassword(services.auth, normalizedEmail, password);
+    const idTokenClaims = await getClaims(() => credential.user.getIdTokenResult());
     try {
-      await assertCourierRole(credential.user.uid);
+      await assertCourierRole(credential.user.uid, {idTokenClaims});
     } catch (error) {
       await firebaseSignOut(services.auth);
       throw error;
@@ -258,8 +323,9 @@ export const onFirebaseAuthChanged = (
       return;
     }
 
+    const idTokenClaims = await getClaims(() => user.getIdTokenResult());
     try {
-      await assertCourierRole(user.uid);
+      await assertCourierRole(user.uid, {idTokenClaims});
     } catch {
       await firebaseSignOut(services.auth);
       callback(null);
