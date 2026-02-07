@@ -19,7 +19,7 @@ A modern on-demand delivery platform with web apps (Vite + React + TypeScript) t
 │   └── shared/           # Shared TypeScript types and utilities
 ├── firebase/             # Firebase security rules and Cloud Functions
 └── docs/                 # Project documentation
-    └── project-plan/      # Project reorganization plan (v2) — see `docs/project-plan/README.md`
+    └── project-plan/      # Legacy planning archive — see `docs/project-plan/README.md`
 ```
 
 **Note**: All web apps can be packaged as native iOS and Android apps using Capacitor.
@@ -30,11 +30,12 @@ See the rollout checklist in [docs/project-plan/09-DAILY-CHECKLIST.md](docs/proj
 
 ## 📚 Documentation System
 
+- Canonical hierarchy + policy: [docs/BLUEPRINT.md](docs/BLUEPRINT.md)
 - Developer playbook: [docs/DEVELOPER_PLAYBOOK.md](docs/DEVELOPER_PLAYBOOK.md)
 - Session state: [docs/dev/SESSION_STATE.md](docs/dev/SESSION_STATE.md)
 - Worklog: [docs/dev/WORKLOG.md](docs/dev/WORKLOG.md)
-- Global source of truth: [docs/BLUEPRINT.md](docs/BLUEPRINT.md)
 - App docs registry: [docs/apps/README.md](docs/apps/README.md)
+- Legacy planning archive: [docs/project-plan/README.md](docs/project-plan/README.md)
 - Branch-specific delta docs: `.github/copilot/branches/*.md`
 
 ## 📱 Active Applications

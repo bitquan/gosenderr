@@ -166,6 +166,6 @@ New features must be wrapped in flags stored in Firestore `featureFlags`.
 ---
 
 ## 📚 Documentation & Ownership
-- Keep this doc as the single source of truth
+- Treat this doc as a planning reference; promote any active rules into canonical docs in `docs/` or `apps/*/README.md`
 - Update `docs/project-plan/README.md`, `docs/_sidebar.md`, and root `README.md`
 - Track progress weekly against phase exit criteria
