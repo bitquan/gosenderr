@@ -8,13 +8,14 @@ import {JobsScreen} from './src/screens/JobsScreen';
 import {LoginScreen} from './src/screens/LoginScreen';
 import {SettingsScreen} from './src/screens/SettingsScreen';
 import {configureRuntime, type NativeRuntimeConfig} from './src/config/runtime';
-import {fetchJobs} from './src/services/jobsService';
+import {ServiceRegistryProvider, useServiceRegistry} from './src/services/serviceRegistry';
 import type {Job} from './src/types/jobs';
 
 type TabKey = 'dashboard' | 'jobs' | 'settings';
 
 const AppShell = (): React.JSX.Element => {
   const {session, initializing} = useAuth();
+  const {jobs: jobsService} = useServiceRegistry();
   const [activeTab, setActiveTab] = useState<TabKey>('dashboard');
   const [jobs, setJobs] = useState<Job[]>([]);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
@@ -32,7 +33,7 @@ const AppShell = (): React.JSX.Element => {
       setJobsLoading(true);
       setJobsError(null);
       try {
-        setJobs(await fetchJobs(session));
+        setJobs(await jobsService.fetchJobs(session));
       } catch (error) {
         setJobsError(error instanceof Error ? error.message : 'Unable to load jobs.');
       } finally {
@@ -41,7 +42,7 @@ const AppShell = (): React.JSX.Element => {
     };
 
     void loadJobs();
-  }, [session]);
+  }, [jobsService, session]);
 
   const selectedJob = useMemo(
     () => (selectedJobId ? jobs.find(job => job.id === selectedJobId) ?? null : null),
@@ -136,9 +137,11 @@ function App({runtimeConfig}: AppProps): React.JSX.Element {
   configureRuntime(runtimeConfig);
 
   return (
-    <AuthProvider>
-      <AppShell />
-    </AuthProvider>
+    <ServiceRegistryProvider>
+      <AuthProvider>
+        <AppShell />
+      </AuthProvider>
+    </ServiceRegistryProvider>
   );
 }
 

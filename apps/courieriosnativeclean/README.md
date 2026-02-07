@@ -58,6 +58,29 @@ From repo root:
 Note:
 
 - RN Jest and ESLint scripts in this app currently need config alignment before they are reliable release gates.
+- Type-check gate is available and should pass for architecture changes:
+  - `pnpm --filter courieriosnativeclean exec tsc --noEmit`
+
+## Upgrade-safe architecture
+
+Core feature modules use a ports/adapters service registry.
+
+- Ports:
+  - `apps/courieriosnativeclean/src/services/ports/authPort.ts`
+  - `apps/courieriosnativeclean/src/services/ports/jobsPort.ts`
+  - `apps/courieriosnativeclean/src/services/ports/locationPort.ts`
+  - `apps/courieriosnativeclean/src/services/ports/notificationsPort.ts`
+  - `apps/courieriosnativeclean/src/services/ports/analyticsPort.ts`
+- Adapters:
+  - `apps/courieriosnativeclean/src/services/adapters/*`
+- Registry provider:
+  - `apps/courieriosnativeclean/src/services/serviceRegistry.tsx`
+
+Rules:
+
+- Screens and UI context must consume services via `useServiceRegistry()`.
+- SDK-specific code stays inside adapters, not screen components.
+- New integrations must add a port contract first, then adapter implementation.
 
 ## Deploy
 

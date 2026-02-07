@@ -1,6 +1,6 @@
 import React, {createContext, useContext, useEffect, useMemo, useState} from 'react';
 
-import {onFirebaseAuthChanged, restoreSession, signIn, signOut} from '../services/authService';
+import {useServiceRegistry} from '../services/serviceRegistry';
 import type {AuthSession} from '../types/auth';
 
 type AuthContextValue = {
@@ -14,6 +14,7 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export const AuthProvider = ({children}: {children: React.ReactNode}): React.JSX.Element => {
+  const {auth} = useServiceRegistry();
   const [session, setSession] = useState<AuthSession | null>(null);
   const [initializing, setInitializing] = useState(true);
   const [signingIn, setSigningIn] = useState(false);
@@ -22,7 +23,7 @@ export const AuthProvider = ({children}: {children: React.ReactNode}): React.JSX
     let mounted = true;
 
     const initialize = async (): Promise<void> => {
-      const restored = await restoreSession();
+      const restored = await auth.restoreSession();
       if (mounted) {
         setSession(restored);
         setInitializing(false);
@@ -31,7 +32,7 @@ export const AuthProvider = ({children}: {children: React.ReactNode}): React.JSX
 
     void initialize();
 
-    const unsubscribe = onFirebaseAuthChanged(nextSession => {
+    const unsubscribe = auth.onAuthStateChanged(nextSession => {
       if (mounted) {
         setSession(nextSession);
       }
@@ -41,12 +42,12 @@ export const AuthProvider = ({children}: {children: React.ReactNode}): React.JSX
       mounted = false;
       unsubscribe?.();
     };
-  }, []);
+  }, [auth]);
 
   const signInWithEmail = async (email: string, password: string): Promise<void> => {
     setSigningIn(true);
     try {
-      const nextSession = await signIn(email, password);
+      const nextSession = await auth.signIn(email, password);
       setSession(nextSession);
     } finally {
       setSigningIn(false);
@@ -54,7 +55,7 @@ export const AuthProvider = ({children}: {children: React.ReactNode}): React.JSX
   };
 
   const signOutUser = async (): Promise<void> => {
-    await signOut();
+    await auth.signOut();
     setSession(null);
   };
 

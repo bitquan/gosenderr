@@ -4,16 +4,16 @@ import {StyleSheet, Text, View} from 'react-native';
 import {PrimaryButton} from '../components/PrimaryButton';
 import {ScreenContainer} from '../components/ScreenContainer';
 import {useAuth} from '../context/AuthContext';
-import {fetchJobs} from '../services/jobsService';
-import {useLocationTracking} from '../services/locationService';
+import {useServiceRegistry} from '../services/serviceRegistry';
 import type {Job} from '../types/jobs';
 
 export const DashboardScreen = ({onOpenJobs}: {onOpenJobs: () => void}): React.JSX.Element => {
   const {session} = useAuth();
+  const {jobs: jobsService, location: locationService} = useServiceRegistry();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [jobsError, setJobsError] = useState<string | null>(null);
   const [loadingJobs, setLoadingJobs] = useState(false);
-  const {state: locationState, startTracking, stopTracking} = useLocationTracking();
+  const {state: locationState, startTracking, stopTracking} = locationService.useLocationTracking();
 
   useEffect(() => {
     const loadJobs = async (): Promise<void> => {
@@ -24,7 +24,7 @@ export const DashboardScreen = ({onOpenJobs}: {onOpenJobs: () => void}): React.J
       setLoadingJobs(true);
       setJobsError(null);
       try {
-        setJobs(await fetchJobs(session));
+        setJobs(await jobsService.fetchJobs(session));
       } catch (error) {
         setJobsError(error instanceof Error ? error.message : 'Unable to load jobs.');
       } finally {
@@ -33,7 +33,7 @@ export const DashboardScreen = ({onOpenJobs}: {onOpenJobs: () => void}): React.J
     };
 
     void loadJobs();
-  }, [session]);
+  }, [jobsService, session]);
 
   const activeJobsCount = useMemo(
     () => jobs.filter(job => job.status !== 'delivered' && job.status !== 'cancelled').length,
