@@ -64,6 +64,11 @@ Defaults:
 - `Debug` builds default to `dev`
 - `Release` builds default to `prod`
 
+Native config precedence:
+1. `SENDERR_*` build settings (from `xcconfig`/Xcode)
+2. `GoogleService-Info.plist` values for Firebase keys/project/bucket/app ID/sender ID
+3. Env defaults (`dev` / `staging` / `prod`)
+
 If Firebase keys are blank, or Firebase calls fail at runtime, the app safely falls back to local mock auth/jobs.
 
 ## Related issues
@@ -79,6 +84,7 @@ If Firebase keys are blank, or Firebase calls fail at runtime, the app safely fa
 - `#135` Jobs list + detail read
 - `#136` Job status updates + actions
 - `#144` Location permissions + tracking
+- `#148` API/client config cleanup for native target
 - `#150` MVP acceptance criteria
 - `#161` Canonical iOS cleanup
 - `#165` Storage hardening (rules + regression tests)
