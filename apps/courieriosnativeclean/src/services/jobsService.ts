@@ -87,19 +87,29 @@ const loadLocalJobs = async (): Promise<Job[]> => {
   return seedJobs;
 };
 
+const logFirebaseFallback = (operation: string, error: unknown): void => {
+  const message = error instanceof Error ? error.message : String(error);
+  // Keep mock/offline flows usable when backend is unreachable.
+  console.warn(`[jobsService] ${operation} failed in Firebase mode; falling back to local mock data.`, message);
+};
+
 export const fetchJobs = async (session: AuthSession): Promise<Job[]> => {
   if (isFirebaseReady()) {
     const services = getFirebaseServices();
     if (services) {
-      const jobsRef = collection(services.db, 'jobs');
-      const jobsQuery = query(
-        jobsRef,
-        where('courierUid', '==', session.uid),
-        orderBy('updatedAt', 'desc'),
-      );
-      const snap = await getDocs(jobsQuery);
-      if (!snap.empty) {
-        return snap.docs.map(d => mapFirestoreJob(d.id, d.data() as Record<string, unknown>));
+      try {
+        const jobsRef = collection(services.db, 'jobs');
+        const jobsQuery = query(
+          jobsRef,
+          where('courierUid', '==', session.uid),
+          orderBy('updatedAt', 'desc'),
+        );
+        const snap = await getDocs(jobsQuery);
+        if (!snap.empty) {
+          return snap.docs.map(d => mapFirestoreJob(d.id, d.data() as Record<string, unknown>));
+        }
+      } catch (error) {
+        logFirebaseFallback('fetchJobs', error);
       }
     }
   }
@@ -111,10 +121,14 @@ export const getJobById = async (session: AuthSession, id: string): Promise<Job 
   if (isFirebaseReady()) {
     const services = getFirebaseServices();
     if (services) {
-      const ref = doc(services.db, 'jobs', id);
-      const snap = await getDoc(ref);
-      if (snap.exists()) {
-        return mapFirestoreJob(snap.id, snap.data() as Record<string, unknown>);
+      try {
+        const ref = doc(services.db, 'jobs', id);
+        const snap = await getDoc(ref);
+        if (snap.exists()) {
+          return mapFirestoreJob(snap.id, snap.data() as Record<string, unknown>);
+        }
+      } catch (error) {
+        logFirebaseFallback('getJobById', error);
       }
     }
   }
@@ -131,16 +145,20 @@ export const updateJobStatus = async (
   if (isFirebaseReady()) {
     const services = getFirebaseServices();
     if (services) {
-      const ref = doc(services.db, 'jobs', id);
-      await updateDoc(ref, {
-        status: nextStatus,
-        courierUid: session.uid,
-        updatedAt: serverTimestamp(),
-      });
+      try {
+        const ref = doc(services.db, 'jobs', id);
+        await updateDoc(ref, {
+          status: nextStatus,
+          courierUid: session.uid,
+          updatedAt: serverTimestamp(),
+        });
 
-      const updated = await getDoc(ref);
-      if (updated.exists()) {
-        return mapFirestoreJob(updated.id, updated.data() as Record<string, unknown>);
+        const updated = await getDoc(ref);
+        if (updated.exists()) {
+          return mapFirestoreJob(updated.id, updated.data() as Record<string, unknown>);
+        }
+      } catch (error) {
+        logFirebaseFallback('updateJobStatus', error);
       }
     }
   }

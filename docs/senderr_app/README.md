@@ -41,6 +41,7 @@ For physical devices, point Metro host to your machine IP in `AppDelegate.swift`
 - Auth: login/logout via Firebase where configured; local mock fallback for offline dev.
 - Navigation: dashboard / jobs / settings tabs + job detail route.
 - Jobs: list/detail read, optimistic status action updates.
+- Jobs fallback: when Firebase read/write fails at runtime, jobs flow falls back to AsyncStorage-backed local mock data.
 - Location: permission request and tracking hook with latest coordinate snapshot.
 
 ## Build-time environment config
