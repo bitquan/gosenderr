@@ -28,6 +28,9 @@ jobs:
       - name: Senderr iOS dependency audit
         run: pnpm run ios:audit:deps:check
 
+      - name: Senderr iOS smoke checks
+        run: pnpm run ios:smoke -- ci
+
       - name: Lint
         run: pnpm -w turbo run lint --filter '!courieriosnativeclean'
 

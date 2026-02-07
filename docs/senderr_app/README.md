@@ -77,7 +77,12 @@ Native precedence:
 
 ## Supporting docs
 - Native dependency audit: `docs/senderr_app/NATIVE_DEPENDENCY_AUDIT.md`
+- Smoke checklist: `docs/senderr_app/SMOKE_CHECKLIST.md`
 - Roadmap/progress tracker: `docs/senderr_app/ROADMAP.md`
+- App README (build fixes + troubleshooting): `apps/courieriosnativeclean/README.md`
+- Repo-wide playbook: `docs/DEVELOPER_PLAYBOOK.md`
+- Session handoff state: `docs/dev/SESSION_STATE.md`
+- Session worklog: `docs/dev/WORKLOG.md`
 - Device test matrix: `docs/senderr_app/DEVICE_TEST_MATRIX.md`
 - Navigation map: `docs/senderr_app/NAVIGATION_MAP.md`
 - MVP criteria: `docs/senderr_app/MVP_ACCEPTANCE.md`
