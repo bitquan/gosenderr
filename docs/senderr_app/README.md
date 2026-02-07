@@ -77,6 +77,8 @@ Native precedence:
 
 ## Supporting docs
 - Repo-wide playbook: `docs/DEVELOPER_PLAYBOOK.md`
+- Session handoff state: `docs/dev/SESSION_STATE.md`
+- Session worklog: `docs/dev/WORKLOG.md`
 - Navigation map: `docs/senderr_app/NAVIGATION_MAP.md`
 - MVP criteria: `docs/senderr_app/MVP_ACCEPTANCE.md`
 - Signing/provisioning: `docs/senderr_app/IOS_SIGNING.md`
