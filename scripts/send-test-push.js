@@ -29,7 +29,7 @@ if (!token) {
 const title = getArgValue('--title', 'GoSenderr Test');
 const body = getArgValue('--body', 'Push check');
 const serviceAccountPath = getArgValue('--serviceAccount');
-const apnsTopic = getArgValue('--apnsTopic', 'com.gosenderr.courier');
+const apnsTopic = getArgValue('--apnsTopic', 'com.gosenderr.senderr');
 const dataOnly = hasFlag('--dataOnly');
 
 const dataPairs = args

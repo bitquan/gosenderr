@@ -65,7 +65,7 @@ case "${prefix}" in
     product_area="Senderr iOS Native"
     primary_paths="apps/courieriosnativeclean/ios"
     cmd_1="cd apps/courieriosnativeclean/ios && pod install"
-    cmd_2="open apps/courieriosnativeclean/ios/courieriosnativeclean.xcworkspace"
+    cmd_2="open apps/courieriosnativeclean/ios/Senderrappios.xcworkspace"
     ;;
 esac
 

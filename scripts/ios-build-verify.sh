@@ -35,7 +35,7 @@ if [[ ! -f "$GOOGLE_PLIST" ]]; then
   <key>API_KEY</key>
   <string>placeholder-api-key</string>
   <key>BUNDLE_ID</key>
-  <string>com.gosenderr.senderrappios</string>
+  <string>com.gosenderr.senderr</string>
   <key>GCM_SENDER_ID</key>
   <string>000000000000</string>
   <key>GOOGLE_APP_ID</key>
