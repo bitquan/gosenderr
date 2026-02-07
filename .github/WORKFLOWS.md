@@ -105,6 +105,16 @@ This file is the canonical map of active workflows under `.github/workflows/`.
   - Key jobs:
     - `create-audit-issue`
 
+- `docs-drift-audit.yml` (`Docs Drift Audit`)
+  - Triggers:
+    - weekly schedule
+    - `workflow_dispatch`
+  - Purpose:
+    - Run canonical docs drift checks and publish an artifact report.
+    - Open/update a tracking issue if docs verification fails.
+  - Key jobs:
+    - `docs-drift-audit`
+
 ## Secrets and Config Dependencies
 
 Primary checklist:
@@ -136,6 +146,10 @@ Common secret groups:
 1. Run:
    - `pnpm run verify:docs`
 2. Resolve broken links/TODO policy violations in canonical docs.
+3. For weekly audit failures:
+   - open the latest `docs-drift-audit-report` artifact
+   - triage the related open issue titled `Docs drift audit failure`
+   - fix drift in a PR and close or update that issue
 
 ### Senderr iOS checks (`senderr_app-ci.yml`)
 
@@ -173,3 +187,5 @@ Common secret groups:
 - Do not remove active workflow files without updating this guide in the same PR.
 - When adding a workflow, add it here with triggers, purpose, and triage notes.
 - Keep workflow names in docs synchronized with `name:` values in workflow YAML files.
+- Operational owner for docs audit outputs:
+  - `@bitquan` reviews weekly docs drift issues and drives follow-up PRs.

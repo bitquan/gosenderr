@@ -1,0 +1,116 @@
+name: Docs Drift Audit
+
+on:
+  schedule:
+    - cron: "0 14 * * 1"
+  workflow_dispatch:
+
+jobs:
+  docs-drift-audit:
+    name: Weekly Docs Drift Audit
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run docs verification
+        id: verify
+        run: |
+          set +e
+          bash scripts/verify-docs.sh > docs-audit.log 2>&1
+          rc=$?
+          echo "exit_code=$rc" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Build audit report
+        run: |
+          mkdir -p artifacts
+          run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          if [[ "${{ steps.verify.outputs.exit_code }}" == "0" ]]; then
+            result="PASS"
+          else
+            result="FAIL"
+          fi
+
+          {
+            echo "# Docs Drift Audit Report"
+            echo
+            echo "- Result: ${result}"
+            echo "- Repository: ${GITHUB_REPOSITORY}"
+            echo "- Branch: ${GITHUB_REF_NAME}"
+            echo "- Run: ${run_url}"
+            echo "- Timestamp (UTC): $(date -u '+%Y-%m-%d %H:%M:%S')"
+            echo
+            echo "## verify-docs output"
+            echo
+            echo '```text'
+            cat docs-audit.log
+            echo '```'
+          } > artifacts/docs-drift-report.md
+
+      - name: Upload audit artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs-drift-audit-report
+          path: artifacts/docs-drift-report.md
+          if-no-files-found: error
+
+      - name: Create or update drift issue
+        if: steps.verify.outputs.exit_code != '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require("fs");
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const runUrl = `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`;
+            const title = "Docs drift audit failure";
+            const logTail = fs.readFileSync("docs-audit.log", "utf8").split("\n").slice(-80).join("\n");
+            const body = [
+              "Automated weekly docs drift audit detected failures.",
+              "",
+              `- Workflow run: ${runUrl}`,
+              `- Branch: ${process.env.GITHUB_REF_NAME}`,
+              "",
+              "```text",
+              logTail,
+              "```",
+              "",
+              "Please triage and fix canonical docs drift before next release."
+            ].join("\n");
+
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner,
+              repo,
+              state: "open",
+              per_page: 100
+            });
+
+            const existing = issues.find((issue) => issue.title === title);
+
+            if (existing) {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: existing.number,
+                body
+              });
+              core.info(`Updated existing issue #${existing.number}`);
+            } else {
+              const created = await github.rest.issues.create({
+                owner,
+                repo,
+                title,
+                body
+              });
+              core.info(`Created issue #${created.data.number}`);
+            }
+
+      - name: Fail job when drift is detected
+        if: steps.verify.outputs.exit_code != '0'
+        run: |
+          echo "Docs drift audit failed. See report artifact and issue update."
+          exit 1
