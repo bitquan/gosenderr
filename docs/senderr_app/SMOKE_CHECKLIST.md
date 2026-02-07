@@ -7,7 +7,7 @@ Use this checklist before merge for iOS-native related changes.
 From repo root:
 
 ```bash
-bash scripts/ios-smoke-checks.sh
+pnpm run ios:smoke
 ```
 
 Expected:
