@@ -1,3 +1,29 @@
+# Senderr iOS Notes
+
+## Issue #122 (gRPC/modulemap build failures)
+- Canonical iOS project path: `apps/courieriosnativeclean/ios`
+- Canonical workspace: `apps/courieriosnativeclean/ios/Senderrappios.xcworkspace`
+- Canonical target/scheme: `Senderrappios`
+
+### Required setup
+```bash
+pnpm install
+pnpm run ios:pods:install
+```
+
+### Validation commands
+```bash
+cd apps/courieriosnativeclean/ios
+pod install
+xcodebuild -workspace Senderrappios.xcworkspace -scheme Senderrappios -configuration Debug -sdk iphoneos -destination 'generic/platform=iOS' clean build
+xcodebuild -workspace Senderrappios.xcworkspace -scheme Senderrappios -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' clean build
+```
+
+### Physical device note
+- Ensure Metro is reachable from device (not `localhost`): use your Mac LAN IP (for example `192.168.0.76:8081`).
+
+---
+
 This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
 
 # Getting Started
