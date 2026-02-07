@@ -64,6 +64,20 @@ When legacy guidance becomes current policy, copy it into canonical docs under `
 - If `docs-impact: yes`, update canonical docs in the same PR.
 - If behavior is temporary to a branch, add it only to the branch profile delta section.
 
+## Docs verification policy
+
+`pnpm run verify:docs` is the required CI docs gate.
+
+- Failing conditions in canonical docs:
+  - `TODO` markers
+  - broken local markdown links
+- Canonical verification scope:
+  - all markdown under `docs/`
+  - excluding legacy archives:
+    - `docs/project-plan/*`
+    - `docs/archive/*`
+- Legacy paths may contain planning TODOs, but those TODOs are not allowed in canonical docs.
+
 ## Ownership and review
 
 - Canonical docs are owned by `CODEOWNERS`.
