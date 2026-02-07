@@ -81,6 +81,16 @@ if [[ -z "${summary}" || -z "${next_action}" ]]; then
   exit 1
 fi
 
+case "${status}" in
+  in_progress|blocked|done)
+    ;;
+  *)
+    echo "error: --status must be one of: in_progress, blocked, done"
+    usage
+    exit 1
+    ;;
+esac
+
 branch="$(git rev-parse --abbrev-ref HEAD)"
 commit="$(git rev-parse --short HEAD)"
 local_ts="$(date '+%Y-%m-%d %H:%M')"

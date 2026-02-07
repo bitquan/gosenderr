@@ -7,6 +7,27 @@ on:
       - main
 
 jobs:
+  handoff-policy:
+    name: PR Handoff Checklist
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    steps:
+      - name: Validate handoff checklist selection
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = String(context.payload.pull_request?.body || "");
+            const updatedChecked = /-\s*\[[xX]\]\s*`?handoff:\s*updated`?/i.test(body);
+            const notNeededChecked = /-\s*\[[xX]\]\s*`?handoff:\s*not needed`?/i.test(body);
+
+            if ((updatedChecked && notNeededChecked) || (!updatedChecked && !notNeededChecked)) {
+              core.setFailed(
+                "Select exactly one handoff option in the PR template: `handoff: updated` or `handoff: not needed`."
+              );
+            }
+
   checks:
     name: Lint + Docs
     runs-on: ubuntu-latest
