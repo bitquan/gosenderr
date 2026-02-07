@@ -15,9 +15,11 @@ This quick-start helps contributors get the Senderr iOS app running locally and 
    - `corepack enable && corepack prepare pnpm@8.0.0 --activate`
 2. Install dependencies at the repo root:
    - `pnpm install --frozen-lockfile`
-3. From the app folder (iOS):
-   - `cd apps/courieriosnativeclean`
-   - `pnpm install` (if you need to install workspace-local deps)
+3. Verify Debug/Release iOS compile matrix:
+   - `pnpm run ios:build:verify`
+4. Open the iOS workspace in Xcode:
+   - `open apps/courieriosnativeclean/ios/Senderrappios.xcworkspace`
+5. Select scheme `Senderr` in Xcode before running.
 
 ## Run the app (iOS Simulator)
 1. Start Metro (from the app folder):

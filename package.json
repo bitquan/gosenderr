@@ -46,7 +46,8 @@
     "smoke:docker": "sh ./scripts/smoke-tests.sh",
     "dev:check": "sh ./scripts/dev-checks.sh",
     "clean:env": "bash scripts/clean-environment.sh",
-    "bootstrap:minimal": "bash scripts/bootstrap-minimal.sh"
+    "bootstrap:minimal": "bash scripts/bootstrap-minimal.sh",
+    "ios:build:verify": "bash scripts/ios-build-verify.sh"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "2.0.7",
