@@ -25,6 +25,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Senderr iOS smoke checks
+        run: pnpm run ios:smoke
+
       - name: Lint
         run: pnpm -w turbo run lint --filter '!courieriosnativeclean'
 
