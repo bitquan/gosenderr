@@ -5,7 +5,7 @@ import {PrimaryButton} from '../components/PrimaryButton';
 import {ScreenContainer} from '../components/ScreenContainer';
 import {StatusBadge} from '../components/StatusBadge';
 import {useAuth} from '../context/AuthContext';
-import {updateJobStatus} from '../services/jobsService';
+import {useServiceRegistry} from '../services/serviceRegistry';
 import {NEXT_STATUS, type Job, type JobStatus} from '../types/jobs';
 
 type JobDetailScreenProps = {
@@ -16,6 +16,7 @@ type JobDetailScreenProps = {
 
 export const JobDetailScreen = ({job, onBack, onJobUpdated}: JobDetailScreenProps): React.JSX.Element => {
   const {session} = useAuth();
+  const {jobs: jobsService} = useServiceRegistry();
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,7 +38,7 @@ export const JobDetailScreen = ({job, onBack, onJobUpdated}: JobDetailScreenProp
     onJobUpdated(optimistic);
 
     try {
-      const updated = await updateJobStatus(session, job.id, nextStatus);
+      const updated = await jobsService.updateJobStatus(session, job.id, nextStatus);
       onJobUpdated(updated);
     } catch (updateError) {
       onJobUpdated(job);

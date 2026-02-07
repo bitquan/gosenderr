@@ -4,20 +4,13 @@ import Geolocation, {
   type GeolocationError,
   type GeolocationResponse,
 } from '@react-native-community/geolocation';
+import type {
+  LocationSnapshot,
+  LocationTrackingController,
+  LocationTrackingState,
+} from './ports/locationPort';
 
-export type LocationSnapshot = {
-  latitude: number;
-  longitude: number;
-  accuracy: number;
-  timestamp: number;
-};
-
-export type LocationTrackingState = {
-  hasPermission: boolean;
-  tracking: boolean;
-  lastLocation: LocationSnapshot | null;
-  error: string | null;
-};
+export type {LocationSnapshot, LocationTrackingController, LocationTrackingState} from './ports/locationPort';
 
 const toSnapshot = (position: GeolocationResponse): LocationSnapshot => ({
   latitude: position.coords.latitude,
@@ -136,5 +129,12 @@ export const useLocationTracking = (): {
     };
   }, [stopTracking]);
 
-  return {state, requestPermission, startTracking, stopTracking};
+  const controller: LocationTrackingController = {
+    state,
+    requestPermission,
+    startTracking,
+    stopTracking,
+  };
+
+  return controller;
 };

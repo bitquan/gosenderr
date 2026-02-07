@@ -4,7 +4,7 @@ import {FlatList, Pressable, RefreshControl, StyleSheet, Text, View} from 'react
 import {ScreenContainer} from '../components/ScreenContainer';
 import {StatusBadge} from '../components/StatusBadge';
 import {useAuth} from '../context/AuthContext';
-import {fetchJobs} from '../services/jobsService';
+import {useServiceRegistry} from '../services/serviceRegistry';
 import type {Job} from '../types/jobs';
 
 type JobsScreenProps = {
@@ -15,6 +15,7 @@ type JobsScreenProps = {
 
 export const JobsScreen = ({jobs, setJobs, onOpenDetail}: JobsScreenProps): React.JSX.Element => {
   const {session} = useAuth();
+  const {jobs: jobsService} = useServiceRegistry();
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,14 +28,14 @@ export const JobsScreen = ({jobs, setJobs, onOpenDetail}: JobsScreenProps): Reac
     setError(null);
 
     try {
-      const nextJobs = await fetchJobs(session);
+      const nextJobs = await jobsService.fetchJobs(session);
       setJobs(nextJobs);
     } catch (refreshError) {
       setError(refreshError instanceof Error ? refreshError.message : 'Unable to refresh jobs.');
     } finally {
       setRefreshing(false);
     }
-  }, [session, setJobs]);
+  }, [jobsService, session, setJobs]);
 
   return (
     <ScreenContainer scroll={false}>

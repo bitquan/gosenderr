@@ -80,6 +80,29 @@ Native precedence:
 2. `GoogleService-Info.plist` values for Firebase keys/project/bucket/app ID/sender ID
 3. Environment defaults (`dev` / `staging` / `prod`)
 
+## Upgrade-safe service architecture
+
+The app now uses a ports/adapters model for core domains:
+
+- Auth
+- Jobs
+- Location
+- Notifications
+- Analytics
+
+Implementation layout:
+
+- Ports: `apps/courieriosnativeclean/src/services/ports/*`
+- Adapters: `apps/courieriosnativeclean/src/services/adapters/*`
+- Service registry and dependency entrypoint:
+  - `apps/courieriosnativeclean/src/services/serviceRegistry.tsx`
+
+Rules:
+
+- Screen components and context layers consume services through `useServiceRegistry()`.
+- Direct SDK imports should stay in adapter modules only.
+- New provider/sdk integration should add or update a port interface first, then adapter implementation.
+
 ## Supporting docs
 - Native dependency audit: `docs/senderr_app/NATIVE_DEPENDENCY_AUDIT.md`
 - Smoke checklist: `docs/senderr_app/SMOKE_CHECKLIST.md`

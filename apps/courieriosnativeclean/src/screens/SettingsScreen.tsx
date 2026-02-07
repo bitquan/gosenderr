@@ -4,11 +4,12 @@ import {StyleSheet, Text, View} from 'react-native';
 import {PrimaryButton} from '../components/PrimaryButton';
 import {ScreenContainer} from '../components/ScreenContainer';
 import {useAuth} from '../context/AuthContext';
-import {useLocationTracking} from '../services/locationService';
+import {useServiceRegistry} from '../services/serviceRegistry';
 
 export const SettingsScreen = (): React.JSX.Element => {
   const {session, signOutUser} = useAuth();
-  const {state, requestPermission, startTracking, stopTracking} = useLocationTracking();
+  const {location: locationService} = useServiceRegistry();
+  const {state, requestPermission, startTracking, stopTracking} = locationService.useLocationTracking();
 
   return (
     <ScreenContainer>
