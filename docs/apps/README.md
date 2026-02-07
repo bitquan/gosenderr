@@ -2,6 +2,11 @@
 
 This file maps each app to its canonical documentation location.
 
+> Doc metadata
+> - Owner: `@bitquan`
+> - Last verified: `2026-02-07`
+> - Review cadence: `monthly`
+
 ## Canonical app docs
 
 - Marketplace:

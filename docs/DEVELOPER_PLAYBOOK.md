@@ -4,6 +4,11 @@ This is the repo-wide operating guide for developers.
 
 If you follow this file exactly, you avoid the common setup and branch mistakes.
 
+> Doc metadata
+> - Owner: `@bitquan`
+> - Last verified: `2026-02-07`
+> - Review cadence: `monthly`
+
 ## 1) Canonical repo + apps
 
 - Repo root:
@@ -175,6 +180,7 @@ pnpm run ios:clean:install
 - App docs index: `docs/apps/README.md`
 - Senderr iOS docs: `docs/senderr_app/README.md`
 - Minimal disk setup: `docs/dev/MINIMAL-SETUP.md`
+- Docs ownership + review cadence: `docs/DOCS_OWNERSHIP.md`
 
 ## 10) Session recovery logs (required)
 
@@ -201,3 +207,12 @@ Run this command:
 - before switching branches
 - before opening a PR
 - before ending a session
+
+PR handoff policy:
+
+- Mandatory:
+  - Any PR with behavior, setup, config, CI, workflow, or process changes must use `scripts/dev-handoff.sh` and set PR template checkbox `handoff: updated`.
+- Optional:
+  - Docs-only and metadata-only PRs may skip log updates only if there is no behavior/process/setup impact, and must set PR template checkbox `handoff: not needed`.
+- Enforcement:
+  - CI validates that exactly one handoff checkbox is selected in every PR.

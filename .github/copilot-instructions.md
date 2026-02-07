@@ -107,6 +107,12 @@ Update with:
 
 Run handoff update before branch switch, before PR, and at end of session.
 
+PR handoff requirement:
+
+- Choose exactly one PR template checkbox:
+  - `handoff: updated` for behavior/setup/config/process changes.
+  - `handoff: not needed` for docs-only or metadata-only changes.
+
 ## Guardrails
 
 - Do not rewrite branch history on shared branches.
