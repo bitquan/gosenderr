@@ -17,6 +17,24 @@ interface CourierProfile {
   }
 }
 
+function sanitizeImageUrl(value: string | null | undefined): string | null {
+  if (!value) return null
+
+  try {
+    const parsed = new URL(value, window.location.origin)
+    if (parsed.protocol === 'https:' || parsed.protocol === 'http:' || parsed.protocol === 'blob:') {
+      return value
+    }
+    if (parsed.protocol === 'data:' && value.startsWith('data:image/')) {
+      return value
+    }
+  } catch {
+    return null
+  }
+
+  return null
+}
+
 export default function CourierProfilePage() {
   const { user } = useAuth()
   const { isAdmin } = useAdmin()
@@ -28,6 +46,7 @@ export default function CourierProfilePage() {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
+  const profileImageUrl = sanitizeImageUrl(photoPreview ?? user?.photoURL)
 
   useEffect(() => {
     if (!user) return
@@ -179,9 +198,9 @@ export default function CourierProfilePage() {
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] flex items-center justify-center text-3xl text-white shadow-lg overflow-hidden">
-                {photoPreview || user?.photoURL ? (
+                {profileImageUrl ? (
                   <img
-                    src={photoPreview || user?.photoURL || ''}
+                    src={profileImageUrl}
                     alt="Profile"
                     className="w-full h-full object-cover"
                   />
