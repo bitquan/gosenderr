@@ -60,6 +60,11 @@ Recommended branch names (match `docs/senderr_app/BRANCHING.md`):
 - `senderr-app/upgrade/<short-task-name>` for upgrades
 - `senderr-app/docs` for docs-only changes
 
+Examples:
+
+- `senderr-app/feature/auth-flow`
+- `senderr-app/fix/firebase-startup`
+
 ## 4) Day-to-day git commands
 
 Use branch helper commands from repo root:
@@ -147,7 +152,6 @@ Open PR to:
 `The sandbox is not in sync with Podfile.lock`:
 
 ```bash
-cd "$(git rev-parse --show-toplevel)"
 pnpm run ios:clean:install
 ```
 
