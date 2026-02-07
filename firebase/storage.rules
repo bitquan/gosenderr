@@ -10,12 +10,18 @@ service firebase.storage {
       return request.auth.uid;
     }
 
+    function isAdmin() {
+      return isSignedIn()
+        && firestore.exists(/databases/(default)/documents/users/$(uid()))
+        && firestore.get(/databases/(default)/documents/users/$(uid())).data.role == 'admin';
+    }
+
     function jobExists(jobId) {
-      return exists(/databases/(default)/documents/jobs/$(jobId));
+      return firestore.exists(/databases/(default)/documents/jobs/$(jobId));
     }
 
     function getJobData(jobId) {
-      return get(/databases/(default)/documents/jobs/$(jobId)).data;
+      return firestore.get(/databases/(default)/documents/jobs/$(jobId)).data;
     }
 
     function isJobCreator(jobId) {
@@ -43,6 +49,10 @@ service firebase.storage {
     function isValidCourierDocument() {
       return request.resource.contentType.matches('image/(jpeg|png|webp)|application/pdf')
         && request.resource.size < 15 * 1024 * 1024;  // 15MB max
+    }
+
+    function isValidYear(year) {
+      return year.matches('[0-9]{4}');
     }
 
     // Temporary job photos: jobs/{tempId}/photos/{photoFile}
@@ -101,7 +111,7 @@ service firebase.storage {
       // Admins can read any insurance documents (check via Firestore)
       allow read: if isSignedIn() && (
         uid() == userId
-        || get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin'
+        || isAdmin()
       );
     }
 
@@ -113,7 +123,7 @@ service firebase.storage {
       // User can read their own documents; admins can read all
       allow read: if isSignedIn() && (
         uid() == userId
-        || get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin'
+        || isAdmin()
       );
     }
 
@@ -125,7 +135,7 @@ service firebase.storage {
       // User can read their own documents; admins can read all
       allow read: if isSignedIn() && (
         uid() == userId
-        || get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin'
+        || isAdmin()
       );
     }
 
@@ -134,6 +144,7 @@ service firebase.storage {
       // Assigned courier can upload proof photos for the job
       allow write: if isSignedIn()
         && uid() == courierId
+        && isAssignedCourier(jobId)
         && isValidImage();
 
       // Job creator and assigned courier can read proof photos
@@ -141,7 +152,7 @@ service firebase.storage {
         uid() == courierId
         || isJobCreator(jobId)
         || isAssignedCourier(jobId)
-        || get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin'
+        || isAdmin()
       );
     }
 
@@ -149,11 +160,12 @@ service firebase.storage {
     match /courier-expenses/{courierId}/{year}/{receiptFile} {
       allow write: if isSignedIn()
         && uid() == courierId
+        && isValidYear(year)
         && isValidCourierDocument();
 
       allow read: if isSignedIn() && (
         uid() == courierId
-        || get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin'
+        || isAdmin()
       );
     }
 
