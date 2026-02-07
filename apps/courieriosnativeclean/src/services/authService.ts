@@ -5,8 +5,10 @@ import {
   signOut as firebaseSignOut,
   type Unsubscribe,
 } from 'firebase/auth';
+import {doc, getDoc} from 'firebase/firestore';
 
 import {getFirebaseServices, isFirebaseReady} from './firebase';
+import {isMockAuthEnabled} from '../config/runtime';
 import type {AuthSession} from '../types/auth';
 
 const SESSION_KEY = '@senderr/auth/session';
@@ -16,6 +18,25 @@ const toSessionToken = (): string => `${Date.now()}_${Math.random().toString(36)
 const normalizeDisplayName = (email: string): string => {
   const base = email.split('@')[0] || 'courier';
   return base.charAt(0).toUpperCase() + base.slice(1);
+};
+
+const assertCourierRole = async (uid: string): Promise<void> => {
+  const services = getFirebaseServices();
+  if (!services) {
+    throw new Error('Firebase services are not ready.');
+  }
+
+  const userRef = doc(services.db, 'users', uid);
+  const userSnap = await getDoc(userRef);
+
+  if (!userSnap.exists()) {
+    throw new Error('No courier profile found for this account.');
+  }
+
+  const role = String((userSnap.data() as {role?: unknown}).role ?? '').trim().toLowerCase();
+  if (role !== 'courier' && role !== 'driver') {
+    throw new Error('This account does not have courier access.');
+  }
 };
 
 const persistSession = async (session: AuthSession | null): Promise<void> => {
@@ -31,6 +52,13 @@ export const restoreSession = async (): Promise<AuthSession | null> => {
     const services = getFirebaseServices();
     if (services?.auth.currentUser) {
       const user = services.auth.currentUser;
+      try {
+        await assertCourierRole(user.uid);
+      } catch {
+        await firebaseSignOut(services.auth);
+        await persistSession(null);
+        return null;
+      }
       return {
         uid: user.uid,
         email: user.email ?? 'unknown@senderr.app',
@@ -46,8 +74,18 @@ export const restoreSession = async (): Promise<AuthSession | null> => {
     return null;
   }
 
+  if (!isMockAuthEnabled()) {
+    await AsyncStorage.removeItem(SESSION_KEY);
+    return null;
+  }
+
   try {
-    return JSON.parse(raw) as AuthSession;
+    const parsed = JSON.parse(raw) as AuthSession;
+    if (parsed.provider !== 'mock') {
+      await AsyncStorage.removeItem(SESSION_KEY);
+      return null;
+    }
+    return parsed;
   } catch {
     await AsyncStorage.removeItem(SESSION_KEY);
     return null;
@@ -67,6 +105,13 @@ export const signIn = async (email: string, password: string): Promise<AuthSessi
     }
 
     const credential = await signInWithEmailAndPassword(services.auth, normalizedEmail, password);
+    try {
+      await assertCourierRole(credential.user.uid);
+    } catch (error) {
+      await firebaseSignOut(services.auth);
+      throw error;
+    }
+
     const token = await credential.user.getIdToken();
     const session: AuthSession = {
       uid: credential.user.uid,
@@ -78,6 +123,12 @@ export const signIn = async (email: string, password: string): Promise<AuthSessi
     };
     await persistSession(session);
     return session;
+  }
+
+  if (!isMockAuthEnabled()) {
+    throw new Error(
+      'Firebase auth is required. Configure SENDERR_FIREBASE_* and GoogleService-Info.plist, or enable SENDERR_ALLOW_MOCK_AUTH=1 for local-only development.',
+    );
   }
 
   if (password.length < 6) {
@@ -121,6 +172,14 @@ export const onFirebaseAuthChanged = (
 
   return onAuthStateChanged(services.auth, async user => {
     if (!user) {
+      callback(null);
+      return;
+    }
+
+    try {
+      await assertCourierRole(user.uid);
+    } catch {
+      await firebaseSignOut(services.auth);
       callback(null);
       return;
     }

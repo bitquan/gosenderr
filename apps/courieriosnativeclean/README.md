@@ -112,6 +112,9 @@ For environment profile builds:
 - Firebase crash for missing plist:
   - Ensure file exists at:
     - `apps/courieriosnativeclean/ios/Senderrappios/GoogleService-Info.plist`
+- `Firebase auth is required` on login:
+  - Ensure `SENDERR_FIREBASE_*` values are present and valid for current profile.
+  - For local-only fallback testing, explicitly set `SENDERR_ALLOW_MOCK_AUTH = 1` in a non-production config.
 
 ## Links
 

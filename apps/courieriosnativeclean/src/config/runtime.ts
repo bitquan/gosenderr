@@ -12,12 +12,14 @@ type FirebaseRuntimeConfig = {
 type RuntimeConfig = {
   envName: SenderrEnvironment;
   apiBaseUrl: string;
+  allowMockAuth: boolean;
   firebase: FirebaseRuntimeConfig;
 };
 
 export type NativeRuntimeConfig = {
   envName?: string;
   apiBaseUrl?: string;
+  allowMockAuth?: boolean;
   firebase?: Partial<FirebaseRuntimeConfig>;
 };
 
@@ -40,6 +42,7 @@ const normalizeEnvName = (value: string): SenderrEnvironment => {
 const ENV_DEFAULTS: Record<SenderrEnvironment, Omit<RuntimeConfig, 'envName'>> = {
   dev: {
     apiBaseUrl: 'https://dev-api.gosenderr.com',
+    allowMockAuth: false,
     firebase: {
       apiKey: '',
       authDomain: 'gosenderr-dev.firebaseapp.com',
@@ -51,6 +54,7 @@ const ENV_DEFAULTS: Record<SenderrEnvironment, Omit<RuntimeConfig, 'envName'>> =
   },
   staging: {
     apiBaseUrl: 'https://staging-api.gosenderr.com',
+    allowMockAuth: false,
     firebase: {
       apiKey: '',
       authDomain: 'gosenderr-staging.firebaseapp.com',
@@ -62,6 +66,7 @@ const ENV_DEFAULTS: Record<SenderrEnvironment, Omit<RuntimeConfig, 'envName'>> =
   },
   prod: {
     apiBaseUrl: 'https://api.gosenderr.com',
+    allowMockAuth: false,
     firebase: {
       apiKey: '',
       authDomain: 'gosenderr-6773f.firebaseapp.com',
@@ -76,6 +81,19 @@ const ENV_DEFAULTS: Record<SenderrEnvironment, Omit<RuntimeConfig, 'envName'>> =
 const resolveString = (value: string | undefined, fallback: string): string => {
   const trimmed = value?.trim();
   return trimmed ? trimmed : fallback;
+};
+
+const resolveBoolean = (value: string | undefined, fallback: boolean): boolean => {
+  if (typeof value !== 'string') {
+    return fallback;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) {
+    return fallback;
+  }
+
+  return normalized === '1' || normalized === 'true' || normalized === 'yes' || normalized === 'on';
 };
 
 const normalizeApiBaseUrl = (value: string): string => {
@@ -97,10 +115,14 @@ const buildConfigFromSources = (nativeConfig?: NativeRuntimeConfig): RuntimeConf
   const envName = normalizeEnvName(envSource);
   const defaults = ENV_DEFAULTS[envName];
   const nativeFirebase = nativeConfig?.firebase ?? {};
+  const allowMockAuth =
+    nativeConfig?.allowMockAuth ??
+    resolveBoolean(readEnv('SENDERR_ALLOW_MOCK_AUTH'), false);
 
   return {
     envName,
     apiBaseUrl: normalizeApiBaseUrl(resolveString(nativeConfig?.apiBaseUrl, defaults.apiBaseUrl)),
+    allowMockAuth: envName === 'prod' ? false : allowMockAuth,
     firebase: {
       apiKey: resolveString(nativeFirebase.apiKey ?? readEnv('SENDERR_FIREBASE_API_KEY'), defaults.firebase.apiKey),
       authDomain: resolveString(
@@ -130,6 +152,7 @@ export const configureRuntime = (nativeConfig?: NativeRuntimeConfig): void => {
   const next = buildConfigFromSources(nativeConfig);
   runtimeConfig.envName = next.envName;
   runtimeConfig.apiBaseUrl = next.apiBaseUrl;
+  runtimeConfig.allowMockAuth = next.allowMockAuth;
   runtimeConfig.firebase = next.firebase;
 };
 
@@ -137,3 +160,5 @@ export const hasFirebaseConfig = (): boolean => {
   const cfg = runtimeConfig.firebase;
   return Boolean(cfg.apiKey && cfg.authDomain && cfg.projectId && cfg.appId);
 };
+
+export const isMockAuthEnabled = (): boolean => runtimeConfig.allowMockAuth;
