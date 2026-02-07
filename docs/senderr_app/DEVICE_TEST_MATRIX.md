@@ -9,13 +9,14 @@ Tracks iOS-native smoke coverage across target device and OS combinations.
 | iPhone 12 | Pending | Pending | |
 | iPhone 13 | Pending | Pending | |
 | iPhone 14 | Pending | Pending | |
-| iPhone 15 | Pending | Pending | |
+| iPhone 15 | N/A | Pending | iOS 16 not supported on iPhone 15 |
 
 Status values:
 - `Pending`
 - `Pass`
 - `Fail`
 - `Blocked`
+- `N/A` (device/OS combo not applicable)
 
 ## Test pass checklist (run per device/OS row)
 
@@ -47,7 +48,7 @@ Copy this block for each matrix row you test.
 - Jobs: Pass|Fail
 - Location: Pass|Fail
 - Firebase init: Pass|Fail
-- Result: Pass|Fail|Blocked
+- Result: Pass|Fail|Blocked|N/A
 - Issue links: #<id>, #<id>
 - Notes:
 ```
