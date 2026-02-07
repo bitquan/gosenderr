@@ -4,15 +4,21 @@ import {SafeAreaView, ScrollView, StyleSheet, View, type ViewStyle} from 'react-
 export const ScreenContainer = ({
   children,
   contentStyle,
+  scroll = true,
 }: {
   children: React.ReactNode;
   contentStyle?: ViewStyle;
+  scroll?: boolean;
 }): React.JSX.Element => {
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={[styles.content, contentStyle]}>
-        <View style={styles.inner}>{children}</View>
-      </ScrollView>
+      {scroll ? (
+        <ScrollView contentContainerStyle={[styles.content, contentStyle]}>
+          <View style={styles.inner}>{children}</View>
+        </ScrollView>
+      ) : (
+        <View style={[styles.content, styles.inner, contentStyle]}>{children}</View>
+      )}
     </SafeAreaView>
   );
 };

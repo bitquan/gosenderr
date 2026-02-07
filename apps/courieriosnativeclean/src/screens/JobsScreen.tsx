@@ -37,7 +37,7 @@ export const JobsScreen = ({jobs, setJobs, onOpenDetail}: JobsScreenProps): Reac
   }, [session, setJobs]);
 
   return (
-    <ScreenContainer>
+    <ScreenContainer scroll={false}>
       <View style={styles.header}>
         <Text style={styles.title}>My Jobs</Text>
         <Text style={styles.subtitle}>{jobs.length} jobs loaded</Text>

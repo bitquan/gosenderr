@@ -133,7 +133,6 @@ export const useLocationTracking = (): {
   useEffect(() => {
     return () => {
       stopTracking();
-      Geolocation.stopObserving();
     };
   }, [stopTracking]);
 
