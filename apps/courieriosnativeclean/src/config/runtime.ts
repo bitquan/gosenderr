@@ -93,8 +93,6 @@ const buildConfigFromSources = (nativeConfig?: NativeRuntimeConfig): RuntimeConf
   const envSource =
     nativeConfig?.envName ||
     readEnv('SENDERR_ENV_NAME') ||
-    readEnv('SENDERR_APP_ENV') ||
-    readEnv('SENDERR_ENV') ||
     'dev';
   const envName = normalizeEnvName(envSource);
   const defaults = ENV_DEFAULTS[envName];
