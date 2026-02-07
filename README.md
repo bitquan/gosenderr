@@ -31,6 +31,8 @@ See the rollout checklist in [docs/project-plan/09-DAILY-CHECKLIST.md](docs/proj
 ## 📚 Documentation System
 
 - Developer playbook: [docs/DEVELOPER_PLAYBOOK.md](docs/DEVELOPER_PLAYBOOK.md)
+- Session state: [docs/dev/SESSION_STATE.md](docs/dev/SESSION_STATE.md)
+- Worklog: [docs/dev/WORKLOG.md](docs/dev/WORKLOG.md)
 - Global source of truth: [docs/BLUEPRINT.md](docs/BLUEPRINT.md)
 - App docs registry: [docs/apps/README.md](docs/apps/README.md)
 - Branch-specific delta docs: `.github/copilot/branches/*.md`

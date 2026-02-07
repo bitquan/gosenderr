@@ -169,3 +169,29 @@ pnpm run ios:clean:install
 - App docs index: `docs/apps/README.md`
 - Senderr iOS docs: `docs/senderr_app/README.md`
 - Minimal disk setup: `docs/dev/MINIMAL-SETUP.md`
+
+## 10) Session recovery logs (required)
+
+Use these two files as persistent memory:
+
+- Current handoff state: `docs/dev/SESSION_STATE.md`
+- Append-only history: `docs/dev/WORKLOG.md`
+
+Update both with one command:
+
+```bash
+bash scripts/dev-handoff.sh \
+  --summary "implemented X and validated Y" \
+  --next "start issue #NNN" \
+  --status in_progress \
+  --issue "#NNN" \
+  --pr "#PPP" \
+  --files "path/a,path/b"
+```
+
+Run this command:
+
+- at the end of each major coding block
+- before switching branches
+- before opening a PR
+- before ending a session
