@@ -3,45 +3,59 @@ import {FlatList, Pressable, RefreshControl, StyleSheet, Text, View} from 'react
 
 import {ScreenContainer} from '../components/ScreenContainer';
 import {StatusBadge} from '../components/StatusBadge';
-import {useAuth} from '../context/AuthContext';
-import {useServiceRegistry} from '../services/serviceRegistry';
+import type {JobsSyncState} from '../services/ports/jobsPort';
 import type {Job} from '../types/jobs';
 
 type JobsScreenProps = {
   jobs: Job[];
   setJobs: (jobs: Job[]) => void;
+  syncState: JobsSyncState;
+  onRefresh: () => Promise<Job[]>;
   onOpenDetail: (jobId: string) => void;
 };
 
-export const JobsScreen = ({jobs, setJobs, onOpenDetail}: JobsScreenProps): React.JSX.Element => {
-  const {session} = useAuth();
-  const {jobs: jobsService} = useServiceRegistry();
+const formatSyncTime = (isoTime: string | null): string => {
+  if (!isoTime) {
+    return 'Never';
+  }
+  return new Date(isoTime).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+};
+
+export const JobsScreen = ({jobs, setJobs, syncState, onRefresh, onOpenDetail}: JobsScreenProps): React.JSX.Element => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    if (!session) {
-      return;
-    }
-
     setRefreshing(true);
     setError(null);
 
     try {
-      const nextJobs = await jobsService.fetchJobs(session);
+      const nextJobs = await onRefresh();
       setJobs(nextJobs);
     } catch (refreshError) {
       setError(refreshError instanceof Error ? refreshError.message : 'Unable to refresh jobs.');
     } finally {
       setRefreshing(false);
     }
-  }, [jobsService, session, setJobs]);
+  }, [onRefresh, setJobs]);
+
+  const syncMessage =
+    syncState.message ??
+    (syncState.stale ? 'Live updates are paused. Showing cached jobs.' : 'Live updates are active.');
 
   return (
     <ScreenContainer scroll={false}>
       <View style={styles.header}>
         <Text style={styles.title}>My Jobs</Text>
         <Text style={styles.subtitle}>{jobs.length} jobs loaded</Text>
+      </View>
+
+      <View style={[styles.syncCard, syncState.stale ? styles.syncCardStale : styles.syncCardLive]}>
+        <Text style={styles.syncTitle}>Sync: {syncState.status}</Text>
+        <Text style={styles.syncText}>{syncMessage}</Text>
+        <Text style={styles.syncMeta}>
+          Last sync: {formatSyncTime(syncState.lastSyncedAt)}{syncState.reconnectAttempt > 0 ? ` | Retry ${syncState.reconnectAttempt}` : ''}
+        </Text>
       </View>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -92,6 +106,30 @@ const styles = StyleSheet.create({
   error: {
     color: '#dc2626',
     fontWeight: '600',
+  },
+  syncCard: {
+    borderRadius: 12,
+    padding: 12,
+    gap: 4,
+  },
+  syncCardLive: {
+    backgroundColor: '#e8f5e9',
+  },
+  syncCardStale: {
+    backgroundColor: '#fff7ed',
+  },
+  syncTitle: {
+    fontWeight: '800',
+    textTransform: 'capitalize',
+    color: '#111827',
+  },
+  syncText: {
+    color: '#374151',
+    fontSize: 13,
+  },
+  syncMeta: {
+    color: '#4b5563',
+    fontSize: 12,
   },
   listContent: {
     paddingTop: 8,

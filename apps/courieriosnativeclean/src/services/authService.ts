@@ -12,6 +12,13 @@ import {isMockAuthEnabled} from '../config/runtime';
 import type {AuthSession} from '../types/auth';
 
 const SESSION_KEY = '@senderr/auth/session';
+const ROLE_CACHE_KEY = '@senderr/auth/role-cache';
+const ROLE_CACHE_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 7;
+
+type CachedRole = {
+  role: 'courier' | 'driver';
+  validatedAt: string;
+};
 
 const toSessionToken = (): string => `${Date.now()}_${Math.random().toString(36).slice(2, 12)}`;
 
@@ -20,22 +27,97 @@ const normalizeDisplayName = (email: string): string => {
   return base.charAt(0).toUpperCase() + base.slice(1);
 };
 
+const readRoleCache = async (): Promise<Record<string, CachedRole>> => {
+  const raw = await AsyncStorage.getItem(ROLE_CACHE_KEY);
+  if (!raw) {
+    return {};
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as Record<string, CachedRole>;
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+};
+
+const writeRoleCache = async (uid: string, role: 'courier' | 'driver'): Promise<void> => {
+  const cache = await readRoleCache();
+  cache[uid] = {
+    role,
+    validatedAt: new Date().toISOString(),
+  };
+  await AsyncStorage.setItem(ROLE_CACHE_KEY, JSON.stringify(cache));
+};
+
+const clearRoleCache = async (uid: string): Promise<void> => {
+  const cache = await readRoleCache();
+  if (!(uid in cache)) {
+    return;
+  }
+  delete cache[uid];
+  await AsyncStorage.setItem(ROLE_CACHE_KEY, JSON.stringify(cache));
+};
+
+const hasRecentRoleCache = async (uid: string): Promise<boolean> => {
+  const cache = await readRoleCache();
+  const entry = cache[uid];
+  if (!entry) {
+    return false;
+  }
+
+  const validatedAtMs = Date.parse(entry.validatedAt);
+  if (!Number.isFinite(validatedAtMs)) {
+    return false;
+  }
+
+  return Date.now() - validatedAtMs <= ROLE_CACHE_MAX_AGE_MS;
+};
+
+const isTransientRoleLookupError = (error: unknown): boolean => {
+  const code = String((error as {code?: unknown})?.code ?? '').toLowerCase();
+  const message = String((error as {message?: unknown})?.message ?? '').toLowerCase();
+
+  return (
+    code.includes('unavailable') ||
+    code.includes('deadline-exceeded') ||
+    message.includes('offline') ||
+    message.includes('network')
+  );
+};
+
 const assertCourierRole = async (uid: string): Promise<void> => {
   const services = getFirebaseServices();
   if (!services) {
     throw new Error('Firebase services are not ready.');
   }
 
-  const userRef = doc(services.db, 'users', uid);
-  const userSnap = await getDoc(userRef);
+  try {
+    const userRef = doc(services.db, 'users', uid);
+    const userSnap = await getDoc(userRef);
 
-  if (!userSnap.exists()) {
-    throw new Error('No courier profile found for this account.');
-  }
+    if (!userSnap.exists()) {
+      await clearRoleCache(uid);
+      throw new Error('No courier profile found for this account.');
+    }
 
-  const role = String((userSnap.data() as {role?: unknown}).role ?? '').trim().toLowerCase();
-  if (role !== 'courier' && role !== 'driver') {
-    throw new Error('This account does not have courier access.');
+    const role = String((userSnap.data() as {role?: unknown}).role ?? '').trim().toLowerCase();
+    if (role !== 'courier' && role !== 'driver') {
+      await clearRoleCache(uid);
+      throw new Error('This account does not have courier access.');
+    }
+
+    await writeRoleCache(uid, role);
+  } catch (error) {
+    if (isTransientRoleLookupError(error) && (await hasRecentRoleCache(uid))) {
+      return;
+    }
+
+    if (isTransientRoleLookupError(error)) {
+      throw new Error('Unable to verify courier access while offline. Reconnect and try again.');
+    }
+
+    throw error;
   }
 };
 

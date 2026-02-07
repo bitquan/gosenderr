@@ -80,3 +80,26 @@ Append-only log used for session recovery.
 - Blockers: None
 - Next:
   - open PR for #202 and continue #203 realtime jobs
+
+---
+
+## 2026-02-07 14:44 local (2026-02-07 19:44 UTC)
+
+- Status: `in_progress`
+- Summary: merged #202 via replacement PR #213; started #203 realtime jobs sync; patched auth role verification to tolerate transient Firestore offline with recent role cache
+- Branch: `codex/issue-203-realtime-jobs-sync`
+- Commit: `working tree`
+- Issue: `#203`
+- PR: `n/a`
+- Files:
+  - `apps/courieriosnativeclean/src/services/jobsService.ts`
+  - `apps/courieriosnativeclean/src/services/ports/jobsPort.ts`
+  - `apps/courieriosnativeclean/src/screens/JobsScreen.tsx`
+  - `apps/courieriosnativeclean/src/screens/DashboardScreen.tsx`
+  - `apps/courieriosnativeclean/App.tsx`
+  - `apps/courieriosnativeclean/src/services/authService.ts`
+  - `docs/senderr_app/JOBS_SCHEMA_MIGRATION.md`
+- Blockers:
+  - RN Jest transform config still fails before test execution (`@react-native/js-polyfills`), pre-existing
+- Next:
+  - finish #203 validation and open PR linked to #203

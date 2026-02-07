@@ -4,20 +4,20 @@ This file is the canonical handoff state when a chat/session is interrupted.
 
 ## Last Updated
 
-- Local: 2026-02-07 14:26
-- UTC: 2026-02-07 19:26
+- Local: 2026-02-07 14:44
+- UTC: 2026-02-07 19:44
 
 ## Current Focus
 
-- Active issue: #202
+- Active issue: #203
 - Active PR: n/a
-- Objective: implemented #202 firebase-only auth default with explicit mock gate and courier role validation
+- Objective: implement realtime jobs sync + reconnect state; patched auth role check to handle temporary Firestore offline using recent role cache
 
 ## Branch + Commit
 
-- Branch: `codex/issue-202-real-auth-path`
-- Commit: `a5bc220`
-- Working tree: clean
+- Branch: `codex/issue-203-realtime-jobs-sync`
+- Commit: `working tree`
+- Working tree: dirty (expected during implementation)
 
 ## Blockers
 
@@ -25,7 +25,8 @@ This file is the canonical handoff state when a chat/session is interrupted.
 
 ## Next Actions
 
-1. open PR for #202 and continue #203 realtime jobs
+1. finish #203 app-level jobs subscription wiring + tests/docs
+2. run validation (`tsc`, ios smoke, docs checks), then open PR linked to #203
 2. Re-open `docs/dev/WORKLOG.md` and append after each meaningful change.
 3. Keep this file current at task boundaries.
 
@@ -33,7 +34,7 @@ This file is the canonical handoff state when a chat/session is interrupted.
 
 ```bash
 cd /Users/papadev/dev/apps/Gosenderr_Dev_Folder/gosenderr
-git checkout codex/issue-202-real-auth-path
+git checkout codex/issue-203-realtime-jobs-sync
 git pull --rebase
 sed -n '1,200p' docs/dev/SESSION_STATE.md
 sed -n '1,200p' docs/dev/WORKLOG.md
