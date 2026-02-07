@@ -2,6 +2,11 @@
 
 This file defines the repo documentation hierarchy, precedence, and archive policy.
 
+> Doc metadata
+> - Owner: `@bitquan`
+> - Last verified: `2026-02-07`
+> - Review cadence: `monthly`
+
 ## Canonical hierarchy
 
 Use the following order of truth when docs conflict:
@@ -13,6 +18,7 @@ Use the following order of truth when docs conflict:
 - Source of truth for shared architecture, development workflow, deployment, and process rules.
 - Key docs:
   - `docs/BLUEPRINT.md`
+  - `docs/DOCS_OWNERSHIP.md`
   - `docs/ARCHITECTURE.md`
   - `docs/DEVELOPMENT.md`
   - `docs/DEPLOYMENT.md`
@@ -78,9 +84,27 @@ When legacy guidance becomes current policy, copy it into canonical docs under `
     - `docs/archive/*`
 - Legacy paths may contain planning TODOs, but those TODOs are not allowed in canonical docs.
 
+## Verification metadata policy
+
+Canonical docs should include a metadata block near the top:
+
+```md
+> Doc metadata
+> - Owner: `@github-handle`
+> - Last verified: `YYYY-MM-DD`
+> - Review cadence: `weekly` | `monthly` | `quarterly`
+```
+
+Update `Last verified` when:
+
+- setup/run/test/deploy instructions are touched
+- workflow/process behavior changes
+- ownership or review cadence changes
+
 ## Ownership and review
 
-- Canonical docs are owned by `CODEOWNERS`.
+- Canonical docs ownership and cadence are tracked in `docs/DOCS_OWNERSHIP.md`.
+- `CODEOWNERS` remains the merge gate owner-of-record.
 - Branch profile docs are owned by the branch author.
 - Before merge, branch deltas must be:
   - promoted into canonical docs, or

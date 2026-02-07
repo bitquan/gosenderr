@@ -2,6 +2,11 @@
 
 [![CI](https://github.com/bitquan/gosenderr/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/bitquan/gosenderr/actions/workflows/ci.yml)
 
+> Doc metadata
+> - Owner: `@bitquan`
+> - Last verified: `2026-02-07`
+> - Review cadence: `monthly`
+
 
 A modern on-demand delivery platform with web apps (Vite + React + TypeScript) that can be packaged as native iOS and Android apps using Capacitor.
 
@@ -31,6 +36,7 @@ See the rollout checklist in [docs/project-plan/09-DAILY-CHECKLIST.md](docs/proj
 ## 📚 Documentation System
 
 - Canonical hierarchy + policy: [docs/BLUEPRINT.md](docs/BLUEPRINT.md)
+- Docs ownership + review cadence: [docs/DOCS_OWNERSHIP.md](docs/DOCS_OWNERSHIP.md)
 - Developer playbook: [docs/DEVELOPER_PLAYBOOK.md](docs/DEVELOPER_PLAYBOOK.md)
 - Session state: [docs/dev/SESSION_STATE.md](docs/dev/SESSION_STATE.md)
 - Worklog: [docs/dev/WORKLOG.md](docs/dev/WORKLOG.md)
