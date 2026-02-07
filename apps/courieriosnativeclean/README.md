@@ -58,10 +58,25 @@ This workflow:
 - verifies `Podfile.lock` equals `Pods/Manifest.lock`
 
 ## Build validation
-From repo root:
+Run full verification from repo root:
+
+```bash
+pnpm run ios:build:verify
+```
+
+Verification script behavior:
+- runs Debug simulator build
+- runs Debug device build
+- runs Release device build
+- sets `RCT_NO_LAUNCH_PACKAGER=1` and `SKIP_BUNDLING=1` for deterministic CLI verification
+- sets `CODE_SIGNING_ALLOWED=NO` for device compile-only checks
+- creates a temporary placeholder `GoogleService-Info.plist` if missing, then removes it after verification
+
+Equivalent manual commands:
 
 ```bash
 cd apps/courieriosnativeclean/ios
+xcodebuild -workspace Senderrappios.xcworkspace -scheme Senderr -configuration Debug -destination 'generic/platform=iOS Simulator' clean build
 xcodebuild -workspace Senderrappios.xcworkspace -scheme Senderr -configuration Debug -sdk iphoneos -destination 'generic/platform=iOS' clean build
 xcodebuild -workspace Senderrappios.xcworkspace -scheme Senderr -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' clean build
 ```
@@ -92,4 +107,5 @@ If app startup fails with `No such module FirebaseCore` or `FirebaseApp.configur
 
 ## Related issues
 - `#123` Stabilize pod install and clean build workflow
+- `#125` Confirm Debug + Release build in Xcode
 - `#126` Document build fixes in app README

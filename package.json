@@ -53,7 +53,8 @@
     "ios:bootstrap": "bash scripts/bootstrap-senderr-ios.sh",
     "ios:pods:install": "bash scripts/bootstrap-senderr-ios.sh",
     "ios:clean:install": "bash scripts/ios-clean-install.sh",
-    "ios:clean:build:debug": "bash scripts/ios-clean-install.sh && (cd apps/courieriosnativeclean/ios && xcodebuild -workspace Senderrappios.xcworkspace -scheme Senderr -configuration Debug -sdk iphoneos -destination 'generic/platform=iOS' clean build)"
+    "ios:clean:build:debug": "bash scripts/ios-clean-install.sh && (cd apps/courieriosnativeclean/ios && xcodebuild -workspace Senderrappios.xcworkspace -scheme Senderr -configuration Debug -sdk iphoneos -destination 'generic/platform=iOS' clean build)",
+    "ios:build:verify": "bash scripts/ios-build-verify.sh"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "2.0.7",

@@ -19,9 +19,11 @@ This quick-start helps contributors get the Senderr iOS app running locally and 
    - `pnpm run ios:bootstrap`
 4. Verify canonical iOS structure and template sync:
    - `pnpm run ios:check`
-5. Open the iOS workspace in Xcode:
+5. Verify Debug/Release iOS compile matrix:
+   - `pnpm run ios:build:verify`
+6. Open the iOS workspace in Xcode:
    - `open apps/courieriosnativeclean/ios/Senderrappios.xcworkspace`
-6. Select scheme `Senderr` in Xcode before running.
+7. Select scheme `Senderr` in Xcode before running.
 
 ## Run the app (iOS Simulator)
 1. Start Metro (from the app folder):
