@@ -2,10 +2,15 @@ name: Senderr App CI
 
 on:
   pull_request:
+    branches:
+      - main
+      - senderr_app
     paths:
       - "apps/senderr-app/**"
       - "packages/**"
-      - "docs/**"
+      - "pnpm-lock.yaml"
+      - "package.json"
+      - ".github/workflows/courier-ci.yml"
 
 jobs:
   checks:
