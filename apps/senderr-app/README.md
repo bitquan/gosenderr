@@ -9,8 +9,7 @@ This is the Senderr courier web app in `apps/senderr-app`.
 2. Start the app:
    - `pnpm --filter @gosenderr/senderr-app dev`
 
-App URL:
-- `http://localhost:5174`
+Default local URL: `http://localhost:5174`
 
 ## Environment
 
@@ -27,7 +26,7 @@ This app reads the following env vars:
 
 Use repo-level env guidance in `/README.md` until an app-local `.env.example` is added.
 
-## Run and Build
+## Run
 
 - Dev server:
   - `pnpm --filter @gosenderr/senderr-app dev`
@@ -37,6 +36,17 @@ Use repo-level env guidance in `/README.md` until an app-local `.env.example` is
   - `pnpm --filter @gosenderr/senderr-app preview`
 - Lint:
   - `pnpm --filter @gosenderr/senderr-app lint`
+
+## Test
+
+Current package scripts do not include an app-local test command.
+
+Use these validation commands from repo root:
+
+- App lint:
+  - `pnpm --filter @gosenderr/senderr-app lint`
+- App production build:
+  - `pnpm --filter @gosenderr/senderr-app build`
 
 ## Mobile (Capacitor)
 
@@ -64,7 +74,7 @@ Target:
 - Map errors:
   - Verify `VITE_MAPBOX_TOKEN`.
 
-## Related Docs
+## Links
 
 - Repo docs policy: `/docs/BLUEPRINT.md`
 - App docs registry: `/docs/apps/README.md`

@@ -43,18 +43,25 @@ Primary env vars used by this app:
 - `VITE_PUBLIC_CONFIG_URL`
 - `VITE_ADMIN_DESKTOP_USE_EMULATORS`
 
-## Build, Test, Package
+## Test
 
 From repo root:
 
-- Build renderer + Electron main:
-  - `pnpm --filter @gosenderr/admin-desktop build`
 - E2E tests:
   - `pnpm --filter @gosenderr/admin-desktop test:e2e`
-- Package directory (no installer):
-  - `pnpm --filter @gosenderr/admin-desktop pack`
+- Build validation:
+  - `pnpm --filter @gosenderr/admin-desktop build`
+
+## Deploy
+
+Admin desktop does not deploy to Firebase hosting.
+
+Release artifacts are generated locally:
+
 - Build distributables:
   - `pnpm --filter @gosenderr/admin-desktop dist`
+- Package directory (no installer):
+  - `pnpm --filter @gosenderr/admin-desktop pack`
 
 ## Troubleshooting
 
@@ -65,7 +72,7 @@ From repo root:
 - Emulator/auth issues:
   - Start with `pnpm dev:admin-desktop` so emulators are booted consistently.
 
-## Related Docs
+## Links
 
 - Repo docs policy: `/docs/BLUEPRINT.md`
 - App docs registry: `/docs/apps/README.md`
