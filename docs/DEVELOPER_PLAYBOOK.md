@@ -207,3 +207,12 @@ Run this command:
 - before switching branches
 - before opening a PR
 - before ending a session
+
+PR handoff policy:
+
+- Mandatory:
+  - Any PR with behavior, setup, config, CI, workflow, or process changes must use `scripts/dev-handoff.sh` and set PR template checkbox `handoff: updated`.
+- Optional:
+  - Docs-only and metadata-only PRs may skip log updates only if there is no behavior/process/setup impact, and must set PR template checkbox `handoff: not needed`.
+- Enforcement:
+  - CI validates that exactly one handoff checkbox is selected in every PR.

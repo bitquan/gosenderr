@@ -15,6 +15,13 @@ Please include a summary of the change and which issue is fixed. Include any rel
 - [ ] `docs-impact: no` (no docs updates required)
 - [ ] Branch delta doc updated when behavior differs from canonical docs (`.github/copilot/branches/*`)
 
+## Session handoff
+
+Select exactly one:
+
+- [ ] `handoff: updated` (I ran `bash scripts/dev-handoff.sh ...` with current issue/PR context and updated `docs/dev/SESSION_STATE.md` + `docs/dev/WORKLOG.md`)
+- [ ] `handoff: not needed` (docs-only or metadata-only PR with no behavior/process/setup impact)
+
 ## Checklist
 
 - [ ] PR is targeted at `senderr_app`
