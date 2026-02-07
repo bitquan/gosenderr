@@ -76,6 +76,7 @@ Native precedence:
 3. Environment defaults (`dev` / `staging` / `prod`)
 
 ## Supporting docs
+- App README (build fixes + troubleshooting): `apps/courieriosnativeclean/README.md`
 - Repo-wide playbook: `docs/DEVELOPER_PLAYBOOK.md`
 - Session handoff state: `docs/dev/SESSION_STATE.md`
 - Session worklog: `docs/dev/WORKLOG.md`
