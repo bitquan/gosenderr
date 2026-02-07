@@ -13,12 +13,14 @@ Legacy duplicate iOS project/workspace folders are archived at `apps/_archive/le
 ## Setup
 1. Install deps from repo root:
    - `pnpm install --frozen-lockfile`
-2. Clean/sync pods:
-   - `pnpm run ios:clean:install`
-3. Build verification:
-   - `pnpm run ios:build:verify`
+2. Run canonical iOS setup + verification:
+   - `pnpm run ios:senderr`
 4. Open Xcode workspace:
    - `open apps/courieriosnativeclean/ios/Senderrappios.xcworkspace`
+
+Optional subcommands:
+- `pnpm run ios:clean:install`
+- `pnpm run ios:build:verify`
 
 ## Storage hardening checks
 Run Storage rules regression tests from repo root:

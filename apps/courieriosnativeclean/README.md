@@ -19,22 +19,25 @@ Legacy iOS workspaces/projects were archived under `apps/_archive/legacy-ios-wor
 ## Local run
 1. Install dependencies from repo root:
    - `pnpm install`
-2. Install pods:
-   - `cd apps/courieriosnativeclean/ios && pod install`
+2. Run the canonical iOS prep/build flow:
+   - `pnpm run ios:senderr`
 3. Open workspace:
    - `open apps/courieriosnativeclean/ios/Senderrappios.xcworkspace`
 4. In another terminal, start Metro:
    - `cd apps/courieriosnativeclean && npx react-native start --reset-cache`
 
 ## Build verification
-Run compile matrix from repo root:
+Canonical one-command flow from repo root:
 
 ```bash
-pnpm run ios:clean:install
-pnpm run ios:build:verify
+pnpm run ios:senderr
 ```
 
-`ios:build:verify` checks:
+Optional subcommands:
+- `pnpm run ios:clean:install`
+- `pnpm run ios:build:verify`
+
+`ios:build:verify` still checks:
 - Debug simulator build
 - Debug device compile build
 - Release device compile build
@@ -82,3 +85,4 @@ If Firebase keys are blank, or Firebase calls fail at runtime, the app safely fa
 - `#150` MVP acceptance criteria
 - `#161` Canonical iOS cleanup
 - `#165` Storage hardening (rules + regression tests)
+- `#149` Consolidate iOS build scripts
