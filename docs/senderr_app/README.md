@@ -64,6 +64,7 @@ For physical devices, point Metro host to your machine IP in `AppDelegate.swift`
 Injected build-time keys:
 - `SENDERR_ENV_NAME`
 - `SENDERR_API_BASE_URL`
+- `SENDERR_ALLOW_MOCK_AUTH`
 - `SENDERR_FIREBASE_API_KEY`
 - `SENDERR_FIREBASE_AUTH_DOMAIN`
 - `SENDERR_FIREBASE_PROJECT_ID`
@@ -79,6 +80,11 @@ Native precedence:
 1. Values injected through `Info.plist` build settings (`SENDERR_*`)
 2. `GoogleService-Info.plist` values for Firebase keys/project/bucket/app ID/sender ID
 3. Environment defaults (`dev` / `staging` / `prod`)
+
+Auth mode rules:
+- Firebase auth is the default and required path.
+- Mock auth is disabled by default across all env profiles.
+- Local-only override requires explicit `SENDERR_ALLOW_MOCK_AUTH=1` in a non-production build.
 
 ## Upgrade-safe service architecture
 

@@ -3,10 +3,12 @@ import {StyleSheet, Text, TextInput, View} from 'react-native';
 
 import {PrimaryButton} from '../components/PrimaryButton';
 import {ScreenContainer} from '../components/ScreenContainer';
+import {isMockAuthEnabled} from '../config/runtime';
 import {useAuth} from '../context/AuthContext';
 
 export const LoginScreen = (): React.JSX.Element => {
   const {signInWithEmail, signingIn} = useAuth();
+  const mockAuthEnabled = isMockAuthEnabled();
   const [email, setEmail] = useState('courier@example.com');
   const [password, setPassword] = useState('DemoPass123!');
   const [error, setError] = useState<string | null>(null);
@@ -59,7 +61,9 @@ export const LoginScreen = (): React.JSX.Element => {
         />
 
         <Text style={styles.hint}>
-          Tip: if Firebase env values are not set, the app uses a local mock auth mode for development.
+          {mockAuthEnabled
+            ? 'Mock auth is enabled for local development only.'
+            : 'Firebase auth is required. Configure SENDERR_FIREBASE_* values to sign in.'}
         </Text>
       </View>
     </ScreenContainer>

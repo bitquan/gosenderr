@@ -2,10 +2,13 @@
 SENDERR_ENV_NAME = prod
 SENDERR_API_BASE_URL = api.gosenderr.com
 
-// Optional Firebase JS SDK values. Leave blank to use mock mode.
+// Firebase JS SDK values for production.
 SENDERR_FIREBASE_API_KEY =
 SENDERR_FIREBASE_APP_ID =
 SENDERR_FIREBASE_MESSAGING_SENDER_ID =
 SENDERR_FIREBASE_AUTH_DOMAIN = gosenderr-6773f.firebaseapp.com
 SENDERR_FIREBASE_PROJECT_ID = gosenderr-6773f
 SENDERR_FIREBASE_STORAGE_BUCKET = gosenderr-6773f.appspot.com
+
+// Must remain disabled in production.
+SENDERR_ALLOW_MOCK_AUTH = 0
