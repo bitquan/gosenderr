@@ -2,6 +2,11 @@
 
 This is the source-of-truth guide for the native Senderr courier app at `apps/courieriosnativeclean`.
 
+> Doc metadata
+> - Owner: `@bitquan`
+> - Last verified: `2026-02-07`
+> - Review cadence: `weekly`
+
 ## Canonical iOS targets
 - Workspace: `apps/courieriosnativeclean/ios/Senderrappios.xcworkspace`
 - Xcode scheme: `Senderr`

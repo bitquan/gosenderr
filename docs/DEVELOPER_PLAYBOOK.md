@@ -4,6 +4,11 @@ This is the repo-wide operating guide for developers.
 
 If you follow this file exactly, you avoid the common setup and branch mistakes.
 
+> Doc metadata
+> - Owner: `@bitquan`
+> - Last verified: `2026-02-07`
+> - Review cadence: `monthly`
+
 ## 1) Canonical repo + apps
 
 - Repo root:
@@ -175,6 +180,7 @@ pnpm run ios:clean:install
 - App docs index: `docs/apps/README.md`
 - Senderr iOS docs: `docs/senderr_app/README.md`
 - Minimal disk setup: `docs/dev/MINIMAL-SETUP.md`
+- Docs ownership + review cadence: `docs/DOCS_OWNERSHIP.md`
 
 ## 10) Session recovery logs (required)
 

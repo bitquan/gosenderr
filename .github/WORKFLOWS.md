@@ -2,6 +2,11 @@
 
 This file is the canonical map of active workflows under `.github/workflows/`.
 
+> Doc metadata
+> - Owner: `@bitquan`
+> - Last verified: `2026-02-07`
+> - Review cadence: `weekly`
+
 ## Workflow Inventory
 
 ### Core CI
