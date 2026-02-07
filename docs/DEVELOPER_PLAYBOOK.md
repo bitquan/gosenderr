@@ -7,7 +7,7 @@ If you follow this file exactly, you avoid the common setup and branch mistakes.
 ## 1) Canonical repo + apps
 
 - Repo root:
-  - `/Users/papadev/dev/apps/Gosenderr_Dev_Folder/gosenderr`
+  - `<repo-root>` (run `git rev-parse --show-toplevel`)
 - Active apps:
   - `apps/marketplace-app`
   - `apps/senderr-app` (Senderr web)
@@ -45,18 +45,20 @@ Current app stream base branch:
 Start any new work:
 
 ```bash
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
 git checkout senderr_app
 git pull --ff-only origin senderr_app
-git checkout -b <scope>/<short-task-name>
+git checkout -b senderr-app/<type>/<short-task-name>
 bash scripts/setup-branch-copilot.sh
 ```
 
-Recommended branch scopes:
+Recommended branch names (match `docs/senderr_app/BRANCHING.md`):
 
-- `senderr-ios/*` for native iOS work
-- `senderr/*` for Senderr web work
-- `marketplace/*` for marketplace work
-- `senderr-app/*` for repo/workspace/docs workflow work
+- `senderr-app/feature/<short-task-name>` for features
+- `senderr-app/fix/<short-task-name>` for fixes
+- `senderr-app/upgrade/<short-task-name>` for upgrades
+- `senderr-app/docs` for docs-only changes
 
 ## 4) Day-to-day git commands
 
@@ -134,7 +136,7 @@ Open PR to:
 
 - You are not in repo root.
 - Fix:
-  - `cd /Users/papadev/dev/apps/Gosenderr_Dev_Folder/gosenderr`
+  - `cd "$(git rev-parse --show-toplevel)"`
 
 `No Podfile found`:
 
@@ -145,7 +147,7 @@ Open PR to:
 `The sandbox is not in sync with Podfile.lock`:
 
 ```bash
-cd /Users/papadev/dev/apps/Gosenderr_Dev_Folder/gosenderr
+cd "$(git rev-parse --show-toplevel)"
 pnpm run ios:clean:install
 ```
 
