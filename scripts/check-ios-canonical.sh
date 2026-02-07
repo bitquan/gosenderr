@@ -13,7 +13,11 @@ done < <(find "$REPO_ROOT/apps" -maxdepth 4 -type f -name Podfile | awk '!/\/app
 
 if [[ "${#PODFILES[@]}" -ne 1 ]]; then
   echo "error: expected exactly one iOS Podfile under apps/, found ${#PODFILES[@]}" >&2
-  printf ' - %s\n' "${PODFILES[@]}" >&2
+  if [[ "${#PODFILES[@]}" -eq 0 ]]; then
+    echo " - (none found)" >&2
+  else
+    printf ' - %s\n' "${PODFILES[@]}" >&2
+  fi
   exit 1
 fi
 

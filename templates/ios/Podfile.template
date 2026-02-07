@@ -18,6 +18,7 @@ end
 
 platform :ios, '16.0'
 prepare_react_native_project!
+project 'Senderrappios.xcodeproj'
 
 # Keep new architecture disabled until explicitly migrated.
 ENV['RCT_NEW_ARCH_ENABLED'] = '0'
