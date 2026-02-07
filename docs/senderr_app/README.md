@@ -70,6 +70,11 @@ Defaults:
 - `Debug` => `dev`
 - `Release` => `prod`
 
+Native precedence:
+1. Values injected through `Info.plist` build settings (`SENDERR_*`)
+2. `GoogleService-Info.plist` values for Firebase keys/project/bucket/app ID/sender ID
+3. Environment defaults (`dev` / `staging` / `prod`)
+
 ## Supporting docs
 - Navigation map: `docs/senderr_app/NAVIGATION_MAP.md`
 - MVP criteria: `docs/senderr_app/MVP_ACCEPTANCE.md`

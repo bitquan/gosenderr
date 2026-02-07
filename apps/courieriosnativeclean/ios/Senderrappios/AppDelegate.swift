@@ -61,14 +61,28 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     let isDebugBuild = _isDebugAssertConfiguration()
     let envName = readInfoValue("SenderrEnvName") ?? (isDebugBuild ? "dev" : "prod")
     let apiBaseUrl = normalizedAPIBaseURL(readInfoValue("SenderrApiBaseUrl") ?? defaultApiBaseURL(for: envName))
+    let firebaseProjectID =
+      readInfoValue("SenderrFirebaseProjectId")
+      ?? readGoogleServiceValue("PROJECT_ID")
+      ?? defaultFirebaseProjectID(for: envName)
+    let firebaseAuthDomain =
+      readInfoValue("SenderrFirebaseAuthDomain")
+      ?? defaultFirebaseAuthDomain(for: firebaseProjectID)
+      ?? defaultFirebaseAuthDomain(for: envName)
+    let firebaseStorageBucket =
+      readInfoValue("SenderrFirebaseStorageBucket")
+      ?? readGoogleServiceValue("STORAGE_BUCKET")
+      ?? defaultFirebaseStorageBucket(for: envName)
 
     let firebase: [String: String] = [
-      "apiKey": readInfoValue("SenderrFirebaseApiKey") ?? "",
-      "authDomain": readInfoValue("SenderrFirebaseAuthDomain") ?? defaultFirebaseAuthDomain(for: envName),
-      "projectId": readInfoValue("SenderrFirebaseProjectId") ?? defaultFirebaseProjectID(for: envName),
-      "storageBucket": readInfoValue("SenderrFirebaseStorageBucket") ?? defaultFirebaseStorageBucket(for: envName),
-      "messagingSenderId": readInfoValue("SenderrFirebaseMessagingSenderId") ?? "",
-      "appId": readInfoValue("SenderrFirebaseAppId") ?? "",
+      "apiKey": readInfoValue("SenderrFirebaseApiKey") ?? readGoogleServiceValue("API_KEY") ?? "",
+      "authDomain": firebaseAuthDomain,
+      "projectId": firebaseProjectID,
+      "storageBucket": firebaseStorageBucket,
+      "messagingSenderId": readInfoValue("SenderrFirebaseMessagingSenderId")
+        ?? readGoogleServiceValue("GCM_SENDER_ID")
+        ?? "",
+      "appId": readInfoValue("SenderrFirebaseAppId") ?? readGoogleServiceValue("GOOGLE_APP_ID") ?? "",
     ]
 
     return [
@@ -125,8 +139,31 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     return "\(defaultFirebaseProjectID(for: env)).firebaseapp.com"
   }
 
+  private func defaultFirebaseAuthDomain(for projectID: String) -> String? {
+    let trimmed = projectID.trimmingCharacters(in: .whitespacesAndNewlines)
+    if trimmed.isEmpty {
+      return nil
+    }
+    return "\(trimmed).firebaseapp.com"
+  }
+
   private func defaultFirebaseStorageBucket(for env: String) -> String {
     return "\(defaultFirebaseProjectID(for: env)).appspot.com"
+  }
+
+  private func readGoogleServiceValue(_ key: String) -> String? {
+    guard let path = Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist"),
+      let dictionary = NSDictionary(contentsOfFile: path),
+      let raw = dictionary[key] as? String
+    else {
+      return nil
+    }
+
+    let value = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+    if value.isEmpty {
+      return nil
+    }
+    return value
   }
 
   func userNotificationCenter(
