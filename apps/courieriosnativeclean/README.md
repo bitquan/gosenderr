@@ -1,124 +1,95 @@
-# Senderr iOS Notes
+# Senderr iOS Native (`apps/courieriosnativeclean`)
 
-## Issue #122 (gRPC/modulemap build failures)
-- Canonical iOS project path: `apps/courieriosnativeclean/ios`
-- Canonical workspace: `apps/courieriosnativeclean/ios/Senderrappios.xcworkspace`
-- Canonical scheme: `Senderr`
-- Canonical template source: `templates/ios/*`
+This is the canonical iOS native app for Senderr.
 
-### Required setup
+## Canonical paths
+- App root: `apps/courieriosnativeclean`
+- iOS root: `apps/courieriosnativeclean/ios`
+- Workspace: `apps/courieriosnativeclean/ios/Senderrappios.xcworkspace`
+- Scheme: `Senderr`
+- Podfile path: `apps/courieriosnativeclean/ios/Podfile`
+- Canonical iOS templates: `templates/ios/*`
+
+## Prerequisites
+- Node 18+
+- `pnpm` 8+
+- Xcode current version
+- CocoaPods (`pod` command available)
+
+## Setup (repo root)
+Run from repo root:
+
 ```bash
 pnpm install
 pnpm run ios:bootstrap
 pnpm run ios:check
 ```
 
-### Validation commands
+What these do:
+- `ios:bootstrap`: syncs canonical iOS template files and runs `pod install`
+- `ios:check`: verifies there is exactly one active iOS Podfile and canonical workspace/scheme
+
+## Open in Xcode
+Open only:
+
+```bash
+open apps/courieriosnativeclean/ios/Senderrappios.xcworkspace
+```
+
+In Xcode:
+- select scheme `Senderr`
+- choose your simulator or physical device
+- Product -> Build / Run
+
+## Deterministic clean pod workflow (`#123`)
+If Xcode shows pod sandbox or module errors, run:
+
+```bash
+pnpm run ios:pod:check
+pnpm run ios:clean:install
+pnpm run ios:check
+```
+
+This workflow:
+- clears `Pods/` and `ios/build`
+- clears only `Senderr*` entries in DerivedData
+- clears CocoaPods cache
+- runs deterministic `pod install` (`--deployment` when lockfile exists)
+- verifies `Podfile.lock` equals `Pods/Manifest.lock`
+
+## Build validation
+From repo root:
+
 ```bash
 cd apps/courieriosnativeclean/ios
 xcodebuild -workspace Senderrappios.xcworkspace -scheme Senderr -configuration Debug -sdk iphoneos -destination 'generic/platform=iOS' clean build
 xcodebuild -workspace Senderrappios.xcworkspace -scheme Senderr -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' clean build
 ```
 
-### Physical device note
-- Ensure Metro is reachable from device (not `localhost`): use your Mac LAN IP (for example `192.168.0.76:8081`).
-
----
-
-## Issue #123 (clean pod install workflow)
-
-### Single command sequence
-```bash
-pnpm run ios:pod:check
-pnpm run ios:clean:build:debug
-```
-
-### What this does
-- Syncs canonical iOS templates (`Podfile`, `.xcode.env`, `LocalDebug.xcconfig`)
-- Clears project Pods + local iOS build folder
-- Clears Senderrappios DerivedData only
-- Clears CocoaPods cache
-- Runs deterministic pod install (`pod install --deployment` when `Podfile.lock` exists)
-- Verifies `Podfile.lock` and `Pods/Manifest.lock` are in sync
-
----
-
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
-
-# Getting Started
-
->**Note**: Make sure you have completed the [React Native - Environment Setup](https://reactnative.dev/docs/environment-setup) instructions till "Creating a new application" step, before proceeding.
-
-## Step 1: Start the Metro Server
-
-First, you will need to start **Metro**, the JavaScript _bundler_ that ships _with_ React Native.
-
-To start Metro, run the following command from the _root_ of your React Native project:
+## Physical device run
+Start Metro from app root:
 
 ```bash
-# using npm
-npm start
-
-# OR using Yarn
-yarn start
+cd apps/courieriosnativeclean
+pnpm start -- --reset-cache
 ```
 
-## Step 2: Start your Application
+Point the app to your Mac LAN IP (not `localhost`), for example:
+- `192.168.0.76:8081`
 
-Let Metro Bundler run in its _own_ terminal. Open a _new_ terminal from the _root_ of your React Native project. Run the following command to start your _Android_ or _iOS_ app:
+## Firebase config
+If app startup fails with `No such module FirebaseCore` or `FirebaseApp.configure()` errors:
+- confirm `GoogleService-Info.plist` exists at:
+  - `apps/courieriosnativeclean/ios/Senderrappios/GoogleService-Info.plist`
+- rerun:
+  - `pnpm run ios:clean:install`
 
-### For Android
+## Common pitfalls
+- Running `pod install` from the wrong folder:
+  - must run in `apps/courieriosnativeclean/ios`
+- Opening `.xcodeproj` instead of `.xcworkspace`
+- Using archived or legacy iOS project folders instead of canonical path
 
-```bash
-# using npm
-npm run android
-
-# OR using Yarn
-yarn android
-```
-
-### For iOS
-
-```bash
-# using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
-```
-
-If everything is set up _correctly_, you should see your new app running in your _Android Emulator_ or _iOS Simulator_ shortly provided you have set up your emulator/simulator correctly.
-
-This is one way to run your app — you can also run it directly from within Android Studio and Xcode respectively.
-
-## Step 3: Modifying your App
-
-Now that you have successfully run the app, let's modify it.
-
-1. Open `App.tsx` in your text editor of choice and edit some lines.
-2. For **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Developer Menu** (<kbd>Ctrl</kbd> + <kbd>M</kbd> (on Window and Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (on macOS)) to see your changes!
-
-   For **iOS**: Hit <kbd>Cmd ⌘</kbd> + <kbd>R</kbd> in your iOS Simulator to reload the app and see your changes!
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [Introduction to React Native](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you can't get this to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+## Related issues
+- `#123` Stabilize pod install and clean build workflow
+- `#126` Document build fixes in app README
