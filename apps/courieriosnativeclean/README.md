@@ -64,7 +64,7 @@ Defaults:
 - `Debug` builds default to `dev`
 - `Release` builds default to `prod`
 
-If Firebase keys are blank, the app safely falls back to local mock auth/jobs.
+If Firebase keys are blank, or Firebase calls fail at runtime, the app safely falls back to local mock auth/jobs.
 
 ## Related issues
 - `#123` Stabilize pod install and clean build workflow
@@ -74,6 +74,7 @@ If Firebase keys are blank, the app safely falls back to local mock auth/jobs.
 - `#129` Bundle identifiers + provisioning docs
 - `#131` Navigation structure
 - `#132` Base screen scaffolds
+- `#133` Wire base flows to mock data
 - `#134` Auth integration
 - `#135` Jobs list + detail read
 - `#136` Job status updates + actions
