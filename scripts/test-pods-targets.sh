@@ -9,7 +9,7 @@ set -u
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 IOS_DIR="${IOS_DIR:-$REPO_ROOT/apps/courieriosnativeclean/ios}"
 PODS_PROJECT="$IOS_DIR/Pods/Pods.xcodeproj"
-WORKSPACE="$IOS_DIR/Senderrappios.xcworkspace"
+WORKSPACE="$IOS_DIR/Senderr.xcworkspace"
 RESULTS_DIR="/tmp/pods-target-test-$(date +%s)"
 mkdir -p "$RESULTS_DIR"
 MODE="fast"
@@ -82,13 +82,13 @@ if [[ ${#TARGETS[@]} -eq 0 ]]; then
   exit 1
 fi
 
-# filter: skip aggregate "Pods-Senderrappios" target and any empty lines
+# filter: skip aggregate "Pods-Senderr" target and any empty lines
 FILTERED=()
 for t in "${TARGETS[@]}"; do
   if [[ -z "$t" ]]; then continue; fi
   if [[ "$t" =~ ^Pods- ]]; then continue; fi
   # skip user-facing aggregated targets
-  if [[ "$t" == "Senderrappios" || "$t" == "Pods-Senderrappios" ]]; then continue; fi
+  if [[ "$t" == "Senderr" || "$t" == "Pods-Senderr" ]]; then continue; fi
   FILTERED+=("$t")
 done
 

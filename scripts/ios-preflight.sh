@@ -4,7 +4,7 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 IOS_DIR="${IOS_DIR:-$REPO_ROOT/apps/courieriosnativeclean/ios}"
 PODFILE="$IOS_DIR/Podfile"
 PODS_DIR="$IOS_DIR/Pods"
-XCDEBUG="$PODS_DIR/Target Support Files/Pods-Senderrappios/Pods-Senderrappios.debug.xcconfig"
+XCDEBUG="$PODS_DIR/Target Support Files/Pods-Senderr/Pods-Senderr.debug.xcconfig"
 GRPC_XC="$PODS_DIR/Target Support Files/gRPC-Core/gRPC-Core.debug.xcconfig"
 BORING_XC="$PODS_DIR/Target Support Files/BoringSSL-GRPC/BoringSSL-GRPC.debug.xcconfig"
 DERIVED_ROOT="$HOME/Library/Developer/Xcode/DerivedData"
@@ -64,7 +64,7 @@ done
 
 # xcconfig checks
 if [ -f "$XCDEBUG" ]; then
-  echo "🔎 Inspecting OTHER_LDFLAGS in Pods-Senderrappios.debug.xcconfig"
+  echo "🔎 Inspecting OTHER_LDFLAGS in Pods-Senderr.debug.xcconfig"
   LDFLAGS=$(grep 'OTHER_LDFLAGS' "$XCDEBUG" || true)
   # Accept both quoted and unquoted -l tokens (e.g. -l"abseil" or -labseil)
   if echo "$LDFLAGS" | grep -E -q '\-l"?abseil"?' && echo "$LDFLAGS" | grep -E -q '\-l"?gRPC-Core"?'; then

@@ -11,22 +11,22 @@
 		711B9977605A84CDDF8303C1 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
-		9A765C6FDB257B9B2D379157 /* libPods-Senderrappios.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7AE3B08710D9316DACC17635 /* libPods-Senderrappios.a */; };
+		9A765C6FDB257B9B2D379157 /* libPods-Senderr.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7AE3B08710D9316DACC17635 /* libPods-Senderr.a */; };
 		A1F24B3C7D8E9F0011223345 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = A1F24B3C7D8E9F0011223344 /* GoogleService-Info.plist */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		13B07F961A680F5B00A75B9A /* Senderr.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Senderr.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = Senderrappios/Images.xcassets; sourceTree = "<group>"; };
-		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = Senderrappios/Info.plist; sourceTree = "<group>"; };
-		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = Senderrappios/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = Senderrappios/AppDelegate.swift; sourceTree = "<group>"; };
-		7AE3B08710D9316DACC17635 /* libPods-Senderrappios.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-Senderrappios.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = Senderrappios/LaunchScreen.storyboard; sourceTree = "<group>"; };
-		866CAAE1E2FF292711BDCF7A /* Pods-Senderrappios.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Senderrappios.debug.xcconfig"; path = "Target Support Files/Pods-Senderrappios/Pods-Senderrappios.debug.xcconfig"; sourceTree = "<group>"; };
+		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = Senderr/Images.xcassets; sourceTree = "<group>"; };
+		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = Senderr/Info.plist; sourceTree = "<group>"; };
+		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = Senderr/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = Senderr/AppDelegate.swift; sourceTree = "<group>"; };
+		7AE3B08710D9316DACC17635 /* libPods-Senderr.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-Senderr.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = Senderr/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		866CAAE1E2FF292711BDCF7A /* Pods-Senderr.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Senderr.debug.xcconfig"; path = "Target Support Files/Pods-Senderr/Pods-Senderr.debug.xcconfig"; sourceTree = "<group>"; };
 		A1B2C3D4E5F60123456789AB /* LocalDebug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = LocalDebug.xcconfig; path = LocalDebug.xcconfig; sourceTree = "<group>"; };
-		A1F24B3C7D8E9F0011223344 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "Senderrappios/GoogleService-Info.plist"; sourceTree = "<group>"; };
-		DFA2AE9B04A7CBE7E007741A /* Pods-Senderrappios.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Senderrappios.release.xcconfig"; path = "Target Support Files/Pods-Senderrappios/Pods-Senderrappios.release.xcconfig"; sourceTree = "<group>"; };
+		A1F24B3C7D8E9F0011223344 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "Senderr/GoogleService-Info.plist"; sourceTree = "<group>"; };
+		DFA2AE9B04A7CBE7E007741A /* Pods-Senderr.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Senderr.release.xcconfig"; path = "Target Support Files/Pods-Senderr/Pods-Senderr.release.xcconfig"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -35,14 +35,14 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				9A765C6FDB257B9B2D379157 /* libPods-Senderrappios.a in Frameworks */,
+				9A765C6FDB257B9B2D379157 /* libPods-Senderr.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		13B07FAE1A68108700A75B9A /* Senderrappios */ = {
+		13B07FAE1A68108700A75B9A /* Senderr */ = {
 			isa = PBXGroup;
 			children = (
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
@@ -53,14 +53,14 @@
 				13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */,
 				A1B2C3D4E5F60123456789AB /* LocalDebug.xcconfig */,
 			);
-			name = Senderrappios;
+			name = Senderr;
 			sourceTree = "<group>";
 		};
 		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				7AE3B08710D9316DACC17635 /* libPods-Senderrappios.a */,
+				7AE3B08710D9316DACC17635 /* libPods-Senderr.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -75,7 +75,7 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
-				13B07FAE1A68108700A75B9A /* Senderrappios */,
+				13B07FAE1A68108700A75B9A /* Senderr */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
@@ -97,8 +97,8 @@
 		BBD78D7AC51CEA395F1C20DB /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				866CAAE1E2FF292711BDCF7A /* Pods-Senderrappios.debug.xcconfig */,
-				DFA2AE9B04A7CBE7E007741A /* Pods-Senderrappios.release.xcconfig */,
+				866CAAE1E2FF292711BDCF7A /* Pods-Senderr.debug.xcconfig */,
+				DFA2AE9B04A7CBE7E007741A /* Pods-Senderr.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -106,9 +106,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		13B07F861A680F5B00A75B9A /* Senderrappios */ = {
+		13B07F861A680F5B00A75B9A /* Senderr */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "Senderrappios" */;
+			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "Senderr" */;
 			buildPhases = (
 				E3FDB19AE97360D828D69151 /* [CP] Check Pods Manifest.lock */,
 				13B07F871A680F5B00A75B9A /* Sources */,
@@ -122,7 +122,7 @@
 			);
 			dependencies = (
 			);
-			name = Senderrappios;
+			name = Senderr;
 			productName = Senderr;
 			productReference = 13B07F961A680F5B00A75B9A /* Senderr.app */;
 			productType = "com.apple.product-type.application";
@@ -140,7 +140,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "Senderrappios" */;
+			buildConfigurationList = 83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "Senderr" */;
 			compatibilityVersion = "Xcode 12.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -153,7 +153,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				13B07F861A680F5B00A75B9A /* Senderrappios */,
+				13B07F861A680F5B00A75B9A /* Senderr */,
 			);
 		};
 /* End PBXProject section */
@@ -195,15 +195,15 @@
 			files = (
 			);
 			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-Senderrappios/Pods-Senderrappios-resources-${CONFIGURATION}-input-files.xcfilelist",
+				"${PODS_ROOT}/Target Support Files/Pods-Senderr/Pods-Senderr-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-Senderrappios/Pods-Senderrappios-resources-${CONFIGURATION}-output-files.xcfilelist",
+				"${PODS_ROOT}/Target Support Files/Pods-Senderr/Pods-Senderr-resources-${CONFIGURATION}-output-files.xcfilelist",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Senderrappios/Pods-Senderrappios-resources.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Senderr/Pods-Senderr-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		E3FDB19AE97360D828D69151 /* [CP] Check Pods Manifest.lock */ = {
@@ -221,7 +221,7 @@
 			outputFileListPaths = (
 			);
 			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-Senderrappios-checkManifestLockResult.txt",
+				"$(DERIVED_FILE_DIR)/Pods-Senderr-checkManifestLockResult.txt",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -234,15 +234,15 @@
 			files = (
 			);
 			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-Senderrappios/Pods-Senderrappios-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+				"${PODS_ROOT}/Target Support Files/Pods-Senderr/Pods-Senderr-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-Senderrappios/Pods-Senderrappios-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+				"${PODS_ROOT}/Target Support Files/Pods-Senderr/Pods-Senderr-frameworks-${CONFIGURATION}-output-files.xcfilelist",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Senderrappios/Pods-Senderrappios-frameworks.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Senderr/Pods-Senderr-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -261,21 +261,21 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 866CAAE1E2FF292711BDCF7A /* Pods-Senderrappios.debug.xcconfig */;
+			baseConfigurationReference = 866CAAE1E2FF292711BDCF7A /* Pods-Senderr.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CODE_SIGN_ENTITLEMENTS = Senderrappios/Senderrappios.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Senderr/Senderr.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = G27DM624XF;
 				ENABLE_BITCODE = NO;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_INHIBIT_ALL_WARNINGS = NO;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
-				INFOPLIST_FILE = Senderrappios/Info.plist;
+				INFOPLIST_FILE = Senderr/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -297,20 +297,20 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = DFA2AE9B04A7CBE7E007741A /* Pods-Senderrappios.release.xcconfig */;
+			baseConfigurationReference = DFA2AE9B04A7CBE7E007741A /* Pods-Senderr.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CODE_SIGN_ENTITLEMENTS = Senderrappios/Senderrappios.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Senderr/Senderr.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = G27DM624XF;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_INHIBIT_ALL_WARNINGS = NO;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
-				INFOPLIST_FILE = Senderrappios/Info.plist;
+				INFOPLIST_FILE = Senderr/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -508,7 +508,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "Senderrappios" */ = {
+		13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "Senderr" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				13B07F941A680F5B00A75B9A /* Debug */,
@@ -517,7 +517,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "Senderrappios" */ = {
+		83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "Senderr" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				83CBBA201A601CBA00E9B192 /* Debug */,

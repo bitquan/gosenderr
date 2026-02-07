@@ -3,7 +3,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 IOS_DIR="$REPO_ROOT/apps/courieriosnativeclean/ios"
-WORKSPACE="$IOS_DIR/Senderrappios.xcworkspace"
+WORKSPACE="$IOS_DIR/Senderr.xcworkspace"
 SCHEME="Senderr"
 
 if [[ ! -d "$IOS_DIR" ]]; then

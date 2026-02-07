@@ -18,12 +18,12 @@ end
 
 platform :ios, '16.0'
 prepare_react_native_project!
-project 'Senderrappios.xcodeproj'
+project 'Senderr.xcodeproj'
 
 # Keep new architecture disabled until explicitly migrated.
 ENV['RCT_NEW_ARCH_ENABLED'] = '0'
 
-target 'Senderrappios' do
+target 'Senderr' do
   config = use_native_modules!
 
   use_react_native!(
