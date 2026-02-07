@@ -1,0 +1,52 @@
+repo_root = File.expand_path('../../../', __dir__)
+
+begin
+  require File.join(repo_root, 'node_modules', 'react-native', 'scripts', 'react_native_pods')
+rescue LoadError
+  rn_pods = Dir.glob(File.join(repo_root, 'node_modules', '.pnpm', 'react-native@*', 'node_modules', 'react-native', 'scripts', 'react_native_pods')).first
+  raise 'react_native_pods not found' unless rn_pods
+  require rn_pods
+end
+
+begin
+  require File.join(repo_root, 'node_modules', '@react-native-community', 'cli-platform-ios', 'native_modules')
+rescue LoadError
+  cli_ios = Dir.glob(File.join(repo_root, 'node_modules', '.pnpm', '@react-native-community+cli-platform-ios@*', 'node_modules', '@react-native-community', 'cli-platform-ios', 'native_modules')).first
+  raise 'cli-platform-ios native_modules not found' unless cli_ios
+  require cli_ios
+end
+
+platform :ios, '16.0'
+prepare_react_native_project!
+project 'Senderrappios.xcodeproj'
+
+# Keep new architecture disabled until explicitly migrated.
+ENV['RCT_NEW_ARCH_ENABLED'] = '0'
+
+target 'Senderrappios' do
+  config = use_native_modules!
+
+  use_react_native!(
+    :path => config[:reactNativePath],
+    :app_path => "#{Pod::Config.instance.installation_root}/.."
+  )
+
+  # AppDelegate imports FirebaseCore directly.
+  pod 'FirebaseCore', :modular_headers => true
+  pod 'FirebaseCoreInternal', :modular_headers => true
+  pod 'GoogleUtilities', :modular_headers => true
+
+  post_install do |installer|
+    react_native_post_install(
+      installer,
+      config[:reactNativePath],
+      :mac_catalyst_enabled => false
+    )
+
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |build_config|
+        build_config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'
+      end
+    end
+  end
+end

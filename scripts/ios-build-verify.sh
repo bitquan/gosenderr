@@ -85,8 +85,11 @@ run_build "DEBUG_SIMULATOR" \
   -workspace "$WORKSPACE" \
   -scheme "$SCHEME" \
   -configuration Debug \
+  -sdk iphonesimulator \
   -destination 'generic/platform=iOS Simulator' \
   clean build \
+  ONLY_ACTIVE_ARCH=YES \
+  ARCHS=arm64 \
   CODE_SIGNING_ALLOWED=NO
 
 run_build "DEBUG_DEVICE" \

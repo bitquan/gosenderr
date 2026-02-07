@@ -47,6 +47,7 @@
     "dev:check": "sh ./scripts/dev-checks.sh",
     "clean:env": "bash scripts/clean-environment.sh",
     "bootstrap:minimal": "bash scripts/bootstrap-minimal.sh",
+    "ios:clean:install": "bash scripts/ios-clean-install.sh",
     "ios:build:verify": "bash scripts/ios-build-verify.sh"
   },
   "devDependencies": {
