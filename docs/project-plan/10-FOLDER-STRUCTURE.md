@@ -35,7 +35,7 @@ gosenderr/
 │   │   ├── package.json
 │   │   └── vite.config.ts
 │   ├── admin-desktop/               # Admin (Electron)
-│   ├── courier-app/                 # Courier (web + Capacitor)
+│   ├── senderr-app/                 # Courier (web + Capacitor)
 │   ├── marketplace-app/             # Marketplace (web)
 │   └── landing/                     # Landing page
 │
@@ -299,7 +299,7 @@ gosenderr/
 │   │   ├── vite.config.ts
 │   │   └── README.md
 │   │
-│   ├── courier-app/                 # NEW: React Native iOS app
+│   ├── senderr-app/                 # NEW: React Native iOS app
 │   │   ├── ios/
 │   │   │   ├── CourierApp/
 │   │   │   ├── CourierApp.xcodeproj/
@@ -384,7 +384,7 @@ gosenderr/
 │   │   └── README.md
 │   │
 │   ├── admin-app/                   # Web admin (active)
-│   ├── courier-app/                 # Courier app (active)
+│   ├── senderr-app/                 # Courier app (active)
 │   ├── marketplace-app/             # Marketplace app (active)
 │   │
 │   └── landing/                     # Marketing landing page
@@ -657,7 +657,7 @@ package.json                  # Dependencies and scripts
 
 ---
 
-### `/apps/courier-app/`
+### `/apps/senderr-app/`
 
 **Purpose:** Native iOS app for delivery couriers
 
@@ -753,7 +753,7 @@ src/
 import { Button, Card, Avatar } from '@gosenderr/ui'
 ```
 
-**Note:** Only used by web apps (admin-desktop, marketplace-app). Not compatible with React Native (courier-app).
+**Note:** Only used by web apps (admin-desktop, marketplace-app). Not compatible with React Native (senderr-app).
 
 ---
 
@@ -864,11 +864,11 @@ pnpm exec cap init
 pnpm exec cap add ios
 ```
 
-**Step 4: Create Courier App**
+**Step 4: Create Senderr App**
 ```bash
 cd apps
 npx react-native@latest init CourierApp --template react-native-template-typescript
-mv CourierApp courier-app
+mv CourierApp senderr-app
 ```
 
 ### Phase 2: Update Workspace Configuration
@@ -910,8 +910,8 @@ packages:
     "build:marketplace": "pnpm --filter @gosenderr/marketplace-app build",
     "deploy:marketplace": "pnpm build:marketplace && firebase deploy --only hosting:marketplace",
     
-    "dev:courier": "pnpm --filter @gosenderr/courier-app start",
-    "ios:courier": "pnpm --filter @gosenderr/courier-app ios",
+    "dev:courier": "pnpm --filter @gosenderr/senderr-app start",
+    "ios:courier": "pnpm --filter @gosenderr/senderr-app ios",
     
     "deploy:functions": "firebase deploy --only functions",
     "deploy:all": "pnpm build && firebase deploy"
@@ -1080,7 +1080,7 @@ firebase/functions/src/orders/             # Backend
 ```
 packages/shared/src/types/job.ts           # Types
 apps/admin-desktop/src/pages/Jobs.tsx      # Admin UI
-apps/courier-app/src/screens/MapScreen.tsx # Courier UI
+apps/senderr-app/src/screens/MapScreen.tsx # Courier UI
 firebase/functions/src/jobs/               # Backend
 ```
 

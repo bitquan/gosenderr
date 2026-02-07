@@ -12,7 +12,7 @@ body:
         - Admin Desktop (Electron)
         - Admin Web (admin-app)
         - Marketplace (marketplace-app)
-        - Courier (courier-app)
+        - Senderr (senderr-app)
         - Landing/Marketing
         - Other
     validations:

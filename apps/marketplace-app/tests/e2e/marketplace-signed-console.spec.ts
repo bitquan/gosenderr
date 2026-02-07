@@ -1,7 +1,7 @@
 import { test } from '@playwright/test';
 
-const VENDOR_EMAIL = 'vender@sender.com';
-const VENDOR_PASS = 'admin123';
+const SELLER_EMAIL = 'seller@example.com';
+const SELLER_PASS = 'DemoPass123!';
 
 test('marketplace console when signed in', async ({ page }) => {
   page.on('console', (msg) => console.log('PAGE LOG:', msg.type(), msg.text()));
@@ -9,11 +9,10 @@ test('marketplace console when signed in', async ({ page }) => {
   await page.context().clearCookies();
   await page.evaluate(() => localStorage.clear());
   await page.goto('/login');
-  await page.getByText('Vendor').click();
-  await page.fill('input[type="email"]', VENDOR_EMAIL);
-  await page.fill('input[type="password"]', VENDOR_PASS);
+  await page.fill('input[type="email"]', SELLER_EMAIL);
+  await page.fill('input[type="password"]', SELLER_PASS);
   await page.click('button:has-text("Sign In")');
-  await page.waitForURL('**/vendor/dashboard');
+  await page.waitForURL('**/marketplace');
 
   await page.goto('/marketplace');
   // wait for data fetch

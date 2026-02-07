@@ -151,7 +151,7 @@ VITE_MAPBOX_ACCESS_TOKEN=pk.xxx
 VITE_API_URL=https://us-central1-gosenderr-6773f.cloudfunctions.net
 ```
 
-#### **apps/courier-app/.env**
+#### **apps/senderr-app/.env**
 ```bash
 FIREBASE_API_KEY=xxx
 FIREBASE_AUTH_DOMAIN=gosenderr-6773f.firebaseapp.com
@@ -738,7 +738,7 @@ sudo gem install cocoapods
 ### Development Build
 
 ```bash
-cd apps/courier-app
+cd apps/senderr-app
 
 # Install dependencies
 pnpm install
@@ -771,7 +771,7 @@ pnpm start --reset-cache
 #### Debug Build (for Testing)
 
 ```bash
-cd apps/courier-app
+cd apps/senderr-app
 
 # Build debug IPA
 cd ios
@@ -789,7 +789,7 @@ find ./build -name "*.app"
 #### Release Build
 
 ```bash
-cd apps/courier-app/ios
+cd apps/senderr-app/ios
 
 # Open Xcode workspace
 open CourierApp.xcworkspace
@@ -821,7 +821,7 @@ open CourierApp.xcworkspace
 
 #### React Native Build Script
 
-Add to `apps/courier-app/package.json`:
+Add to `apps/senderr-app/package.json`:
 ```json
 {
   "scripts": {
@@ -857,7 +857,7 @@ Same process as Marketplace iOS (see above), but with:
 
 Install CodePush for React Native:
 ```bash
-cd apps/courier-app
+cd apps/senderr-app
 
 # Install CodePush
 pnpm add react-native-code-push
@@ -1286,7 +1286,7 @@ cost-of-modules --no-install
 
 #### Pod install fails
 ```bash
-cd apps/marketplace-app/ios  # or courier-app/ios
+cd apps/marketplace-app/ios  # or senderr-app/ios
 rm -rf Pods Podfile.lock
 pod cache clean --all
 pod deintegrate
@@ -1316,7 +1316,7 @@ rm -rf ~/Library/Developer/Xcode/DerivedData/ModuleCache.noindex
 
 #### Metro bundler fails
 ```bash
-cd apps/courier-app
+cd apps/senderr-app
 watchman watch-del-all
 rm -rf node_modules
 pnpm install
