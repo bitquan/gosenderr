@@ -80,3 +80,4 @@ If Firebase keys are blank, the app safely falls back to local mock auth/jobs.
 - `#144` Location permissions + tracking
 - `#150` MVP acceptance criteria
 - `#161` Canonical iOS cleanup
+- `#165` Storage hardening (rules + regression tests)

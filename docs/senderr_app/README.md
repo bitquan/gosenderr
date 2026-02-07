@@ -20,6 +20,16 @@ Legacy duplicate iOS project/workspace folders are archived at `apps/_archive/le
 4. Open Xcode workspace:
    - `open apps/courieriosnativeclean/ios/Senderrappios.xcworkspace`
 
+## Storage hardening checks
+Run Storage rules regression tests from repo root:
+- `firebase emulators:exec --only firestore,storage "cd firebase && node tests/storageRules.test.mjs && node tests/storagePublicRead.test.mjs"`
+
+Coverage includes:
+- Marketplace public-read behavior remains intact
+- Delivery-proof uploads restricted to assigned courier
+- Admin read access for protected courier docs
+- Invalid path segment rejection for courier expense uploads
+
 ## Run on simulator/device
 1. Start Metro from app folder:
    - `cd apps/courieriosnativeclean && npx react-native start --reset-cache`
