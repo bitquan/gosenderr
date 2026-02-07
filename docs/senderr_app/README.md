@@ -76,6 +76,7 @@ Native precedence:
 3. Environment defaults (`dev` / `staging` / `prod`)
 
 ## Supporting docs
+- Smoke checklist: `docs/senderr_app/SMOKE_CHECKLIST.md`
 - Roadmap/progress tracker: `docs/senderr_app/ROADMAP.md`
 - App README (build fixes + troubleshooting): `apps/courieriosnativeclean/README.md`
 - Repo-wide playbook: `docs/DEVELOPER_PLAYBOOK.md`
