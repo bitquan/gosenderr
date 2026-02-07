@@ -76,6 +76,7 @@ Native precedence:
 3. Environment defaults (`dev` / `staging` / `prod`)
 
 ## Supporting docs
+- Roadmap/progress tracker: `docs/senderr_app/ROADMAP.md`
 - Navigation map: `docs/senderr_app/NAVIGATION_MAP.md`
 - MVP criteria: `docs/senderr_app/MVP_ACCEPTANCE.md`
 - Signing/provisioning: `docs/senderr_app/IOS_SIGNING.md`
