@@ -1,70 +1,65 @@
 # Senderr iOS Roadmap
 
-Last updated: 2026-02-07
-Source: GitHub issues with label `scope:courier`
+Last updated: 2026-02-07  
+Source: GitHub issues labeled `scope:courier`
 
 ## Snapshot
 
-- Total tracked courier iOS issues in current plan set (`#122`-`#150`, `#161`, `#165`): `31`
-- Done: `16`
-- Remaining: `15`
-- Completion: `51.6%`
+- Total `scope:courier` issues: `34`
+- Closed: `25`
+- Open: `9`
+- Completion: `73.5%`
 
-## In Progress
+## Active Queue (Open)
 
-- No active PR-review blockers in this issue set.
+P1:
 
-## Closeout Queue (Merged PR, Issue Still Open)
+1. `#182` docs(senderr-ios): refresh roadmap from live issue state and define update cadence
 
+P2:
+
+1. `#128` iOS Senderr: Update icons + launch screen
+2. `#137` iOS Senderr: Push notifications setup + local testing
+3. `#138` iOS Senderr: Add unit tests for critical screens
+4. `#141` iOS Senderr: TestFlight build + internal QA checklist
+5. `#143` iOS Senderr: Mapbox/Maps integration validation
+6. `#145` iOS Senderr: Offline mode for active job flow
+7. `#146` iOS Senderr: Crash/analytics integration
+
+P3:
+
+1. `#147` iOS Senderr: Release checklist + App Store metadata
+
+## Recently Completed (Most Recent)
+
+- `#126` iOS Senderr: Document build fixes in app README
+- `#142` iOS Senderr: Audit native dependencies for iOS 16 compatibility
+- `#139` iOS Senderr: Add smoke test checklist + CI script
+- `#140` iOS Senderr: Device testing matrix (iPhone 12-15, iOS 16-17)
 - `#149` iOS Senderr: Consolidate iOS build scripts
-  - PR: `#169` (merged) https://github.com/bitquan/gosenderr/pull/169
-  - Status: verify on current `senderr_app` head, then close issue
-- `#148` iOS Senderr: API/client config cleanup for native target
-  - PR: `#168` (merged) https://github.com/bitquan/gosenderr/pull/168
-  - Status: close issue after final acceptance check
 - `#130` iOS Senderr: Add build-time env config (dev/staging/prod)
-  - PR: `#164` (merged) https://github.com/bitquan/gosenderr/pull/164
-  - Status: close issue after env profile verification pass
+- `#148` iOS Senderr: API/client config cleanup for native target
+- `#133` iOS Senderr: Wire base flows to mock data
+- `#165` Storage hardening: tighten Firebase Storage rules + regression tests
+- `#161` iOS Senderr: Remove legacy duplicate iOS project folders
 
-## Next Up (Priority Order)
+## Working Rules
 
-1. `#149` iOS build scripts closeout (post-merge validation + issue close)
-2. `#130` Env config closeout verification + issue close
-3. `#126` Document build fixes in app README (closeout pass)
-4. `#139` Smoke test checklist + CI script
-5. `#140` Device testing matrix (iPhone 12-15, iOS 16-17)
-6. `#141` TestFlight build + internal QA checklist
-7. `#142` Native dependency audit for iOS 16 compatibility
+- Keep native app work in `apps/courieriosnativeclean` only.
+- Use one issue-focused branch and PR per change set.
+- Target branch for this stream is `senderr_app`.
 
-## Feature Backlog (P2/P3)
+## Update Cadence (Required)
 
-- `#137` Push notifications setup + local testing
-- `#138` Unit tests for critical screens
-- `#143` Mapbox/Maps integration validation
-- `#145` Offline mode for active job flow
-- `#146` Crash/analytics integration
-- `#147` Release checklist + App Store metadata
-- `#128` Update icons + launch screen
+Update this roadmap:
 
-## Done (Key Milestones)
+1. On every merged PR that closes a `scope:courier` issue.
+2. During weekly maintenance sweep (Friday).
+3. Before milestone reviews or release planning.
 
-- `#122` gRPC/BoringSSL iOS build failure fix
-- `#123` Pod install + clean build workflow stabilization
-- `#124` Header search/modulemap alignment
-- `#125` Debug + Release build verification
-- `#127` App identity renamed to Senderr
-- `#129` Bundle IDs + provisioning verified
-- `#131` Base navigation structure confirmed
-- `#132` Base screen scaffolds implemented
-- `#134` Auth integration
-- `#135` Jobs list + detail read
-- `#136` Job status updates + actions
-- `#144` Location permissions + tracking
-- `#150` MVP acceptance criteria
-- `#161` Canonical iOS cleanup (single active app path)
-- `#165` Storage hardening + regression tests
+Update process:
 
-## Working Rule
-
-- Keep all native work in `apps/courieriosnativeclean` only.
-- Open PRs against `senderr_app` with one issue-focused change set per PR.
+1. Pull live issue status from GitHub labels (`scope:courier`).
+2. Remove any closed issue from active queue immediately.
+3. Recompute snapshot totals (total/closed/open/completion).
+4. Commit roadmap refresh in the same PR when issue state changes.
