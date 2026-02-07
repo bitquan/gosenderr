@@ -33,13 +33,29 @@ For physical devices, point Metro host to your machine IP in `AppDelegate.swift`
 - Jobs: list/detail read, optimistic status action updates.
 - Location: permission request and tracking hook with latest coordinate snapshot.
 
-## Environment variables (runtime)
+## Build-time environment config
+- Env profile files:
+  - `apps/courieriosnativeclean/ios/config/env/dev.xcconfig`
+  - `apps/courieriosnativeclean/ios/config/env/staging.xcconfig`
+  - `apps/courieriosnativeclean/ios/config/env/prod.xcconfig`
+- Build helper:
+  - `bash scripts/ios-build-env.sh dev`
+  - `bash scripts/ios-build-env.sh staging`
+  - `bash scripts/ios-build-env.sh prod Release`
+
+Injected build-time keys:
+- `SENDERR_ENV_NAME`
+- `SENDERR_API_BASE_URL`
 - `SENDERR_FIREBASE_API_KEY`
 - `SENDERR_FIREBASE_AUTH_DOMAIN`
 - `SENDERR_FIREBASE_PROJECT_ID`
 - `SENDERR_FIREBASE_STORAGE_BUCKET`
 - `SENDERR_FIREBASE_MESSAGING_SENDER_ID`
 - `SENDERR_FIREBASE_APP_ID`
+
+Defaults:
+- `Debug` => `dev`
+- `Release` => `prod`
 
 ## Supporting docs
 - Navigation map: `docs/senderr_app/NAVIGATION_MAP.md`

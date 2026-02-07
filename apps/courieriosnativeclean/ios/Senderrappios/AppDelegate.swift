@@ -30,7 +30,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
       return false
     }
 
-    let rootView = RCTRootView(bridge: bridge, moduleName: "Senderrappios", initialProperties: nil)
+    let rootView = RCTRootView(
+      bridge: bridge,
+      moduleName: "Senderrappios",
+      initialProperties: buildRuntimeInitialProperties()
+    )
     let rootViewController = UIViewController()
     rootViewController.view = rootView
     window?.rootViewController = rootViewController
@@ -51,6 +55,78 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
         "Firebase disabled: GoogleService-Info.plist is missing from app bundle for target Senderrappios."
       )
     }
+  }
+
+  private func buildRuntimeInitialProperties() -> [String: Any] {
+    let isDebugBuild = _isDebugAssertConfiguration()
+    let envName = readInfoValue("SenderrEnvName") ?? (isDebugBuild ? "dev" : "prod")
+    let apiBaseUrl = normalizedAPIBaseURL(readInfoValue("SenderrApiBaseUrl") ?? defaultApiBaseURL(for: envName))
+
+    let firebase: [String: String] = [
+      "apiKey": readInfoValue("SenderrFirebaseApiKey") ?? "",
+      "authDomain": readInfoValue("SenderrFirebaseAuthDomain") ?? defaultFirebaseAuthDomain(for: envName),
+      "projectId": readInfoValue("SenderrFirebaseProjectId") ?? defaultFirebaseProjectID(for: envName),
+      "storageBucket": readInfoValue("SenderrFirebaseStorageBucket") ?? defaultFirebaseStorageBucket(for: envName),
+      "messagingSenderId": readInfoValue("SenderrFirebaseMessagingSenderId") ?? "",
+      "appId": readInfoValue("SenderrFirebaseAppId") ?? "",
+    ]
+
+    return [
+      "runtimeConfig": [
+        "envName": envName,
+        "apiBaseUrl": apiBaseUrl,
+        "firebase": firebase,
+      ],
+    ]
+  }
+
+  private func readInfoValue(_ key: String) -> String? {
+    guard let raw = Bundle.main.object(forInfoDictionaryKey: key) as? String else {
+      return nil
+    }
+    let value = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+    if value.isEmpty || value.hasPrefix("$(") {
+      return nil
+    }
+    return value
+  }
+
+  private func defaultApiBaseURL(for env: String) -> String {
+    switch env.lowercased() {
+    case "prod", "production":
+      return "https://api.gosenderr.com"
+    case "staging":
+      return "https://staging-api.gosenderr.com"
+    default:
+      return "https://dev-api.gosenderr.com"
+    }
+  }
+
+  private func normalizedAPIBaseURL(_ value: String) -> String {
+    let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+    if trimmed.hasPrefix("http://") || trimmed.hasPrefix("https://") {
+      return trimmed
+    }
+    return "https://\(trimmed)"
+  }
+
+  private func defaultFirebaseProjectID(for env: String) -> String {
+    switch env.lowercased() {
+    case "prod", "production":
+      return "gosenderr-6773f"
+    case "staging":
+      return "gosenderr-staging"
+    default:
+      return "gosenderr-dev"
+    }
+  }
+
+  private func defaultFirebaseAuthDomain(for env: String) -> String {
+    return "\(defaultFirebaseProjectID(for: env)).firebaseapp.com"
+  }
+
+  private func defaultFirebaseStorageBucket(for env: String) -> String {
+    return "\(defaultFirebaseProjectID(for: env)).appspot.com"
   }
 
   func userNotificationCenter(

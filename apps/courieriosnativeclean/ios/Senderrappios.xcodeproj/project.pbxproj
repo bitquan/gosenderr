@@ -281,18 +281,26 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					"-ObjC",
-					"-lc++",
-				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.gosenderr.senderr;
-				PRODUCT_NAME = Senderr;
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_VERSION = 5.0;
-				VERSIONING_SYSTEM = "apple-generic";
-			};
+					MARKETING_VERSION = 1.0;
+					OTHER_LDFLAGS = (
+						"$(inherited)",
+						"-ObjC",
+						"-lc++",
+					);
+					PRODUCT_BUNDLE_IDENTIFIER = com.gosenderr.senderr;
+					PRODUCT_NAME = Senderr;
+					SENDERR_API_BASE_URL = "https://dev-api.gosenderr.com";
+					SENDERR_ENV_NAME = dev;
+					SENDERR_FIREBASE_API_KEY = "";
+					SENDERR_FIREBASE_APP_ID = "";
+					SENDERR_FIREBASE_AUTH_DOMAIN = "gosenderr-dev.firebaseapp.com";
+					SENDERR_FIREBASE_MESSAGING_SENDER_ID = "";
+					SENDERR_FIREBASE_PROJECT_ID = gosenderr-dev;
+					SENDERR_FIREBASE_STORAGE_BUCKET = "gosenderr-dev.appspot.com";
+					SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+					SWIFT_VERSION = 5.0;
+					VERSIONING_SYSTEM = "apple-generic";
+				};
 			name = Debug;
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
@@ -316,17 +324,25 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					"-ObjC",
-					"-lc++",
-				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.gosenderr.senderr;
-				PRODUCT_NAME = Senderr;
-				SWIFT_VERSION = 5.0;
-				VERSIONING_SYSTEM = "apple-generic";
-			};
+					MARKETING_VERSION = 1.0;
+					OTHER_LDFLAGS = (
+						"$(inherited)",
+						"-ObjC",
+						"-lc++",
+					);
+					PRODUCT_BUNDLE_IDENTIFIER = com.gosenderr.senderr;
+					PRODUCT_NAME = Senderr;
+					SENDERR_API_BASE_URL = "https://api.gosenderr.com";
+					SENDERR_ENV_NAME = prod;
+					SENDERR_FIREBASE_API_KEY = "";
+					SENDERR_FIREBASE_APP_ID = "";
+					SENDERR_FIREBASE_AUTH_DOMAIN = "gosenderr-6773f.firebaseapp.com";
+					SENDERR_FIREBASE_MESSAGING_SENDER_ID = "";
+					SENDERR_FIREBASE_PROJECT_ID = gosenderr-6773f;
+					SENDERR_FIREBASE_STORAGE_BUCKET = "gosenderr-6773f.appspot.com";
+					SWIFT_VERSION = 5.0;
+					VERSIONING_SYSTEM = "apple-generic";
+				};
 			name = Release;
 		};
 		83CBBA201A601CBA00E9B192 /* Debug */ = {
