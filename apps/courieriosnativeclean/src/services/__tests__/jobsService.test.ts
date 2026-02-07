@@ -19,6 +19,7 @@ const mockDoc = jest.fn();
 const mockUpdateDoc = jest.fn();
 const mockGetDoc = jest.fn();
 const mockServerTimestamp = jest.fn(() => 'SERVER_TIMESTAMP');
+const mockOnSnapshot = jest.fn();
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
   __esModule: true,
@@ -44,9 +45,11 @@ jest.mock('firebase/firestore', () => ({
   updateDoc: mockUpdateDoc,
   getDoc: mockGetDoc,
   serverTimestamp: () => mockServerTimestamp(),
+  onSnapshot: mockOnSnapshot,
 }));
 
-import {fetchJobs, updateJobStatus} from '../jobsService';
+import {runtimeConfig} from '../../config/runtime';
+import {fetchJobs, subscribeJobs, updateJobStatus} from '../jobsService';
 
 const session: AuthSession = {
   uid: 'courier_123',
@@ -72,6 +75,7 @@ describe('jobsService firebase/mock fallback', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.spyOn(console, 'warn').mockImplementation(() => {});
+    runtimeConfig.envName = 'dev';
 
     mockIsFirebaseReady.mockReturnValue(true);
     mockGetFirebaseServices.mockReturnValue({db: {}} as unknown);
@@ -130,6 +134,92 @@ describe('jobsService firebase/mock fallback', () => {
     expect(jobs).toHaveLength(1);
     expect(jobs[0].id).toBe('remote_job_1');
     expect(jobs[0].status).toBe('accepted');
+    expect(mockGetItem).not.toHaveBeenCalled();
+  });
+
+  it('streams listener updates and reports live sync state', () => {
+    let onNext: ((snapshot: any) => void) | null = null;
+    const detach = jest.fn();
+    mockOnSnapshot.mockImplementation((...args: any[]) => {
+      onNext = args[2] as (snapshot: any) => void;
+      return detach;
+    });
+
+    const states: {status: string; stale: boolean}[] = [];
+    const payloads: Job[][] = [];
+
+    const subscription = subscribeJobs(session, {
+      onJobs: nextJobs => payloads.push(nextJobs),
+      onSyncState: state => states.push({status: state.status, stale: state.stale}),
+    });
+
+    expect(states[0]?.status).toBe('connecting');
+
+    if (!onNext) {
+      throw new Error('Expected snapshot handler to be registered');
+    }
+    const nextHandler = onNext as (snapshot: any) => void;
+
+    nextHandler({
+      docs: [
+        {
+          id: 'remote_job_listener',
+          data: () => ({
+            customerName: 'Listener Customer',
+            pickupAddress: 'Pickup',
+            dropoffAddress: 'Dropoff',
+            etaMinutes: 12,
+            status: 'accepted',
+          }),
+        },
+      ],
+      metadata: {fromCache: false},
+    });
+
+    expect(payloads[0]?.[0].id).toBe('remote_job_listener');
+    expect(states[states.length - 1]?.status).toBe('live');
+    expect(states[states.length - 1]?.stale).toBe(false);
+
+    subscription.unsubscribe();
+    expect(detach).toHaveBeenCalled();
+  });
+
+  it('retries listener attach with backoff after disconnect', () => {
+    jest.useFakeTimers();
+
+    let onError: ((error: Error) => void) | null = null;
+    mockOnSnapshot.mockImplementation((...args: any[]) => {
+      onError = args[3] as (error: Error) => void;
+      return jest.fn();
+    });
+
+    const states: {status: string; reconnectAttempt: number}[] = [];
+    const subscription = subscribeJobs(session, {
+      onJobs: () => {},
+      onSyncState: state => states.push({status: state.status, reconnectAttempt: state.reconnectAttempt}),
+    });
+
+    if (!onError) {
+      throw new Error('Expected error handler to be registered');
+    }
+    const errorHandler = onError as (error: Error) => void;
+
+    errorHandler(new Error('socket disconnected'));
+    expect(states[states.length - 1]?.status).toBe('reconnecting');
+    expect(states[states.length - 1]?.reconnectAttempt).toBe(1);
+
+    jest.advanceTimersByTime(1000);
+    expect(mockOnSnapshot).toHaveBeenCalledTimes(2);
+
+    subscription.unsubscribe();
+    jest.useRealTimers();
+  });
+
+  it('does not silently fall back to local seed jobs in prod mode', async () => {
+    runtimeConfig.envName = 'prod';
+    (mockGetDocs as any).mockRejectedValue(new Error('network unavailable'));
+
+    await expect(fetchJobs(session)).rejects.toThrow('fetchJobs failed in Firebase mode');
     expect(mockGetItem).not.toHaveBeenCalled();
   });
 });

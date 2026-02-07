@@ -47,8 +47,8 @@ For physical devices, point Metro host to your machine IP in `AppDelegate.swift`
 ## Current courier shell
 - Auth: login/logout via Firebase where configured; local mock fallback for offline dev.
 - Navigation: dashboard / jobs / settings tabs + job detail route.
-- Jobs: list/detail read, optimistic status action updates.
-- Jobs fallback: when Firebase read/write fails at runtime, jobs flow falls back to AsyncStorage-backed local mock data.
+- Jobs: app-level real-time sync with Firestore listener, reconnect backoff, stale-data indicator, and optimistic status updates.
+- Jobs fallback: AsyncStorage mock fallback is allowed only outside production mode.
 - Location: permission request and tracking hook with latest coordinate snapshot.
 
 ## Build-time environment config
@@ -77,9 +77,11 @@ Defaults:
 - `Release` => `prod`
 
 Native precedence:
-1. Values injected through `Info.plist` build settings (`SENDERR_*`)
-2. `GoogleService-Info.plist` values for Firebase keys/project/bucket/app ID/sender ID
+1. `GoogleService-Info.plist` values for Firebase keys/project/bucket/app ID/sender ID
+2. Values injected through `Info.plist` build settings (`SENDERR_*`)
 3. Environment defaults (`dev` / `staging` / `prod`)
+
+This ordering prevents mixed Firebase runtime config (for example, API key from plist + projectId from xcconfig), which can cause Firestore role checks to fail as "offline" even when network is available.
 
 Auth mode rules:
 - Firebase auth is the default and required path.
@@ -122,3 +124,4 @@ Rules:
 - MVP criteria: `docs/senderr_app/MVP_ACCEPTANCE.md`
 - Signing/provisioning: `docs/senderr_app/IOS_SIGNING.md`
 - Flow audit guide: `docs/senderr_app/AUDIT.md`
+- Jobs schema migration: `docs/senderr_app/JOBS_SCHEMA_MIGRATION.md`

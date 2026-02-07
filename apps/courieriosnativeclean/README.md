@@ -81,6 +81,8 @@ Rules:
 - Screens and UI context must consume services via `useServiceRegistry()`.
 - SDK-specific code stays inside adapters, not screen components.
 - New integrations must add a port contract first, then adapter implementation.
+- Jobs sync path uses repository subscription (`subscribeJobs`) with reconnect/stale state surfaced to screens.
+- Production mode does not silently fallback to local seed jobs for Firestore failures.
 
 ## Deploy
 
@@ -115,10 +117,15 @@ For environment profile builds:
 - `Firebase auth is required` on login:
   - Ensure `SENDERR_FIREBASE_*` values are present and valid for current profile.
   - For local-only fallback testing, explicitly set `SENDERR_ALLOW_MOCK_AUTH = 1` in a non-production config.
+- `Unable to verify courier access while offline` immediately after sign-in:
+  - Confirm `GoogleService-Info.plist` matches the active app and Firebase project.
+  - Confirm target bundle ID matches the plist bundle ID (or replace plist with one for the current bundle ID).
+  - Run `pnpm run ios:clean:install`, then rebuild from `Senderrappios.xcworkspace`.
 
 ## Links
 
 - Repo docs policy: `/docs/BLUEPRINT.md`
 - Senderr iOS docs hub: `/docs/senderr_app/README.md`
 - Senderr iOS roadmap: `/docs/senderr_app/ROADMAP.md`
+- Jobs schema migration path: `/docs/senderr_app/JOBS_SCHEMA_MIGRATION.md`
 - App docs registry: `/docs/apps/README.md`

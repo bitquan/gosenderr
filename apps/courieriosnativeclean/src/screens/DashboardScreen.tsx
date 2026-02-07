@@ -1,44 +1,27 @@
-import React, {useEffect, useMemo, useState} from 'react';
+import React from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 
 import {PrimaryButton} from '../components/PrimaryButton';
 import {ScreenContainer} from '../components/ScreenContainer';
 import {useAuth} from '../context/AuthContext';
 import {useServiceRegistry} from '../services/serviceRegistry';
-import type {Job} from '../types/jobs';
 
-export const DashboardScreen = ({onOpenJobs}: {onOpenJobs: () => void}): React.JSX.Element => {
+type DashboardScreenProps = {
+  onOpenJobs: () => void;
+  activeJobsCount: number;
+  loadingJobs: boolean;
+  jobsError: string | null;
+};
+
+export const DashboardScreen = ({
+  onOpenJobs,
+  activeJobsCount,
+  loadingJobs,
+  jobsError,
+}: DashboardScreenProps): React.JSX.Element => {
   const {session} = useAuth();
-  const {jobs: jobsService, location: locationService} = useServiceRegistry();
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [jobsError, setJobsError] = useState<string | null>(null);
-  const [loadingJobs, setLoadingJobs] = useState(false);
+  const {location: locationService} = useServiceRegistry();
   const {state: locationState, startTracking, stopTracking} = locationService.useLocationTracking();
-
-  useEffect(() => {
-    const loadJobs = async (): Promise<void> => {
-      if (!session) {
-        return;
-      }
-
-      setLoadingJobs(true);
-      setJobsError(null);
-      try {
-        setJobs(await jobsService.fetchJobs(session));
-      } catch (error) {
-        setJobsError(error instanceof Error ? error.message : 'Unable to load jobs.');
-      } finally {
-        setLoadingJobs(false);
-      }
-    };
-
-    void loadJobs();
-  }, [jobsService, session]);
-
-  const activeJobsCount = useMemo(
-    () => jobs.filter(job => job.status !== 'delivered' && job.status !== 'cancelled').length,
-    [jobs],
-  );
 
   return (
     <ScreenContainer>

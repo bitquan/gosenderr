@@ -80,3 +80,48 @@ Append-only log used for session recovery.
 - Blockers: None
 - Next:
   - open PR for #202 and continue #203 realtime jobs
+
+---
+
+## 2026-02-07 14:44 local (2026-02-07 19:44 UTC)
+
+- Status: `in_progress`
+- Summary: merged #202 via replacement PR #213; started #203 realtime jobs sync; patched auth role verification to tolerate transient Firestore offline with recent role cache
+- Branch: `codex/issue-203-realtime-jobs-sync`
+- Commit: `working tree`
+- Issue: `#203`
+- PR: `n/a`
+- Files:
+  - `apps/courieriosnativeclean/src/services/jobsService.ts`
+  - `apps/courieriosnativeclean/src/services/ports/jobsPort.ts`
+  - `apps/courieriosnativeclean/src/screens/JobsScreen.tsx`
+  - `apps/courieriosnativeclean/src/screens/DashboardScreen.tsx`
+  - `apps/courieriosnativeclean/App.tsx`
+  - `apps/courieriosnativeclean/src/services/authService.ts`
+  - `docs/senderr_app/JOBS_SCHEMA_MIGRATION.md`
+- Blockers:
+  - RN Jest transform config still fails before test execution (`@react-native/js-polyfills`), pre-existing
+- Next:
+  - finish #203 validation and open PR linked to #203
+
+---
+
+## 2026-02-07 15:54 local (2026-02-07 20:54 UTC)
+
+- Status: `in_progress`
+- Summary: patched Senderr iOS auth to avoid offline courier-access false negatives by adding ID token claims fallback and stale role-cache fallback on transient Firestore failures
+- Branch: `codex/issue-203-realtime-jobs-sync`
+- Commit: `working tree`
+- Issue: `#203`
+- PR: `#214`
+- Files:
+  - `apps/courieriosnativeclean/src/services/authService.ts`
+  - `docs/dev/SESSION_STATE.md`
+  - `docs/dev/WORKLOG.md`
+- Validation:
+  - `pnpm --filter courieriosnativeclean exec tsc --noEmit`
+- Blockers:
+  - none for this patch; Xcode pod builds remain verbose with RN/Folly warnings
+- Next:
+  - verify sign-in on physical iPhone with transient/offline Firestore conditions
+  - continue #203 PR updates

@@ -61,28 +61,30 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     let isDebugBuild = _isDebugAssertConfiguration()
     let envName = readInfoValue("SenderrEnvName") ?? (isDebugBuild ? "dev" : "prod")
     let apiBaseUrl = normalizedAPIBaseURL(readInfoValue("SenderrApiBaseUrl") ?? defaultApiBaseURL(for: envName))
+    // Keep JS Firebase config internally consistent by preferring one source:
+    // GoogleService-Info.plist (if present) first, then Info.plist overrides, then defaults.
     let firebaseProjectID =
-      readInfoValue("SenderrFirebaseProjectId")
-      ?? readGoogleServiceValue("PROJECT_ID")
+      readGoogleServiceValue("PROJECT_ID")
+      ?? readInfoValue("SenderrFirebaseProjectId")
       ?? defaultFirebaseProjectID(for: envName)
     let firebaseAuthDomain =
-      readInfoValue("SenderrFirebaseAuthDomain")
-      ?? defaultFirebaseAuthDomain(for: firebaseProjectID)
+      defaultFirebaseAuthDomain(for: firebaseProjectID)
+      ?? readInfoValue("SenderrFirebaseAuthDomain")
       ?? defaultFirebaseAuthDomain(for: envName)
     let firebaseStorageBucket =
-      readInfoValue("SenderrFirebaseStorageBucket")
-      ?? readGoogleServiceValue("STORAGE_BUCKET")
+      readGoogleServiceValue("STORAGE_BUCKET")
+      ?? readInfoValue("SenderrFirebaseStorageBucket")
       ?? defaultFirebaseStorageBucket(for: envName)
 
     let firebase: [String: String] = [
-      "apiKey": readInfoValue("SenderrFirebaseApiKey") ?? readGoogleServiceValue("API_KEY") ?? "",
+      "apiKey": readGoogleServiceValue("API_KEY") ?? readInfoValue("SenderrFirebaseApiKey") ?? "",
       "authDomain": firebaseAuthDomain,
       "projectId": firebaseProjectID,
       "storageBucket": firebaseStorageBucket,
-      "messagingSenderId": readInfoValue("SenderrFirebaseMessagingSenderId")
-        ?? readGoogleServiceValue("GCM_SENDER_ID")
+      "messagingSenderId": readGoogleServiceValue("GCM_SENDER_ID")
+        ?? readInfoValue("SenderrFirebaseMessagingSenderId")
         ?? "",
-      "appId": readInfoValue("SenderrFirebaseAppId") ?? readGoogleServiceValue("GOOGLE_APP_ID") ?? "",
+      "appId": readGoogleServiceValue("GOOGLE_APP_ID") ?? readInfoValue("SenderrFirebaseAppId") ?? "",
     ]
 
     return [

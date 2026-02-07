@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {ActivityIndicator, Pressable, StyleSheet, Text, View} from 'react-native';
 
 import {AuthProvider, useAuth} from './src/context/AuthContext';
@@ -8,45 +8,106 @@ import {JobsScreen} from './src/screens/JobsScreen';
 import {LoginScreen} from './src/screens/LoginScreen';
 import {SettingsScreen} from './src/screens/SettingsScreen';
 import {configureRuntime, type NativeRuntimeConfig} from './src/config/runtime';
+import type {JobsSubscription, JobsSyncState} from './src/services/ports/jobsPort';
 import {ServiceRegistryProvider, useServiceRegistry} from './src/services/serviceRegistry';
 import type {Job} from './src/types/jobs';
 
 type TabKey = 'dashboard' | 'jobs' | 'settings';
 
+const DEFAULT_JOBS_SYNC_STATE: JobsSyncState = {
+  status: 'idle',
+  stale: false,
+  reconnectAttempt: 0,
+  lastSyncedAt: null,
+  message: null,
+  source: 'firebase',
+};
+
 const AppShell = (): React.JSX.Element => {
   const {session, initializing} = useAuth();
   const {jobs: jobsService} = useServiceRegistry();
+  const jobsSubscriptionRef = useRef<JobsSubscription | null>(null);
   const [activeTab, setActiveTab] = useState<TabKey>('dashboard');
   const [jobs, setJobs] = useState<Job[]>([]);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [jobsLoading, setJobsLoading] = useState(false);
   const [jobsError, setJobsError] = useState<string | null>(null);
+  const [jobsSyncState, setJobsSyncState] = useState<JobsSyncState>(DEFAULT_JOBS_SYNC_STATE);
 
   useEffect(() => {
-    const loadJobs = async (): Promise<void> => {
-      if (!session) {
-        setJobs([]);
-        setSelectedJobId(null);
-        return;
-      }
+    jobsSubscriptionRef.current?.unsubscribe();
+    jobsSubscriptionRef.current = null;
 
-      setJobsLoading(true);
+    if (!session) {
+      setJobs([]);
+      setSelectedJobId(null);
+      setJobsLoading(false);
       setJobsError(null);
-      try {
-        setJobs(await jobsService.fetchJobs(session));
-      } catch (error) {
-        setJobsError(error instanceof Error ? error.message : 'Unable to load jobs.');
-      } finally {
+      setJobsSyncState(DEFAULT_JOBS_SYNC_STATE);
+      return;
+    }
+
+    setJobsLoading(true);
+    setJobsError(null);
+
+    const subscription = jobsService.subscribeJobs(session, {
+      onJobs: nextJobs => {
+        setJobs(nextJobs);
         setJobsLoading(false);
+      },
+      onSyncState: nextSyncState => {
+        setJobsSyncState(nextSyncState);
+        if (nextSyncState.status === 'error' && nextSyncState.message) {
+          setJobsError(nextSyncState.message);
+          setJobsLoading(false);
+        }
+        if (nextSyncState.status === 'live' || nextSyncState.status === 'stale') {
+          setJobsLoading(false);
+        }
+      },
+    });
+
+    jobsSubscriptionRef.current = subscription;
+
+    void subscription.refresh().catch(error => {
+      setJobsError(error instanceof Error ? error.message : 'Unable to load jobs.');
+      setJobsLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+      if (jobsSubscriptionRef.current === subscription) {
+        jobsSubscriptionRef.current = null;
       }
     };
+  }, [jobsService, session]);
 
-    void loadJobs();
+  const refreshJobs = useCallback(async (): Promise<Job[]> => {
+    if (!session) {
+      return [];
+    }
+
+    setJobsError(null);
+    try {
+      const nextJobs = jobsSubscriptionRef.current
+        ? await jobsSubscriptionRef.current.refresh()
+        : await jobsService.fetchJobs(session);
+      setJobs(nextJobs);
+      return nextJobs;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to refresh jobs.';
+      setJobsError(message);
+      throw error;
+    }
   }, [jobsService, session]);
 
   const selectedJob = useMemo(
     () => (selectedJobId ? jobs.find(job => job.id === selectedJobId) ?? null : null),
     [jobs, selectedJobId],
+  );
+  const activeJobsCount = useMemo(
+    () => jobs.filter(job => job.status !== 'delivered' && job.status !== 'cancelled').length,
+    [jobs],
   );
 
   if (initializing) {
@@ -79,7 +140,12 @@ const AppShell = (): React.JSX.Element => {
     <View style={styles.root}>
       <View style={styles.content}>
         {activeTab === 'dashboard' ? (
-          <DashboardScreen onOpenJobs={() => setActiveTab('jobs')} />
+          <DashboardScreen
+            onOpenJobs={() => setActiveTab('jobs')}
+            activeJobsCount={activeJobsCount}
+            loadingJobs={jobsLoading}
+            jobsError={jobsError}
+          />
         ) : null}
 
         {activeTab === 'jobs' ? (
@@ -94,6 +160,8 @@ const AppShell = (): React.JSX.Element => {
             <JobsScreen
               jobs={jobs}
               setJobs={setJobs}
+              syncState={jobsSyncState}
+              onRefresh={refreshJobs}
               onOpenDetail={jobId => {
                 setSelectedJobId(jobId);
               }}
