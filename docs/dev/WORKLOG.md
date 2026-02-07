@@ -40,3 +40,23 @@ Append-only log used for session recovery.
 - Blockers: None
 - Next:
   - merge PR #173 and continue next Senderr roadmap issue
+
+---
+
+## 2026-02-07 14:21 local (2026-02-07 19:21 UTC)
+
+- Status: `in_progress`
+- Summary: implemented Senderr iOS service ports/adapters registry baseline (#207)
+- Branch: `codex/issue-207-upgrade-architecture`
+- Commit: `f89b39a`
+- Issue: `#207`
+- PR: `n/a`
+- Files:
+  - `apps/courieriosnativeclean/src/services/serviceRegistry.tsx`
+  - `apps/courieriosnativeclean/src/services/ports/authPort.ts`
+  - `apps/courieriosnativeclean/src/services/adapters/authFirebaseAdapter.ts`
+  - `apps/courieriosnativeclean/App.tsx`
+  - `docs/senderr_app/README.md`
+- Blockers: None
+- Next:
+  - open and iterate PR for #207, then begin #202
