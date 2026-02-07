@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-IOS_DIR="$REPO_ROOT/apps/courier-ios-native/ios"
+IOS_DIR="${IOS_DIR:-$REPO_ROOT/apps/courieriosnativeclean/ios}"
 PODFILE="$IOS_DIR/Podfile"
 PODS_DIR="$IOS_DIR/Pods"
 XCDEBUG="$PODS_DIR/Target Support Files/Pods-Senderrappios/Pods-Senderrappios.debug.xcconfig"
