@@ -12,7 +12,7 @@ This file maps each active app to its canonical documentation location.
   - `apps/senderr-app/copilot-instructions.md`
 - Senderr iOS Native (single canonical native app):
   - `apps/courieriosnativeclean/README.md`
-  - iOS project: `apps/courieriosnativeclean/ios/Senderrappios.xcworkspace`
+  - iOS project: `apps/courieriosnativeclean/ios/Senderr.xcworkspace`
   - scheme: `Senderr`
   - template source: `templates/ios/*`
   - bootstrap command: `pnpm run ios:bootstrap`

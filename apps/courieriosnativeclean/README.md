@@ -5,7 +5,7 @@ This is the canonical iOS native app for Senderr.
 ## Canonical paths
 - App root: `apps/courieriosnativeclean`
 - iOS root: `apps/courieriosnativeclean/ios`
-- Workspace: `apps/courieriosnativeclean/ios/Senderrappios.xcworkspace`
+- Workspace: `apps/courieriosnativeclean/ios/Senderr.xcworkspace`
 - Scheme: `Senderr`
 - Podfile path: `apps/courieriosnativeclean/ios/Podfile`
 - Canonical iOS templates: `templates/ios/*`
@@ -33,7 +33,7 @@ What these do:
 Open only:
 
 ```bash
-open apps/courieriosnativeclean/ios/Senderrappios.xcworkspace
+open apps/courieriosnativeclean/ios/Senderr.xcworkspace
 ```
 
 In Xcode:
@@ -76,9 +76,9 @@ Equivalent manual commands:
 
 ```bash
 cd apps/courieriosnativeclean/ios
-xcodebuild -workspace Senderrappios.xcworkspace -scheme Senderr -configuration Debug -destination 'generic/platform=iOS Simulator' clean build
-xcodebuild -workspace Senderrappios.xcworkspace -scheme Senderr -configuration Debug -sdk iphoneos -destination 'generic/platform=iOS' clean build
-xcodebuild -workspace Senderrappios.xcworkspace -scheme Senderr -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' clean build
+xcodebuild -workspace Senderr.xcworkspace -scheme Senderr -configuration Debug -destination 'generic/platform=iOS Simulator' clean build
+xcodebuild -workspace Senderr.xcworkspace -scheme Senderr -configuration Debug -sdk iphoneos -destination 'generic/platform=iOS' clean build
+xcodebuild -workspace Senderr.xcworkspace -scheme Senderr -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' clean build
 ```
 
 ## Physical device run
@@ -95,7 +95,7 @@ Point the app to your Mac LAN IP (not `localhost`), for example:
 ## Firebase config
 If app startup fails with `No such module FirebaseCore` or `FirebaseApp.configure()` errors:
 - confirm `GoogleService-Info.plist` exists at:
-  - `apps/courieriosnativeclean/ios/Senderrappios/GoogleService-Info.plist`
+  - `apps/courieriosnativeclean/ios/Senderr/GoogleService-Info.plist`
 - rerun:
   - `pnpm run ios:clean:install`
 

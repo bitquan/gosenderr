@@ -9,7 +9,7 @@ set -euo pipefail
 # - run a clean simulator build and collect logs
 
 IOS_APP_DIR="${IOS_APP_DIR:-apps/courieriosnativeclean/ios}"
-WORKSPACE="$IOS_APP_DIR/Senderrappios.xcworkspace"
+WORKSPACE="$IOS_APP_DIR/Senderr.xcworkspace"
 SCHEME="Senderr"
 CONFIG="Debug"
 SIMULATOR="iPhone 17"
@@ -60,12 +60,12 @@ pod cache clean --all || true
 rm -rf ~/Library/Caches/CocoaPods || true
 
 # Clear DerivedData for this project only (best-effort)
-title "Clearing DerivedData for Senderrappios"
+title "Clearing DerivedData for Senderr"
 DERIVED_DIRS=("$HOME/Library/Developer/Xcode/DerivedData")
 for d in "${DERIVED_DIRS[@]}"; do
   if [ -d "$d" ]; then
-    echo "Searching DerivedData entries in $d for Senderrappios..."
-    find "$d" -maxdepth 1 -type d -name "Senderrappios*" -print0 | xargs -0 -I{} rm -rf "{}" || true
+    echo "Searching DerivedData entries in $d for Senderr..."
+    find "$d" -maxdepth 1 -type d -name "Senderr*" -print0 | xargs -0 -I{} rm -rf "{}" || true
   fi
 done
 

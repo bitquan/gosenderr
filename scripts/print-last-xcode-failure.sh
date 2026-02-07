@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Prints a compact summary of the last Xcode build failure for Senderrappios
+# Prints a compact summary of the last Xcode build failure for Senderr
 # Looks for .xcactivitylog (preferred) or .xcresult and prints relevant error/phase lines
 
 DERIVED=~/Library/Developer/Xcode/DerivedData
-PROJECT_PREFIX=Senderrappios
+PROJECT_PREFIX=Senderr
 
 latest_log=$(ls -1dt "$DERIVED"/${PROJECT_PREFIX}-*/Logs/Build/*.xcactivitylog 2>/dev/null | head -n1 || true)
 if [[ -n "$latest_log" && -f "$latest_log" ]]; then

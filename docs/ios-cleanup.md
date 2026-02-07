@@ -4,7 +4,7 @@ Short checklist to free space and make builds faster for local development.
 
 Quick safe actions (fast):
 
-- Remove project DerivedData for `Senderrappios`: `./scripts/ios-clean-deriv.sh` (interactive)
+- Remove project DerivedData for `Senderr`: `./scripts/ios-clean-deriv.sh` (interactive)
 - Prune pnpm store: `./scripts/cleanup-pnpm.sh --prune`
 - List simulator sizes: `./scripts/cleanup-simulators.sh --list`
 
@@ -21,4 +21,4 @@ Maintenance tips:
 - Use `pnpm store prune` regularly.
 - Delete old Xcode Archives (`~/Library/Developer/Xcode/Archives`) if disk space is constrained.
 
-If you want, I can run the safe clean steps (remove Senderrappios DerivedData and run pnpm prune) now — tell me which ones to run.
+If you want, I can run the safe clean steps (remove Senderr DerivedData and run pnpm prune) now — tell me which ones to run.

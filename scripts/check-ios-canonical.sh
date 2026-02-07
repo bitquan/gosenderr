@@ -3,8 +3,8 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 EXPECTED_PODFILE="$REPO_ROOT/apps/courieriosnativeclean/ios/Podfile"
-EXPECTED_WORKSPACE="$REPO_ROOT/apps/courieriosnativeclean/ios/Senderrappios.xcworkspace"
-EXPECTED_SCHEME="$REPO_ROOT/apps/courieriosnativeclean/ios/Senderrappios.xcodeproj/xcshareddata/xcschemes/Senderr.xcscheme"
+EXPECTED_WORKSPACE="$REPO_ROOT/apps/courieriosnativeclean/ios/Senderr.xcworkspace"
+EXPECTED_SCHEME="$REPO_ROOT/apps/courieriosnativeclean/ios/Senderr.xcodeproj/xcshareddata/xcschemes/Senderr.xcscheme"
 
 PODFILES=()
 while IFS= read -r podfile; do

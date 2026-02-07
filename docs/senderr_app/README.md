@@ -22,7 +22,7 @@ This quick-start helps contributors get the Senderr iOS app running locally and 
 5. Verify Debug/Release iOS compile matrix:
    - `pnpm run ios:build:verify`
 6. Open the iOS workspace in Xcode:
-   - `open apps/courieriosnativeclean/ios/Senderrappios.xcworkspace`
+   - `open apps/courieriosnativeclean/ios/Senderr.xcworkspace`
 7. Select scheme `Senderr` in Xcode before running.
 
 ## Run the app (iOS Simulator)

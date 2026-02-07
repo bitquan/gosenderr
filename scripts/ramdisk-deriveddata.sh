@@ -7,7 +7,7 @@ set -euo pipefail
 #        ./scripts/ramdisk-deriveddata.sh status
 # Default SIZE_GB = 6 (recommend 4-12 depending on RAM)
 
-PROJ_NAME="Senderrappios"
+PROJ_NAME="Senderr"
 RAM_LABEL="RDX-DerivedData"
 MOUNT_POINT="/Volumes/$RAM_LABEL"
 BACKUP_DIR="$HOME/.ramdisk_backups"

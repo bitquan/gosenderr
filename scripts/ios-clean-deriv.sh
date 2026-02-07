@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Safely remove Xcode DerivedData for the Senderrappios project (or all DerivedData with --all)
+# Safely remove Xcode DerivedData for the Senderr project (or all DerivedData with --all)
 # Usage: ./scripts/ios-clean-deriv.sh [--all] [--yes]
 
-PROJECT_NAME="Senderrappios"
+PROJECT_NAME="Senderr"
 DERIVED_ROOT="$HOME/Library/Developer/Xcode/DerivedData"
 
 all=false
