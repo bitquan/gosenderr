@@ -60,3 +60,23 @@ Append-only log used for session recovery.
 - Blockers: None
 - Next:
   - open and iterate PR for #207, then begin #202
+
+---
+
+## 2026-02-07 14:26 local (2026-02-07 19:26 UTC)
+
+- Status: `in_progress`
+- Summary: implemented #202 firebase-only auth default with explicit mock gate and courier role validation
+- Branch: `codex/issue-202-real-auth-path`
+- Commit: `a5bc220`
+- Issue: `#202`
+- PR: `n/a`
+- Files:
+  - `apps/courieriosnativeclean/src/services/authService.ts`
+  - `apps/courieriosnativeclean/src/config/runtime.ts`
+  - `apps/courieriosnativeclean/src/screens/LoginScreen.tsx`
+  - `apps/courieriosnativeclean/ios/config/env/dev.xcconfig`
+  - `docs/senderr_app/README.md`
+- Blockers: None
+- Next:
+  - open PR for #202 and continue #203 realtime jobs
