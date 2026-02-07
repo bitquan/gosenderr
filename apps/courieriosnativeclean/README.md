@@ -26,6 +26,21 @@ Legacy iOS workspaces/projects were archived under `apps/_archive/legacy-ios-wor
 4. In another terminal, start Metro:
    - `cd apps/courieriosnativeclean && npx react-native start --reset-cache`
 
+## Canonical pod install steps
+Always run pod operations from this exact directory:
+
+```bash
+cd /Users/papadev/dev/apps/Gosenderr_Dev_Folder/gosenderr/apps/courieriosnativeclean/ios
+pod install
+```
+
+If you see "No Podfile found", you are in the wrong folder.
+
+Do not open `Senderrappios.xcodeproj` for active work. Use:
+- `Senderrappios.xcworkspace`
+
+Do not manually edit generated files under `ios/Pods/`.
+
 ## Build verification
 Canonical one-command flow from repo root:
 
@@ -41,6 +56,39 @@ Optional subcommands:
 - Debug simulator build
 - Debug device compile build
 - Release device compile build
+
+## Clean build recovery
+From repo root:
+
+```bash
+pnpm run ios:clean:install
+pnpm run ios:build:verify
+```
+
+If Xcode still shows stale build state:
+
+```bash
+pkill -f XCBuildService || true
+rm -rf ~/Library/Developer/Xcode/DerivedData/Senderrappios-*
+```
+
+Then reopen:
+- `apps/courieriosnativeclean/ios/Senderrappios.xcworkspace`
+
+## Known issues and workarounds
+- Error: `The sandbox is not in sync with Podfile.lock`
+  - Fix: run `pnpm run ios:clean:install` from repo root.
+- Error: `No such module 'FirebaseCore'`
+  - Fix: run `pnpm run ios:clean:install`, then reopen `.xcworkspace` (not `.xcodeproj`).
+- Error: `Command PhaseScriptExecution failed with a nonzero exit code`
+  - Fix: verify Metro is running, rerun `pnpm run ios:clean:install`, then rebuild.
+- Error: device cannot reach `http://localhost:8081`
+  - Fix: run Metro on all interfaces:
+    - `cd apps/courieriosnativeclean && npx react-native start --host 0.0.0.0 --port 8081 --reset-cache`
+  - Ensure iPhone and Mac are on the same Wi-Fi network.
+- Runtime crash: `FirebaseApp.configure() could not find a valid GoogleService-Info.plist`
+  - Fix: place `GoogleService-Info.plist` in:
+    - `apps/courieriosnativeclean/ios/Senderrappios/GoogleService-Info.plist`
 
 ## Runtime configuration
 ### Build-time environment profiles (`dev` / `staging` / `prod`)
