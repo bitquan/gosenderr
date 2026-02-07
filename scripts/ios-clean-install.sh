@@ -4,7 +4,7 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 IOS_DIR="${IOS_DIR:-$REPO_ROOT/apps/courieriosnativeclean/ios}"
 WORKSPACE="${WORKSPACE:-$IOS_DIR/Senderrappios.xcworkspace}"
-SCHEME="${SCHEME:-Senderrappios}"
+SCHEME="${SCHEME:-Senderr}"
 DERIVED_ROOT="${DERIVED_ROOT:-$HOME/Library/Developer/Xcode/DerivedData}"
 CLEAN_POD_CACHE="${CLEAN_POD_CACHE:-1}"
 
@@ -34,6 +34,7 @@ rm -rf "$IOS_DIR/build"
 # 2) Clear Xcode derived data for this app only.
 if [[ -d "$DERIVED_ROOT" ]]; then
   find "$DERIVED_ROOT" -maxdepth 1 -type d -name 'Senderrappios-*' -exec rm -rf {} + 2>/dev/null || true
+  find "$DERIVED_ROOT" -maxdepth 1 -type d -name 'Senderr-*' -exec rm -rf {} + 2>/dev/null || true
 fi
 
 # 3) Optionally clear CocoaPods caches.

@@ -3,20 +3,21 @@
 ## Issue #122 (gRPC/modulemap build failures)
 - Canonical iOS project path: `apps/courieriosnativeclean/ios`
 - Canonical workspace: `apps/courieriosnativeclean/ios/Senderrappios.xcworkspace`
-- Canonical target/scheme: `Senderrappios`
+- Canonical scheme: `Senderr`
+- Canonical template source: `templates/ios/*`
 
 ### Required setup
 ```bash
 pnpm install
-pnpm run ios:pods:install
+pnpm run ios:bootstrap
+pnpm run ios:check
 ```
 
 ### Validation commands
 ```bash
 cd apps/courieriosnativeclean/ios
-pod install
-xcodebuild -workspace Senderrappios.xcworkspace -scheme Senderrappios -configuration Debug -sdk iphoneos -destination 'generic/platform=iOS' clean build
-xcodebuild -workspace Senderrappios.xcworkspace -scheme Senderrappios -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' clean build
+xcodebuild -workspace Senderrappios.xcworkspace -scheme Senderr -configuration Debug -sdk iphoneos -destination 'generic/platform=iOS' clean build
+xcodebuild -workspace Senderrappios.xcworkspace -scheme Senderr -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' clean build
 ```
 
 ### Physical device note
@@ -28,11 +29,12 @@ xcodebuild -workspace Senderrappios.xcworkspace -scheme Senderrappios -configura
 
 ### Single command sequence
 ```bash
-pnpm run ios:clean:install
+pnpm run ios:pod:check
 pnpm run ios:clean:build:debug
 ```
 
 ### What this does
+- Syncs canonical iOS templates (`Podfile`, `.xcode.env`, `LocalDebug.xcconfig`)
 - Clears project Pods + local iOS build folder
 - Clears Senderrappios DerivedData only
 - Clears CocoaPods cache

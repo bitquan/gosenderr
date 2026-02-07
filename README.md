@@ -24,6 +24,9 @@ A modern on-demand delivery platform with web apps (Vite + React + TypeScript) t
 
 **Note**: All web apps can be packaged as native iOS and Android apps using Capacitor.
 
+Native iOS source of truth: `apps/courieriosnativeclean` (workspace: `apps/courieriosnativeclean/ios/Senderrappios.xcworkspace`, scheme: `Senderr`).
+Bootstrap and validate canonical iOS setup with `pnpm run ios:bootstrap` and `pnpm run ios:check`.
+
 ## ✅ Testing & Deployment
 
 See the rollout checklist in [docs/project-plan/09-DAILY-CHECKLIST.md](docs/project-plan/09-DAILY-CHECKLIST.md).

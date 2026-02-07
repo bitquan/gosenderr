@@ -49,9 +49,11 @@
     "bootstrap:minimal": "bash scripts/bootstrap-minimal.sh",
     "ios:pod:sync": "bash scripts/sync-ios-podfile.sh --sync",
     "ios:pod:check": "bash scripts/sync-ios-podfile.sh --check",
-    "ios:pods:install": "bash scripts/sync-ios-podfile.sh --sync && (cd apps/courieriosnativeclean/ios && pod install)",
+    "ios:check": "bash scripts/check-ios-canonical.sh",
+    "ios:bootstrap": "bash scripts/bootstrap-senderr-ios.sh",
+    "ios:pods:install": "bash scripts/bootstrap-senderr-ios.sh",
     "ios:clean:install": "bash scripts/ios-clean-install.sh",
-    "ios:clean:build:debug": "bash scripts/ios-clean-install.sh && (cd apps/courieriosnativeclean/ios && xcodebuild -workspace Senderrappios.xcworkspace -scheme Senderrappios -configuration Debug -sdk iphoneos -destination 'generic/platform=iOS' clean build)"
+    "ios:clean:build:debug": "bash scripts/ios-clean-install.sh && (cd apps/courieriosnativeclean/ios && xcodebuild -workspace Senderrappios.xcworkspace -scheme Senderr -configuration Debug -sdk iphoneos -destination 'generic/platform=iOS' clean build)"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "2.0.7",
