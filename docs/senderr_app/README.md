@@ -1,54 +1,48 @@
-# Senderr App — Developer Quick Start 🚀
+# Senderr App — Developer Quick Start
 
-This quick-start helps contributors get the Senderr iOS app running locally and follow the repo's development conventions.
+This is the source-of-truth guide for the native Senderr courier app at `apps/courieriosnativeclean`.
 
-## Environment
-- Node: 18.x (use nvm or system)
-- pnpm: >= 8 (use corepack)
-- Xcode: latest compatible with RN target
-- CocoaPods: latest
-- watchman: recommended on macOS
-- Optional: `ios-deploy` for running on physical devices (`brew install ios-deploy`)
+## Canonical iOS targets
+- Workspace: `apps/courieriosnativeclean/ios/Senderrappios.xcworkspace`
+- Xcode scheme: `Senderr`
+- Bundle id: `com.gosenderr.senderr`
+- Minimum iOS: `16.0`
+
+Legacy duplicate iOS project/workspace folders are archived at `apps/_archive/legacy-ios-workspaces/` and are out of active scope.
 
 ## Setup
-1. Enable Corepack and install pnpm:
-   - `corepack enable && corepack prepare pnpm@8.0.0 --activate`
-2. Install dependencies at the repo root:
+1. Install deps from repo root:
    - `pnpm install --frozen-lockfile`
-3. Verify Debug/Release iOS compile matrix:
+2. Clean/sync pods:
+   - `pnpm run ios:clean:install`
+3. Build verification:
    - `pnpm run ios:build:verify`
-4. Open the iOS workspace in Xcode:
+4. Open Xcode workspace:
    - `open apps/courieriosnativeclean/ios/Senderrappios.xcworkspace`
-5. Select scheme `Senderr` in Xcode before running.
 
-## Run the app (iOS Simulator)
-1. Start Metro (from the app folder):
-   - `pnpm run start -- --reset-cache` or `npx react-native start --reset-cache`
-2. In another terminal (same folder):
-   - `pnpm run ios -- --simulator="iPhone 17"` or `npx react-native run-ios --simulator="iPhone 17"`
+## Run on simulator/device
+1. Start Metro from app folder:
+   - `cd apps/courieriosnativeclean && npx react-native start --reset-cache`
+2. Run from Xcode with scheme `Senderr`.
 
-> Common Metro issues:
-> - If Metro can't resolve modules in a pnpm monorepo, ensure `metro.config.js` includes the repo root `node_modules` in `watchFolders` and `nodeModulesPaths`. (See `metro.config.js` in this app.)
+For physical devices, point Metro host to your machine IP in `AppDelegate.swift` and keep phone + Mac on same network.
 
-## Run tests & checks
-- Lint: `pnpm lint`
-- Type check: `pnpm type-check`
-- Unit tests: `pnpm -w test --if-present`
-- Verify docs: `pnpm run verify:docs`
+## Current courier shell
+- Auth: login/logout via Firebase where configured; local mock fallback for offline dev.
+- Navigation: dashboard / jobs / settings tabs + job detail route.
+- Jobs: list/detail read, optimistic status action updates.
+- Location: permission request and tracking hook with latest coordinate snapshot.
 
-## Branching & PRs
-- Branch from `senderr_app` and use `senderr-app/<type>/<short-desc>` for sub-branches (e.g., `senderr-app/feature/auth-flow`).
-- Open PRs targeting `senderr_app` and follow the PR template.
+## Environment variables (runtime)
+- `SENDERR_FIREBASE_API_KEY`
+- `SENDERR_FIREBASE_AUTH_DOMAIN`
+- `SENDERR_FIREBASE_PROJECT_ID`
+- `SENDERR_FIREBASE_STORAGE_BUCKET`
+- `SENDERR_FIREBASE_MESSAGING_SENDER_ID`
+- `SENDERR_FIREBASE_APP_ID`
 
-## Troubleshooting
-- `error: unknown command 'start'` → run the app's `start` script, not the repo root `npx react-native start` unless in the app folder.
-- `ios-deploy` missing → install with `brew install ios-deploy` to run on devices.
-- Metro module resolution with pnpm → ensure `watchFolders` include the monorepo root `node_modules`.
-
-## Docs & audits
-- Keep code and docs in sync: update docs in the same PR when behavior changes.
-- See `docs/senderr_app/AUDIT.md` for the flow audit checklist and cadence.
-
----
-
-If you'd like, I can add a small local script or a Makefile to ease these commands.
+## Supporting docs
+- Navigation map: `docs/senderr_app/NAVIGATION_MAP.md`
+- MVP criteria: `docs/senderr_app/MVP_ACCEPTANCE.md`
+- Signing/provisioning: `docs/senderr_app/IOS_SIGNING.md`
+- Flow audit guide: `docs/senderr_app/AUDIT.md`

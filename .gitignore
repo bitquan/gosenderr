@@ -88,6 +88,11 @@ logs/
 # Keys / credentials
 **/*.pem
 **/*serviceAccount*.json
+apps/courieriosnativeclean/ios/Senderrappios/GoogleService-Info.plist
+apps/courieriosnativeclean/ios/Senderrappios/GoogleService-Info\ .plist
+
+# iOS generated artifacts
+apps/courieriosnativeclean/ios/build/
 # Playwright
 test-results/
 playwright-report/

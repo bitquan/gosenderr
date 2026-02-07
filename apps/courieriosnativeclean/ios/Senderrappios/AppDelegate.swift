@@ -62,7 +62,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
   }
 
   // MARK: - RCTBridgeDelegate
-  func sourceURL(for bridge: RCTBridge!) -> URL? {
+  func sourceURL(for bridge: RCTBridge) -> URL? {
 #if DEBUG
     let provider = RCTBundleURLProvider.sharedSettings()
     if provider.jsLocation == nil || provider.jsLocation?.isEmpty == true || provider.jsLocation == "localhost" ||

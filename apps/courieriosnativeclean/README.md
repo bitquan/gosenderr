@@ -1,42 +1,66 @@
 # Senderr iOS (React Native)
 
+Canonical native iOS app for couriers.
+
+## Canonical project path
+- Workspace: `apps/courieriosnativeclean/ios/Senderrappios.xcworkspace`
+- Scheme: `Senderr`
+- Bundle id: `com.gosenderr.senderr`
+
+Legacy iOS workspaces/projects were archived under `apps/_archive/legacy-ios-workspaces/` and should not be used for active development.
+
+## Implemented P1 courier shell
+- Auth flow (login/logout) with Firebase-backed mode and local mock fallback.
+- Base app navigation shell (Dashboard / Jobs / Settings) plus Job Detail flow.
+- Jobs list + detail loading from Firestore with local seeded fallback.
+- Job status actions (`pending -> accepted -> picked_up -> delivered`) with optimistic UI update.
+- Location permissions + background-capable tracking hook for courier updates.
+
 ## Local run
-1. From repo root, install deps:
+1. Install dependencies from repo root:
    - `pnpm install`
 2. Install pods:
    - `cd apps/courieriosnativeclean/ios && pod install`
 3. Open workspace:
    - `open apps/courieriosnativeclean/ios/Senderrappios.xcworkspace`
-4. Use scheme:
-   - `Senderr`
+4. In another terminal, start Metro:
+   - `cd apps/courieriosnativeclean && npx react-native start --reset-cache`
 
-## Build verification (`#125`)
-Run full compile matrix from repo root:
+## Build verification
+Run compile matrix from repo root:
 
 ```bash
+pnpm run ios:clean:install
 pnpm run ios:build:verify
 ```
 
-The script verifies:
+`ios:build:verify` checks:
 - Debug simulator build
-- Debug device build (compile-only)
-- Release device build (compile-only)
+- Debug device compile build
+- Release device compile build
 
-Script behavior:
-- sets `RCT_NO_LAUNCH_PACKAGER=1` and `SKIP_BUNDLING=1` for deterministic CLI builds
-- sets `CODE_SIGNING_ALLOWED=NO` for device compile checks
-- creates a temporary placeholder `GoogleService-Info.plist` if missing, then removes it
+## Runtime configuration
+Set Firebase values as env vars when you want real backend auth/data in RN runtime:
+- `SENDERR_FIREBASE_API_KEY`
+- `SENDERR_FIREBASE_AUTH_DOMAIN`
+- `SENDERR_FIREBASE_PROJECT_ID`
+- `SENDERR_FIREBASE_STORAGE_BUCKET`
+- `SENDERR_FIREBASE_MESSAGING_SENDER_ID`
+- `SENDERR_FIREBASE_APP_ID`
 
-## Manual equivalent
-
-```bash
-cd apps/courieriosnativeclean/ios
-xcodebuild -workspace Senderrappios.xcworkspace -scheme Senderr -configuration Debug -destination 'generic/platform=iOS Simulator' clean build
-xcodebuild -workspace Senderrappios.xcworkspace -scheme Senderr -configuration Debug -sdk iphoneos -destination 'generic/platform=iOS' clean build CODE_SIGNING_ALLOWED=NO
-xcodebuild -workspace Senderrappios.xcworkspace -scheme Senderr -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' clean build CODE_SIGNING_ALLOWED=NO
-```
+If these are missing, app falls back to local mock auth/jobs for development.
 
 ## Related issues
 - `#123` Stabilize pod install and clean build workflow
+- `#124` gRPC/BoringSSL header/modulemap alignment
 - `#125` Confirm Debug + Release build in Xcode
-- `#126` Document build fixes in app README
+- `#127` Rename app identity to Senderr
+- `#129` Bundle identifiers + provisioning docs
+- `#131` Navigation structure
+- `#132` Base screen scaffolds
+- `#134` Auth integration
+- `#135` Jobs list + detail read
+- `#136` Job status updates + actions
+- `#144` Location permissions + tracking
+- `#150` MVP acceptance criteria
+- `#161` Canonical iOS cleanup
