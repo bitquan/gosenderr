@@ -24,6 +24,23 @@ xcodebuild -workspace Senderrappios.xcworkspace -scheme Senderrappios -configura
 
 ---
 
+## Issue #123 (clean pod install workflow)
+
+### Single command sequence
+```bash
+pnpm run ios:clean:install
+pnpm run ios:clean:build:debug
+```
+
+### What this does
+- Clears project Pods + local iOS build folder
+- Clears Senderrappios DerivedData only
+- Clears CocoaPods cache
+- Runs deterministic pod install (`pod install --deployment` when `Podfile.lock` exists)
+- Verifies `Podfile.lock` and `Pods/Manifest.lock` are in sync
+
+---
+
 This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
 
 # Getting Started
