@@ -216,3 +216,23 @@ Append-only log used for session recovery.
 - Blockers: None
 - Next:
   - open PR for #205, run checks, and merge
+
+---
+
+## 2026-02-08 00:46 local (2026-02-08 05:46 UTC)
+
+- Status: `in_progress`
+- Summary: opened PR #221 for issue #205 command transition pipeline
+- Branch: `codex/issue-205-job-transition-conflicts`
+- Commit: `8072d4f`
+- Issue: `#205`
+- PR: `#221`
+- Files:
+  - `apps/courieriosnativeclean/src/services/jobTransitionRules.ts`
+  - `apps/courieriosnativeclean/src/services/jobsService.ts`
+  - `apps/courieriosnativeclean/src/services/ports/jobsPort.ts`
+  - `apps/courieriosnativeclean/src/services/__tests__/jobsService.test.ts`
+  - `apps/courieriosnativeclean/src/screens/JobDetailScreen.tsx`
+- Blockers: None
+- Next:
+  - monitor CI, address review feedback, merge #221
