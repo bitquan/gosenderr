@@ -51,6 +51,7 @@ For physical devices, point Metro host to your machine IP in `AppDelegate.swift`
 - Jobs fallback: AsyncStorage mock fallback is allowed only outside production mode.
 - Location: permission request and tracking hook with latest coordinate snapshot.
 - Profile/settings: courier profile read/write with validation, local cache persistence, and Firebase sync fallback. Includes separate package and food rate cards with guardrails for minimum pricing.
+- Telemetry: Firebase Analytics + Crashlytics via service adapter with non-fatal error capture and runtime safety fallback.
 
 ## Build-time environment config
 - Env profile files:
@@ -116,6 +117,7 @@ Rules:
 
 ## Supporting docs
 - Native dependency audit: `docs/senderr_app/NATIVE_DEPENDENCY_AUDIT.md`
+- Crash + analytics guide: `docs/senderr_app/CRASH_ANALYTICS.md`
 - Smoke checklist: `docs/senderr_app/SMOKE_CHECKLIST.md`
 - Roadmap/progress tracker: `docs/senderr_app/ROADMAP.md`
 - App README (build fixes + troubleshooting): `apps/courieriosnativeclean/README.md`

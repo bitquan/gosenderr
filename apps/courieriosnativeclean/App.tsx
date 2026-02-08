@@ -25,8 +25,10 @@ const DEFAULT_JOBS_SYNC_STATE: JobsSyncState = {
 
 const AppShell = (): React.JSX.Element => {
   const {session, initializing} = useAuth();
-  const {jobs: jobsService} = useServiceRegistry();
+  const {jobs: jobsService, analytics} = useServiceRegistry();
   const jobsSubscriptionRef = useRef<JobsSubscription | null>(null);
+  const lastTrackedJobsCountRef = useRef<number | null>(null);
+  const lastSyncErrorRef = useRef<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabKey>('dashboard');
   const [jobs, setJobs] = useState<Job[]>([]);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
@@ -44,6 +46,8 @@ const AppShell = (): React.JSX.Element => {
       setJobsLoading(false);
       setJobsError(null);
       setJobsSyncState(DEFAULT_JOBS_SYNC_STATE);
+      lastTrackedJobsCountRef.current = null;
+      lastSyncErrorRef.current = null;
       return;
     }
 
@@ -54,15 +58,26 @@ const AppShell = (): React.JSX.Element => {
       onJobs: nextJobs => {
         setJobs(nextJobs);
         setJobsLoading(false);
+        if (lastTrackedJobsCountRef.current !== nextJobs.length) {
+          lastTrackedJobsCountRef.current = nextJobs.length;
+          void analytics.track('jobs_loaded', {
+            count: nextJobs.length,
+          });
+        }
       },
       onSyncState: nextSyncState => {
         setJobsSyncState(nextSyncState);
         if (nextSyncState.status === 'error' && nextSyncState.message) {
           setJobsError(nextSyncState.message);
           setJobsLoading(false);
+          if (lastSyncErrorRef.current !== nextSyncState.message) {
+            lastSyncErrorRef.current = nextSyncState.message;
+            void analytics.recordError(new Error(nextSyncState.message), 'jobs_sync_error');
+          }
         }
         if (nextSyncState.status === 'live' || nextSyncState.status === 'stale') {
           setJobsLoading(false);
+          lastSyncErrorRef.current = null;
         }
       },
     });
@@ -72,6 +87,7 @@ const AppShell = (): React.JSX.Element => {
     void subscription.refresh().catch(error => {
       setJobsError(error instanceof Error ? error.message : 'Unable to load jobs.');
       setJobsLoading(false);
+      void analytics.recordError(error, 'jobs_initial_refresh_failed');
     });
 
     return () => {
@@ -80,7 +96,7 @@ const AppShell = (): React.JSX.Element => {
         jobsSubscriptionRef.current = null;
       }
     };
-  }, [jobsService, session]);
+  }, [analytics, jobsService, session]);
 
   const refreshJobs = useCallback(async (): Promise<Job[]> => {
     if (!session) {
@@ -98,11 +114,12 @@ const AppShell = (): React.JSX.Element => {
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unable to refresh jobs.';
       setJobsError(message);
+      void analytics.recordError(error, 'jobs_manual_refresh_failed');
       throw error;
     } finally {
       setJobsLoading(false);
     }
-  }, [jobsService, session]);
+  }, [analytics, jobsService, session]);
 
   const selectedJob = useMemo(
     () => (selectedJobId ? jobs.find(job => job.id === selectedJobId) ?? null : null),

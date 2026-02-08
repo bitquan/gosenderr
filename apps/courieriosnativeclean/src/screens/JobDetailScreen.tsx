@@ -21,7 +21,7 @@ type Feedback = {
 
 export const JobDetailScreen = ({job, onBack, onJobUpdated}: JobDetailScreenProps): React.JSX.Element => {
   const {session} = useAuth();
-  const {jobs: jobsService} = useServiceRegistry();
+  const {jobs: jobsService, analytics} = useServiceRegistry();
   const [updating, setUpdating] = useState(false);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
 
@@ -40,6 +40,11 @@ export const JobDetailScreen = ({job, onBack, onJobUpdated}: JobDetailScreenProp
 
       if (result.kind === 'success') {
         onJobUpdated(result.job);
+        void analytics.track('job_status_updated', {
+          from_status: job.status,
+          to_status: result.job.status,
+          idempotent: result.idempotent,
+        });
         if (result.message) {
           setFeedback({message: result.message, tone: 'info'});
         }
@@ -48,6 +53,11 @@ export const JobDetailScreen = ({job, onBack, onJobUpdated}: JobDetailScreenProp
 
       if (result.kind === 'conflict' || result.kind === 'retryable_error') {
         onJobUpdated(result.job);
+        void analytics.track('job_status_updated', {
+          from_status: job.status,
+          to_status: result.job.status,
+          result_kind: result.kind,
+        });
         setFeedback({message: result.message, tone: 'error'});
         return;
       }
@@ -55,8 +65,10 @@ export const JobDetailScreen = ({job, onBack, onJobUpdated}: JobDetailScreenProp
       if (result.job) {
         onJobUpdated(result.job);
       }
+      void analytics.recordError(new Error(result.message), `job_status_update_${result.kind}`);
       setFeedback({message: result.message, tone: 'error'});
     } catch (updateError) {
+      void analytics.recordError(updateError, 'job_status_update_failed');
       setFeedback({
         message: updateError instanceof Error ? updateError.message : 'Unable to update status.',
         tone: 'error',

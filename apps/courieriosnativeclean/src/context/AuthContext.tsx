@@ -1,4 +1,4 @@
-import React, {createContext, useContext, useEffect, useMemo, useState} from 'react';
+import React, {createContext, useContext, useEffect, useMemo, useRef, useState} from 'react';
 
 import {useServiceRegistry} from '../services/serviceRegistry';
 import type {AuthSession} from '../types/auth';
@@ -14,19 +14,28 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export const AuthProvider = ({children}: {children: React.ReactNode}): React.JSX.Element => {
-  const {auth} = useServiceRegistry();
+  const {auth, analytics} = useServiceRegistry();
   const [session, setSession] = useState<AuthSession | null>(null);
   const [initializing, setInitializing] = useState(true);
   const [signingIn, setSigningIn] = useState(false);
+  const lastTrackedSessionUid = useRef<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
 
     const initialize = async (): Promise<void> => {
-      const restored = await auth.restoreSession();
-      if (mounted) {
-        setSession(restored);
-        setInitializing(false);
+      try {
+        await analytics.initialize();
+        const restored = await auth.restoreSession();
+        if (mounted) {
+          setSession(restored);
+          setInitializing(false);
+        }
+      } catch (error) {
+        if (mounted) {
+          setInitializing(false);
+        }
+        void analytics.recordError(error, 'auth_restore_session_failed');
       }
     };
 
@@ -42,21 +51,46 @@ export const AuthProvider = ({children}: {children: React.ReactNode}): React.JSX
       mounted = false;
       unsubscribe?.();
     };
-  }, [auth]);
+  }, [analytics, auth]);
+
+  useEffect(() => {
+    if (session?.uid && session.uid !== lastTrackedSessionUid.current) {
+      lastTrackedSessionUid.current = session.uid;
+      void analytics.identifyUser(session);
+      void analytics.track('auth_signed_in', {
+        provider: session.provider,
+      });
+      return;
+    }
+
+    if (!session && lastTrackedSessionUid.current) {
+      lastTrackedSessionUid.current = null;
+      void analytics.track('auth_signed_out');
+      void analytics.clearUser();
+    }
+  }, [analytics, session]);
 
   const signInWithEmail = async (email: string, password: string): Promise<void> => {
     setSigningIn(true);
     try {
       const nextSession = await auth.signIn(email, password);
       setSession(nextSession);
+    } catch (error) {
+      void analytics.recordError(error, 'auth_sign_in_failed');
+      throw error;
     } finally {
       setSigningIn(false);
     }
   };
 
   const signOutUser = async (): Promise<void> => {
-    await auth.signOut();
-    setSession(null);
+    try {
+      await auth.signOut();
+      setSession(null);
+    } catch (error) {
+      void analytics.recordError(error, 'auth_sign_out_failed');
+      throw error;
+    }
   };
 
   const value = useMemo<AuthContextValue>(

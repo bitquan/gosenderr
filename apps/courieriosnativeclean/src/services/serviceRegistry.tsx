@@ -1,6 +1,6 @@
 import React, {createContext, useContext, useMemo} from 'react';
 
-import {analyticsNoopAdapter} from './adapters/analyticsNoopAdapter';
+import {analyticsFirebaseAdapter} from './adapters/analyticsFirebaseAdapter';
 import {authFirebaseAdapter} from './adapters/authFirebaseAdapter';
 import {jobsFirebaseAdapter} from './adapters/jobsFirebaseAdapter';
 import {locationNativeAdapter} from './adapters/locationNativeAdapter';
@@ -27,7 +27,7 @@ const defaultRegistry: ServiceRegistry = {
   jobs: jobsFirebaseAdapter,
   location: locationNativeAdapter,
   notifications: notificationsNoopAdapter,
-  analytics: analyticsNoopAdapter,
+  analytics: analyticsFirebaseAdapter,
   profile: profileFirebaseAdapter,
 };
 

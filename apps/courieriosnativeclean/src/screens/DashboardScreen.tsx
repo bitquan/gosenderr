@@ -1,4 +1,4 @@
-import React, {useMemo} from 'react';
+import React, {useEffect, useMemo, useRef} from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 
 import {EmptyState} from '../components/states/EmptyState';
@@ -70,8 +70,9 @@ export const DashboardScreen = ({
 }: DashboardScreenProps): React.JSX.Element => {
   const JobsMapCard = loadJobsMapCard();
   const {session} = useAuth();
-  const {location: locationService} = useServiceRegistry();
+  const {location: locationService, analytics} = useServiceRegistry();
   const {state: locationState, requestPermission, startTracking, stopTracking} = locationService.useLocationTracking();
+  const lastTrackingError = useRef<string | null>(null);
 
   const syncHealth = deriveSyncHealth(jobsSyncState);
 
@@ -131,6 +132,45 @@ export const DashboardScreen = ({
       tone: 'good',
     };
   }, [locationState.error, locationState.lastLocation, locationState.tracking, syncHealth.tone]);
+
+  useEffect(() => {
+    if (locationState.error && locationState.error !== lastTrackingError.current) {
+      lastTrackingError.current = locationState.error;
+      void analytics.track('tracking_error', {
+        message: locationState.error.slice(0, 100),
+      });
+      void analytics.recordError(new Error(locationState.error), 'tracking_state_error');
+    }
+
+    if (!locationState.error) {
+      lastTrackingError.current = null;
+    }
+  }, [analytics, locationState.error]);
+
+  const handleStartTracking = (): void => {
+    void (async () => {
+      try {
+        await startTracking();
+        void analytics.track('tracking_started', {
+          has_permission: locationState.hasPermission,
+          from_screen: 'dashboard',
+        });
+      } catch (error) {
+        void analytics.track('tracking_error', {
+          from_screen: 'dashboard',
+          action: 'start',
+        });
+        void analytics.recordError(error, 'tracking_start_failed');
+      }
+    })();
+  };
+
+  const handleStopTracking = (): void => {
+    stopTracking();
+    void analytics.track('tracking_stopped', {
+      from_screen: 'dashboard',
+    });
+  };
 
   const handleRetryTracking = (): void => {
     void (async () => {
@@ -211,15 +251,13 @@ export const DashboardScreen = ({
           <PrimaryButton
             label={locationState.tracking ? 'Tracking active' : 'Start tracking'}
             disabled={locationState.tracking}
-            onPress={() => {
-              void startTracking();
-            }}
+            onPress={handleStartTracking}
           />
           <PrimaryButton
             label="Stop"
             variant="secondary"
             disabled={!locationState.tracking}
-            onPress={stopTracking}
+            onPress={handleStopTracking}
           />
           {trackingHealth.tone === 'error' || trackingHealth.tone === 'degraded' ? (
             <PrimaryButton
