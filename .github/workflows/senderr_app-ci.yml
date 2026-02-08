@@ -6,7 +6,7 @@ on:
 
 jobs:
   checks:
-    name: Lint, Type-check, Tests
+    name: Lint + Type-check + Unit Tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -37,5 +37,28 @@ jobs:
       - name: Type check
         run: pnpm -r --if-present type-check
 
-      - name: Run tests
-        run: pnpm -w test --if-present
+      - name: Run courier unit tests
+        run: pnpm --filter courieriosnativeclean test:unit
+
+  integration:
+    name: Courier Integration (Firestore Emulator)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Enable corepack and install pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@8.0.0 --activate
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run courier integration tests on emulator
+        run: pnpm exec firebase emulators:exec --project demo-senderr --only firestore,auth "pnpm --filter courieriosnativeclean test:integration"
