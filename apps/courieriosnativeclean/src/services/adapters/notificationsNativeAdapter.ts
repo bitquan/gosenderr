@@ -30,4 +30,5 @@ export const notificationsNativeAdapter: NotificationsServicePort = {
     return nativeModule.registerMessagingToken();
   },
   handleForegroundMessage: async () => undefined,
+  subscribeToForegroundMessages: () => () => undefined,
 };

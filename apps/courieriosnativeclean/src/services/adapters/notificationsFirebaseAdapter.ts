@@ -33,6 +33,15 @@ export const notificationsFirebaseAdapter: NotificationsServicePort = {
     const token = await messaging().getToken();
     return token?.trim() ? token : null;
   },
+  registerMessagingToken: async () => {
+    if (Platform.OS !== 'ios') {
+      return null;
+    }
+
+    await messaging().registerDeviceForRemoteMessages();
+    const token = await messaging().getToken();
+    return token?.trim() ? token : null;
+  },
   handleForegroundMessage: async payload => {
     // Keep this lightweight; UI can decide how to surface alerts.
     console.info('[notifications] foreground message', payload);
