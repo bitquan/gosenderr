@@ -1,4 +1,5 @@
 export type SenderrEnvironment = 'dev' | 'staging' | 'prod';
+export type MapsProvider = 'native' | 'mapbox';
 
 type FirebaseRuntimeConfig = {
   apiKey: string;
@@ -9,11 +10,17 @@ type FirebaseRuntimeConfig = {
   appId: string;
 };
 
+type MapsRuntimeConfig = {
+  provider: MapsProvider;
+  mapboxAccessToken: string;
+};
+
 type RuntimeConfig = {
   envName: SenderrEnvironment;
   apiBaseUrl: string;
   allowMockAuth: boolean;
   firebase: FirebaseRuntimeConfig;
+  maps: MapsRuntimeConfig;
 };
 
 export type NativeRuntimeConfig = {
@@ -21,6 +28,7 @@ export type NativeRuntimeConfig = {
   apiBaseUrl?: string;
   allowMockAuth?: boolean;
   firebase?: Partial<FirebaseRuntimeConfig>;
+  maps?: Partial<MapsRuntimeConfig>;
 };
 
 const readEnv = (key: string): string => {
@@ -39,6 +47,13 @@ const normalizeEnvName = (value: string): SenderrEnvironment => {
   return 'dev';
 };
 
+const normalizeMapsProvider = (value: string | undefined): MapsProvider => {
+  if (!value) {
+    return 'native';
+  }
+  return value.trim().toLowerCase() === 'mapbox' ? 'mapbox' : 'native';
+};
+
 const ENV_DEFAULTS: Record<SenderrEnvironment, Omit<RuntimeConfig, 'envName'>> = {
   dev: {
     apiBaseUrl: 'https://dev-api.gosenderr.com',
@@ -50,6 +65,10 @@ const ENV_DEFAULTS: Record<SenderrEnvironment, Omit<RuntimeConfig, 'envName'>> =
       storageBucket: 'gosenderr-dev.appspot.com',
       messagingSenderId: '',
       appId: '',
+    },
+    maps: {
+      provider: 'native',
+      mapboxAccessToken: '',
     },
   },
   staging: {
@@ -63,6 +82,10 @@ const ENV_DEFAULTS: Record<SenderrEnvironment, Omit<RuntimeConfig, 'envName'>> =
       messagingSenderId: '',
       appId: '',
     },
+    maps: {
+      provider: 'native',
+      mapboxAccessToken: '',
+    },
   },
   prod: {
     apiBaseUrl: 'https://api.gosenderr.com',
@@ -74,6 +97,10 @@ const ENV_DEFAULTS: Record<SenderrEnvironment, Omit<RuntimeConfig, 'envName'>> =
       storageBucket: 'gosenderr-6773f.appspot.com',
       messagingSenderId: '',
       appId: '',
+    },
+    maps: {
+      provider: 'native',
+      mapboxAccessToken: '',
     },
   },
 };
@@ -115,6 +142,7 @@ const buildConfigFromSources = (nativeConfig?: NativeRuntimeConfig): RuntimeConf
   const envName = normalizeEnvName(envSource);
   const defaults = ENV_DEFAULTS[envName];
   const nativeFirebase = nativeConfig?.firebase ?? {};
+  const nativeMaps = nativeConfig?.maps ?? {};
   const allowMockAuth =
     nativeConfig?.allowMockAuth ??
     resolveBoolean(readEnv('SENDERR_ALLOW_MOCK_AUTH'), false);
@@ -143,6 +171,15 @@ const buildConfigFromSources = (nativeConfig?: NativeRuntimeConfig): RuntimeConf
       ),
       appId: resolveString(nativeFirebase.appId ?? readEnv('SENDERR_FIREBASE_APP_ID'), defaults.firebase.appId),
     },
+    maps: {
+      provider: normalizeMapsProvider(
+        nativeMaps.provider ?? readEnv('SENDERR_MAP_PROVIDER') ?? defaults.maps.provider,
+      ),
+      mapboxAccessToken: resolveString(
+        nativeMaps.mapboxAccessToken ?? readEnv('SENDERR_MAPBOX_ACCESS_TOKEN'),
+        defaults.maps.mapboxAccessToken,
+      ),
+    },
   };
 };
 
@@ -154,6 +191,7 @@ export const configureRuntime = (nativeConfig?: NativeRuntimeConfig): void => {
   runtimeConfig.apiBaseUrl = next.apiBaseUrl;
   runtimeConfig.allowMockAuth = next.allowMockAuth;
   runtimeConfig.firebase = next.firebase;
+  runtimeConfig.maps = next.maps;
 };
 
 export const hasFirebaseConfig = (): boolean => {

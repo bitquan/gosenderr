@@ -1,16 +1,19 @@
 import React from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 
+import {JobsMapCard} from '../components/JobsMapCard';
 import {PrimaryButton} from '../components/PrimaryButton';
 import {ScreenContainer} from '../components/ScreenContainer';
 import {useAuth} from '../context/AuthContext';
 import {useServiceRegistry} from '../services/serviceRegistry';
+import type {Job} from '../types/jobs';
 
 type DashboardScreenProps = {
   onOpenJobs: () => void;
   activeJobsCount: number;
   loadingJobs: boolean;
   jobsError: string | null;
+  activeJob: Job | null;
 };
 
 export const DashboardScreen = ({
@@ -18,6 +21,7 @@ export const DashboardScreen = ({
   activeJobsCount,
   loadingJobs,
   jobsError,
+  activeJob,
 }: DashboardScreenProps): React.JSX.Element => {
   const {session} = useAuth();
   const {location: locationService} = useServiceRegistry();
@@ -66,6 +70,8 @@ export const DashboardScreen = ({
           />
         </View>
       </View>
+
+      <JobsMapCard activeJob={activeJob} courierLocation={locationState.lastLocation} />
     </ScreenContainer>
   );
 };

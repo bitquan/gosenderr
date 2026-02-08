@@ -84,6 +84,7 @@ Rules:
 - Jobs sync path uses repository subscription (`subscribeJobs`) with reconnect/stale state surfaced to screens.
 - Offline job updates are queued locally and auto-synced when connectivity returns.
 - Production mode does not silently fallback to local seed jobs for Firestore failures.
+- Dashboard map validation card uses native maps (`react-native-maps`) with marker data from jobs/location services.
 
 ## Deploy
 
@@ -118,6 +119,9 @@ For environment profile builds:
 - `Firebase auth is required` on login:
   - Ensure `SENDERR_FIREBASE_*` values are present and valid for current profile.
   - For local-only fallback testing, explicitly set `SENDERR_ALLOW_MOCK_AUTH = 1` in a non-production config.
+- Map card warns about missing token/provider config:
+  - Ensure `SENDERR_MAP_PROVIDER` is set to `native` or `mapbox`.
+  - If `SENDERR_MAP_PROVIDER = mapbox`, set `SENDERR_MAPBOX_ACCESS_TOKEN`.
 - `Unable to verify courier access while offline` immediately after sign-in:
   - Confirm `GoogleService-Info.plist` matches the active app and Firebase project.
   - Confirm target bundle ID matches the plist bundle ID (or replace plist with one for the current bundle ID).
@@ -132,5 +136,6 @@ For environment profile builds:
 - Senderr iOS docs hub: `/docs/senderr_app/README.md`
 - Senderr iOS roadmap: `/docs/senderr_app/ROADMAP.md`
 - Jobs schema migration path: `/docs/senderr_app/JOBS_SCHEMA_MIGRATION.md`
+- Maps validation checklist: `/docs/senderr_app/MAPS_VALIDATION.md`
 - Offline mode details: `/docs/senderr_app/OFFLINE_MODE.md`
 - App docs registry: `/docs/apps/README.md`

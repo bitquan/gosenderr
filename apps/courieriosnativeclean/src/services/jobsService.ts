@@ -44,6 +44,16 @@ const seedJobs: Job[] = [
     customerName: 'Ava Thompson',
     pickupAddress: '42 Market St, San Francisco, CA',
     dropoffAddress: '220 Pine St, San Francisco, CA',
+    pickupLocation: {
+      latitude: 37.79367,
+      longitude: -122.39678,
+      label: '42 Market St, San Francisco, CA',
+    },
+    dropoffLocation: {
+      latitude: 37.79261,
+      longitude: -122.39885,
+      label: '220 Pine St, San Francisco, CA',
+    },
     notes: 'Fragile package. Ring doorbell at delivery.',
     etaMinutes: 18,
     status: 'pending',
@@ -54,6 +64,16 @@ const seedJobs: Job[] = [
     customerName: 'Noah Rivera',
     pickupAddress: '500 Howard St, San Francisco, CA',
     dropoffAddress: '160 Spear St, San Francisco, CA',
+    pickupLocation: {
+      latitude: 37.78847,
+      longitude: -122.39654,
+      label: '500 Howard St, San Francisco, CA',
+    },
+    dropoffLocation: {
+      latitude: 37.79102,
+      longitude: -122.39095,
+      label: '160 Spear St, San Francisco, CA',
+    },
     notes: 'Customer prefers contactless drop-off.',
     etaMinutes: 25,
     status: 'accepted',
@@ -68,9 +88,34 @@ const normalizeStatus = (status: string): JobStatus => {
   return 'pending';
 };
 
+const normalizeLocation = (value: unknown): Job['pickupLocation'] | undefined => {
+  if (!value || typeof value !== 'object') {
+    return undefined;
+  }
+
+  const location = value as Record<string, unknown>;
+  const latitudeSource = location.latitude ?? location.lat;
+  const longitudeSource = location.longitude ?? location.lng;
+  const latitude = typeof latitudeSource === 'number' ? latitudeSource : Number(latitudeSource);
+  const longitude = typeof longitudeSource === 'number' ? longitudeSource : Number(longitudeSource);
+
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    return undefined;
+  }
+
+  const label = typeof location.label === 'string' ? location.label : undefined;
+  return {
+    latitude,
+    longitude,
+    label,
+  };
+};
+
 const mapFirestoreJob = (id: string, data: Record<string, unknown>): Job => {
   const pickup = data.pickup as {label?: string} | undefined;
   const dropoff = data.dropoff as {label?: string} | undefined;
+  const pickupLocation = normalizeLocation(data.pickup) ?? normalizeLocation(data.pickupLocation);
+  const dropoffLocation = normalizeLocation(data.dropoff) ?? normalizeLocation(data.dropoffLocation);
   const updatedAt = data.updatedAt as {toDate?: () => Date} | string | Date | undefined;
 
   let normalizedUpdatedAt = new Date().toISOString();
@@ -87,6 +132,8 @@ const mapFirestoreJob = (id: string, data: Record<string, unknown>): Job => {
     customerName: String(data.customerName ?? 'Customer'),
     pickupAddress: pickup?.label ?? String(data.pickupAddress ?? 'Pickup address unavailable'),
     dropoffAddress: dropoff?.label ?? String(data.dropoffAddress ?? 'Dropoff address unavailable'),
+    pickupLocation,
+    dropoffLocation,
     notes: data.notes ? String(data.notes) : undefined,
     etaMinutes: Number(data.etaMinutes ?? 20),
     status: normalizeStatus(String(data.status ?? 'pending')),

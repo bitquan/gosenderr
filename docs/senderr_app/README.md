@@ -71,6 +71,8 @@ Injected build-time keys:
 - `SENDERR_FIREBASE_STORAGE_BUCKET`
 - `SENDERR_FIREBASE_MESSAGING_SENDER_ID`
 - `SENDERR_FIREBASE_APP_ID`
+- `SENDERR_MAP_PROVIDER`
+- `SENDERR_MAPBOX_ACCESS_TOKEN`
 
 Defaults:
 - `Debug` => `dev`
@@ -120,6 +122,7 @@ Rules:
 - Session handoff state: `docs/dev/SESSION_STATE.md`
 - Session worklog: `docs/dev/WORKLOG.md`
 - Device test matrix: `docs/senderr_app/DEVICE_TEST_MATRIX.md`
+- Maps validation: `docs/senderr_app/MAPS_VALIDATION.md`
 - Navigation map: `docs/senderr_app/NAVIGATION_MAP.md`
 - MVP criteria: `docs/senderr_app/MVP_ACCEPTANCE.md`
 - Signing/provisioning: `docs/senderr_app/IOS_SIGNING.md`

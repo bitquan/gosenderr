@@ -10,5 +10,9 @@ SENDERR_FIREBASE_AUTH_DOMAIN = gosenderr-6773f.firebaseapp.com
 SENDERR_FIREBASE_PROJECT_ID = gosenderr-6773f
 SENDERR_FIREBASE_STORAGE_BUCKET = gosenderr-6773f.appspot.com
 
+// Maps runtime options.
+SENDERR_MAP_PROVIDER = native
+SENDERR_MAPBOX_ACCESS_TOKEN =
+
 // Must remain disabled in production.
 SENDERR_ALLOW_MOCK_AUTH = 0
