@@ -88,6 +88,7 @@ const AppShell = (): React.JSX.Element => {
     }
 
     setJobsError(null);
+    setJobsLoading(true);
     try {
       const nextJobs = jobsSubscriptionRef.current
         ? await jobsSubscriptionRef.current.refresh()
@@ -98,6 +99,8 @@ const AppShell = (): React.JSX.Element => {
       const message = error instanceof Error ? error.message : 'Unable to refresh jobs.';
       setJobsError(message);
       throw error;
+    } finally {
+      setJobsLoading(false);
     }
   }, [jobsService, session]);
 
@@ -141,32 +144,29 @@ const AppShell = (): React.JSX.Element => {
         {activeTab === 'dashboard' ? (
           <DashboardScreen
             onOpenJobs={() => setActiveTab('jobs')}
+            onRetryJobs={() => {
+              void refreshJobs().catch(() => undefined);
+            }}
             activeJobsCount={activeJobsCount}
             loadingJobs={jobsLoading}
             jobsError={jobsError}
+            jobsSyncState={jobsSyncState}
             activeJob={activeJob}
           />
         ) : null}
 
         {activeTab === 'jobs' ? (
-          <>
-            {jobsLoading ? (
-              <View style={styles.jobsLoadingCard}>
-                <ActivityIndicator size="small" color="#1453ff" />
-                <Text style={styles.jobsLoadingText}>Loading jobs...</Text>
-              </View>
-            ) : null}
-            {jobsError ? <Text style={styles.jobsError}>{jobsError}</Text> : null}
-            <JobsScreen
-              jobs={jobs}
-              setJobs={setJobs}
-              syncState={jobsSyncState}
-              onRefresh={refreshJobs}
-              onOpenDetail={jobId => {
-                setSelectedJobId(jobId);
-              }}
-            />
-          </>
+          <JobsScreen
+            jobs={jobs}
+            setJobs={setJobs}
+            loadingJobs={jobsLoading}
+            jobsError={jobsError}
+            syncState={jobsSyncState}
+            onRefresh={refreshJobs}
+            onOpenDetail={jobId => {
+              setSelectedJobId(jobId);
+            }}
+          />
         ) : null}
 
         {activeTab === 'settings' ? <SettingsScreen /> : null}
@@ -231,26 +231,6 @@ const styles = StyleSheet.create({
   loadingText: {
     color: '#4b5563',
     fontSize: 15,
-    fontWeight: '600',
-  },
-  jobsLoadingCard: {
-    marginHorizontal: 16,
-    marginTop: 16,
-    padding: 12,
-    borderRadius: 10,
-    backgroundColor: '#ffffff',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  jobsLoadingText: {
-    color: '#374151',
-    fontWeight: '600',
-  },
-  jobsError: {
-    marginHorizontal: 16,
-    marginTop: 8,
-    color: '#dc2626',
     fontWeight: '600',
   },
   tabBar: {
