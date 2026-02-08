@@ -297,3 +297,23 @@ Append-only log used for session recovery.
 - Blockers: None
 - Next:
   - Open PR for #137 and then start #141 TestFlight QA checklist docs
+
+---
+
+## 2026-02-08 12:12 local (2026-02-08 17:12 UTC)
+
+- Status: `in_progress`
+- Summary: Synced APNs+FCM token flow into Senderr iOS profile and added fallback mode for send-test-push
+- Branch: `codex/issue-137-209-push-token-followup`
+- Commit: `f545b4a`
+- Issue: `#137,#209`
+- PR: `n/a`
+- Files:
+  - `apps/courieriosnativeclean/App.tsx`
+  - `apps/courieriosnativeclean/src/services/serviceRegistry.tsx`
+  - `apps/courieriosnativeclean/src/services/adapters/notificationsNativeAdapter.ts`
+  - `apps/courieriosnativeclean/src/services/adapters/notificationsFirebaseAdapter.ts`
+  - `scripts/send-test-push.js`
+- Blockers: None
+- Next:
+  - Open PR to senderr_app and validate end-to-end push delivery with APNs topic mapping
