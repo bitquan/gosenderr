@@ -287,7 +287,7 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.gosenderr.senderr;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gosender.courier;
 				PRODUCT_NAME = Senderr;
 				SENDERR_API_BASE_URL = "https://dev-api.gosenderr.com";
 				SENDERR_ENV_NAME = dev;
@@ -330,7 +330,7 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.gosenderr.senderr;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gosender.courier;
 				PRODUCT_NAME = Senderr;
 				SENDERR_API_BASE_URL = "https://api.gosenderr.com";
 				SENDERR_ENV_NAME = prod;
