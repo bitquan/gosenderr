@@ -6,18 +6,17 @@ Source: GitHub issues labeled `scope:courier`
 ## Snapshot
 
 - Total `scope:courier` issues: `44`
-- Closed: `30`
-- Open: `14`
-- Completion: `68.2%`
+- Closed: `31`
+- Open: `13`
+- Completion: `70.5%`
 
 ## Active Queue (Open)
 
 P1:
 
 1. `#201` iOS Senderr: MVP feature completion + upgradeability epic
-2. `#203` iOS Senderr: real-time jobs sync with reconnect resilience
-3. `#204` iOS Senderr: location tracking upload pipeline hardening
-4. `#205` iOS Senderr: job transition command pipeline and conflict handling
+2. `#204` iOS Senderr: location tracking upload pipeline hardening
+3. `#205` iOS Senderr: job transition command pipeline and conflict handling
 
 P2:
 
@@ -37,6 +36,7 @@ P3:
 
 ## Recently Completed (Most Recent)
 
+- `#203` iOS Senderr: real-time jobs sync with reconnect resilience
 - `#145` iOS Senderr: Offline mode for active job flow
 - `#143` iOS Senderr: Mapbox/Maps integration validation
 - `#207` iOS Senderr: adopt upgrade-safe ports/adapters architecture
@@ -46,7 +46,6 @@ P3:
 - `#161` iOS Senderr: Remove legacy duplicate iOS project folders
 - `#150` iOS Senderr: Define MVP acceptance criteria
 - `#149` iOS Senderr: Consolidate iOS build scripts
-- `#148` iOS Senderr: API/client config cleanup for native target
 
 ## Working Rules
 
