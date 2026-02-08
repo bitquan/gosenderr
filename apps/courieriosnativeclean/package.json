@@ -7,7 +7,9 @@
     "ios": "react-native run-ios",
     "lint": "eslint .",
     "start": "react-native start",
-    "test": "jest"
+    "test": "jest",
+    "test:unit": "jest --config jest.integration.config.js src/services/__integration__/adapters.contract.integration.test.ts",
+    "test:integration": "jest --config jest.integration.config.js src/services/__integration__/jobs.emulator.integration.test.ts"
   },
   "dependencies": {
     "@babel/runtime": "^7.25.0",

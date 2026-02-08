@@ -130,3 +130,11 @@ Rules:
 - Flow audit guide: `docs/senderr_app/AUDIT.md`
 - Jobs schema migration: `docs/senderr_app/JOBS_SCHEMA_MIGRATION.md`
 - Offline active job sync: `docs/senderr_app/OFFLINE_MODE.md`
+
+## Test Lanes
+
+- Unit tests: `pnpm --filter courieriosnativeclean test:unit`
+- Integration tests (Firestore emulator):
+  `firebase emulators:exec --project demo-senderr --only firestore,auth "pnpm --filter courieriosnativeclean test:integration"`
+
+The integration lane validates critical auth/jobs/location service contracts and the assigned-job status transition flow against Firestore emulator.
