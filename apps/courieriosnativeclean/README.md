@@ -95,12 +95,15 @@ Release flow is Xcode/TestFlight-based:
 
 1. Build/archive from `Senderrappios.xcworkspace`.
 2. Distribute through App Store Connect/TestFlight.
+3. Run internal release checklist:
+   - `docs/senderr_app/TESTFLIGHT_QA_CHECKLIST.md`
 
 For environment profile builds:
 
 - `bash scripts/ios-build-env.sh dev`
 - `bash scripts/ios-build-env.sh staging`
 - `bash scripts/ios-build-env.sh prod Release`
+- `pnpm run ios:testflight:archive`
 
 ## Troubleshooting
 

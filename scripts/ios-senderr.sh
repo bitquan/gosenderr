@@ -14,6 +14,8 @@ Commands:
   full          Clean pods + install + verify Debug/Release builds (default)
   clean-install Clean pod artifacts and run pod install
   build-verify  Run iOS build verification matrix
+  testflight-archive Build Release archive + IPA for TestFlight handoff
+  testflight-upload  Build Release archive + IPA, then upload to App Store Connect
   open-xcode    Open the canonical Senderr iOS workspace
   metro         Start Metro from the Senderr app directory
   help          Show this help
@@ -26,6 +28,14 @@ run_clean_install() {
 
 run_build_verify() {
   bash "$ROOT_DIR/scripts/ios-build-verify.sh"
+}
+
+run_testflight_archive() {
+  bash "$ROOT_DIR/scripts/ios-testflight.sh" archive
+}
+
+run_testflight_upload() {
+  bash "$ROOT_DIR/scripts/ios-testflight.sh" upload
 }
 
 run_open_xcode() {
@@ -58,6 +68,12 @@ case "$cmd" in
     ;;
   build-verify)
     run_build_verify
+    ;;
+  testflight-archive)
+    run_testflight_archive
+    ;;
+  testflight-upload)
+    run_testflight_upload
     ;;
   open-xcode)
     run_open_xcode
