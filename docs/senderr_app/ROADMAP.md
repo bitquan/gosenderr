@@ -6,31 +6,19 @@ Source: GitHub issues labeled `scope:courier`
 ## Snapshot
 
 - Total `scope:courier` issues: `44`
-- Closed: `36`
-- Open: `8`
-- Completion: `81.8%`
+- Closed: `44`
+- Open: `0`
+- Completion: `100.0%`
 
 ## Active Queue (Open)
 
-P1:
-
-1. `#201` iOS Senderr: MVP feature completion + upgradeability epic
-
-P2:
-
-1. `#128` iOS Senderr: Update icons + launch screen
-2. `#137` iOS Senderr: Push notifications setup + local testing
-3. `#138` iOS Senderr: Add unit tests for critical screens
-4. `#141` iOS Senderr: TestFlight build + internal QA checklist
-5. `#146` iOS Senderr: Crash/analytics integration
-6. `#210` iOS Senderr: add integration test harness for critical workflows
-
-P3:
-
-1. `#147` iOS Senderr: Release checklist + App Store metadata
+- None
 
 ## Recently Completed (Most Recent)
 
+- `#201` iOS Senderr: MVP feature completion + upgradeability epic
+- `#147` iOS Senderr: Release checklist + App Store metadata
+- `#128` iOS Senderr: Update icons + launch screen
 - `#209` iOS Senderr: close UX state gaps for reliability feedback
 - `#208` iOS Senderr: feature flags and remote config for safe rollout
 - `#206` iOS Senderr: implement real courier profile and settings persistence

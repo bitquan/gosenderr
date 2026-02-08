@@ -381,3 +381,63 @@ Append-only log used for session recovery.
 - Blockers: None
 - Next:
   - Monitor CI for PR #232 and merge
+
+---
+
+## 2026-02-08 13:23 local (2026-02-08 18:23 UTC)
+
+- Status: `in_progress`
+- Summary: Completed #128 branding assets and #147 release metadata/checklist docs; refreshed courier roadmap to done state
+- Branch: `codex/batch-128-147-201-release-readiness`
+- Commit: `760fa3a`
+- Issue: `#128,#147,#201`
+- PR: `n/a`
+- Files:
+  - `apps/courieriosnativeclean/ios/Senderrappios/Images.xcassets/AppIcon.appiconset/Contents.json`
+  - `apps/courieriosnativeclean/ios/Senderrappios/LaunchScreen.storyboard`
+  - `docs/senderr_app/APP_STORE_RELEASE.md`
+  - `docs/senderr_app/README.md`
+  - `docs/senderr_app/ROADMAP.md`
+- Blockers: None
+- Next:
+  - Push branch and open PR that closes #128 #147 #201
+
+---
+
+## 2026-02-08 13:25 local (2026-02-08 18:25 UTC)
+
+- Status: `in_progress`
+- Summary: Committed #128 asset branding + #147 release metadata docs + roadmap refresh toward epic closure
+- Branch: `codex/batch-128-147-201-release-readiness`
+- Commit: `421e1f7`
+- Issue: `#128,#147,#201`
+- PR: `n/a`
+- Files:
+  - `apps/courieriosnativeclean/ios/Senderrappios/Images.xcassets/AppIcon.appiconset/Contents.json`
+  - `apps/courieriosnativeclean/ios/Senderrappios/LaunchScreen.storyboard`
+  - `docs/senderr_app/APP_STORE_RELEASE.md`
+  - `docs/senderr_app/ROADMAP.md`
+- Blockers: None
+- Next:
+  - Push branch and open PR; then merge to close #128 #147 #201
+
+---
+
+## 2026-02-08 13:27 local (2026-02-08 18:27 UTC)
+
+- Status: `in_progress`
+- Summary: Opened PR #234 for #128/#147/#201 release-readiness batch
+- Branch: `codex/batch-128-147-201-release-readiness`
+- Commit: `ad58c81`
+- Issue: `#128,#147,#201`
+- PR: `#234`
+- Files:
+  - `apps/courieriosnativeclean/ios/Senderrappios/Images.xcassets/AppIcon.appiconset/Contents.json`
+  - `apps/courieriosnativeclean/ios/Senderrappios/LaunchScreen.storyboard`
+  - `docs/senderr_app/APP_STORE_RELEASE.md`
+  - `docs/senderr_app/ROADMAP.md`
+  - `docs/dev/SESSION_STATE.md`
+  - `docs/dev/WORKLOG.md`
+- Blockers: None
+- Next:
+  - Monitor CI on #234 and merge to senderr_app when green
