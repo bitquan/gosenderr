@@ -277,3 +277,23 @@ Append-only log used for session recovery.
 - Blockers: Jest and ESLint in this workspace fail due pre-existing toolchain/config mismatch (not introduced in this change).
 - Next:
   - Commit branch changes, open PR for #206, and run full CI checks.
+
+---
+
+## 2026-02-08 04:39 local (2026-02-08 09:39 UTC)
+
+- Status: `in_progress`
+- Summary: Implemented Firebase Messaging push notifications wiring (permission, token registration, foreground handling) for Senderr iOS
+- Branch: `codex/issue-137-push-notifications-setup`
+- Commit: `d98da71`
+- Issue: `#137`
+- PR: `n/a`
+- Files:
+  - `apps/courieriosnativeclean/App.tsx`
+  - `apps/courieriosnativeclean/src/services/adapters/notificationsFirebaseAdapter.ts`
+  - `apps/courieriosnativeclean/src/services/serviceRegistry.tsx`
+  - `apps/courieriosnativeclean/src/services/ports/notificationsPort.ts`
+  - `docs/senderr_app/PUSH_NOTIFICATIONS.md`
+- Blockers: None
+- Next:
+  - Open PR for #137 and then start #141 TestFlight QA checklist docs
