@@ -5,7 +5,7 @@ import {authFirebaseAdapter} from './adapters/authFirebaseAdapter';
 import {featureFlagsService} from './featureFlagsService';
 import {jobsFirebaseAdapter} from './adapters/jobsFirebaseAdapter';
 import {locationNativeAdapter} from './adapters/locationNativeAdapter';
-import {notificationsNoopAdapter} from './adapters/notificationsNoopAdapter';
+import {notificationsFirebaseAdapter} from './adapters/notificationsFirebaseAdapter';
 import {profileFirebaseAdapter} from './adapters/profileFirebaseAdapter';
 import type {AnalyticsServicePort} from './ports/analyticsPort';
 import type {AuthServicePort} from './ports/authPort';
@@ -29,7 +29,7 @@ const defaultRegistry: ServiceRegistry = {
   auth: authFirebaseAdapter,
   jobs: jobsFirebaseAdapter,
   location: locationNativeAdapter,
-  notifications: notificationsNoopAdapter,
+  notifications: notificationsFirebaseAdapter,
   analytics: analyticsFirebaseAdapter,
   profile: profileFirebaseAdapter,
   featureFlags: featureFlagsService,

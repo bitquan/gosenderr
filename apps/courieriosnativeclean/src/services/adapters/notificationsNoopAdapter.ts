@@ -4,4 +4,5 @@ export const notificationsNoopAdapter: NotificationsServicePort = {
   requestPermission: async () => false,
   registerDeviceToken: async () => null,
   handleForegroundMessage: async () => undefined,
+  subscribeToForegroundMessages: () => () => undefined,
 };

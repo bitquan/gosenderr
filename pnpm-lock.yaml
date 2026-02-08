@@ -245,6 +245,9 @@ importers:
       '@react-native-firebase/crashlytics':
         specifier: ^21.7.1
         version: 21.14.0(@react-native-firebase/app@21.14.0)
+      '@react-native-firebase/messaging':
+        specifier: ^21.7.1
+        version: 21.14.0(@react-native-firebase/app@21.14.0)
       firebase:
         specifier: 12.0.0
         version: 12.0.0(@react-native-async-storage/async-storage@2.2.0)
@@ -4086,6 +4089,18 @@ packages:
     dependencies:
       '@react-native-firebase/app': 21.14.0(@react-native-async-storage/async-storage@2.2.0)(react-native@0.76.5)(react@18.3.1)
       stacktrace-js: 2.0.2
+    dev: false
+
+  /@react-native-firebase/messaging@21.14.0(@react-native-firebase/app@21.14.0):
+    resolution: {integrity: sha512-EwJVFr2xtQFf6wQ3anXvnxCyFNRc6Hw7B6Ov4GYwgBEXNzw0MIPN2qDDA3lIN2a6nf6zESPuflYyG6Tel1ovSQ==}
+    peerDependencies:
+      '@react-native-firebase/app': 21.14.0
+      expo: '>=47.0.0'
+    peerDependenciesMeta:
+      expo:
+        optional: true
+    dependencies:
+      '@react-native-firebase/app': 21.14.0(@react-native-async-storage/async-storage@2.2.0)(react-native@0.76.5)(react@18.3.1)
     dev: false
 
   /@react-native/assets-registry@0.76.5:
