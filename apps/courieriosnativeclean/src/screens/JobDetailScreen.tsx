@@ -14,11 +14,16 @@ type JobDetailScreenProps = {
   onJobUpdated: (job: Job) => void;
 };
 
+type Feedback = {
+  message: string;
+  tone: 'error' | 'info';
+};
+
 export const JobDetailScreen = ({job, onBack, onJobUpdated}: JobDetailScreenProps): React.JSX.Element => {
   const {session} = useAuth();
   const {jobs: jobsService} = useServiceRegistry();
   const [updating, setUpdating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<Feedback | null>(null);
 
   const nextStatus = useMemo<JobStatus | null>(() => NEXT_STATUS[job.status] ?? null, [job.status]);
 
@@ -27,22 +32,35 @@ export const JobDetailScreen = ({job, onBack, onJobUpdated}: JobDetailScreenProp
       return;
     }
 
-    const optimistic: Job = {
-      ...job,
-      status: nextStatus,
-      updatedAt: new Date().toISOString(),
-    };
-
     setUpdating(true);
-    setError(null);
-    onJobUpdated(optimistic);
+    setFeedback(null);
 
     try {
-      const updated = await jobsService.updateJobStatus(session, job.id, nextStatus);
-      onJobUpdated(updated);
+      const result = await jobsService.updateJobStatus(session, job.id, nextStatus);
+
+      if (result.kind === 'success') {
+        onJobUpdated(result.job);
+        if (result.message) {
+          setFeedback({message: result.message, tone: 'info'});
+        }
+        return;
+      }
+
+      if (result.kind === 'conflict' || result.kind === 'retryable_error') {
+        onJobUpdated(result.job);
+        setFeedback({message: result.message, tone: 'error'});
+        return;
+      }
+
+      if (result.job) {
+        onJobUpdated(result.job);
+      }
+      setFeedback({message: result.message, tone: 'error'});
     } catch (updateError) {
-      onJobUpdated(job);
-      setError(updateError instanceof Error ? updateError.message : 'Unable to update status.');
+      setFeedback({
+        message: updateError instanceof Error ? updateError.message : 'Unable to update status.',
+        tone: 'error',
+      });
     } finally {
       setUpdating(false);
     }
@@ -68,7 +86,7 @@ export const JobDetailScreen = ({job, onBack, onJobUpdated}: JobDetailScreenProp
         <Text style={styles.sectionLabel}>ETA</Text>
         <Text style={styles.sectionValue}>{job.etaMinutes} minutes</Text>
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+        {feedback ? <Text style={feedback.tone === 'error' ? styles.error : styles.info}>{feedback.message}</Text> : null}
 
         <PrimaryButton
           label={
@@ -114,6 +132,11 @@ const styles = StyleSheet.create({
   },
   error: {
     color: '#dc2626',
+    fontWeight: '600',
+    marginTop: 4,
+  },
+  info: {
+    color: '#1d4ed8',
     fontWeight: '600',
     marginTop: 4,
   },
