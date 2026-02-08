@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useRef, useState} from 'react';
+import {useCallback, useEffect, useState} from 'react';
 import {PermissionsAndroid, Platform} from 'react-native';
 import Geolocation, {
   type GeolocationError,
@@ -40,94 +40,145 @@ const requestIOSLocation = async (): Promise<boolean> => {
   });
 };
 
-export const useLocationTracking = (): {
-  state: LocationTrackingState;
-  requestPermission: () => Promise<boolean>;
-  startTracking: () => Promise<void>;
-  stopTracking: () => void;
-} => {
-  const watchIdRef = useRef<number | null>(null);
-  const [state, setState] = useState<LocationTrackingState>({
-    hasPermission: false,
-    tracking: false,
-    lastLocation: null,
-    error: null,
+type Listener = (state: LocationTrackingState) => void;
+
+const listeners = new Set<Listener>();
+let watchId: number | null = null;
+let permissionPromise: Promise<boolean> | null = null;
+
+let sharedState: LocationTrackingState = {
+  hasPermission: false,
+  tracking: false,
+  lastLocation: null,
+  error: null,
+};
+
+const publishState = (): void => {
+  listeners.forEach(listener => {
+    listener(sharedState);
   });
+};
 
-  const setTrackingError = (error: GeolocationError): void => {
-    setState(prev => ({
-      ...prev,
-      error: error.message,
-      tracking: false,
-    }));
-  };
+const updateSharedState = (updater: (prev: LocationTrackingState) => LocationTrackingState): void => {
+  sharedState = updater(sharedState);
+  publishState();
+};
 
-  const requestPermission = useCallback(async (): Promise<boolean> => {
+const setTrackingError = (error: GeolocationError): void => {
+  updateSharedState(prev => ({
+    ...prev,
+    error: error.message,
+    tracking: false,
+  }));
+
+  if (watchId !== null) {
+    Geolocation.clearWatch(watchId);
+    watchId = null;
+  }
+};
+
+const requestPermissionInternal = async (): Promise<boolean> => {
+  if (permissionPromise) {
+    return permissionPromise;
+  }
+
+  permissionPromise = (async () => {
     try {
       const granted = Platform.OS === 'ios' ? await requestIOSLocation() : await requestAndroidLocation();
-      setState(prev => ({
+      updateSharedState(prev => ({
         ...prev,
         hasPermission: granted,
         error: granted ? null : 'Location permission denied.',
       }));
       return granted;
     } catch (error) {
-      setState(prev => ({
+      updateSharedState(prev => ({
         ...prev,
         hasPermission: false,
         error: error instanceof Error ? error.message : 'Unable to request location permission.',
       }));
       return false;
     }
-  }, []);
+  })();
 
+  try {
+    return await permissionPromise;
+  } finally {
+    permissionPromise = null;
+  }
+};
+
+const stopTrackingInternal = (): void => {
+  if (watchId !== null) {
+    Geolocation.clearWatch(watchId);
+    watchId = null;
+  }
+
+  updateSharedState(prev => ({
+    ...prev,
+    tracking: false,
+  }));
+};
+
+const startTrackingInternal = async (): Promise<void> => {
+  if (watchId !== null) {
+    return;
+  }
+
+  const hasPermission = sharedState.hasPermission || (await requestPermissionInternal());
+  if (!hasPermission) {
+    return;
+  }
+
+  updateSharedState(prev => ({
+    ...prev,
+    tracking: true,
+    error: null,
+  }));
+
+  watchId = Geolocation.watchPosition(
+    position => {
+      updateSharedState(prev => ({
+        ...prev,
+        tracking: true,
+        error: null,
+        lastLocation: toSnapshot(position),
+      }));
+    },
+    setTrackingError,
+    {
+      enableHighAccuracy: true,
+      distanceFilter: 15,
+      interval: 5000,
+      fastestInterval: 3000,
+    },
+  );
+};
+
+const subscribe = (listener: Listener): (() => void) => {
+  listeners.add(listener);
+  listener(sharedState);
+
+  return () => {
+    listeners.delete(listener);
+  };
+};
+
+export const useLocationTracking = (): {
+  state: LocationTrackingState;
+  requestPermission: () => Promise<boolean>;
+  startTracking: () => Promise<void>;
+  stopTracking: () => void;
+} => {
+  const [state, setState] = useState<LocationTrackingState>(sharedState);
+
+  useEffect(() => subscribe(setState), []);
+
+  const requestPermission = useCallback(async (): Promise<boolean> => requestPermissionInternal(), []);
+  const startTracking = useCallback(async (): Promise<void> => startTrackingInternal(), []);
   const stopTracking = useCallback((): void => {
-    if (watchIdRef.current !== null) {
-      Geolocation.clearWatch(watchIdRef.current);
-      watchIdRef.current = null;
-    }
-    setState(prev => ({
-      ...prev,
-      tracking: false,
-    }));
+    stopTrackingInternal();
   }, []);
-
-  const startTracking = useCallback(async (): Promise<void> => {
-    if (!state.hasPermission) {
-      const granted = await requestPermission();
-      if (!granted) {
-        return;
-      }
-    }
-
-    if (watchIdRef.current !== null) {
-      return;
-    }
-
-    watchIdRef.current = Geolocation.watchPosition(
-      position => {
-        setState(prev => ({
-          ...prev,
-          tracking: true,
-          error: null,
-          lastLocation: toSnapshot(position),
-        }));
-      },
-      setTrackingError,
-      {
-        enableHighAccuracy: true,
-        distanceFilter: 15,
-        interval: 5000,
-        fastestInterval: 3000,
-      },
-    );
-  }, [requestPermission, state.hasPermission]);
-
-  useEffect(() => {
-    return () => {
-      stopTracking();
-    };
-  }, [stopTracking]);
 
   const controller: LocationTrackingController = {
     state,

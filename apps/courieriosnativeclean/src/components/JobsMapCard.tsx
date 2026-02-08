@@ -102,6 +102,24 @@ export const JobsMapCard = ({activeJob, courierLocation}: JobsMapCardProps): Rea
     );
   }, [mapReady, points]);
 
+
+  useEffect(() => {
+    if (!mapReady || !mapRef.current || points.length !== 1) {
+      return;
+    }
+
+    const point = points[0];
+    mapRef.current.animateToRegion(
+      {
+        latitude: point.latitude,
+        longitude: point.longitude,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      },
+      350,
+    );
+  }, [mapReady, points]);
+
   return (
     <View style={styles.card}>
       <Text style={styles.sectionTitle}>Map Validation</Text>
