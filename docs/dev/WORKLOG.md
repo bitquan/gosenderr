@@ -253,3 +253,27 @@ Append-only log used for session recovery.
 - Blockers: None
 - Next:
   - implement courier profile + settings persistence for issue #206
+
+---
+
+## 2026-02-08 01:16 local (2026-02-08 06:16 UTC)
+
+- Status: `in_progress`
+- Summary: Implemented courier profile/settings persistence with separate package and food rate cards, validation, Firebase sync, and local cache migration.
+- Branch: `codex/issue-206-profile-settings-persistence`
+- Commit: `78e6293`
+- Issue: `#206`
+- PR: `n/a`
+- Files:
+  - `apps/courieriosnativeclean/src/types/profile.ts`
+  - `apps/courieriosnativeclean/src/services/ports/profilePort.ts`
+  - `apps/courieriosnativeclean/src/services/profileService.ts`
+  - `apps/courieriosnativeclean/src/services/adapters/profileFirebaseAdapter.ts`
+  - `apps/courieriosnativeclean/src/services/serviceRegistry.tsx`
+  - `apps/courieriosnativeclean/src/screens/SettingsScreen.tsx`
+  - `apps/courieriosnativeclean/src/services/__tests__/profileService.test.ts`
+  - `docs/senderr_app/PROFILE_SCHEMA_MIGRATION.md`
+  - `docs/senderr_app/README.md`
+- Blockers: Jest and ESLint in this workspace fail due pre-existing toolchain/config mismatch (not introduced in this change).
+- Next:
+  - Commit branch changes, open PR for #206, and run full CI checks.
