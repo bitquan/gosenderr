@@ -362,3 +362,22 @@ Append-only log used for session recovery.
 - Blockers: None
 - Next:
   - Open PR, run CI, and merge to senderr_app
+
+---
+
+## 2026-02-08 12:52 local (2026-02-08 17:52 UTC)
+
+- Status: `in_progress`
+- Summary: Opened PR #232 for #206/#208/#209 follow-up DoD closure
+- Branch: `codex/batch-206-208-209-courier-settings-flags-ux`
+- Commit: `4113a65`
+- Issue: `#206,#208,#209`
+- PR: `#232`
+- Files:
+  - `apps/courieriosnativeclean/App.tsx`
+  - `apps/courieriosnativeclean/src/components/states/__tests__/StateComponents.test.tsx`
+  - `docs/senderr_app/README.md`
+  - `docs/senderr_app/SMOKE_CHECKLIST.md`
+- Blockers: None
+- Next:
+  - Monitor CI for PR #232 and merge

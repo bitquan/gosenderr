@@ -4,20 +4,20 @@ This file is the canonical handoff state when a chat/session is interrupted.
 
 ## Last Updated
 
-- Local: 2026-02-08 12:50
-- UTC: 2026-02-08 17:50
+- Local: 2026-02-08 12:52
+- UTC: 2026-02-08 17:52
 
 ## Current Focus
 
 - Active issue: #206,#208,#209
-- Active PR: n/a
-- Objective: Closed DoD gaps for #206/#208/#209 (notification flag gate + state tests + smoke/docs updates)
+- Active PR: #232
+- Objective: Opened PR #232 for #206/#208/#209 follow-up DoD closure
 
 ## Branch + Commit
 
 - Branch: `codex/batch-206-208-209-courier-settings-flags-ux`
-- Commit: `96fee9d`
-- Working tree: clean
+- Commit: `4113a65`
+- Working tree: dirty
 
 ## Blockers
 
@@ -25,7 +25,7 @@ This file is the canonical handoff state when a chat/session is interrupted.
 
 ## Next Actions
 
-1. Open PR, run CI, and merge to senderr_app
+1. Monitor CI for PR #232 and merge
 2. Re-open `docs/dev/WORKLOG.md` and append after each meaningful change.
 3. Keep this file current at task boundaries.
 
