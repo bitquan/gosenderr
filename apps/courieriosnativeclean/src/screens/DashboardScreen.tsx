@@ -1,11 +1,11 @@
 import React from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 
-import {JobsMapCard} from '../components/JobsMapCard';
 import {PrimaryButton} from '../components/PrimaryButton';
 import {ScreenContainer} from '../components/ScreenContainer';
 import {useAuth} from '../context/AuthContext';
 import {useServiceRegistry} from '../services/serviceRegistry';
+import type {LocationSnapshot} from '../services/ports/locationPort';
 import type {Job} from '../types/jobs';
 
 type DashboardScreenProps = {
@@ -16,6 +16,34 @@ type DashboardScreenProps = {
   activeJob: Job | null;
 };
 
+type JobsMapCardProps = {
+  activeJob: Job | null;
+  courierLocation: LocationSnapshot | null;
+};
+
+const JobsMapCardFallback = ({activeJob, courierLocation}: JobsMapCardProps): React.JSX.Element => (
+  <View style={styles.card}>
+    <Text style={styles.sectionTitle}>Map Validation</Text>
+    <Text style={styles.subtitle}>
+      {activeJob || courierLocation
+        ? 'Map component is unavailable in this runtime. Restart Metro with --reset-cache and rebuild.'
+        : 'No active job yet.'}
+    </Text>
+  </View>
+);
+
+const loadJobsMapCard = (): React.ComponentType<JobsMapCardProps> => {
+  try {
+    // Metro can serve stale module state after path/branch changes.
+    // Resolve lazily so dashboard stays alive with a clear fallback.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports,global-require
+    const mapModule = require('../components/JobsMapCard');
+    return mapModule?.JobsMapCard ?? JobsMapCardFallback;
+  } catch (_error) {
+    return JobsMapCardFallback;
+  }
+};
+
 export const DashboardScreen = ({
   onOpenJobs,
   activeJobsCount,
@@ -23,6 +51,7 @@ export const DashboardScreen = ({
   jobsError,
   activeJob,
 }: DashboardScreenProps): React.JSX.Element => {
+  const JobsMapCard = loadJobsMapCard();
   const {session} = useAuth();
   const {location: locationService} = useServiceRegistry();
   const {state: locationState, startTracking, stopTracking} = locationService.useLocationTracking();
