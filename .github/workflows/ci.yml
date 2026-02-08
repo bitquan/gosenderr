@@ -262,8 +262,36 @@ jobs:
       - name: Run admin app tests
         run: pnpm --filter @gosenderr/admin-app test -- --run
 
+  admin-desktop-changes:
+    name: Admin Desktop Change Detection
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      should_run: ${{ steps.filter.outputs.admin_desktop_related }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect admin desktop related changes
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            admin_desktop_related:
+              - 'apps/admin-desktop/**'
+              - 'packages/shared/**'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - 'turbo.json'
+              - '.github/workflows/ci.yml'
+
   admin-desktop-packaging:
     name: Admin Desktop Packaging (${{ matrix.os }})
+    needs: admin-desktop-changes
+    if: needs.admin-desktop-changes.outputs.should_run == 'true'
     runs-on: ${{ matrix.os }}
     permissions:
       contents: read
