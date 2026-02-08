@@ -47,7 +47,7 @@ For physical devices, point Metro host to your machine IP in `AppDelegate.swift`
 ## Current courier shell
 - Auth: login/logout via Firebase where configured; local mock fallback for offline dev.
 - Navigation: dashboard / jobs / settings tabs + job detail route.
-- Jobs: app-level real-time sync with Firestore listener, reconnect backoff, stale-data indicator, and optimistic status updates.
+- Jobs: app-level real-time sync with Firestore listener, reconnect backoff, stale-data indicator, optimistic status updates, and offline status-update queue flush on reconnect.
 - Jobs fallback: AsyncStorage mock fallback is allowed only outside production mode.
 - Location: permission request and tracking hook with latest coordinate snapshot.
 
@@ -125,3 +125,4 @@ Rules:
 - Signing/provisioning: `docs/senderr_app/IOS_SIGNING.md`
 - Flow audit guide: `docs/senderr_app/AUDIT.md`
 - Jobs schema migration: `docs/senderr_app/JOBS_SCHEMA_MIGRATION.md`
+- Offline active job sync: `docs/senderr_app/OFFLINE_MODE.md`

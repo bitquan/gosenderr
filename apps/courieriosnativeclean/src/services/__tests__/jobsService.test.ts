@@ -112,6 +112,56 @@ describe('jobsService firebase/mock fallback', () => {
     expect(persistedJobs[0].status).toBe('accepted');
   });
 
+  it('queues status updates in prod mode when connectivity drops', async () => {
+    runtimeConfig.envName = 'prod';
+    (mockUpdateDoc as any).mockRejectedValue(new Error('network unavailable'));
+    (mockGetItem as any).mockImplementation((key: string) => {
+      if (key === '@senderr/jobs') {
+        return Promise.resolve(JSON.stringify(makeLocalJobs()));
+      }
+      if (key === '@senderr/jobs/status-update-queue') {
+        return Promise.resolve(null);
+      }
+      return Promise.resolve(null);
+    });
+
+    const updated = await updateJobStatus(session, 'local_job_1', 'accepted');
+
+    expect(updated.status).toBe('accepted');
+    expect(mockSetItem).toHaveBeenCalledWith('@senderr/jobs/status-update-queue', expect.any(String));
+  });
+
+  it('clears queued status update after a successful Firebase write', async () => {
+    runtimeConfig.envName = 'prod';
+    (mockUpdateDoc as any).mockResolvedValue(undefined);
+    (mockGetDoc as any).mockResolvedValue({exists: () => false});
+    (mockGetItem as any).mockImplementation((key: string) => {
+      if (key === '@senderr/jobs') {
+        return Promise.resolve(JSON.stringify(makeLocalJobs()));
+      }
+      if (key === '@senderr/jobs/status-update-queue') {
+        return Promise.resolve(
+          JSON.stringify([
+            {
+              jobId: 'local_job_1',
+              sessionUid: session.uid,
+              nextStatus: 'accepted',
+              enqueuedAt: new Date().toISOString(),
+              attempts: 1,
+              lastError: 'network unavailable',
+            },
+          ]),
+        );
+      }
+      return Promise.resolve(null);
+    });
+
+    const updated = await updateJobStatus(session, 'local_job_1', 'accepted');
+
+    expect(updated.status).toBe('accepted');
+    expect(mockRemoveItem).toHaveBeenCalledWith('@senderr/jobs/status-update-queue');
+  });
+
   it('returns Firebase jobs when query succeeds', async () => {
     (mockGetDocs as any).mockResolvedValue({
       empty: false,
