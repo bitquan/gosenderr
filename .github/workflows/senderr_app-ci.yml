@@ -61,4 +61,4 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run courier integration tests on emulator
-        run: firebase emulators:exec --project demo-senderr --only firestore,auth "pnpm --filter courieriosnativeclean test:integration"
+        run: pnpm exec firebase emulators:exec --project demo-senderr --only firestore,auth "pnpm --filter courieriosnativeclean test:integration"
