@@ -4,13 +4,13 @@ This is the source-of-truth guide for the native Senderr courier app at `apps/co
 
 > Doc metadata
 > - Owner: `@bitquan`
-> - Last verified: `2026-02-07`
+> - Last verified: `2026-02-08`
 > - Review cadence: `weekly`
 
 ## Canonical iOS targets
 - Workspace: `apps/courieriosnativeclean/ios/Senderrappios.xcworkspace`
 - Xcode scheme: `Senderr`
-- Bundle id: `com.gosenderr.senderr`
+- Bundle id: `com.gosenderr.courier`
 - Minimum iOS: `16.0`
 
 Legacy duplicate iOS project/workspace folders are archived at `apps/_archive/legacy-ios-workspaces/` and are out of active scope.
@@ -131,6 +131,7 @@ Rules:
 - MVP criteria: `docs/senderr_app/MVP_ACCEPTANCE.md`
 - Signing/provisioning: `docs/senderr_app/IOS_SIGNING.md`
 - TestFlight release + QA checklist: `docs/senderr_app/TESTFLIGHT_QA_CHECKLIST.md`
+- App Store release checklist + metadata: `docs/senderr_app/APP_STORE_RELEASE.md`
 - Flow audit guide: `docs/senderr_app/AUDIT.md`
 - Jobs schema migration: `docs/senderr_app/JOBS_SCHEMA_MIGRATION.md`
 - Profile schema migration: `docs/senderr_app/PROFILE_SCHEMA_MIGRATION.md`
