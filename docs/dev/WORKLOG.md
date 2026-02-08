@@ -401,3 +401,22 @@ Append-only log used for session recovery.
 - Blockers: None
 - Next:
   - Push branch and open PR that closes #128 #147 #201
+
+---
+
+## 2026-02-08 13:25 local (2026-02-08 18:25 UTC)
+
+- Status: `in_progress`
+- Summary: Committed #128 asset branding + #147 release metadata docs + roadmap refresh toward epic closure
+- Branch: `codex/batch-128-147-201-release-readiness`
+- Commit: `421e1f7`
+- Issue: `#128,#147,#201`
+- PR: `n/a`
+- Files:
+  - `apps/courieriosnativeclean/ios/Senderrappios/Images.xcassets/AppIcon.appiconset/Contents.json`
+  - `apps/courieriosnativeclean/ios/Senderrappios/LaunchScreen.storyboard`
+  - `docs/senderr_app/APP_STORE_RELEASE.md`
+  - `docs/senderr_app/ROADMAP.md`
+- Blockers: None
+- Next:
+  - Push branch and open PR; then merge to close #128 #147 #201
