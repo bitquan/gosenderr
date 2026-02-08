@@ -33,6 +33,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Avatar } from "@/components/ui/Avatar";
 import { FloatingButton } from "@/components/ui/FloatingButton";
 import { NotFoundPage } from "@/components/ui/NotFoundPage";
+import {
+  extractPostalCodeFromAddress,
+  getPickupDisplayAddress,
+} from "@/lib/pickupPrivacy";
 
 interface DropoffAddress {
   address: string;
@@ -44,9 +48,13 @@ interface DropoffAddress {
 type DeliveryItem = Omit<MarketplaceItem, "pickupLocation"> & {
   pickupLocation: {
     address: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
     lat: number;
     lng: number;
   };
+  sellerSharesExactPickup: boolean;
   isFoodItem: boolean;
   foodDetails?: {
     temperature: FoodTemperature;
@@ -158,13 +166,32 @@ export default function RequestDeliveryPage() {
           return;
         }
 
+        let sellerSharesExactPickup = false;
+        try {
+          const sellerSnap = await getDoc(doc(db, "users", fetchedItem.sellerId));
+          if (sellerSnap.exists()) {
+            const sellerData = sellerSnap.data() as any;
+            sellerSharesExactPickup =
+              sellerData?.sellerProfile?.shareExactPickupLocation === true ||
+              sellerData?.sellerProfile?.localSellingConfig?.shareExactPickupLocation === true;
+          }
+        } catch (sellerError) {
+          console.error("Failed to load seller pickup privacy settings:", sellerError);
+        }
+
         const itemWithId: DeliveryItem = {
           ...fetchedItem,
           pickupLocation: {
             address: pickupLocation?.address || "Pickup location",
+            city: pickupLocation?.city || "",
+            state: pickupLocation?.state || "",
+            postalCode:
+              pickupLocation?.postalCode ||
+              extractPostalCodeFromAddress(pickupLocation?.address || ""),
             lat,
             lng,
           },
+          sellerSharesExactPickup,
           isFoodItem: (fetchedItem as any).category === "food",
         };
 
@@ -336,7 +363,6 @@ export default function RequestDeliveryPage() {
     const params = new URLSearchParams({
       itemId,
       courierId: selectedCourier.id,
-      pickupAddress: item.pickupLocation.address,
       dropoffAddress: dropoffAddress.address,
       dropoffLat: dropoffAddress.lat.toString(),
       dropoffLng: dropoffAddress.lng.toString(),
@@ -476,6 +502,11 @@ export default function RequestDeliveryPage() {
     );
   }
 
+  const pickupDisplayAddress = getPickupDisplayAddress(
+    item.pickupLocation,
+    item.sellerSharesExactPickup,
+  );
+
   return (
     <div className="min-h-screen bg-[#F8F9FF] pb-24">
       {/* Header */}
@@ -500,9 +531,7 @@ export default function RequestDeliveryPage() {
             </div>
             <div className="bg-white/15 rounded-2xl p-4">
               <p className="text-xs text-purple-100">Pickup</p>
-              <p className="text-sm font-semibold">
-                {item.pickupLocation.address}
-              </p>
+              <p className="text-sm font-semibold">{pickupDisplayAddress}</p>
             </div>
           </div>
         </div>
@@ -553,7 +582,7 @@ export default function RequestDeliveryPage() {
                 </p>
                 <p className="text-sm text-gray-600">
                   <span className="font-semibold">Pickup:</span>{" "}
-                  {item.pickupLocation.address}
+                  {pickupDisplayAddress}
                 </p>
                 {item.isFoodItem && item.foodDetails && (
                   <div className="mt-3">

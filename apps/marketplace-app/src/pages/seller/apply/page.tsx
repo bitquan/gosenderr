@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { Timestamp, doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { Card, CardContent } from "@/components/ui/Card";
@@ -28,6 +28,7 @@ type SellerDraftForm = {
   localState: string;
   localPostalCode: string;
   operatingRadiusMiles: number;
+  shareExactPickupLocation: boolean;
   localComplianceConfirmed: boolean;
 };
 
@@ -44,6 +45,7 @@ const DEFAULT_FORM_DATA: SellerDraftForm = {
   localState: "",
   localPostalCode: "",
   operatingRadiusMiles: 10,
+  shareExactPickupLocation: false,
   localComplianceConfirmed: false,
 };
 
@@ -59,6 +61,15 @@ export default function SellerApplicationPage() {
   const [draftSaveState, setDraftSaveState] = useState<
     "idle" | "saving" | "saved" | "error"
   >("idle");
+  const [draftRoleSeed, setDraftRoleSeed] = useState<{
+    role: string;
+    primaryRole: string;
+    roles: string[];
+  }>({
+    role: "customer",
+    primaryRole: "customer",
+    roles: ["customer"],
+  });
   const [draftHydrated, setDraftHydrated] = useState(false);
   const [submissionAttempted, setSubmissionAttempted] = useState(false);
 
@@ -105,6 +116,20 @@ export default function SellerApplicationPage() {
         const userSnap = await getDoc(doc(db, `users/${uid}`));
         const userData = userSnap.exists() ? userSnap.data() : {};
         const roles = Array.isArray(userData?.roles) ? userData.roles : [];
+        const resolvedRoles = Array.from(
+          new Set(
+            (
+              roles.length
+                ? roles
+                : [userData?.role || userData?.primaryRole || "customer"]
+            ).filter(Boolean),
+          ),
+        );
+        setDraftRoleSeed({
+          role: userData?.role || "customer",
+          primaryRole: userData?.primaryRole || userData?.role || "customer",
+          roles: resolvedRoles.length ? resolvedRoles : ["customer"],
+        });
         const hasSellerRole = userData?.role === "seller" || roles.includes("seller");
 
         if (hasSellerRole || userData?.sellerApplication?.status === "approved") {
@@ -162,6 +187,9 @@ export default function SellerApplicationPage() {
         await setDoc(
           doc(db, `users/${uid}`),
           {
+            role: draftRoleSeed.role,
+            primaryRole: draftRoleSeed.primaryRole,
+            roles: draftRoleSeed.roles,
             sellerOnboardingV2: {
               version: 2,
               status: "in_progress",
@@ -198,6 +226,7 @@ export default function SellerApplicationPage() {
     sellerStatus,
     businessInfoComplete,
     localConfigValidation,
+    draftRoleSeed,
   ]);
 
   const uploadDocuments = async () => {
@@ -232,7 +261,7 @@ export default function SellerApplicationPage() {
           url,
           name: item.file.name,
           contentType: item.file.type || "application/octet-stream",
-          uploadedAt: serverTimestamp(),
+          uploadedAt: Timestamp.now(),
         });
       }
     } finally {
@@ -313,6 +342,7 @@ export default function SellerApplicationPage() {
         postalCode: formData.localPostalCode.trim(),
         operatingRadiusMiles: Number(formData.operatingRadiusMiles),
         contactPhone: formData.phone.trim(),
+        shareExactPickupLocation: formData.shareExactPickupLocation,
         complianceConfirmed: formData.localComplianceConfirmed,
         complianceConfirmedAt: serverTimestamp(),
       };
@@ -344,6 +374,7 @@ export default function SellerApplicationPage() {
             ...(userData?.sellerProfile || {}),
             localSellingConfig,
             localSellingEnabled: true,
+            shareExactPickupLocation: formData.shareExactPickupLocation,
           },
           sellerOnboardingV2: {
             version: 2,
@@ -605,6 +636,25 @@ export default function SellerApplicationPage() {
                       }
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500"
                     />
+                  </div>
+
+                  <div className="flex items-start gap-3 rounded-lg border border-blue-200 bg-white p-3">
+                    <input
+                      type="checkbox"
+                      id="shareExactPickupLocation"
+                      checked={formData.shareExactPickupLocation}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          shareExactPickupLocation: e.target.checked,
+                        })
+                      }
+                      className="mt-1 h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <label htmlFor="shareExactPickupLocation" className="text-sm text-gray-700">
+                      Share my full pickup address with customers.
+                      If off, customers only see an approximate location (city and ZIP).
+                    </label>
                   </div>
 
                   <div className="flex items-start gap-3">
