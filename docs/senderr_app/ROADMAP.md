@@ -6,17 +6,15 @@ Source: GitHub issues labeled `scope:courier`
 ## Snapshot
 
 - Total `scope:courier` issues: `44`
-- Closed: `31`
-- Open: `13`
-- Completion: `70.5%`
+- Closed: `36`
+- Open: `8`
+- Completion: `81.8%`
 
 ## Active Queue (Open)
 
 P1:
 
 1. `#201` iOS Senderr: MVP feature completion + upgradeability epic
-2. `#204` iOS Senderr: location tracking upload pipeline hardening
-3. `#205` iOS Senderr: job transition command pipeline and conflict handling
 
 P2:
 
@@ -25,10 +23,7 @@ P2:
 3. `#138` iOS Senderr: Add unit tests for critical screens
 4. `#141` iOS Senderr: TestFlight build + internal QA checklist
 5. `#146` iOS Senderr: Crash/analytics integration
-6. `#206` iOS Senderr: implement real courier profile and settings persistence
-7. `#208` iOS Senderr: feature flags and remote config for safe rollout
-8. `#209` iOS Senderr: close UX state gaps for reliability feedback
-9. `#210` iOS Senderr: add integration test harness for critical workflows
+6. `#210` iOS Senderr: add integration test harness for critical workflows
 
 P3:
 
@@ -36,6 +31,11 @@ P3:
 
 ## Recently Completed (Most Recent)
 
+- `#209` iOS Senderr: close UX state gaps for reliability feedback
+- `#208` iOS Senderr: feature flags and remote config for safe rollout
+- `#206` iOS Senderr: implement real courier profile and settings persistence
+- `#205` iOS Senderr: job transition command pipeline and conflict handling
+- `#204` iOS Senderr: location tracking upload pipeline hardening
 - `#203` iOS Senderr: real-time jobs sync with reconnect resilience
 - `#145` iOS Senderr: Offline mode for active job flow
 - `#143` iOS Senderr: Mapbox/Maps integration validation
