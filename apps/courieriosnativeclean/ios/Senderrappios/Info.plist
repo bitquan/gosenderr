@@ -27,7 +27,7 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>MBXAccessToken</key>
-	<string>pk.eyJ1IjoiZ29zZW5kZXJyIiwiYSI6ImNtZjFlc2pkMTJheHIya29ub251YjZjMzQifQ.Oav2gJB_Z1sSPjOzjTPCzA</string>
+	<string>$(SENDERR_MAPBOX_ACCESS_TOKEN)</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
@@ -61,6 +61,10 @@
 	<string>$(SENDERR_FIREBASE_PROJECT_ID)</string>
 	<key>SenderrFirebaseStorageBucket</key>
 	<string>$(SENDERR_FIREBASE_STORAGE_BUCKET)</string>
+	<key>SenderrMapProvider</key>
+	<string>$(SENDERR_MAP_PROVIDER)</string>
+	<key>SenderrMapboxAccessToken</key>
+	<string>$(SENDERR_MAPBOX_ACCESS_TOKEN)</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>

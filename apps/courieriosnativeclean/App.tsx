@@ -105,10 +105,9 @@ const AppShell = (): React.JSX.Element => {
     () => (selectedJobId ? jobs.find(job => job.id === selectedJobId) ?? null : null),
     [jobs, selectedJobId],
   );
-  const activeJobsCount = useMemo(
-    () => jobs.filter(job => job.status !== 'delivered' && job.status !== 'cancelled').length,
-    [jobs],
-  );
+  const activeJobs = useMemo(() => jobs.filter(job => job.status !== 'delivered' && job.status !== 'cancelled'), [jobs]);
+  const activeJobsCount = activeJobs.length;
+  const activeJob = activeJobs[0] ?? null;
 
   if (initializing) {
     return (
@@ -145,6 +144,7 @@ const AppShell = (): React.JSX.Element => {
             activeJobsCount={activeJobsCount}
             loadingJobs={jobsLoading}
             jobsError={jobsError}
+            activeJob={activeJob}
           />
         ) : null}
 

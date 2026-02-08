@@ -75,6 +75,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
       readGoogleServiceValue("STORAGE_BUCKET")
       ?? readInfoValue("SenderrFirebaseStorageBucket")
       ?? defaultFirebaseStorageBucket(for: envName)
+    let mapboxAccessToken = readInfoValue("SenderrMapboxAccessToken") ?? readInfoValue("MBXAccessToken") ?? ""
+    let mapProvider = readInfoValue("SenderrMapProvider") ?? (mapboxAccessToken.isEmpty ? "native" : "mapbox")
 
     let firebase: [String: String] = [
       "apiKey": readGoogleServiceValue("API_KEY") ?? readInfoValue("SenderrFirebaseApiKey") ?? "",
@@ -92,6 +94,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
         "envName": envName,
         "apiBaseUrl": apiBaseUrl,
         "firebase": firebase,
+        "maps": [
+          "provider": mapProvider,
+          "mapboxAccessToken": mapboxAccessToken,
+        ],
       ],
     ]
   }

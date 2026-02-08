@@ -10,5 +10,9 @@ SENDERR_FIREBASE_AUTH_DOMAIN = gosenderr-staging.firebaseapp.com
 SENDERR_FIREBASE_PROJECT_ID = gosenderr-staging
 SENDERR_FIREBASE_STORAGE_BUCKET = gosenderr-staging.appspot.com
 
+// Maps runtime options.
+SENDERR_MAP_PROVIDER = native
+SENDERR_MAPBOX_ACCESS_TOKEN =
+
 // Explicit local-only override. Default is disabled.
 SENDERR_ALLOW_MOCK_AUTH = 0

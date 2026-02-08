@@ -1,10 +1,18 @@
 export type JobStatus = 'pending' | 'accepted' | 'picked_up' | 'delivered' | 'cancelled';
 
+export type JobLocation = {
+  latitude: number;
+  longitude: number;
+  label?: string;
+};
+
 export type Job = {
   id: string;
   customerName: string;
   pickupAddress: string;
   dropoffAddress: string;
+  pickupLocation?: JobLocation;
+  dropoffLocation?: JobLocation;
   notes?: string;
   etaMinutes: number;
   status: JobStatus;
