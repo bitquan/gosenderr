@@ -317,3 +317,48 @@ Append-only log used for session recovery.
 - Blockers: None
 - Next:
   - Open PR to senderr_app and validate end-to-end push delivery with APNs topic mapping
+
+---
+
+## 2026-02-08 12:47 local (2026-02-08 17:47 UTC)
+
+- Status: `in_progress`
+- Summary: Completed follow-up batch patch for #206/#208/#209 with notification-flag gate hardening, reusable state-component tests, and smoke/docs alignment.
+- Branch: `codex/batch-206-208-209-courier-settings-flags-ux`
+- Commit: `working tree`
+- Issue: `#206,#208,#209`
+- PR: `n/a`
+- Files:
+  - `apps/courieriosnativeclean/App.tsx`
+  - `apps/courieriosnativeclean/src/components/states/__tests__/StateComponents.test.tsx`
+  - `docs/senderr_app/README.md`
+  - `docs/senderr_app/SMOKE_CHECKLIST.md`
+  - `docs/dev/SESSION_STATE.md`
+  - `docs/dev/WORKLOG.md`
+- Validation:
+  - `pnpm --filter courieriosnativeclean test -- src/components/states/__tests__/StateComponents.test.tsx` (pass)
+  - `pnpm --filter courieriosnativeclean exec tsc --noEmit` (fails due repo-wide pre-existing missing jest types in tsconfig)
+  - `pnpm --filter courieriosnativeclean lint -- App.tsx src/components/states/__tests__/StateComponents.test.tsx` (fails due pre-existing ESLint toolchain mismatch)
+- Blockers:
+  - Pre-existing TypeScript and ESLint configuration mismatches in this workspace.
+- Next:
+  - Commit changes and open PR linked to #206 #208 #209.
+
+---
+
+## 2026-02-08 12:50 local (2026-02-08 17:50 UTC)
+
+- Status: `in_progress`
+- Summary: Closed DoD gaps for #206/#208/#209 (notification flag gate + state tests + smoke/docs updates)
+- Branch: `codex/batch-206-208-209-courier-settings-flags-ux`
+- Commit: `96fee9d`
+- Issue: `#206,#208,#209`
+- PR: `n/a`
+- Files:
+  - `apps/courieriosnativeclean/App.tsx`
+  - `apps/courieriosnativeclean/src/components/states/__tests__/StateComponents.test.tsx`
+  - `docs/senderr_app/README.md`
+  - `docs/senderr_app/SMOKE_CHECKLIST.md`
+- Blockers: None
+- Next:
+  - Open PR, run CI, and merge to senderr_app

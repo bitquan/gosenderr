@@ -34,6 +34,7 @@ const AppShell = (): React.JSX.Element => {
   const notificationsSetupForUidRef = useRef<string | null>(null);
   const lastTrackedJobsCountRef = useRef<number | null>(null);
   const lastSyncErrorRef = useRef<string | null>(null);
+  const notificationsEnabled = featureFlagsState.state.flags.notifications;
   const [activeTab, setActiveTab] = useState<TabKey>('dashboard');
   const [jobs, setJobs] = useState<Job[]>([]);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
@@ -42,7 +43,7 @@ const AppShell = (): React.JSX.Element => {
   const [jobsSyncState, setJobsSyncState] = useState<JobsSyncState>(DEFAULT_JOBS_SYNC_STATE);
 
   useEffect(() => {
-    if (!featureFlagsState.state.flags.notifications) {
+    if (!notificationsEnabled) {
       return;
     }
 
@@ -54,10 +55,10 @@ const AppShell = (): React.JSX.Element => {
     });
 
     return unsubscribe;
-  }, [analytics, featureFlagsState.state.flags.notifications, notificationsService]);
+  }, [analytics, notificationsEnabled, notificationsService]);
 
   useEffect(() => {
-    if (!session || !featureFlagsState.state.flags.notifications) {
+    if (!session || !notificationsEnabled) {
       notificationsSetupForUidRef.current = null;
       return;
     }
@@ -103,7 +104,7 @@ const AppShell = (): React.JSX.Element => {
     return () => {
       cancelled = true;
     };
-  }, [analytics, featureFlagsState.state.flags.notifications, notificationsService, session]);
+  }, [analytics, notificationsEnabled, notificationsService, session]);
 
   useEffect(() => {
     jobsSubscriptionRef.current?.unsubscribe();
@@ -168,7 +169,7 @@ const AppShell = (): React.JSX.Element => {
   }, [analytics, jobsService, session]);
 
   useEffect(() => {
-    if (!session || !isFirebaseReady()) {
+    if (!session || !isFirebaseReady() || !notificationsEnabled) {
       return;
     }
 
@@ -215,7 +216,7 @@ const AppShell = (): React.JSX.Element => {
     return () => {
       cancelled = true;
     };
-  }, [notificationsService, session]);
+  }, [notificationsEnabled, notificationsService, session]);
 
   const refreshJobs = useCallback(async (): Promise<Job[]> => {
     if (!session) {

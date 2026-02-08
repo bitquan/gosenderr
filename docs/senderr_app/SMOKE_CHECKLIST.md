@@ -64,3 +64,20 @@ npx react-native start --host 0.0.0.0 --port 8081 --reset-cache
 Expected:
 - Device reaches Metro
 - App launches and loads JS bundle
+
+## 6) UX reliability smoke (issues #206/#208/#209)
+
+Validate these states before merge:
+
+- Dashboard
+  - Loading / empty / error state cards appear correctly for jobs.
+  - Tracking card shows `Tracking status`, `Upload health`, and `Last sync`.
+  - Retry button appears when tracking/sync health is degraded or error.
+- Jobs
+  - Sync card updates tone and message for `live`, `reconnecting`, and `error`.
+  - Manual `Retry sync` is available on degraded/error sync states.
+  - Empty and error states expose clear recovery actions.
+- Settings
+  - Courier profile loads from Firebase/local fallback and can be saved.
+  - Package and food rate cards validate and persist.
+  - In non-prod builds, `Feature Flags (Debug)` shows effective flag values and refresh works.
