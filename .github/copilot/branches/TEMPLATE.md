@@ -3,7 +3,7 @@
 ## Intent
 
 - Branch mode: `main` or `clone`
-- Product area: `<marketplace | senderr | senderr-ios | other>`
+- Product area: `<senderrplace | senderr-web | senderr-ios | admin-app | admin-desktop | landing | backend | other>`
 
 ## Scope
 

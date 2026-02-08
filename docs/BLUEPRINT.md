@@ -52,6 +52,8 @@ When legacy guidance becomes current policy, copy it into canonical docs under `
 - Every active branch must have one branch profile doc.
 - Initialize with:
   - `bash scripts/setup-branch-copilot.sh`
+- Template prerequisites are enforced with:
+  - `bash scripts/verify-app-templates.sh`
 - Branch profile file naming:
   - `<branch-with-slashes-replaced-by-dashes>.md`
 - Required sections:

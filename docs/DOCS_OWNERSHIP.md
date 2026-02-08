@@ -24,6 +24,11 @@ When docs are modified, update `Last verified` in that same PR.
 | `docs/DEVELOPER_PLAYBOOK.md` | `@bitquan` | Monthly | 2026-02-07 |
 | `docs/apps/README.md` | `@bitquan` | Monthly | 2026-02-07 |
 | `docs/senderr_app/README.md` | `@bitquan` | Weekly | 2026-02-07 |
+| `docs/senderrplace/README.md` | `@bitquan` | Weekly | 2026-02-08 |
+| `docs/senderr_web/README.md` | `@bitquan` | Weekly | 2026-02-08 |
+| `docs/admin_app/README.md` | `@bitquan` | Weekly | 2026-02-08 |
+| `docs/admin_desktop/README.md` | `@bitquan` | Weekly | 2026-02-08 |
+| `docs/landing/README.md` | `@bitquan` | Weekly | 2026-02-08 |
 | `.github/WORKFLOWS.md` | `@bitquan` | Weekly | 2026-02-07 |
 
 ## Review operations

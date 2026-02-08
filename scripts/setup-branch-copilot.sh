@@ -10,7 +10,10 @@ fi
 
 cd "${repo_root}"
 
+bash scripts/verify-app-templates.sh
+
 branch="${1:-$(git rev-parse --abbrev-ref HEAD)}"
+app_hint="${2:-}"
 if [[ "${branch}" == "HEAD" ]]; then
   echo "error: detached HEAD is not supported"
   exit 1
@@ -30,6 +33,10 @@ fi
 prefix="${branch%%/*}"
 suffix="${branch##*/}"
 
+if [[ -n "${app_hint}" ]]; then
+  prefix="${app_hint}"
+fi
+
 branch_mode="feature"
 if [[ "${suffix}" == "main" ]]; then
   branch_mode="mainline"
@@ -43,9 +50,9 @@ cmd_1="pnpm lint"
 cmd_2="pnpm test"
 
 case "${prefix}" in
-  marketplace)
-    product_area="Marketplace"
-    primary_paths="apps/marketplace-app"
+  senderrplace|marketplace)
+    product_area="Senderrplace"
+    primary_paths="apps/marketplace-app docs/senderrplace docs/senderrplace_v2"
     cmd_1="pnpm --filter @gosenderr/marketplace-app dev"
     cmd_2="pnpm --filter @gosenderr/marketplace-app build"
     ;;
@@ -61,13 +68,90 @@ case "${prefix}" in
     cmd_1="pnpm --filter @gosenderr/senderr-app dev"
     cmd_2="pnpm --filter @gosenderr/senderr-app build"
     ;;
+  senderr-web)
+    product_area="Senderr Web App"
+    primary_paths="apps/senderr-app docs/senderr_web"
+    cmd_1="pnpm --filter @gosenderr/senderr-app dev"
+    cmd_2="pnpm --filter @gosenderr/senderr-app build"
+    ;;
   senderr-ios)
     product_area="Senderr iOS Native"
     primary_paths="apps/courieriosnativeclean/ios"
     cmd_1="pnpm run ios:senderr"
     cmd_2="pnpm run ios:senderr -- open-xcode"
     ;;
+  admin-app)
+    product_area="Admin Web App"
+    primary_paths="apps/admin-app docs/admin_app"
+    cmd_1="pnpm --filter @gosenderr/admin-app dev"
+    cmd_2="pnpm --filter @gosenderr/admin-app build"
+    ;;
+  admin-desktop)
+    product_area="Admin Desktop App"
+    primary_paths="apps/admin-desktop docs/admin_desktop"
+    cmd_1="pnpm --filter @gosenderr/admin-desktop dev"
+    cmd_2="pnpm --filter @gosenderr/admin-desktop build"
+    ;;
+  landing)
+    product_area="Landing Web App"
+    primary_paths="apps/landing docs/landing"
+    cmd_1="python3 -m http.server 5008 --directory apps/landing"
+    cmd_2="firebase emulators:start --only hosting"
+    ;;
+  backend|functions|firebase)
+    product_area="Backend"
+    primary_paths="firebase/functions docs/backend"
+    cmd_1="pnpm --filter @gosenderr/functions lint"
+    cmd_2="pnpm --filter @gosenderr/functions test"
+    ;;
 esac
+
+if [[ "${product_area}" == "General" ]]; then
+  case "${branch}" in
+    *senderrplace*|*marketplace*)
+      product_area="Senderrplace"
+      primary_paths="apps/marketplace-app docs/senderrplace docs/senderrplace_v2"
+      cmd_1="pnpm --filter @gosenderr/marketplace-app dev"
+      cmd_2="pnpm --filter @gosenderr/marketplace-app build"
+      ;;
+    *senderr-ios*|*courier*|*ios*)
+      product_area="Senderr iOS Native"
+      primary_paths="apps/courieriosnativeclean docs/senderr_app"
+      cmd_1="pnpm run ios:senderr"
+      cmd_2="pnpm run ios:senderr -- open-xcode"
+      ;;
+    *senderr-web*|*senderr-app*|*senderr_web*)
+      product_area="Senderr Web App"
+      primary_paths="apps/senderr-app docs/senderr_web"
+      cmd_1="pnpm --filter @gosenderr/senderr-app dev"
+      cmd_2="pnpm --filter @gosenderr/senderr-app build"
+      ;;
+    *admin-desktop*)
+      product_area="Admin Desktop App"
+      primary_paths="apps/admin-desktop docs/admin_desktop"
+      cmd_1="pnpm --filter @gosenderr/admin-desktop dev"
+      cmd_2="pnpm --filter @gosenderr/admin-desktop build"
+      ;;
+    *admin-app*|*admin-web*)
+      product_area="Admin Web App"
+      primary_paths="apps/admin-app docs/admin_app"
+      cmd_1="pnpm --filter @gosenderr/admin-app dev"
+      cmd_2="pnpm --filter @gosenderr/admin-app build"
+      ;;
+    *landing*)
+      product_area="Landing Web App"
+      primary_paths="apps/landing docs/landing"
+      cmd_1="python3 -m http.server 5008 --directory apps/landing"
+      cmd_2="firebase emulators:start --only hosting"
+      ;;
+    *backend*|*functions*|*firebase*)
+      product_area="Backend"
+      primary_paths="firebase/functions docs/backend"
+      cmd_1="pnpm --filter @gosenderr/functions lint"
+      cmd_2="pnpm --filter @gosenderr/functions test"
+      ;;
+  esac
+fi
 
 cat > "${profile_file}" <<EOF
 # Branch Profile: \`${branch}\`
