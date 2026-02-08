@@ -4,19 +4,19 @@ This file is the canonical handoff state when a chat/session is interrupted.
 
 ## Last Updated
 
-- Local: 2026-02-08 00:07
-- UTC: 2026-02-08 05:07
+- Local: 2026-02-08 00:44
+- UTC: 2026-02-08 05:44
 
 ## Current Focus
 
-- Active issue: #204
+- Active issue: #205
 - Active PR: n/a
-- Objective: Hardened location tracking state lifecycle and map follow behavior for courier runtime
+- Objective: implemented issue #205 transition command pipeline with conflict/retry/fatal result types and UI feedback
 
 ## Branch + Commit
 
-- Branch: `codex/issue-204-location-upload`
-- Commit: `507229e`
+- Branch: `codex/issue-205-job-transition-conflicts`
+- Commit: `dfbf52e`
 - Working tree: clean
 
 ## Blockers
@@ -25,7 +25,7 @@ This file is the canonical handoff state when a chat/session is interrupted.
 
 ## Next Actions
 
-1. Validate #204 on-device across Dashboard/Settings tab switches and confirm location writes stay active
+1. open PR for #205, run checks, and merge
 2. Re-open `docs/dev/WORKLOG.md` and append after each meaningful change.
 3. Keep this file current at task boundaries.
 
@@ -33,7 +33,7 @@ This file is the canonical handoff state when a chat/session is interrupted.
 
 ```bash
 cd /Users/papadev/dev/apps/Gosenderr_local/gosenderr
-git checkout codex/issue-204-location-upload
+git checkout codex/issue-205-job-transition-conflicts
 git pull --rebase
 sed -n '1,200p' docs/dev/SESSION_STATE.md
 sed -n '1,200p' docs/dev/WORKLOG.md
