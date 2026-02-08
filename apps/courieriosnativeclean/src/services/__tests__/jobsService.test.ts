@@ -3,23 +3,24 @@ import {beforeEach, describe, expect, it, jest} from '@jest/globals';
 import type {AuthSession} from '../../types/auth';
 import type {Job} from '../../types/jobs';
 
-const mockGetItem = jest.fn();
-const mockSetItem = jest.fn();
-const mockRemoveItem = jest.fn();
+const mockGetItem: any = jest.fn();
+const mockSetItem: any = jest.fn();
+const mockRemoveItem: any = jest.fn();
 
-const mockIsFirebaseReady = jest.fn();
-const mockGetFirebaseServices = jest.fn();
+const mockIsFirebaseReady: any = jest.fn();
+const mockGetFirebaseServices: any = jest.fn();
 
-const mockCollection = jest.fn();
-const mockWhere = jest.fn();
-const mockOrderBy = jest.fn();
-const mockQuery = jest.fn();
-const mockGetDocs = jest.fn();
-const mockDoc = jest.fn();
-const mockUpdateDoc = jest.fn();
-const mockGetDoc = jest.fn();
+const mockCollection: any = jest.fn();
+const mockWhere: any = jest.fn();
+const mockOrderBy: any = jest.fn();
+const mockQuery: any = jest.fn();
+const mockGetDocs: any = jest.fn();
+const mockDoc: any = jest.fn();
+const mockUpdateDoc: any = jest.fn();
+const mockGetDoc: any = jest.fn();
 const mockServerTimestamp = jest.fn(() => 'SERVER_TIMESTAMP');
-const mockOnSnapshot = jest.fn();
+const mockOnSnapshot: any = jest.fn();
+const mockRunTransaction: any = jest.fn();
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
   __esModule: true,
@@ -44,6 +45,7 @@ jest.mock('firebase/firestore', () => ({
   doc: mockDoc,
   updateDoc: mockUpdateDoc,
   getDoc: mockGetDoc,
+  runTransaction: mockRunTransaction,
   serverTimestamp: () => mockServerTimestamp(),
   onSnapshot: mockOnSnapshot,
 }));
@@ -71,6 +73,15 @@ const makeLocalJobs = (): Job[] => [
   },
 ];
 
+const makeRemoteJobData = (status: string) => ({
+  customerName: 'Remote Customer',
+  pickupAddress: 'Remote Pickup',
+  dropoffAddress: 'Remote Dropoff',
+  etaMinutes: 14,
+  status,
+  updatedAt: new Date().toISOString(),
+});
+
 describe('jobsService firebase/mock fallback', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -85,37 +96,8 @@ describe('jobsService firebase/mock fallback', () => {
     mockOrderBy.mockReturnValue('order_clause');
     mockQuery.mockReturnValue('jobs_query');
     mockDoc.mockReturnValue('job_doc_ref');
-  });
 
-  it('falls back to local jobs when Firebase fetch fails', async () => {
-    (mockGetDocs as any).mockRejectedValue(new Error('network unavailable'));
-    (mockGetItem as any).mockResolvedValue(JSON.stringify(makeLocalJobs()));
-
-    const jobs = await fetchJobs(session);
-
-    expect(jobs).toHaveLength(1);
-    expect(jobs[0].id).toBe('local_job_1');
-    expect(mockGetDocs).toHaveBeenCalledWith('jobs_query');
-    expect(mockGetItem).toHaveBeenCalledWith('@senderr/jobs');
-  });
-
-  it('updates local job state when Firebase status update fails', async () => {
-    (mockUpdateDoc as any).mockRejectedValue(new Error('write failed'));
-    (mockGetItem as any).mockResolvedValue(JSON.stringify(makeLocalJobs()));
-
-    const updated = await updateJobStatus(session, 'local_job_1', 'accepted');
-
-    expect(updated.status).toBe('accepted');
-    expect(mockSetItem).toHaveBeenCalledWith('@senderr/jobs', expect.any(String));
-    const setItemCalls = mockSetItem.mock.calls as unknown[][];
-    const persistedJobs = JSON.parse(setItemCalls[0][1] as string) as Job[];
-    expect(persistedJobs[0].status).toBe('accepted');
-  });
-
-  it('queues status updates in prod mode when connectivity drops', async () => {
-    runtimeConfig.envName = 'prod';
-    (mockUpdateDoc as any).mockRejectedValue(new Error('network unavailable'));
-    (mockGetItem as any).mockImplementation((key: string) => {
+    mockGetItem.mockImplementation((key: string) => {
       if (key === '@senderr/jobs') {
         return Promise.resolve(JSON.stringify(makeLocalJobs()));
       }
@@ -125,17 +107,58 @@ describe('jobsService firebase/mock fallback', () => {
       return Promise.resolve(null);
     });
 
-    const updated = await updateJobStatus(session, 'local_job_1', 'accepted');
+    mockGetDoc.mockResolvedValue({exists: () => false});
 
-    expect(updated.status).toBe('accepted');
+    mockRunTransaction.mockImplementation(async (_db: unknown, updater: (tx: any) => Promise<any>) => {
+      const tx = {
+        get: async () => ({
+          exists: () => true,
+          id: 'local_job_1',
+          data: () => makeRemoteJobData('pending'),
+        }),
+        update: jest.fn(),
+      };
+      return updater(tx);
+    });
+  });
+
+  it('falls back to local jobs when Firebase fetch fails', async () => {
+    mockGetDocs.mockRejectedValue(new Error('network unavailable'));
+
+    const jobs = await fetchJobs(session);
+
+    expect(jobs).toHaveLength(1);
+    expect(jobs[0].id).toBe('local_job_1');
+    expect(mockGetDocs).toHaveBeenCalledWith('jobs_query');
+    expect(mockGetItem).toHaveBeenCalledWith('@senderr/jobs');
+  });
+
+  it('returns retryable command result when status update fails in dev', async () => {
+    mockRunTransaction.mockRejectedValue(new Error('network unavailable'));
+
+    const result = await updateJobStatus(session, 'local_job_1', 'accepted');
+
+    expect(result.kind).toBe('retryable_error');
+    if (result.kind !== 'retryable_error') {
+      throw new Error('Expected retryable_error');
+    }
+    expect(result.job.status).toBe('accepted');
+    expect(mockSetItem).toHaveBeenCalledWith('@senderr/jobs', expect.any(String));
+  });
+
+  it('queues status updates in prod mode when connectivity drops', async () => {
+    runtimeConfig.envName = 'prod';
+    mockRunTransaction.mockRejectedValue(new Error('network unavailable'));
+
+    const result = await updateJobStatus(session, 'local_job_1', 'accepted');
+
+    expect(result.kind).toBe('retryable_error');
     expect(mockSetItem).toHaveBeenCalledWith('@senderr/jobs/status-update-queue', expect.any(String));
   });
 
   it('clears queued status update after a successful Firebase write', async () => {
     runtimeConfig.envName = 'prod';
-    (mockUpdateDoc as any).mockResolvedValue(undefined);
-    (mockGetDoc as any).mockResolvedValue({exists: () => false});
-    (mockGetItem as any).mockImplementation((key: string) => {
+    mockGetItem.mockImplementation((key: string) => {
       if (key === '@senderr/jobs') {
         return Promise.resolve(JSON.stringify(makeLocalJobs()));
       }
@@ -156,14 +179,60 @@ describe('jobsService firebase/mock fallback', () => {
       return Promise.resolve(null);
     });
 
-    const updated = await updateJobStatus(session, 'local_job_1', 'accepted');
+    const result = await updateJobStatus(session, 'local_job_1', 'accepted');
 
-    expect(updated.status).toBe('accepted');
+    expect(result.kind).toBe('success');
     expect(mockRemoveItem).toHaveBeenCalledWith('@senderr/jobs/status-update-queue');
   });
 
+  it('returns conflict result when transition is invalid', async () => {
+    mockRunTransaction.mockImplementation(async (_db: unknown, updater: (tx: any) => Promise<any>) => {
+      const tx = {
+        get: async () => ({
+          exists: () => true,
+          id: 'local_job_1',
+          data: () => makeRemoteJobData('delivered'),
+        }),
+        update: jest.fn(),
+      };
+      return updater(tx);
+    });
+
+    const result = await updateJobStatus(session, 'local_job_1', 'accepted');
+
+    expect(result.kind).toBe('conflict');
+    if (result.kind !== 'conflict') {
+      throw new Error('Expected conflict');
+    }
+    expect(result.job.status).toBe('delivered');
+    expect(result.message).toContain('Cannot change job from delivered to accepted');
+  });
+
+  it('returns idempotent success when requested status matches current status', async () => {
+    mockRunTransaction.mockImplementation(async (_db: unknown, updater: (tx: any) => Promise<any>) => {
+      const tx = {
+        get: async () => ({
+          exists: () => true,
+          id: 'local_job_1',
+          data: () => makeRemoteJobData('accepted'),
+        }),
+        update: jest.fn(),
+      };
+      return updater(tx);
+    });
+
+    const result = await updateJobStatus(session, 'local_job_1', 'accepted');
+
+    expect(result.kind).toBe('success');
+    if (result.kind !== 'success') {
+      throw new Error('Expected success');
+    }
+    expect(result.idempotent).toBe(true);
+    expect(result.job.status).toBe('accepted');
+  });
+
   it('returns Firebase jobs when query succeeds', async () => {
-    (mockGetDocs as any).mockResolvedValue({
+    mockGetDocs.mockResolvedValue({
       empty: false,
       docs: [
         {
@@ -184,7 +253,7 @@ describe('jobsService firebase/mock fallback', () => {
     expect(jobs).toHaveLength(1);
     expect(jobs[0].id).toBe('remote_job_1');
     expect(jobs[0].status).toBe('accepted');
-    expect(mockGetItem).not.toHaveBeenCalled();
+    expect(mockGetItem).not.toHaveBeenCalledWith('@senderr/jobs');
   });
 
   it('streams listener updates and reports live sync state', () => {
@@ -267,9 +336,9 @@ describe('jobsService firebase/mock fallback', () => {
 
   it('does not silently fall back to local seed jobs in prod mode', async () => {
     runtimeConfig.envName = 'prod';
-    (mockGetDocs as any).mockRejectedValue(new Error('network unavailable'));
+    mockGetDocs.mockRejectedValue(new Error('network unavailable'));
 
     await expect(fetchJobs(session)).rejects.toThrow('fetchJobs failed in Firebase mode');
-    expect(mockGetItem).not.toHaveBeenCalled();
+    expect(mockGetItem).not.toHaveBeenCalledWith('@senderr/jobs');
   });
 });

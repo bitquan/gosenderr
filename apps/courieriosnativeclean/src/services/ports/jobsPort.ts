@@ -22,9 +22,36 @@ export type JobsSubscriptionHandlers = {
   onSyncState: (state: JobsSyncState) => void;
 };
 
+export type JobStatusCommandResult =
+  | {
+      kind: 'success';
+      job: Job;
+      requestedStatus: JobStatus;
+      idempotent: boolean;
+      message: string | null;
+    }
+  | {
+      kind: 'conflict';
+      job: Job;
+      requestedStatus: JobStatus;
+      message: string;
+    }
+  | {
+      kind: 'retryable_error';
+      job: Job;
+      requestedStatus: JobStatus;
+      message: string;
+    }
+  | {
+      kind: 'fatal_error';
+      job: Job | null;
+      requestedStatus: JobStatus;
+      message: string;
+    };
+
 export interface JobsServicePort {
   fetchJobs: (session: AuthSession) => Promise<Job[]>;
   getJobById: (session: AuthSession, id: string) => Promise<Job | null>;
-  updateJobStatus: (session: AuthSession, id: string, nextStatus: JobStatus) => Promise<Job>;
+  updateJobStatus: (session: AuthSession, id: string, nextStatus: JobStatus) => Promise<JobStatusCommandResult>;
   subscribeJobs: (session: AuthSession, handlers: JobsSubscriptionHandlers) => JobsSubscription;
 }

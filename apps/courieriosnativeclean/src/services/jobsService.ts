@@ -7,6 +7,7 @@ import {
   onSnapshot,
   orderBy,
   query,
+  runTransaction,
   serverTimestamp,
   updateDoc,
   where,
@@ -15,7 +16,8 @@ import {
 
 import {getFirebaseServices, isFirebaseReady} from './firebase';
 import {runtimeConfig} from '../config/runtime';
-import type {JobsSubscription, JobsSubscriptionHandlers, JobsSyncState} from './ports/jobsPort';
+import {buildTransitionConflictMessage, canTransitionJobStatus} from './jobTransitionRules';
+import type {JobStatusCommandResult, JobsSubscription, JobsSubscriptionHandlers, JobsSyncState} from './ports/jobsPort';
 import type {AuthSession} from '../types/auth';
 import type {Job, JobStatus} from '../types/jobs';
 
@@ -432,21 +434,117 @@ export const getJobById = async (session: AuthSession, id: string): Promise<Job 
   }
 };
 
+const loadLocalJobById = async (id: string): Promise<Job | null> => {
+  const local = await loadLocalJobs();
+  return local.find(job => job.id === id) ?? null;
+};
+
+const buildCommandResultSuccess = (
+  job: Job,
+  requestedStatus: JobStatus,
+  idempotent: boolean,
+  message: string | null,
+): JobStatusCommandResult => ({
+  kind: 'success',
+  job,
+  requestedStatus,
+  idempotent,
+  message,
+});
+
+const buildCommandResultConflict = (job: Job, requestedStatus: JobStatus, message: string): JobStatusCommandResult => ({
+  kind: 'conflict',
+  job,
+  requestedStatus,
+  message,
+});
+
+const buildCommandResultRetryable = (job: Job, requestedStatus: JobStatus, message: string): JobStatusCommandResult => ({
+  kind: 'retryable_error',
+  job,
+  requestedStatus,
+  message,
+});
+
+const buildCommandResultFatal = (
+  requestedStatus: JobStatus,
+  message: string,
+  job: Job | null = null,
+): JobStatusCommandResult => ({
+  kind: 'fatal_error',
+  job,
+  requestedStatus,
+  message,
+});
+
+const validateTransitionAgainstJob = (job: Job, nextStatus: JobStatus): JobStatusCommandResult | null => {
+  if (job.status === nextStatus) {
+    return buildCommandResultSuccess(job, nextStatus, true, 'Job status is already up to date.');
+  }
+
+  if (!canTransitionJobStatus(job.status, nextStatus)) {
+    return buildCommandResultConflict(
+      job,
+      nextStatus,
+      `${buildTransitionConflictMessage(job.status, nextStatus)} Refresh job state and retry.`,
+    );
+  }
+
+  return null;
+};
+
 export const updateJobStatus = async (
   session: AuthSession,
   id: string,
   nextStatus: JobStatus,
-): Promise<Job> => {
+): Promise<JobStatusCommandResult> => {
   if (isFirebaseReady()) {
     const services = getFirebaseServices();
     if (services) {
       try {
         const ref = doc(services.db, 'jobs', id);
-        await updateDoc(ref, {
-          status: nextStatus,
-          courierUid: session.uid,
-          updatedAt: serverTimestamp(),
+        const transactionOutcome = await runTransaction(services.db, async transaction => {
+          const snap = await transaction.get(ref);
+          if (!snap.exists()) {
+            return {kind: 'missing' as const};
+          }
+
+          const remoteJob = mapFirestoreJob(snap.id, snap.data() as Record<string, unknown>);
+          const validation = validateTransitionAgainstJob(remoteJob, nextStatus);
+          if (validation?.kind === 'conflict') {
+            return {kind: 'conflict' as const, job: remoteJob};
+          }
+          if (validation?.kind === 'success' && validation.idempotent) {
+            return {kind: 'idempotent' as const, job: remoteJob};
+          }
+
+          transaction.update(ref, {
+            status: nextStatus,
+            courierUid: session.uid,
+            updatedAt: serverTimestamp(),
+          });
+
+          return {kind: 'updated' as const};
         });
+
+        if (transactionOutcome.kind === 'missing') {
+          return buildCommandResultFatal(nextStatus, 'Job no longer exists. Refresh your jobs list and retry.');
+        }
+
+        if (transactionOutcome.kind === 'conflict') {
+          await upsertLocalJob(transactionOutcome.job);
+          return buildCommandResultConflict(
+            transactionOutcome.job,
+            nextStatus,
+            `${buildTransitionConflictMessage(transactionOutcome.job.status, nextStatus)} Refresh and retry.`,
+          );
+        }
+
+        if (transactionOutcome.kind === 'idempotent') {
+          await upsertLocalJob(transactionOutcome.job);
+          await dequeueStatusUpdate(session, id);
+          return buildCommandResultSuccess(transactionOutcome.job, nextStatus, true, 'Job status is already up to date.');
+        }
 
         await dequeueStatusUpdate(session, id);
         void flushQueuedStatusUpdates(session, services.db);
@@ -455,13 +553,24 @@ export const updateJobStatus = async (
         if (updated.exists()) {
           const mapped = mapFirestoreJob(updated.id, updated.data() as Record<string, unknown>);
           await upsertLocalJob(mapped);
-          return mapped;
+          return buildCommandResultSuccess(mapped, nextStatus, false, null);
         }
 
-        return updateLocalJobStatus(id, nextStatus);
+        const updatedLocal = await updateLocalJobStatus(id, nextStatus);
+        return buildCommandResultSuccess(updatedLocal, nextStatus, false, null);
       } catch (error) {
+        const localJob = await loadLocalJobById(id);
+        if (!localJob) {
+          return buildCommandResultFatal(nextStatus, 'Job was not found in local cache.', null);
+        }
+
+        const localValidation = validateTransitionAgainstJob(localJob, nextStatus);
+        if (localValidation) {
+          return localValidation;
+        }
+
         if (!isLikelyConnectivityError(error) && !shouldUseLocalFallback()) {
-          throw buildFirebaseError('updateJobStatus', error);
+          return buildCommandResultFatal(nextStatus, buildFirebaseError('updateJobStatus', error).message, localJob);
         }
 
         if (shouldUseLocalFallback()) {
@@ -470,19 +579,33 @@ export const updateJobStatus = async (
 
         const queuedCount = await enqueueStatusUpdate(session, id, nextStatus, error);
         const updatedLocal = await updateLocalJobStatus(id, nextStatus);
+        const queuedMessage = `Status update queued while connection recovers. Pending updates: ${queuedCount}.`;
         console.warn(
-          `[jobsService] queued status update for ${id} (${nextStatus}) while offline. pending updates: ${queuedCount}`,
+          `[jobsService] queued status update for ${id} (${nextStatus}) while offline. pending updates: ${queuedCount}`
         );
-        return updatedLocal;
+        return buildCommandResultRetryable(updatedLocal, nextStatus, queuedMessage);
       }
-    } else if (!shouldUseLocalFallback()) {
-      throw new Error('Firebase services are unavailable in production mode.');
+    }
+
+    if (!shouldUseLocalFallback()) {
+      return buildCommandResultFatal(nextStatus, 'Firebase services are unavailable in production mode.');
     }
   } else if (!shouldUseLocalFallback()) {
-    throw new Error('Firebase is required in production and is not configured.');
+    return buildCommandResultFatal(nextStatus, 'Firebase is required in production and is not configured.');
   }
 
-  return updateLocalJobStatus(id, nextStatus);
+  const localJob = await loadLocalJobById(id);
+  if (!localJob) {
+    return buildCommandResultFatal(nextStatus, 'Job not found.');
+  }
+
+  const validation = validateTransitionAgainstJob(localJob, nextStatus);
+  if (validation) {
+    return validation;
+  }
+
+  const updatedLocal = await updateLocalJobStatus(id, nextStatus);
+  return buildCommandResultSuccess(updatedLocal, nextStatus, false, 'Status updated locally.');
 };
 
 const createSyncState = (partial: Partial<JobsSyncState>): JobsSyncState => ({
