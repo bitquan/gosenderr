@@ -420,3 +420,24 @@ Append-only log used for session recovery.
 - Blockers: None
 - Next:
   - Push branch and open PR; then merge to close #128 #147 #201
+
+---
+
+## 2026-02-08 13:27 local (2026-02-08 18:27 UTC)
+
+- Status: `in_progress`
+- Summary: Opened PR #234 for #128/#147/#201 release-readiness batch
+- Branch: `codex/batch-128-147-201-release-readiness`
+- Commit: `ad58c81`
+- Issue: `#128,#147,#201`
+- PR: `#234`
+- Files:
+  - `apps/courieriosnativeclean/ios/Senderrappios/Images.xcassets/AppIcon.appiconset/Contents.json`
+  - `apps/courieriosnativeclean/ios/Senderrappios/LaunchScreen.storyboard`
+  - `docs/senderr_app/APP_STORE_RELEASE.md`
+  - `docs/senderr_app/ROADMAP.md`
+  - `docs/dev/SESSION_STATE.md`
+  - `docs/dev/WORKLOG.md`
+- Blockers: None
+- Next:
+  - Monitor CI on #234 and merge to senderr_app when green
