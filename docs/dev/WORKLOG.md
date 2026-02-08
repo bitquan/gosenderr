@@ -236,3 +236,20 @@ Append-only log used for session recovery.
 - Blockers: None
 - Next:
   - monitor CI, address review feedback, merge #221
+
+---
+
+## 2026-02-08 00:50 local (2026-02-08 05:50 UTC)
+
+- Status: `in_progress`
+- Summary: closed issues #204/#205 after merged PRs; created branch for issue #206
+- Branch: `codex/issue-206-profile-settings-persistence`
+- Commit: `c7b932f`
+- Issue: `#206`
+- PR: `n/a`
+- Files:
+  - `docs/dev/SESSION_STATE.md`
+  - `docs/dev/WORKLOG.md`
+- Blockers: None
+- Next:
+  - implement courier profile + settings persistence for issue #206

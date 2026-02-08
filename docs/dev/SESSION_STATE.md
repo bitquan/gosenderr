@@ -4,19 +4,19 @@ This file is the canonical handoff state when a chat/session is interrupted.
 
 ## Last Updated
 
-- Local: 2026-02-08 00:46
-- UTC: 2026-02-08 05:46
+- Local: 2026-02-08 00:50
+- UTC: 2026-02-08 05:50
 
 ## Current Focus
 
-- Active issue: #205
-- Active PR: #221
-- Objective: opened PR #221 for issue #205 command transition pipeline
+- Active issue: #206
+- Active PR: n/a
+- Objective: closed issues #204/#205 after merged PRs; created branch for issue #206
 
 ## Branch + Commit
 
-- Branch: `codex/issue-205-job-transition-conflicts`
-- Commit: `8072d4f`
+- Branch: `codex/issue-206-profile-settings-persistence`
+- Commit: `c7b932f`
 - Working tree: clean
 
 ## Blockers
@@ -25,7 +25,7 @@ This file is the canonical handoff state when a chat/session is interrupted.
 
 ## Next Actions
 
-1. monitor CI, address review feedback, merge #221
+1. implement courier profile + settings persistence for issue #206
 2. Re-open `docs/dev/WORKLOG.md` and append after each meaningful change.
 3. Keep this file current at task boundaries.
 
@@ -33,7 +33,7 @@ This file is the canonical handoff state when a chat/session is interrupted.
 
 ```bash
 cd /Users/papadev/dev/apps/Gosenderr_local/gosenderr
-git checkout codex/issue-205-job-transition-conflicts
+git checkout codex/issue-206-profile-settings-persistence
 git pull --rebase
 sed -n '1,200p' docs/dev/SESSION_STATE.md
 sed -n '1,200p' docs/dev/WORKLOG.md
