@@ -1,7 +1,10 @@
-import React, {useEffect, useMemo, useState} from 'react';
-import {ActivityIndicator, Pressable, StyleSheet, Switch, Text, TextInput, View} from 'react-native';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import {Pressable, StyleSheet, Switch, Text, TextInput, View} from 'react-native';
 
 import {PrimaryButton} from '../components/PrimaryButton';
+import {EmptyState} from '../components/states/EmptyState';
+import {ErrorState} from '../components/states/ErrorState';
+import {LoadingState} from '../components/states/LoadingState';
 import {ScreenContainer} from '../components/ScreenContainer';
 import {useAuth} from '../context/AuthContext';
 import type {CourierProfileValidationErrors} from '../services/ports/profilePort';
@@ -57,6 +60,8 @@ export const SettingsScreen = (): React.JSX.Element => {
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [validationErrors, setValidationErrors] = useState<CourierProfileValidationErrors>({});
   const [profileSource, setProfileSource] = useState<'firebase' | 'local'>('local');
+  const [profileLoadError, setProfileLoadError] = useState<string | null>(null);
+  const [loadAttempt, setLoadAttempt] = useState(0);
 
   useEffect(() => {
     let mounted = true;
@@ -64,12 +69,14 @@ export const SettingsScreen = (): React.JSX.Element => {
     const load = async (): Promise<void> => {
       if (!session) {
         if (mounted) {
+          setProfileLoadError(null);
           setLoadingProfile(false);
         }
         return;
       }
 
       setLoadingProfile(true);
+      setProfileLoadError(null);
       setFeedback(null);
       try {
         const result = await profileService.loadProfile(session);
@@ -88,10 +95,7 @@ export const SettingsScreen = (): React.JSX.Element => {
         if (!mounted) {
           return;
         }
-        setFeedback({
-          tone: 'error',
-          text: error instanceof Error ? error.message : 'Unable to load courier profile.',
-        });
+        setProfileLoadError(error instanceof Error ? error.message : 'Unable to load courier profile.');
       } finally {
         if (mounted) {
           setLoadingProfile(false);
@@ -104,13 +108,17 @@ export const SettingsScreen = (): React.JSX.Element => {
     return () => {
       mounted = false;
     };
-  }, [profileService, session]);
+  }, [loadAttempt, profileService, session]);
 
   const canSaveProfile = useMemo(() => Boolean(profileDraft) && !savingProfile && !loadingProfile, [
     profileDraft,
     savingProfile,
     loadingProfile,
   ]);
+
+  const retryProfileLoad = useCallback((): void => {
+    setLoadAttempt(previous => previous + 1);
+  }, []);
 
   const updateDraft = (updater: (previous: CourierProfileDraft) => CourierProfileDraft): void => {
     setProfileDraft(previous => {
@@ -234,11 +242,29 @@ export const SettingsScreen = (): React.JSX.Element => {
 
       <View style={styles.card}>
         <Text style={styles.title}>Courier Profile</Text>
-        {loadingProfile ? (
-          <View style={styles.loadingRow}>
-            <ActivityIndicator size="small" color="#1453ff" />
-            <Text style={styles.text}>Loading profile...</Text>
-          </View>
+        {loadingProfile && !profileDraft ? (
+          <LoadingState
+            title="Loading profile"
+            message="Fetching your latest profile settings..."
+          />
+        ) : null}
+
+        {!loadingProfile && profileLoadError && !profileDraft ? (
+          <ErrorState
+            title="Unable to load profile"
+            message={profileLoadError}
+            retryLabel="Retry"
+            onRetry={retryProfileLoad}
+          />
+        ) : null}
+
+        {!loadingProfile && !profileLoadError && !profileDraft ? (
+          <EmptyState
+            title="No profile data"
+            message="We couldn't find your courier profile yet."
+            actionLabel="Reload"
+            onAction={retryProfileLoad}
+          />
         ) : null}
 
         {profileDraft ? (
@@ -407,6 +433,16 @@ export const SettingsScreen = (): React.JSX.Element => {
           </>
         ) : null}
 
+        {profileLoadError && profileDraft ? (
+          <ErrorState
+            compact
+            title="Profile may be stale"
+            message={profileLoadError}
+            retryLabel="Retry load"
+            onRetry={retryProfileLoad}
+          />
+        ) : null}
+
         {feedback ? <Text style={feedback.tone === 'error' ? styles.error : styles.info}>{feedback.text}</Text> : null}
       </View>
 
@@ -519,10 +555,5 @@ const styles = StyleSheet.create({
   switchTextWrap: {
     flex: 1,
     gap: 2,
-  },
-  loadingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
   },
 });

@@ -1,18 +1,25 @@
-import React from 'react';
+import React, {useMemo} from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 
+import {EmptyState} from '../components/states/EmptyState';
+import {ErrorState} from '../components/states/ErrorState';
+import {LoadingState} from '../components/states/LoadingState';
 import {PrimaryButton} from '../components/PrimaryButton';
 import {ScreenContainer} from '../components/ScreenContainer';
 import {useAuth} from '../context/AuthContext';
 import {useServiceRegistry} from '../services/serviceRegistry';
+import type {JobsSyncState} from '../services/ports/jobsPort';
 import type {LocationSnapshot} from '../services/ports/locationPort';
+import {deriveSyncHealth, formatLocationSampleTime, formatSyncTime} from './viewModels/jobsViewState';
 import type {Job} from '../types/jobs';
 
 type DashboardScreenProps = {
   onOpenJobs: () => void;
+  onRetryJobs: () => void;
   activeJobsCount: number;
   loadingJobs: boolean;
   jobsError: string | null;
+  jobsSyncState: JobsSyncState;
   activeJob: Job | null;
 };
 
@@ -20,6 +27,14 @@ type JobsMapCardProps = {
   activeJob: Job | null;
   courierLocation: LocationSnapshot | null;
 };
+
+type TrackingHealth = {
+  label: string;
+  detail: string;
+  tone: 'idle' | 'good' | 'degraded' | 'error';
+};
+
+const LOCATION_STALE_THRESHOLD_MS = 45_000;
 
 const JobsMapCardFallback = ({activeJob, courierLocation}: JobsMapCardProps): React.JSX.Element => (
   <View style={styles.card}>
@@ -46,15 +61,88 @@ const loadJobsMapCard = (): React.ComponentType<JobsMapCardProps> => {
 
 export const DashboardScreen = ({
   onOpenJobs,
+  onRetryJobs,
   activeJobsCount,
   loadingJobs,
   jobsError,
+  jobsSyncState,
   activeJob,
 }: DashboardScreenProps): React.JSX.Element => {
   const JobsMapCard = loadJobsMapCard();
   const {session} = useAuth();
   const {location: locationService} = useServiceRegistry();
-  const {state: locationState, startTracking, stopTracking} = locationService.useLocationTracking();
+  const {state: locationState, requestPermission, startTracking, stopTracking} = locationService.useLocationTracking();
+
+  const syncHealth = deriveSyncHealth(jobsSyncState);
+
+  const trackingHealth = useMemo<TrackingHealth>(() => {
+    if (locationState.error) {
+      return {
+        label: 'Error',
+        detail: locationState.error,
+        tone: 'error',
+      };
+    }
+
+    if (!locationState.tracking) {
+      return {
+        label: 'Paused',
+        detail: 'Tracking is not active.',
+        tone: 'idle',
+      };
+    }
+
+    if (!locationState.lastLocation) {
+      return {
+        label: 'Starting',
+        detail: 'Waiting for first location sample.',
+        tone: 'degraded',
+      };
+    }
+
+    const locationAge = Date.now() - locationState.lastLocation.timestamp;
+    if (locationAge > LOCATION_STALE_THRESHOLD_MS) {
+      return {
+        label: 'Stale',
+        detail: `Last sample is ${Math.round(locationAge / 1000)}s old.`,
+        tone: 'degraded',
+      };
+    }
+
+    if (syncHealth.tone === 'error') {
+      return {
+        label: 'Degraded',
+        detail: 'Network sync is failing. Uploads may be delayed.',
+        tone: 'degraded',
+      };
+    }
+
+    if (syncHealth.tone === 'degraded') {
+      return {
+        label: 'Recovering',
+        detail: 'Sync is reconnecting. Upload health may fluctuate.',
+        tone: 'degraded',
+      };
+    }
+
+    return {
+      label: 'Healthy',
+      detail: 'Tracking and sync are healthy.',
+      tone: 'good',
+    };
+  }, [locationState.error, locationState.lastLocation, locationState.tracking, syncHealth.tone]);
+
+  const handleRetryTracking = (): void => {
+    void (async () => {
+      if (!locationState.hasPermission) {
+        const granted = await requestPermission();
+        if (!granted) {
+          return;
+        }
+      }
+      await startTracking();
+    })();
+  };
 
   return (
     <ScreenContainer>
@@ -65,8 +153,46 @@ export const DashboardScreen = ({
 
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Today</Text>
-        <Text style={styles.metric}>{loadingJobs ? 'Loading jobs...' : `${activeJobsCount} active jobs`}</Text>
-        {jobsError ? <Text style={styles.error}>{jobsError}</Text> : null}
+        {loadingJobs && activeJobsCount === 0 ? (
+          <LoadingState
+            compact
+            title="Loading jobs"
+            message="Checking active assignments..."
+          />
+        ) : null}
+
+        {!loadingJobs && jobsError && activeJobsCount === 0 ? (
+          <ErrorState
+            compact
+            title="Unable to load jobs"
+            message={jobsError}
+            retryLabel="Retry jobs"
+            onRetry={onRetryJobs}
+          />
+        ) : null}
+
+        {!loadingJobs && !jobsError && activeJobsCount === 0 ? (
+          <EmptyState
+            compact
+            title="No active jobs"
+            message="You are online, but there are no active assignments right now."
+            actionLabel="Refresh"
+            onAction={onRetryJobs}
+          />
+        ) : null}
+
+        {activeJobsCount > 0 ? <Text style={styles.metric}>{activeJobsCount} active jobs</Text> : null}
+
+        {activeJobsCount > 0 && jobsError ? (
+          <ErrorState
+            compact
+            title="Live updates interrupted"
+            message={jobsError}
+            retryLabel="Retry jobs"
+            onRetry={onRetryJobs}
+          />
+        ) : null}
+
         <PrimaryButton
           label="Open Jobs"
           onPress={onOpenJobs}
@@ -75,14 +201,12 @@ export const DashboardScreen = ({
 
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Location tracking</Text>
-        <Text style={styles.subtitle}>
-          {locationState.lastLocation
-            ? `Lat ${locationState.lastLocation.latitude.toFixed(5)}, Lng ${locationState.lastLocation.longitude.toFixed(
-                5,
-              )}`
-            : 'No location sample yet.'}
-        </Text>
-        {locationState.error ? <Text style={styles.error}>{locationState.error}</Text> : null}
+        <Text style={styles.subtitle}>Tracking status: {trackingHealth.label}</Text>
+        <Text style={styles.subtitle}>{trackingHealth.detail}</Text>
+        <Text style={styles.subtitle}>Last location sample: {formatLocationSampleTime(locationState.lastLocation?.timestamp ?? null)}</Text>
+        <Text style={styles.subtitle}>Upload health: {syncHealth.title}</Text>
+        <Text style={styles.subtitle}>Last sync: {formatSyncTime(jobsSyncState.lastSyncedAt)}</Text>
+
         <View style={styles.row}>
           <PrimaryButton
             label={locationState.tracking ? 'Tracking active' : 'Start tracking'}
@@ -97,6 +221,13 @@ export const DashboardScreen = ({
             disabled={!locationState.tracking}
             onPress={stopTracking}
           />
+          {trackingHealth.tone === 'error' || trackingHealth.tone === 'degraded' ? (
+            <PrimaryButton
+              label="Retry"
+              variant="secondary"
+              onPress={handleRetryTracking}
+            />
+          ) : null}
         </View>
       </View>
 
@@ -133,9 +264,6 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     gap: 8,
-  },
-  error: {
-    color: '#dc2626',
-    fontWeight: '600',
+    flexWrap: 'wrap',
   },
 });
