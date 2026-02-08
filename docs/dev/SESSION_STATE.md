@@ -4,20 +4,20 @@ This file is the canonical handoff state when a chat/session is interrupted.
 
 ## Last Updated
 
-- Local: 2026-02-07 23:42
-- UTC: 2026-02-08 04:42
+- Local: 2026-02-08 00:07
+- UTC: 2026-02-08 05:07
 
 ## Current Focus
 
-- Active issue: #203
+- Active issue: #204
 - Active PR: n/a
-- Objective: Closed issue #203 as implemented on senderr_app via PR #214 and refreshed roadmap queue/snapshot
+- Objective: Hardened location tracking state lifecycle and map follow behavior for courier runtime
 
 ## Branch + Commit
 
-- Branch: `codex/issue-203-realtime-jobs-sync`
-- Commit: `9ddf702`
-- Working tree: dirty
+- Branch: `codex/issue-204-location-upload`
+- Commit: `507229e`
+- Working tree: clean
 
 ## Blockers
 
@@ -25,7 +25,7 @@ This file is the canonical handoff state when a chat/session is interrupted.
 
 ## Next Actions
 
-1. Start issue #204 location tracking upload hardening on a fresh branch from senderr_app
+1. Validate #204 on-device across Dashboard/Settings tab switches and confirm location writes stay active
 2. Re-open `docs/dev/WORKLOG.md` and append after each meaningful change.
 3. Keep this file current at task boundaries.
 
@@ -33,7 +33,7 @@ This file is the canonical handoff state when a chat/session is interrupted.
 
 ```bash
 cd /Users/papadev/dev/apps/Gosenderr_local/gosenderr
-git checkout codex/issue-203-realtime-jobs-sync
+git checkout codex/issue-204-location-upload
 git pull --rebase
 sed -n '1,200p' docs/dev/SESSION_STATE.md
 sed -n '1,200p' docs/dev/WORKLOG.md

@@ -179,3 +179,20 @@ Append-only log used for session recovery.
 - Blockers: None
 - Next:
   - Start issue #204 location tracking upload hardening on a fresh branch from senderr_app
+
+---
+
+## 2026-02-08 00:07 local (2026-02-08 05:07 UTC)
+
+- Status: `in_progress`
+- Summary: Hardened location tracking state lifecycle and map follow behavior for courier runtime
+- Branch: `codex/issue-204-location-upload`
+- Commit: `507229e`
+- Issue: `#204`
+- PR: `n/a`
+- Files:
+  - `apps/courieriosnativeclean/src/services/locationService.ts`
+  - `apps/courieriosnativeclean/src/components/JobsMapCard.tsx`
+- Blockers: None
+- Next:
+  - Validate #204 on-device across Dashboard/Settings tab switches and confirm location writes stay active
