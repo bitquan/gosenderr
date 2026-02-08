@@ -28,6 +28,7 @@ type SellerDraftForm = {
   localState: string;
   localPostalCode: string;
   operatingRadiusMiles: number;
+  shareExactPickupLocation: boolean;
   localComplianceConfirmed: boolean;
 };
 
@@ -44,6 +45,7 @@ const DEFAULT_FORM_DATA: SellerDraftForm = {
   localState: "",
   localPostalCode: "",
   operatingRadiusMiles: 10,
+  shareExactPickupLocation: false,
   localComplianceConfirmed: false,
 };
 
@@ -340,6 +342,7 @@ export default function SellerApplicationPage() {
         postalCode: formData.localPostalCode.trim(),
         operatingRadiusMiles: Number(formData.operatingRadiusMiles),
         contactPhone: formData.phone.trim(),
+        shareExactPickupLocation: formData.shareExactPickupLocation,
         complianceConfirmed: formData.localComplianceConfirmed,
         complianceConfirmedAt: serverTimestamp(),
       };
@@ -371,6 +374,7 @@ export default function SellerApplicationPage() {
             ...(userData?.sellerProfile || {}),
             localSellingConfig,
             localSellingEnabled: true,
+            shareExactPickupLocation: formData.shareExactPickupLocation,
           },
           sellerOnboardingV2: {
             version: 2,
@@ -632,6 +636,25 @@ export default function SellerApplicationPage() {
                       }
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500"
                     />
+                  </div>
+
+                  <div className="flex items-start gap-3 rounded-lg border border-blue-200 bg-white p-3">
+                    <input
+                      type="checkbox"
+                      id="shareExactPickupLocation"
+                      checked={formData.shareExactPickupLocation}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          shareExactPickupLocation: e.target.checked,
+                        })
+                      }
+                      className="mt-1 h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <label htmlFor="shareExactPickupLocation" className="text-sm text-gray-700">
+                      Share my full pickup address with customers.
+                      If off, customers only see an approximate location (city and ZIP).
+                    </label>
                   </div>
 
                   <div className="flex items-start gap-3">

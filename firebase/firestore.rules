@@ -683,6 +683,39 @@ service cloud.firestore {
       allow read: if isAdmin();
     }
 
+    // ========== SELLER BOOKING LINKS ==========
+    // Legacy name used by seller dashboard UI
+    match /sellerBookingLinks/{linkId} {
+      allow read: if signedIn() && (
+        resource.data.sellerId == request.auth.uid || isAdmin()
+      );
+
+      allow create: if signedIn()
+        && request.resource.data.sellerId == request.auth.uid
+        && request.resource.data.itemId is string
+        && request.resource.data.url is string;
+
+      allow update, delete: if signedIn() && (
+        resource.data.sellerId == request.auth.uid || isAdmin()
+      );
+    }
+
+    // Canonical Senderrplace collection name used by backend contracts
+    match /senderrplaceBookingLinks/{linkId} {
+      allow read: if signedIn() && (
+        resource.data.sellerId == request.auth.uid || isAdmin()
+      );
+
+      allow create: if signedIn()
+        && request.resource.data.sellerId == request.auth.uid
+        && request.resource.data.itemId is string
+        && request.resource.data.url is string;
+
+      allow update, delete: if signedIn() && (
+        resource.data.sellerId == request.auth.uid || isAdmin()
+      );
+    }
+
     // ========== MARKETPLACE ITEMS ==========
     match /marketplaceItems/{itemId} {
       // Public can read active items
