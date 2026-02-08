@@ -6,8 +6,8 @@ import {EmptyState} from '../components/states/EmptyState';
 import {ErrorState} from '../components/states/ErrorState';
 import {LoadingState} from '../components/states/LoadingState';
 import {ScreenContainer} from '../components/ScreenContainer';
-import {useAuth} from '../context/AuthContext';
 import {runtimeConfig} from '../config/runtime';
+import {useAuth} from '../context/AuthContext';
 import type {CourierProfileValidationErrors} from '../services/ports/profilePort';
 import {useServiceRegistry} from '../services/serviceRegistry';
 import type {CourierAvailability, CourierProfile, CourierProfileDraft} from '../types/profile';
@@ -52,7 +52,7 @@ const AVAILABILITY_OPTIONS: CourierAvailability[] = ['available', 'busy', 'offli
 
 export const SettingsScreen = (): React.JSX.Element => {
   const {session, signOutUser} = useAuth();
-  const {location: locationService, profile: profileService, featureFlags} = useServiceRegistry();
+  const {location: locationService, profile: profileService, featureFlags, analytics} = useServiceRegistry();
   const {state: locationState, requestPermission, startTracking, stopTracking} = locationService.useLocationTracking();
   const {state: flagsState, refresh: refreshFlags} = featureFlags.useFeatureFlags();
   const showFlagsDebug = runtimeConfig.envName !== 'prod';
@@ -228,6 +228,48 @@ export const SettingsScreen = (): React.JSX.Element => {
     }
   };
 
+  const requestLocationPermission = (): void => {
+    void requestPermission().catch(error => {
+      void analytics.recordError(error, 'settings_request_permission_failed');
+    });
+  };
+
+  const startLocationTracking = (): void => {
+    void (async () => {
+      try {
+        await startTracking();
+        void analytics.track('tracking_started', {
+          from_screen: 'settings',
+        });
+      } catch (error) {
+        void analytics.track('tracking_error', {
+          from_screen: 'settings',
+          action: 'start',
+        });
+        void analytics.recordError(error, 'settings_tracking_start_failed');
+      }
+    })();
+  };
+
+  const stopLocationTracking = (): void => {
+    stopTracking();
+    void analytics.track('tracking_stopped', {
+      from_screen: 'settings',
+    });
+  };
+
+  const sendTelemetryTest = (): void => {
+    void analytics.track('tracking_error', {
+      manual_test: true,
+      env: runtimeConfig.envName,
+    });
+    void analytics.recordError(new Error('senderr_manual_nonfatal_test'), 'settings_manual_test');
+    setFeedback({
+      tone: 'info',
+      text: 'Telemetry test event sent.',
+    });
+  };
+
   return (
     <ScreenContainer>
       <View style={styles.card}>
@@ -241,6 +283,13 @@ export const SettingsScreen = (): React.JSX.Element => {
             void signOutUser();
           }}
         />
+        {runtimeConfig.envName !== 'prod' ? (
+          <PrimaryButton
+            label="Send telemetry test event"
+            variant="secondary"
+            onPress={sendTelemetryTest}
+          />
+        ) : null}
       </View>
 
       <View style={styles.card}>
@@ -464,17 +513,13 @@ export const SettingsScreen = (): React.JSX.Element => {
           <PrimaryButton
             label="Request Permission"
             variant="secondary"
-            onPress={() => {
-              void requestPermission();
-            }}
+            onPress={requestLocationPermission}
           />
           <PrimaryButton
             label="Start"
-            onPress={() => {
-              void startTracking();
-            }}
+            onPress={startLocationTracking}
           />
-          <PrimaryButton label="Stop" variant="secondary" onPress={stopTracking} />
+          <PrimaryButton label="Stop" variant="secondary" onPress={stopLocationTracking} />
         </View>
       </View>
 
