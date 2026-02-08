@@ -140,4 +140,5 @@ For environment profile builds:
 - Maps validation checklist: `/docs/senderr_app/MAPS_VALIDATION.md`
 - Offline mode details: `/docs/senderr_app/OFFLINE_MODE.md`
 - Crash + analytics setup: `/docs/senderr_app/CRASH_ANALYTICS.md`
+- Push notifications setup + validation: `/docs/senderr_app/PUSH_NOTIFICATIONS.md`
 - App docs registry: `/docs/apps/README.md`

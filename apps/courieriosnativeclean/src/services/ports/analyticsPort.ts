@@ -5,6 +5,9 @@ export type AnalyticsEventName =
   | 'auth_signed_out'
   | 'jobs_loaded'
   | 'job_status_updated'
+  | 'notification_foreground_received'
+  | 'notifications_permission_checked'
+  | 'notifications_token_registered'
   | 'tracking_started'
   | 'tracking_stopped'
   | 'tracking_error';

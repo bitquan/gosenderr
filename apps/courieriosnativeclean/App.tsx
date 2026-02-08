@@ -25,8 +25,10 @@ const DEFAULT_JOBS_SYNC_STATE: JobsSyncState = {
 
 const AppShell = (): React.JSX.Element => {
   const {session, initializing} = useAuth();
-  const {jobs: jobsService, analytics} = useServiceRegistry();
+  const {jobs: jobsService, notifications, analytics, featureFlags} = useServiceRegistry();
+  const featureFlagsState = featureFlags.useFeatureFlags();
   const jobsSubscriptionRef = useRef<JobsSubscription | null>(null);
+  const notificationsSetupForUidRef = useRef<string | null>(null);
   const lastTrackedJobsCountRef = useRef<number | null>(null);
   const lastSyncErrorRef = useRef<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabKey>('dashboard');
@@ -35,6 +37,70 @@ const AppShell = (): React.JSX.Element => {
   const [jobsLoading, setJobsLoading] = useState(false);
   const [jobsError, setJobsError] = useState<string | null>(null);
   const [jobsSyncState, setJobsSyncState] = useState<JobsSyncState>(DEFAULT_JOBS_SYNC_STATE);
+
+  useEffect(() => {
+    if (!featureFlagsState.state.flags.notifications) {
+      return;
+    }
+
+    const unsubscribe = notifications.subscribeToForegroundMessages(payload => {
+      void analytics.track('notification_foreground_received', {
+        hasTitle: payload.title ? 'yes' : 'no',
+        hasData: payload.data && Object.keys(payload.data).length > 0 ? 'yes' : 'no',
+      });
+    });
+
+    return unsubscribe;
+  }, [analytics, notifications, featureFlagsState.state.flags.notifications]);
+
+  useEffect(() => {
+    if (!session || !featureFlagsState.state.flags.notifications) {
+      notificationsSetupForUidRef.current = null;
+      return;
+    }
+    if (notificationsSetupForUidRef.current === session.uid) {
+      return;
+    }
+
+    notificationsSetupForUidRef.current = session.uid;
+    let cancelled = false;
+
+    const bootstrapNotifications = async (): Promise<void> => {
+      try {
+        const granted = await notifications.requestPermission();
+        if (cancelled) {
+          return;
+        }
+
+        void analytics.track('notifications_permission_checked', {
+          granted: granted ? 'yes' : 'no',
+        });
+
+        if (!granted) {
+          return;
+        }
+
+        const token = await notifications.registerDeviceToken();
+        if (cancelled || !token) {
+          return;
+        }
+
+        console.info('[notifications] device token registered', token);
+        void analytics.track('notifications_token_registered', {
+          tokenLength: token.length,
+        });
+      } catch (error) {
+        notificationsSetupForUidRef.current = null;
+        void analytics.recordError(error, 'notifications_bootstrap_failed');
+      }
+    };
+
+    void bootstrapNotifications();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [analytics, notifications, session, featureFlagsState.state.flags.notifications]);
 
   useEffect(() => {
     jobsSubscriptionRef.current?.unsubscribe();

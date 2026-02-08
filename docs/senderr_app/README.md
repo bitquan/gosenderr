@@ -118,6 +118,7 @@ Rules:
 ## Supporting docs
 - Native dependency audit: `docs/senderr_app/NATIVE_DEPENDENCY_AUDIT.md`
 - Crash + analytics guide: `docs/senderr_app/CRASH_ANALYTICS.md`
+- Push notifications setup/local validation: `docs/senderr_app/PUSH_NOTIFICATIONS.md`
 - Smoke checklist: `docs/senderr_app/SMOKE_CHECKLIST.md`
 - Roadmap/progress tracker: `docs/senderr_app/ROADMAP.md`
 - App README (build fixes + troubleshooting): `apps/courieriosnativeclean/README.md`
