@@ -21,14 +21,16 @@ type Feedback = {
 
 export const JobDetailScreen = ({job, onBack, onJobUpdated}: JobDetailScreenProps): React.JSX.Element => {
   const {session} = useAuth();
-  const {jobs: jobsService} = useServiceRegistry();
+  const {jobs: jobsService, featureFlags} = useServiceRegistry();
+  const {state: featureFlagState} = featureFlags.useFeatureFlags();
+  const statusActionsEnabled = featureFlagState.flags.jobStatusActions;
   const [updating, setUpdating] = useState(false);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
 
   const nextStatus = useMemo<JobStatus | null>(() => NEXT_STATUS[job.status] ?? null, [job.status]);
 
   const handleUpdate = async (): Promise<void> => {
-    if (!session || !nextStatus) {
+    if (!session || !nextStatus || !statusActionsEnabled) {
       return;
     }
 
@@ -86,6 +88,7 @@ export const JobDetailScreen = ({job, onBack, onJobUpdated}: JobDetailScreenProp
         <Text style={styles.sectionLabel}>ETA</Text>
         <Text style={styles.sectionValue}>{job.etaMinutes} minutes</Text>
 
+        {!statusActionsEnabled ? <Text style={styles.info}>Status updates are currently disabled by rollout controls.</Text> : null}
         {feedback ? <Text style={feedback.tone === 'error' ? styles.error : styles.info}>{feedback.message}</Text> : null}
 
         <PrimaryButton
@@ -96,7 +99,7 @@ export const JobDetailScreen = ({job, onBack, onJobUpdated}: JobDetailScreenProp
                 : `Mark as ${nextStatus.replace('_', ' ')}`
               : 'No further actions'
           }
-          disabled={updating || !nextStatus}
+          disabled={updating || !nextStatus || !statusActionsEnabled}
           onPress={() => {
             void handleUpdate();
           }}

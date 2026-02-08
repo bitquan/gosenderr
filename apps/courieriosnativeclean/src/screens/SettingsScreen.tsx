@@ -7,6 +7,7 @@ import {ErrorState} from '../components/states/ErrorState';
 import {LoadingState} from '../components/states/LoadingState';
 import {ScreenContainer} from '../components/ScreenContainer';
 import {useAuth} from '../context/AuthContext';
+import {runtimeConfig} from '../config/runtime';
 import type {CourierProfileValidationErrors} from '../services/ports/profilePort';
 import {useServiceRegistry} from '../services/serviceRegistry';
 import type {CourierAvailability, CourierProfile, CourierProfileDraft} from '../types/profile';
@@ -51,8 +52,10 @@ const AVAILABILITY_OPTIONS: CourierAvailability[] = ['available', 'busy', 'offli
 
 export const SettingsScreen = (): React.JSX.Element => {
   const {session, signOutUser} = useAuth();
-  const {location: locationService, profile: profileService} = useServiceRegistry();
+  const {location: locationService, profile: profileService, featureFlags} = useServiceRegistry();
   const {state: locationState, requestPermission, startTracking, stopTracking} = locationService.useLocationTracking();
+  const {state: flagsState, refresh: refreshFlags} = featureFlags.useFeatureFlags();
+  const showFlagsDebug = runtimeConfig.envName !== 'prod';
 
   const [profileDraft, setProfileDraft] = useState<CourierProfileDraft | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
@@ -474,6 +477,27 @@ export const SettingsScreen = (): React.JSX.Element => {
           <PrimaryButton label="Stop" variant="secondary" onPress={stopTracking} />
         </View>
       </View>
+
+      {showFlagsDebug ? (
+        <View style={styles.card}>
+          <Text style={styles.title}>Feature Flags (Debug)</Text>
+          <Text style={styles.text}>Source: {flagsState.source}</Text>
+          <Text style={styles.text}>Loading: {flagsState.loading ? 'yes' : 'no'}</Text>
+          <Text style={styles.text}>Last update: {flagsState.updatedAt ?? 'never'}</Text>
+          {flagsState.error ? <Text style={styles.error}>{flagsState.error}</Text> : null}
+          <Text style={styles.text}>trackingUpload: {flagsState.flags.trackingUpload ? 'on' : 'off'}</Text>
+          <Text style={styles.text}>notifications: {flagsState.flags.notifications ? 'on' : 'off'}</Text>
+          <Text style={styles.text}>mapRouting: {flagsState.flags.mapRouting ? 'on' : 'off'}</Text>
+          <Text style={styles.text}>jobStatusActions: {flagsState.flags.jobStatusActions ? 'on' : 'off'}</Text>
+          <PrimaryButton
+            label="Refresh flags"
+            variant="secondary"
+            onPress={() => {
+              void refreshFlags();
+            }}
+          />
+        </View>
+      ) : null}
     </ScreenContainer>
   );
 };
