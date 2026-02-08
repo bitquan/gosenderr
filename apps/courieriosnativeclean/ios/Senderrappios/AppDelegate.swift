@@ -1,6 +1,7 @@
 import UIKit
 import UserNotifications
 import FirebaseCore
+import FirebaseMessaging
 import React
 import React_RCTAppDelegate
 #if canImport(ReactAppDependencyProvider)
@@ -8,8 +9,10 @@ import ReactAppDependencyProvider
 #endif
 
 @main
-class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate, RCTBridgeDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate, MessagingDelegate, RCTBridgeDelegate {
   var window: UIWindow?
+  private let pushTokenDefaultsKey = "SenderrPushDeviceToken"
+  private let fcmTokenDefaultsKey = "SenderrFCMToken"
 
   override init() {
     super.init()
@@ -21,8 +24,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
   ) -> Bool {
     configureFirebaseIfAvailable()
+    Messaging.messaging().delegate = self
     UNUserNotificationCenter.current().delegate = self
-    application.registerForRemoteNotifications()
+    requestPushNotificationAuthorization(application: application)
 
     window = UIWindow(frame: UIScreen.main.bounds)
 
@@ -43,6 +47,26 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     return true
   }
 
+  private func requestPushNotificationAuthorization(application: UIApplication) {
+    UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) {
+      granted,
+      error in
+      if let error {
+        NSLog("Push permission request failed: \(error.localizedDescription)")
+        return
+      }
+
+      if !granted {
+        NSLog("Push permission denied by user.")
+        return
+      }
+
+      DispatchQueue.main.async {
+        application.registerForRemoteNotifications()
+      }
+    }
+  }
+
   private func configureFirebaseIfAvailable() {
     guard FirebaseApp.app() == nil else {
       return
@@ -50,6 +74,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
 
     if Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") != nil {
       FirebaseApp.configure()
+      Messaging.messaging().delegate = self
     } else {
       NSLog(
         "Firebase disabled: GoogleService-Info.plist is missing from app bundle for target Senderrappios."
@@ -179,7 +204,32 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     willPresent notification: UNNotification,
     withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
   ) {
-    completionHandler([])
+    completionHandler([.banner, .sound, .badge])
+  }
+
+  func application(
+    _ application: UIApplication,
+    didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
+  ) {
+    Messaging.messaging().apnsToken = deviceToken
+    let token = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
+    UserDefaults.standard.set(token, forKey: pushTokenDefaultsKey)
+    NSLog("APNs device token registered.")
+  }
+
+  func application(
+    _ application: UIApplication,
+    didFailToRegisterForRemoteNotificationsWithError error: Error
+  ) {
+    NSLog("APNs registration failed: \(error.localizedDescription)")
+  }
+
+  func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
+    guard let fcmToken, !fcmToken.isEmpty else {
+      return
+    }
+    UserDefaults.standard.set(fcmToken, forKey: fcmTokenDefaultsKey)
+    NSLog("FCM token refreshed.")
   }
 
   // MARK: - RCTBridgeDelegate

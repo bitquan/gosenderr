@@ -7,6 +7,7 @@ export type NotificationPayload = {
 export interface NotificationsServicePort {
   requestPermission: () => Promise<boolean>;
   registerDeviceToken: () => Promise<string | null>;
+  registerMessagingToken: () => Promise<string | null>;
   handleForegroundMessage: (payload: NotificationPayload) => Promise<void>;
   subscribeToForegroundMessages: (
     onMessage: (payload: NotificationPayload) => void,
