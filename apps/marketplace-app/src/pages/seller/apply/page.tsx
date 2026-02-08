@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { Timestamp, doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { Card, CardContent } from "@/components/ui/Card";
@@ -59,6 +59,15 @@ export default function SellerApplicationPage() {
   const [draftSaveState, setDraftSaveState] = useState<
     "idle" | "saving" | "saved" | "error"
   >("idle");
+  const [draftRoleSeed, setDraftRoleSeed] = useState<{
+    role: string;
+    primaryRole: string;
+    roles: string[];
+  }>({
+    role: "customer",
+    primaryRole: "customer",
+    roles: ["customer"],
+  });
   const [draftHydrated, setDraftHydrated] = useState(false);
   const [submissionAttempted, setSubmissionAttempted] = useState(false);
 
@@ -105,6 +114,20 @@ export default function SellerApplicationPage() {
         const userSnap = await getDoc(doc(db, `users/${uid}`));
         const userData = userSnap.exists() ? userSnap.data() : {};
         const roles = Array.isArray(userData?.roles) ? userData.roles : [];
+        const resolvedRoles = Array.from(
+          new Set(
+            (
+              roles.length
+                ? roles
+                : [userData?.role || userData?.primaryRole || "customer"]
+            ).filter(Boolean),
+          ),
+        );
+        setDraftRoleSeed({
+          role: userData?.role || "customer",
+          primaryRole: userData?.primaryRole || userData?.role || "customer",
+          roles: resolvedRoles.length ? resolvedRoles : ["customer"],
+        });
         const hasSellerRole = userData?.role === "seller" || roles.includes("seller");
 
         if (hasSellerRole || userData?.sellerApplication?.status === "approved") {
@@ -162,6 +185,9 @@ export default function SellerApplicationPage() {
         await setDoc(
           doc(db, `users/${uid}`),
           {
+            role: draftRoleSeed.role,
+            primaryRole: draftRoleSeed.primaryRole,
+            roles: draftRoleSeed.roles,
             sellerOnboardingV2: {
               version: 2,
               status: "in_progress",
@@ -198,6 +224,7 @@ export default function SellerApplicationPage() {
     sellerStatus,
     businessInfoComplete,
     localConfigValidation,
+    draftRoleSeed,
   ]);
 
   const uploadDocuments = async () => {
@@ -232,7 +259,7 @@ export default function SellerApplicationPage() {
           url,
           name: item.file.name,
           contentType: item.file.type || "application/octet-stream",
-          uploadedAt: serverTimestamp(),
+          uploadedAt: Timestamp.now(),
         });
       }
     } finally {

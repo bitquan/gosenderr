@@ -89,6 +89,15 @@ service cloud.firestore {
       allow read, create, update: if isAdmin();
       
       allow delete: if false;
+
+      // Seller onboarding analytics events (non-blocking client telemetry)
+      match /onboardingEvents/{eventId} {
+        allow read: if isSelf(uid) || isAdmin();
+        allow create: if isSelf(uid)
+          && request.resource.data.flow is string
+          && request.resource.data.eventName is string;
+        allow update, delete: if false;
+      }
     }
 
     // ========== ADMIN PROFILES ==========
