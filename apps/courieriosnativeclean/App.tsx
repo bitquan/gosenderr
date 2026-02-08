@@ -1,5 +1,6 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {ActivityIndicator, Pressable, StyleSheet, Text, View} from 'react-native';
+import {doc, setDoc} from 'firebase/firestore';
 
 import {AuthProvider, useAuth} from './src/context/AuthContext';
 import {DashboardScreen} from './src/screens/DashboardScreen';
@@ -8,6 +9,7 @@ import {JobsScreen} from './src/screens/JobsScreen';
 import {LoginScreen} from './src/screens/LoginScreen';
 import {SettingsScreen} from './src/screens/SettingsScreen';
 import {configureRuntime, type NativeRuntimeConfig} from './src/config/runtime';
+import {getFirebaseServices, isFirebaseReady} from './src/services/firebase';
 import type {JobsSubscription, JobsSyncState} from './src/services/ports/jobsPort';
 import {ServiceRegistryProvider, useServiceRegistry} from './src/services/serviceRegistry';
 import type {Job} from './src/types/jobs';
@@ -25,7 +27,7 @@ const DEFAULT_JOBS_SYNC_STATE: JobsSyncState = {
 
 const AppShell = (): React.JSX.Element => {
   const {session, initializing} = useAuth();
-  const {jobs: jobsService} = useServiceRegistry();
+  const {jobs: jobsService, notifications: notificationsService} = useServiceRegistry();
   const jobsSubscriptionRef = useRef<JobsSubscription | null>(null);
   const [activeTab, setActiveTab] = useState<TabKey>('dashboard');
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -81,6 +83,56 @@ const AppShell = (): React.JSX.Element => {
       }
     };
   }, [jobsService, session]);
+
+  useEffect(() => {
+    if (!session || !isFirebaseReady()) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const syncPushToken = async (): Promise<void> => {
+      try {
+        await notificationsService.requestPermission();
+        for (let attempt = 0; attempt < 5 && !cancelled; attempt += 1) {
+          const apnsToken = await notificationsService.registerDeviceToken();
+          const fcmToken = await notificationsService.registerMessagingToken();
+          if (!apnsToken && !fcmToken) {
+            await new Promise(resolve => setTimeout(resolve, 1200));
+            continue;
+          }
+
+          const services = getFirebaseServices();
+          if (!services) {
+            return;
+          }
+
+          await setDoc(
+            doc(services.db, 'users', session.uid),
+            {
+              courierProfile: {
+                apnsToken: apnsToken ?? null,
+                apnsTokenUpdatedAt: new Date().toISOString(),
+                fcmToken: fcmToken ?? null,
+                fcmTokenUpdatedAt: new Date().toISOString(),
+              },
+              updatedAt: new Date().toISOString(),
+            },
+            {merge: true},
+          );
+          return;
+        }
+      } catch {
+        // Token upload failures should not block app usage.
+      }
+    };
+
+    void syncPushToken();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [notificationsService, session]);
 
   const refreshJobs = useCallback(async (): Promise<Job[]> => {
     if (!session) {

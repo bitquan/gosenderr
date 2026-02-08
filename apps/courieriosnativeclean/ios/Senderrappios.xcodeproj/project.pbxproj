@@ -10,6 +10,8 @@
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		711B9977605A84CDDF8303C1 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
+		762780ED2CA45674006654EF /* SenderrNotificationsModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 762780EC2CA45674006654EF /* SenderrNotificationsModule.swift */; };
+		763780ED2CA45674006654EF /* SenderrNotificationsModule.m in Sources */ = {isa = PBXBuildFile; fileRef = 763780EC2CA45674006654EF /* SenderrNotificationsModule.m */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 		A1F24B3C7D8E9F0011223345 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = A1F24B3C7D8E9F0011223344 /* GoogleService-Info.plist */; };
 		AD077E9BDF063B466B2C33C3 /* libPods-Senderrappios.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F5174EAF907E74B7EBE33E82 /* libPods-Senderrappios.a */; };
@@ -23,6 +25,8 @@
 		5C9C111D720F509EC51103B5 /* Pods-Senderrappios.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Senderrappios.debug.xcconfig"; path = "Target Support Files/Pods-Senderrappios/Pods-Senderrappios.debug.xcconfig"; sourceTree = "<group>"; };
 		72B8AE1DBD8EEF298234DC1E /* Pods-Senderrappios.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Senderrappios.release.xcconfig"; path = "Target Support Files/Pods-Senderrappios/Pods-Senderrappios.release.xcconfig"; sourceTree = "<group>"; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = Senderrappios/AppDelegate.swift; sourceTree = "<group>"; };
+		762780EC2CA45674006654EF /* SenderrNotificationsModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SenderrNotificationsModule.swift; path = Senderrappios/SenderrNotificationsModule.swift; sourceTree = "<group>"; };
+		763780EC2CA45674006654EF /* SenderrNotificationsModule.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = SenderrNotificationsModule.m; path = Senderrappios/SenderrNotificationsModule.m; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = Senderrappios/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		A1B2C3D4E5F60123456789AB /* LocalDebug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = LocalDebug.xcconfig; path = LocalDebug.xcconfig; sourceTree = "<group>"; };
 		A1F24B3C7D8E9F0011223344 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "Senderrappios/GoogleService-Info.plist"; sourceTree = "<group>"; };
@@ -47,6 +51,8 @@
 			children = (
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				761780EC2CA45674006654EE /* AppDelegate.swift */,
+				762780EC2CA45674006654EF /* SenderrNotificationsModule.swift */,
+				763780EC2CA45674006654EF /* SenderrNotificationsModule.m */,
 				A1F24B3C7D8E9F0011223344 /* GoogleService-Info.plist */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
@@ -253,6 +259,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				761780ED2CA45674006654EE /* AppDelegate.swift in Sources */,
+				762780ED2CA45674006654EF /* SenderrNotificationsModule.swift in Sources */,
+				763780ED2CA45674006654EF /* SenderrNotificationsModule.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -287,7 +295,7 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.gosender.courier;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gosenderr.courier;
 				PRODUCT_NAME = Senderr;
 				SENDERR_API_BASE_URL = "https://dev-api.gosenderr.com";
 				SENDERR_ENV_NAME = dev;
@@ -330,7 +338,7 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.gosender.courier;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gosenderr.courier;
 				PRODUCT_NAME = Senderr;
 				SENDERR_API_BASE_URL = "https://api.gosenderr.com";
 				SENDERR_ENV_NAME = prod;
