@@ -9,6 +9,7 @@ import type {
   LocationTrackingController,
   LocationTrackingState,
 } from './ports/locationPort';
+import {featureFlagsService} from './featureFlagsService';
 
 export type {LocationSnapshot, LocationTrackingController, LocationTrackingState} from './ports/locationPort';
 
@@ -121,6 +122,15 @@ const stopTrackingInternal = (): void => {
 };
 
 const startTrackingInternal = async (): Promise<void> => {
+  if (!featureFlagsService.isEnabled('trackingUpload')) {
+    updateSharedState(prev => ({
+      ...prev,
+      tracking: false,
+      error: 'Location tracking is temporarily disabled by rollout controls.',
+    }));
+    return;
+  }
+
   if (watchId !== null) {
     return;
   }

@@ -15,6 +15,7 @@ import {
 } from 'firebase/firestore';
 
 import {getFirebaseServices, isFirebaseReady} from './firebase';
+import {featureFlagsService} from './featureFlagsService';
 import {runtimeConfig} from '../config/runtime';
 import {buildTransitionConflictMessage, canTransitionJobStatus} from './jobTransitionRules';
 import type {JobStatusCommandResult, JobsSubscription, JobsSubscriptionHandlers, JobsSyncState} from './ports/jobsPort';
@@ -498,6 +499,10 @@ export const updateJobStatus = async (
   id: string,
   nextStatus: JobStatus,
 ): Promise<JobStatusCommandResult> => {
+  if (!featureFlagsService.isEnabled('jobStatusActions')) {
+    return buildCommandResultFatal(nextStatus, 'Status updates are temporarily disabled by rollout controls.');
+  }
+
   if (isFirebaseReady()) {
     const services = getFirebaseServices();
     if (services) {

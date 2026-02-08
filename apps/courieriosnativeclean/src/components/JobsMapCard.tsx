@@ -3,6 +3,7 @@ import {Platform, StyleSheet, Text, View} from 'react-native';
 import MapView, {Marker, type Region} from 'react-native-maps';
 
 import {validateMapsConfig} from '../config/maps';
+import {useServiceRegistry} from '../services/serviceRegistry';
 import type {LocationSnapshot} from '../services/ports/locationPort';
 import type {Job} from '../types/jobs';
 
@@ -40,6 +41,10 @@ const buildRegion = (point: MapPoint | undefined): Region => {
 };
 
 export const JobsMapCard = ({activeJob, courierLocation}: JobsMapCardProps): React.JSX.Element => {
+  const {featureFlags} = useServiceRegistry();
+  const {state: flagsState} = featureFlags.useFeatureFlags();
+  const mapRoutingEnabled = flagsState.flags.mapRouting;
+
   const mapRef = useRef<MapView | null>(null);
   const [mapReady, setMapReady] = useState(false);
   const mapsValidation = validateMapsConfig();
@@ -81,7 +86,7 @@ export const JobsMapCard = ({activeJob, courierLocation}: JobsMapCardProps): Rea
   }, [activeJob, courierLocation]);
 
   useEffect(() => {
-    if (!mapReady || !mapRef.current || points.length < 2) {
+    if (!mapRoutingEnabled || !mapReady || !mapRef.current || points.length < 2) {
       return;
     }
 
@@ -100,11 +105,10 @@ export const JobsMapCard = ({activeJob, courierLocation}: JobsMapCardProps): Rea
         },
       },
     );
-  }, [mapReady, points]);
-
+  }, [mapReady, mapRoutingEnabled, points]);
 
   useEffect(() => {
-    if (!mapReady || !mapRef.current || points.length !== 1) {
+    if (!mapRoutingEnabled || !mapReady || !mapRef.current || points.length !== 1) {
       return;
     }
 
@@ -118,7 +122,7 @@ export const JobsMapCard = ({activeJob, courierLocation}: JobsMapCardProps): Rea
       },
       350,
     );
-  }, [mapReady, points]);
+  }, [mapReady, mapRoutingEnabled, points]);
 
   return (
     <View style={styles.card}>
@@ -129,31 +133,36 @@ export const JobsMapCard = ({activeJob, courierLocation}: JobsMapCardProps): Rea
       <Text style={[styles.config, mapsValidation.status === 'warning' ? styles.configWarning : null]}>
         {mapsValidation.message}
       </Text>
+      {!mapRoutingEnabled ? (
+        <Text style={styles.configWarning}>Map routing is disabled by rollout controls.</Text>
+      ) : null}
 
-      <MapView
-        ref={mapRef}
-        style={styles.map}
-        initialRegion={buildRegion(points[0])}
-        rotateEnabled
-        pitchEnabled
-        toolbarEnabled={false}
-        onMapReady={() => setMapReady(true)}
-      >
-        {points.map(point => (
-          <Marker
-            key={point.id}
-            coordinate={{
-              latitude: point.latitude,
-              longitude: point.longitude,
-            }}
-            title={point.title}
-            pinColor={point.color}
-          />
-        ))}
-      </MapView>
+      {mapRoutingEnabled ? (
+        <MapView
+          ref={mapRef}
+          style={styles.map}
+          initialRegion={buildRegion(points[0])}
+          rotateEnabled
+          pitchEnabled
+          toolbarEnabled={false}
+          onMapReady={() => setMapReady(true)}
+        >
+          {points.map(point => (
+            <Marker
+              key={point.id}
+              coordinate={{
+                latitude: point.latitude,
+                longitude: point.longitude,
+              }}
+              title={point.title}
+              pinColor={point.color}
+            />
+          ))}
+        </MapView>
+      ) : null}
 
       {points.length === 0 ? <Text style={styles.helper}>Start tracking to place your courier marker.</Text> : null}
-      {Platform.OS === 'ios' ? (
+      {Platform.OS === 'ios' && mapRoutingEnabled ? (
         <Text style={styles.helper}>iOS map interactions are enabled: pinch, pan, and rotate.</Text>
       ) : null}
     </View>

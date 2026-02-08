@@ -130,3 +130,4 @@ Rules:
 - Flow audit guide: `docs/senderr_app/AUDIT.md`
 - Jobs schema migration: `docs/senderr_app/JOBS_SCHEMA_MIGRATION.md`
 - Offline active job sync: `docs/senderr_app/OFFLINE_MODE.md`
+- Feature flags lifecycle and rollout controls: `docs/senderr_app/FEATURE_FLAGS.md`
