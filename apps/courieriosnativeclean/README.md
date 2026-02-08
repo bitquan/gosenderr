@@ -82,6 +82,7 @@ Rules:
 - SDK-specific code stays inside adapters, not screen components.
 - New integrations must add a port contract first, then adapter implementation.
 - Jobs sync path uses repository subscription (`subscribeJobs`) with reconnect/stale state surfaced to screens.
+- Offline job updates are queued locally and auto-synced when connectivity returns.
 - Production mode does not silently fallback to local seed jobs for Firestore failures.
 
 ## Deploy
@@ -121,6 +122,9 @@ For environment profile builds:
   - Confirm `GoogleService-Info.plist` matches the active app and Firebase project.
   - Confirm target bundle ID matches the plist bundle ID (or replace plist with one for the current bundle ID).
   - Run `pnpm run ios:clean:install`, then rebuild from `Senderrappios.xcworkspace`.
+- Jobs update succeeds locally but sync card shows pending:
+  - Device is offline or backend is temporarily unavailable.
+  - Keep app open; queued status writes sync automatically on reconnect.
 
 ## Links
 
@@ -128,4 +132,5 @@ For environment profile builds:
 - Senderr iOS docs hub: `/docs/senderr_app/README.md`
 - Senderr iOS roadmap: `/docs/senderr_app/ROADMAP.md`
 - Jobs schema migration path: `/docs/senderr_app/JOBS_SCHEMA_MIGRATION.md`
+- Offline mode details: `/docs/senderr_app/OFFLINE_MODE.md`
 - App docs registry: `/docs/apps/README.md`

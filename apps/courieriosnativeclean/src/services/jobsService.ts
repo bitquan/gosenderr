@@ -20,8 +20,23 @@ import type {AuthSession} from '../types/auth';
 import type {Job, JobStatus} from '../types/jobs';
 
 const STORAGE_KEY = '@senderr/jobs';
+const STATUS_UPDATE_QUEUE_KEY = '@senderr/jobs/status-update-queue';
 const BASE_RECONNECT_DELAY_MS = 1000;
 const MAX_RECONNECT_DELAY_MS = 30000;
+
+type QueuedStatusUpdate = {
+  jobId: string;
+  sessionUid: string;
+  nextStatus: JobStatus;
+  enqueuedAt: string;
+  attempts: number;
+  lastError: string | null;
+};
+
+type QueueFlushResult = {
+  flushed: number;
+  remaining: number;
+};
 
 const seedJobs: Job[] = [
   {
@@ -92,7 +107,7 @@ const loadLocalJobs = async (): Promise<Job[]> => {
 
   try {
     const parsed = JSON.parse(raw) as Job[];
-    if (Array.isArray(parsed) && parsed.length > 0) {
+    if (Array.isArray(parsed)) {
       return parsed;
     }
   } catch {
@@ -101,6 +116,129 @@ const loadLocalJobs = async (): Promise<Job[]> => {
 
   await persistJobs(seedJobs);
   return seedJobs;
+};
+
+const upsertLocalJob = async (job: Job): Promise<void> => {
+  const local = await loadLocalJobs();
+  const index = local.findIndex(entry => entry.id === job.id);
+  if (index >= 0) {
+    local[index] = job;
+  } else {
+    local.unshift(job);
+  }
+  await persistJobs(local);
+};
+
+const updateLocalJobStatus = async (id: string, nextStatus: JobStatus): Promise<Job> => {
+  const local = await loadLocalJobs();
+  const index = local.findIndex(job => job.id === id);
+  if (index === -1) {
+    throw new Error('Job not found.');
+  }
+
+  const updated: Job = {
+    ...local[index],
+    status: nextStatus,
+    updatedAt: new Date().toISOString(),
+  };
+  local[index] = updated;
+  await persistJobs(local);
+  return updated;
+};
+
+const readQueuedStatusUpdates = async (): Promise<QueuedStatusUpdate[]> => {
+  const raw = await AsyncStorage.getItem(STATUS_UPDATE_QUEUE_KEY);
+  if (!raw) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as QueuedStatusUpdate[];
+    if (Array.isArray(parsed)) {
+      return parsed;
+    }
+  } catch {
+    // no-op
+  }
+
+  return [];
+};
+
+const persistQueuedStatusUpdates = async (queue: QueuedStatusUpdate[]): Promise<void> => {
+  if (queue.length === 0) {
+    await AsyncStorage.removeItem(STATUS_UPDATE_QUEUE_KEY);
+    return;
+  }
+  await AsyncStorage.setItem(STATUS_UPDATE_QUEUE_KEY, JSON.stringify(queue));
+};
+
+const queueSizeForSession = (queue: QueuedStatusUpdate[], session: AuthSession): number =>
+  queue.filter(entry => entry.sessionUid === session.uid).length;
+
+const enqueueStatusUpdate = async (
+  session: AuthSession,
+  id: string,
+  nextStatus: JobStatus,
+  error: unknown,
+): Promise<number> => {
+  const queue = await readQueuedStatusUpdates();
+  const message = error instanceof Error ? error.message : String(error);
+  const index = queue.findIndex(entry => entry.jobId === id && entry.sessionUid === session.uid);
+
+  if (index >= 0) {
+    queue[index] = {
+      ...queue[index],
+      nextStatus,
+      enqueuedAt: new Date().toISOString(),
+      attempts: queue[index].attempts + 1,
+      lastError: message,
+    };
+  } else {
+    queue.push({
+      jobId: id,
+      sessionUid: session.uid,
+      nextStatus,
+      enqueuedAt: new Date().toISOString(),
+      attempts: 1,
+      lastError: message,
+    });
+  }
+
+  await persistQueuedStatusUpdates(queue);
+  return queueSizeForSession(queue, session);
+};
+
+const dequeueStatusUpdate = async (session: AuthSession, id: string): Promise<void> => {
+  const queue = await readQueuedStatusUpdates();
+  const nextQueue = queue.filter(entry => !(entry.jobId === id && entry.sessionUid === session.uid));
+  if (nextQueue.length !== queue.length) {
+    await persistQueuedStatusUpdates(nextQueue);
+  }
+};
+
+const isLikelyConnectivityError = (error: unknown): boolean => {
+  const message = (error instanceof Error ? error.message : String(error)).toLowerCase();
+  const code =
+    typeof error === 'object' && error !== null && 'code' in error
+      ? String((error as {code?: unknown}).code ?? '')
+          .toLowerCase()
+          .trim()
+      : '';
+
+  const messageMatches =
+    message.includes('offline') ||
+    message.includes('network') ||
+    message.includes('connection') ||
+    message.includes('timed out') ||
+    message.includes('unavailable');
+
+  const codeMatches =
+    code.includes('unavailable') ||
+    code.includes('network-request-failed') ||
+    code.includes('deadline-exceeded') ||
+    code.includes('resource-exhausted');
+
+  return messageMatches || codeMatches;
 };
 
 const logFirebaseFallback = (operation: string, error: unknown): void => {
@@ -122,6 +260,58 @@ const buildQueryForSession = (db: Firestore, session: AuthSession) => {
 const buildFirebaseError = (operation: string, error: unknown): Error => {
   const message = error instanceof Error ? error.message : String(error);
   return new Error(`[jobsService] ${operation} failed in Firebase mode: ${message}`);
+};
+
+const flushQueuedStatusUpdates = async (session: AuthSession, db: Firestore): Promise<QueueFlushResult> => {
+  const queue = await readQueuedStatusUpdates();
+  const sessionQueue = queue
+    .filter(entry => entry.sessionUid === session.uid)
+    .sort((a, b) => a.enqueuedAt.localeCompare(b.enqueuedAt));
+
+  if (sessionQueue.length === 0) {
+    return {flushed: 0, remaining: 0};
+  }
+
+  const queueByKey = new Map<string, QueuedStatusUpdate>();
+  for (const entry of queue) {
+    queueByKey.set(`${entry.sessionUid}:${entry.jobId}`, entry);
+  }
+
+  let flushed = 0;
+
+  for (const entry of sessionQueue) {
+    const key = `${entry.sessionUid}:${entry.jobId}`;
+    const latest = queueByKey.get(key);
+    if (!latest) {
+      continue;
+    }
+
+    try {
+      const ref = doc(db, 'jobs', latest.jobId);
+      await updateDoc(ref, {
+        status: latest.nextStatus,
+        courierUid: session.uid,
+        updatedAt: serverTimestamp(),
+      });
+      queueByKey.delete(key);
+      flushed += 1;
+    } catch (error) {
+      queueByKey.set(key, {
+        ...latest,
+        attempts: latest.attempts + 1,
+        lastError: error instanceof Error ? error.message : String(error),
+      });
+      break;
+    }
+  }
+
+  const nextQueue = Array.from(queueByKey.values());
+  await persistQueuedStatusUpdates(nextQueue);
+
+  return {
+    flushed,
+    remaining: queueSizeForSession(nextQueue, session),
+  };
 };
 
 const localFallbackOrThrow = async (operation: string, error: unknown): Promise<Job[]> => {
@@ -150,10 +340,9 @@ export const fetchJobs = async (session: AuthSession): Promise<Job[]> => {
 
   try {
     const snap = await getDocs(buildQueryForSession(services.db, session));
-    if (!snap.empty) {
-      return snap.docs.map(d => mapFirestoreJob(d.id, d.data() as Record<string, unknown>));
-    }
-    return [];
+    const jobs = snap.docs.map(d => mapFirestoreJob(d.id, d.data() as Record<string, unknown>));
+    await persistJobs(jobs);
+    return jobs;
   } catch (error) {
     return localFallbackOrThrow('fetchJobs', error);
   }
@@ -181,7 +370,9 @@ export const getJobById = async (session: AuthSession, id: string): Promise<Job 
     const ref = doc(services.db, 'jobs', id);
     const snap = await getDoc(ref);
     if (snap.exists()) {
-      return mapFirestoreJob(snap.id, snap.data() as Record<string, unknown>);
+      const job = mapFirestoreJob(snap.id, snap.data() as Record<string, unknown>);
+      await upsertLocalJob(job);
+      return job;
     }
     return null;
   } catch (error) {
@@ -210,15 +401,32 @@ export const updateJobStatus = async (
           updatedAt: serverTimestamp(),
         });
 
+        await dequeueStatusUpdate(session, id);
+        void flushQueuedStatusUpdates(session, services.db);
+
         const updated = await getDoc(ref);
         if (updated.exists()) {
-          return mapFirestoreJob(updated.id, updated.data() as Record<string, unknown>);
+          const mapped = mapFirestoreJob(updated.id, updated.data() as Record<string, unknown>);
+          await upsertLocalJob(mapped);
+          return mapped;
         }
+
+        return updateLocalJobStatus(id, nextStatus);
       } catch (error) {
-        if (!shouldUseLocalFallback()) {
+        if (!isLikelyConnectivityError(error) && !shouldUseLocalFallback()) {
           throw buildFirebaseError('updateJobStatus', error);
         }
-        logFirebaseFallback('updateJobStatus', error);
+
+        if (shouldUseLocalFallback()) {
+          logFirebaseFallback('updateJobStatus', error);
+        }
+
+        const queuedCount = await enqueueStatusUpdate(session, id, nextStatus, error);
+        const updatedLocal = await updateLocalJobStatus(id, nextStatus);
+        console.warn(
+          `[jobsService] queued status update for ${id} (${nextStatus}) while offline. pending updates: ${queuedCount}`,
+        );
+        return updatedLocal;
       }
     } else if (!shouldUseLocalFallback()) {
       throw new Error('Firebase services are unavailable in production mode.');
@@ -227,20 +435,7 @@ export const updateJobStatus = async (
     throw new Error('Firebase is required in production and is not configured.');
   }
 
-  const local = await loadLocalJobs();
-  const index = local.findIndex(job => job.id === id);
-  if (index === -1) {
-    throw new Error('Job not found.');
-  }
-
-  const updated: Job = {
-    ...local[index],
-    status: nextStatus,
-    updatedAt: new Date().toISOString(),
-  };
-  local[index] = updated;
-  await persistJobs(local);
-  return updated;
+  return updateLocalJobStatus(id, nextStatus);
 };
 
 const createSyncState = (partial: Partial<JobsSyncState>): JobsSyncState => ({
@@ -298,6 +493,7 @@ export const subscribeJobs = (session: AuthSession, handlers: JobsSubscriptionHa
   let active = true;
   let detachSnapshot: (() => void) | null = null;
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  let queueFlushPromise: Promise<void> | null = null;
 
   const publishState = (state: Partial<JobsSyncState>): void => {
     if (!active) {
@@ -311,6 +507,54 @@ export const subscribeJobs = (session: AuthSession, handlers: JobsSubscriptionHa
       return;
     }
     handlers.onJobs(jobs);
+  };
+
+  const flushQueue = (): void => {
+    if (queueFlushPromise) {
+      return;
+    }
+
+    queueFlushPromise = flushQueuedStatusUpdates(session, services.db)
+      .then(async result => {
+        if (!active || (result.flushed === 0 && result.remaining === 0)) {
+          return;
+        }
+
+        if (result.flushed > 0) {
+          const refreshed = await fetchJobs(session);
+          publishJobs(refreshed);
+          lastSyncedAt = new Date().toISOString();
+        }
+
+        publishState({
+          status: result.remaining > 0 ? 'reconnecting' : 'live',
+          stale: result.remaining > 0,
+          reconnectAttempt,
+          lastSyncedAt,
+          message:
+            result.remaining > 0
+              ? `${result.remaining} job update(s) still pending sync.`
+              : `Synced ${result.flushed} queued job update(s).`,
+          source: 'firebase',
+        });
+      })
+      .catch(error => {
+        if (!active) {
+          return;
+        }
+        const reason = error instanceof Error ? error.message : String(error);
+        publishState({
+          status: 'reconnecting',
+          stale: true,
+          reconnectAttempt: reconnectAttempt + 1,
+          lastSyncedAt,
+          message: `Queued updates are waiting for network (${reason}).`,
+          source: 'firebase',
+        });
+      })
+      .finally(() => {
+        queueFlushPromise = null;
+      });
   };
 
   const clearReconnectTimer = (): void => {
@@ -355,6 +599,7 @@ export const subscribeJobs = (session: AuthSession, handlers: JobsSubscriptionHa
           if (!fromCache) {
             reconnectAttempt = 0;
             lastSyncedAt = new Date().toISOString();
+            void persistJobs(jobs);
           }
 
           publishJobs(jobs);
@@ -366,6 +611,10 @@ export const subscribeJobs = (session: AuthSession, handlers: JobsSubscriptionHa
             message: fromCache ? 'Showing cached jobs while reconnecting.' : null,
             source: 'firebase',
           });
+
+          if (!fromCache) {
+            flushQueue();
+          }
         },
         error => {
           const reason = error instanceof Error ? error.message : String(error);
@@ -416,15 +665,21 @@ export const subscribeJobs = (session: AuthSession, handlers: JobsSubscriptionHa
       clearSnapshot();
     },
     refresh: async () => {
+      const queueResult = await flushQueuedStatusUpdates(session, services.db);
       const jobs = await fetchJobs(session);
       publishJobs(jobs);
       lastSyncedAt = new Date().toISOString();
       publishState({
-        status: 'live',
-        stale: false,
+        status: queueResult.remaining > 0 ? 'reconnecting' : 'live',
+        stale: queueResult.remaining > 0,
         reconnectAttempt,
         lastSyncedAt,
-        message: null,
+        message:
+          queueResult.remaining > 0
+            ? `${queueResult.remaining} job update(s) pending sync.`
+            : queueResult.flushed > 0
+              ? `Synced ${queueResult.flushed} queued job update(s).`
+              : null,
         source: isFirebaseReady() ? 'firebase' : 'local',
       });
       return jobs;
