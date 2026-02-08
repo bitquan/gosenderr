@@ -1,7 +1,17 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { collection, onSnapshot, query, where } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDoc,
+  increment,
+  onSnapshot,
+  query,
+  serverTimestamp,
+  updateDoc,
+  where,
+} from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { UserDoc, FoodTemperature } from "@gosenderr/shared";
@@ -54,6 +64,8 @@ export default function RequestDeliveryPage() {
 
   const [item, setItem] = useState<DeliveryItem | null>(null);
   const [itemId, setItemId] = useState<string | null>(null);
+  const [bookingLinkId, setBookingLinkId] = useState<string | null>(null);
+  const [bookingLinkResolved, setBookingLinkResolved] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dropoffAddress, setDropoffAddress] = useState<DropoffAddress | null>(
@@ -72,8 +84,55 @@ export default function RequestDeliveryPage() {
   // Step 1: Load item from URL params (optional)
   useEffect(() => {
     const id = searchParams?.get("itemId");
+    const bookingId = searchParams?.get("bookingLink");
     setItemId(id);
+    setBookingLinkId(bookingId);
+    setBookingLinkResolved(false);
   }, [searchParams]);
+
+  // Resolve and validate seller-generated booking links.
+  useEffect(() => {
+    if (!bookingLinkId || bookingLinkResolved) return;
+
+    async function resolveBookingLink() {
+      try {
+        const linkRef = doc(db, "sellerBookingLinks", bookingLinkId);
+        const linkSnap = await getDoc(linkRef);
+
+        if (!linkSnap.exists()) {
+          setError("This booking link is invalid.");
+          setLoading(false);
+          return;
+        }
+
+        const linkData = linkSnap.data() as any;
+        if (linkData.isActive === false) {
+          setError("This booking link is no longer active.");
+          setLoading(false);
+          return;
+        }
+
+        if (typeof linkData.itemId === "string") {
+          if (!itemId || itemId !== linkData.itemId) {
+            setItemId(linkData.itemId);
+          }
+        }
+
+        await updateDoc(linkRef, {
+          openCount: increment(1),
+          lastOpenedAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+        setBookingLinkResolved(true);
+      } catch (err) {
+        console.error("Error resolving booking link:", err);
+        setError("Failed to open booking link.");
+        setLoading(false);
+      }
+    }
+
+    resolveBookingLink();
+  }, [bookingLinkId, bookingLinkResolved, itemId]);
 
   useEffect(() => {
     if (!itemId) return;
@@ -307,6 +366,17 @@ export default function RequestDeliveryPage() {
         (itemId ? `&itemId=${itemId}` : ""),
     );
     return null;
+  }
+
+  if (!itemId && bookingLinkId && loading) {
+    return (
+      <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center">
+        <div className="animate-pulse">
+          <div className="w-16 h-16 bg-purple-200 rounded-full mx-auto mb-4"></div>
+          <div className="h-4 bg-purple-200 rounded w-32 mx-auto"></div>
+        </div>
+      </div>
+    );
   }
 
   if (!itemId) {
