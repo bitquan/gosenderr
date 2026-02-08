@@ -20,6 +20,16 @@ pnpm --filter @gosenderr/admin-app dev
 
 Default local URL: `http://localhost:3000`
 
+## Firebase mode
+
+- Default behavior:
+  - Admin web uses configured Firebase project endpoints (not local emulators).
+- Optional emulator mode:
+  - Set `VITE_ADMIN_APP_USE_EMULATORS=true` before starting dev server.
+  - Requires local Firebase emulators on `127.0.0.1` ports `8080/9099/9199/5001`.
+- Common failure:
+  - `ERR_CONNECTION_REFUSED` to `127.0.0.1:8080` means emulator mode is enabled but emulators are not running.
+
 ## Test
 
 From repo root:

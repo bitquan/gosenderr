@@ -196,8 +196,27 @@ export async function seedFeatureFlags() {
       );
     }
     
+    // Seed config defaults without clobbering existing operator toggles.
+    const configRef = doc(db, 'featureFlags', 'config');
+    const configSnapshot = await getDoc(configRef);
+    const existingConfig = configSnapshot.exists() ? (configSnapshot.data() as any) : {};
+
+    const mergedConfig = {
+      ...FEATURE_FLAGS_CONFIG,
+      ...existingConfig,
+      marketplace: { ...FEATURE_FLAGS_CONFIG.marketplace, ...(existingConfig.marketplace ?? {}) },
+      delivery: { ...FEATURE_FLAGS_CONFIG.delivery, ...(existingConfig.delivery ?? {}) },
+      courier: { ...FEATURE_FLAGS_CONFIG.courier, ...(existingConfig.courier ?? {}) },
+      seller: { ...FEATURE_FLAGS_CONFIG.seller, ...(existingConfig.seller ?? {}) },
+      customer: { ...FEATURE_FLAGS_CONFIG.customer, ...(existingConfig.customer ?? {}) },
+      packageRunner: { ...FEATURE_FLAGS_CONFIG.packageRunner, ...(existingConfig.packageRunner ?? {}) },
+      admin: { ...FEATURE_FLAGS_CONFIG.admin, ...(existingConfig.admin ?? {}) },
+      advanced: { ...FEATURE_FLAGS_CONFIG.advanced, ...(existingConfig.advanced ?? {}) },
+      ui: { ...FEATURE_FLAGS_CONFIG.ui, ...(existingConfig.ui ?? {}) },
+    };
+
     // Also add config document for courier/customer apps
-    await setDoc(doc(db, 'featureFlags', 'config'), FEATURE_FLAGS_CONFIG, { merge: true });
+    await setDoc(configRef, mergedConfig, { merge: true });
     
     console.log(`✅ Seeded ${FEATURE_FLAGS.length} feature flags + config document`);
     return true;
