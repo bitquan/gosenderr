@@ -125,3 +125,21 @@ Append-only log used for session recovery.
 - Next:
   - verify sign-in on physical iPhone with transient/offline Firestore conditions
   - continue #203 PR updates
+
+---
+
+## 2026-02-07 23:32 local (2026-02-08 04:32 UTC)
+
+- Status: `in_progress`
+- Summary: Closed scope:courier issues #143 and #145 as completed on senderr_app and refreshed Senderr iOS roadmap totals/queue
+- Branch: `codex/issue-145-offline-active-job-flow`
+- Commit: `9482315`
+- Issue: `#145`
+- PR: `n/a`
+- Files:
+  - `docs/senderr_app/ROADMAP.md`
+  - `docs/dev/SESSION_STATE.md`
+  - `docs/dev/WORKLOG.md`
+- Blockers: None
+- Next:
+  - Start issue #203 realtime jobs sync hardening implementation branch work
