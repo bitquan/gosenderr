@@ -85,6 +85,7 @@ Rules:
 - Offline job updates are queued locally and auto-synced when connectivity returns.
 - Production mode does not silently fallback to local seed jobs for Firestore failures.
 - Dashboard map validation card uses native maps (`react-native-maps`) with marker data from jobs/location services.
+- Analytics/crash telemetry is routed through `analyticsPort` so screens remain decoupled from Firebase SDK calls.
 
 ## Deploy
 
@@ -138,4 +139,5 @@ For environment profile builds:
 - Jobs schema migration path: `/docs/senderr_app/JOBS_SCHEMA_MIGRATION.md`
 - Maps validation checklist: `/docs/senderr_app/MAPS_VALIDATION.md`
 - Offline mode details: `/docs/senderr_app/OFFLINE_MODE.md`
+- Crash + analytics setup: `/docs/senderr_app/CRASH_ANALYTICS.md`
 - App docs registry: `/docs/apps/README.md`
