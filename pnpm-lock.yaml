@@ -246,8 +246,8 @@ importers:
         specifier: 0.76.5
         version: 0.76.5(@babel/core@7.28.6)(@babel/preset-env@7.29.0)(@types/react@18.3.1)(react@18.3.1)
       react-native-maps:
-        specifier: ^1.27.1
-        version: 1.27.1(react-native@0.76.5)(react@18.3.1)
+        specifier: ^1.18.0
+        version: 1.18.0(react-native@0.76.5)(react@18.3.1)
     devDependencies:
       '@babel/core':
         specifier: ^7.25.2
@@ -12945,12 +12945,12 @@ packages:
     resolution: {integrity: sha512-W+EWGn2v0ApPKgKKCy/7s7WHXkboGcsrXE+2joLyVxkbyVQfO3MUEaUQDHoSmb8TFFrSKYa9mw64WZHNHSDzYA==}
     dev: false
 
-  /react-native-maps@1.27.1(react-native@0.76.5)(react@18.3.1):
-    resolution: {integrity: sha512-wGMFwo7oy1MhRogLj203f193VeY1WD/wXaJKQP7pNRUzcExmqhD3wrQyE1aRneD4ffNO0VkaqCIdcToT0aI7AQ==}
-    engines: {node: '>= 20.19.4'}
+  /react-native-maps@1.18.0(react-native@0.76.5)(react@18.3.1):
+    resolution: {integrity: sha512-S17nYUqeMptgIPaAZuVRo+eRelPreBBYQWw6jsxU7qQ12p+THSfFaqabcNn7fBmsXhT3T27iIl8ek8v1H8BaGw==}
+    engines: {node: '>=18'}
     peerDependencies:
       react: 18.3.1
-      react-native: '>= 0.76.0'
+      react-native: '>= 0.64.3'
       react-native-web: '>= 0.11'
     peerDependenciesMeta:
       react-native-web:

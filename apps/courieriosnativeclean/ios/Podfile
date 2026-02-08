@@ -20,7 +20,7 @@ platform :ios, '16.0'
 prepare_react_native_project!
 project 'Senderrappios.xcodeproj'
 
-# Keep new architecture disabled until explicitly migrated.
+# Keep new architecture disabled for RN 0.76 + react-native-maps 1.18 compatibility.
 ENV['RCT_NEW_ARCH_ENABLED'] = '0'
 
 target 'Senderrappios' do
@@ -46,17 +46,6 @@ target 'Senderrappios' do
     installer.pods_project.targets.each do |target|
       target.build_configurations.each do |build_config|
         build_config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'
-      end
-
-      # react-native-maps 1.27.x Fabric sources are compiled in this setup.
-      # Ensure the pod target has the macro so RNMapsMapView/RNMapsMarkerView headers are visible.
-      if target.name == 'react-native-maps'
-        target.build_configurations.each do |build_config|
-          defs = build_config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] || ['$(inherited)']
-          defs = [defs] unless defs.is_a?(Array)
-          defs << 'RCT_NEW_ARCH_ENABLED=1' unless defs.include?('RCT_NEW_ARCH_ENABLED=1')
-          build_config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = defs
-        end
       end
     end
   end
