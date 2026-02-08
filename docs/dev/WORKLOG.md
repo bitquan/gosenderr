@@ -381,3 +381,23 @@ Append-only log used for session recovery.
 - Blockers: None
 - Next:
   - Monitor CI for PR #232 and merge
+
+---
+
+## 2026-02-08 13:23 local (2026-02-08 18:23 UTC)
+
+- Status: `in_progress`
+- Summary: Completed #128 branding assets and #147 release metadata/checklist docs; refreshed courier roadmap to done state
+- Branch: `codex/batch-128-147-201-release-readiness`
+- Commit: `760fa3a`
+- Issue: `#128,#147,#201`
+- PR: `n/a`
+- Files:
+  - `apps/courieriosnativeclean/ios/Senderrappios/Images.xcassets/AppIcon.appiconset/Contents.json`
+  - `apps/courieriosnativeclean/ios/Senderrappios/LaunchScreen.storyboard`
+  - `docs/senderr_app/APP_STORE_RELEASE.md`
+  - `docs/senderr_app/README.md`
+  - `docs/senderr_app/ROADMAP.md`
+- Blockers: None
+- Next:
+  - Push branch and open PR that closes #128 #147 #201

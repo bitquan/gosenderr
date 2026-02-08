@@ -4,19 +4,19 @@ This file is the canonical handoff state when a chat/session is interrupted.
 
 ## Last Updated
 
-- Local: 2026-02-08 12:52
-- UTC: 2026-02-08 17:52
+- Local: 2026-02-08 13:23
+- UTC: 2026-02-08 18:23
 
 ## Current Focus
 
-- Active issue: #206,#208,#209
-- Active PR: #232
-- Objective: Opened PR #232 for #206/#208/#209 follow-up DoD closure
+- Active issue: #128,#147,#201
+- Active PR: n/a
+- Objective: Completed #128 branding assets and #147 release metadata/checklist docs; refreshed courier roadmap to done state
 
 ## Branch + Commit
 
-- Branch: `codex/batch-206-208-209-courier-settings-flags-ux`
-- Commit: `4113a65`
+- Branch: `codex/batch-128-147-201-release-readiness`
+- Commit: `760fa3a`
 - Working tree: dirty
 
 ## Blockers
@@ -25,15 +25,15 @@ This file is the canonical handoff state when a chat/session is interrupted.
 
 ## Next Actions
 
-1. Monitor CI for PR #232 and merge
+1. Push branch and open PR that closes #128 #147 #201
 2. Re-open `docs/dev/WORKLOG.md` and append after each meaningful change.
 3. Keep this file current at task boundaries.
 
 ## Recovery Commands
 
 ```bash
-cd /Users/papadev/dev/apps/Gosenderr_local/worktrees/batch-206-208-209
-git checkout codex/batch-206-208-209-courier-settings-flags-ux
+cd /Users/papadev/dev/apps/Gosenderr_local/worktrees/batch-128-147-201
+git checkout codex/batch-128-147-201-release-readiness
 git pull --rebase
 sed -n '1,200p' docs/dev/SESSION_STATE.md
 sed -n '1,200p' docs/dev/WORKLOG.md
