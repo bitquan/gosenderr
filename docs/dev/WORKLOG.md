@@ -143,3 +143,21 @@ Append-only log used for session recovery.
 - Blockers: None
 - Next:
   - Start issue #203 realtime jobs sync hardening implementation branch work
+
+---
+
+## 2026-02-07 23:34 local (2026-02-08 04:34 UTC)
+
+- Status: `in_progress`
+- Summary: Opened PR #218 to refresh Senderr iOS roadmap and align closed issue state (#143, #145)
+- Branch: `codex/issue-145-offline-active-job-flow`
+- Commit: `9a33ed7`
+- Issue: `#145`
+- PR: `#218`
+- Files:
+  - `docs/senderr_app/ROADMAP.md`
+  - `docs/dev/SESSION_STATE.md`
+  - `docs/dev/WORKLOG.md`
+- Blockers: None
+- Next:
+  - After PR #218 merges, start issue #203 on a fresh branch from senderr_app

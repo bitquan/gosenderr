@@ -4,20 +4,20 @@ This file is the canonical handoff state when a chat/session is interrupted.
 
 ## Last Updated
 
-- Local: 2026-02-07 23:32
-- UTC: 2026-02-08 04:32
+- Local: 2026-02-07 23:34
+- UTC: 2026-02-08 04:34
 
 ## Current Focus
 
 - Active issue: #145
-- Active PR: n/a
-- Objective: Closed scope:courier issues #143 and #145 as completed on senderr_app and refreshed Senderr iOS roadmap totals/queue
+- Active PR: #218
+- Objective: Opened PR #218 to refresh Senderr iOS roadmap and align closed issue state (#143, #145)
 
 ## Branch + Commit
 
 - Branch: `codex/issue-145-offline-active-job-flow`
-- Commit: `9482315`
-- Working tree: dirty
+- Commit: `9a33ed7`
+- Working tree: clean
 
 ## Blockers
 
@@ -25,7 +25,7 @@ This file is the canonical handoff state when a chat/session is interrupted.
 
 ## Next Actions
 
-1. Start issue #203 realtime jobs sync hardening implementation branch work
+1. After PR #218 merges, start issue #203 on a fresh branch from senderr_app
 2. Re-open `docs/dev/WORKLOG.md` and append after each meaningful change.
 3. Keep this file current at task boundaries.
 
