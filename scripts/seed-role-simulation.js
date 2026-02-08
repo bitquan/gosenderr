@@ -24,7 +24,69 @@ const demoUsers = [
     role: "seller",
     displayName: "Demo Seller",
   },
+  {
+    email: "admin@example.com",
+    role: "admin",
+    displayName: "Demo Admin",
+  },
 ];
+
+const DEFAULT_FEATURE_FLAGS = {
+  marketplace: {
+    enabled: true,
+    itemListings: true,
+    combinedPayments: true,
+    courierOffers: false,
+  },
+  delivery: {
+    onDemand: true,
+    routes: true,
+    longRoutes: false,
+    longHaul: false,
+  },
+  courier: {
+    rateCards: true,
+    equipmentBadges: true,
+    workModes: true,
+  },
+  seller: {
+    stripeConnect: true,
+    multiplePhotos: true,
+    foodListings: true,
+  },
+  customer: {
+    liveTracking: true,
+    proofPhotos: true,
+    routeDelivery: false,
+    packageShipping: true,
+  },
+  packageRunner: {
+    enabled: true,
+    hubNetwork: true,
+    packageTracking: true,
+  },
+  admin: {
+    courierApproval: true,
+    equipmentReview: true,
+    disputeManagement: true,
+    analytics: true,
+    featureFlagsControl: true,
+    webPortalEnabled: true,
+    systemLogs: false,
+    firebaseExplorer: false,
+  },
+  advanced: {
+    pushNotifications: true,
+    ratingEnforcement: true,
+    autoCancel: true,
+    refunds: true,
+  },
+  ui: {
+    modernStyling: true,
+    darkMode: true,
+    animations: true,
+  },
+};
 
 async function upsertAuthUser(email, displayName) {
   try {
@@ -54,6 +116,9 @@ async function upsertAuthUser(email, displayName) {
 async function upsertUserDoc(uid, user) {
   const baseDoc = {
     role: user.role,
+    primaryRole: user.role,
+    roles: [user.role],
+    isAdmin: user.role === "admin",
     email: user.email,
     displayName: user.displayName,
     averageRating: 0,
@@ -97,6 +162,62 @@ async function upsertUserDoc(uid, user) {
   }
 
   await userRef.set(baseDoc, { merge: true });
+}
+
+async function ensureAdminAccess(uid, email, displayName) {
+  await auth.setCustomUserClaims(uid, { admin: true, role: "admin" });
+
+  const adminProfileRef = db.collection("adminProfiles").doc(uid);
+  const existing = await adminProfileRef.get();
+  const baseProfile = {
+    uid,
+    email,
+    displayName,
+    role: "admin",
+    status: "active",
+    permissions: ["all"],
+    updatedAt: FieldValue.serverTimestamp(),
+  };
+
+  if (!existing.exists) {
+    await adminProfileRef.set({
+      ...baseProfile,
+      createdAt: FieldValue.serverTimestamp(),
+    });
+    return;
+  }
+
+  await adminProfileRef.set(baseProfile, { merge: true });
+}
+
+async function ensureFeatureFlagsConfig() {
+  const configRef = db.collection("featureFlags").doc("config");
+  const existing = await configRef.get();
+
+  if (!existing.exists) {
+    await configRef.set({
+      ...DEFAULT_FEATURE_FLAGS,
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+    return;
+  }
+
+  await configRef.set(
+    {
+      admin: {
+        courierApproval: true,
+        equipmentReview: true,
+        disputeManagement: true,
+        analytics: true,
+        featureFlagsControl: true,
+        webPortalEnabled: true,
+        systemLogs: false,
+        firebaseExplorer: false,
+      },
+      updatedAt: FieldValue.serverTimestamp(),
+    },
+    { merge: true },
+  );
 }
 
 async function createDemoItem(sellerUid) {
@@ -195,12 +316,18 @@ async function run() {
     for (const user of demoUsers) {
       const authUser = await upsertAuthUser(user.email, user.displayName);
       await upsertUserDoc(authUser.uid, user);
+      if (user.role === "admin") {
+        await ensureAdminAccess(authUser.uid, user.email, user.displayName);
+      }
       userRecords[user.role] = {
         uid: authUser.uid,
         email: user.email,
       };
       console.log(`✅ ${user.role} ready: ${user.email}`);
     }
+
+    await ensureFeatureFlagsConfig();
+    console.log("✅ feature flags ready: featureFlags/config (admin.webPortalEnabled=true)");
 
     const itemId = await createDemoItem(userRecords.seller.uid);
     const orderId = await createDemoOrder({
@@ -214,6 +341,8 @@ async function run() {
     console.log("\n🎯 Demo artifacts created:");
     console.log(JSON.stringify({ itemId, orderId, jobId }, null, 2));
     console.log("\n🔐 Demo password:", DEMO_PASSWORD);
+    console.log("\n👤 Admin user:");
+    console.log("   admin@example.com / " + DEMO_PASSWORD);
   } catch (error) {
     console.error("❌ Seed failed:", error);
     process.exit(1);
