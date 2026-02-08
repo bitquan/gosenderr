@@ -129,6 +129,7 @@ Rules:
 - Navigation map: `docs/senderr_app/NAVIGATION_MAP.md`
 - MVP criteria: `docs/senderr_app/MVP_ACCEPTANCE.md`
 - Signing/provisioning: `docs/senderr_app/IOS_SIGNING.md`
+- TestFlight release + QA checklist: `docs/senderr_app/TESTFLIGHT_QA_CHECKLIST.md`
 - Flow audit guide: `docs/senderr_app/AUDIT.md`
 - Jobs schema migration: `docs/senderr_app/JOBS_SCHEMA_MIGRATION.md`
 - Offline active job sync: `docs/senderr_app/OFFLINE_MODE.md`
