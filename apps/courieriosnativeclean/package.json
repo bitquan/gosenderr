@@ -8,7 +8,7 @@
     "lint": "eslint .",
     "start": "react-native start",
     "test": "jest",
-    "test:unit": "jest --config jest.integration.config.js src/services/__integration__/adapters.contract.integration.test.ts",
+    "test:unit": "jest --config jest.config.js src/screens/__tests__",
     "test:integration": "jest --config jest.integration.config.js src/services/__integration__/jobs.emulator.integration.test.ts"
   },
   "dependencies": {
