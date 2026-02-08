@@ -4,36 +4,36 @@ This file is the canonical handoff state when a chat/session is interrupted.
 
 ## Last Updated
 
-- Local: 2026-02-08 01:16
-- UTC: 2026-02-08 06:16
+- Local: 2026-02-08 04:44
+- UTC: 2026-02-08 09:44
 
 ## Current Focus
 
-- Active issue: #206
+- Active issue: #141
 - Active PR: n/a
-- Objective: Implemented courier profile/settings persistence with separate package and food rate cards, validation, Firebase sync, and local cache migration.
+- Objective: Added TestFlight archive/upload automation and internal QA checklist for Senderr iOS release flow
 
 ## Branch + Commit
 
-- Branch: `codex/issue-206-profile-settings-persistence`
-- Commit: `78e6293`
-- Working tree: dirty
+- Branch: `codex/issue-141-testflight-qa`
+- Commit: `625cbbd`
+- Working tree: clean
 
 ## Blockers
 
-- Jest and ESLint in this workspace fail due pre-existing toolchain/config mismatch (not introduced in this change).
+- None
 
 ## Next Actions
 
-1. Commit branch changes, open PR for #206, and run full CI checks.
+1. Open PR for #141 and wire it into senderr_app merge queue
 2. Re-open `docs/dev/WORKLOG.md` and append after each meaningful change.
 3. Keep this file current at task boundaries.
 
 ## Recovery Commands
 
 ```bash
-cd /Users/papadev/dev/apps/Gosenderr_local/gosenderr
-git checkout codex/issue-206-profile-settings-persistence
+cd /Users/papadev/dev/apps/Gosenderr_local/worktrees/issue-141
+git checkout codex/issue-141-testflight-qa
 git pull --rebase
 sed -n '1,200p' docs/dev/SESSION_STATE.md
 sed -n '1,200p' docs/dev/WORKLOG.md

@@ -277,3 +277,23 @@ Append-only log used for session recovery.
 - Blockers: Jest and ESLint in this workspace fail due pre-existing toolchain/config mismatch (not introduced in this change).
 - Next:
   - Commit branch changes, open PR for #206, and run full CI checks.
+
+---
+
+## 2026-02-08 04:44 local (2026-02-08 09:44 UTC)
+
+- Status: `in_progress`
+- Summary: Added TestFlight archive/upload automation and internal QA checklist for Senderr iOS release flow
+- Branch: `codex/issue-141-testflight-qa`
+- Commit: `625cbbd`
+- Issue: `#141`
+- PR: `n/a`
+- Files:
+  - `scripts/ios-testflight.sh`
+  - `scripts/ios-senderr.sh`
+  - `docs/senderr_app/TESTFLIGHT_QA_CHECKLIST.md`
+  - `apps/courieriosnativeclean/README.md`
+  - `docs/senderr_app/README.md`
+- Blockers: None
+- Next:
+  - Open PR for #141 and wire it into senderr_app merge queue
