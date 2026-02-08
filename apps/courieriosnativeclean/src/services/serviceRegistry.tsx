@@ -52,3 +52,12 @@ export const ServiceRegistryProvider = ({
 };
 
 export const useServiceRegistry = (): ServiceRegistry => useContext(ServiceRegistryContext);
+
+// Keep a default export for compatibility with stale Metro/Babel import interop.
+// Some bundles may still resolve this module as a default object.
+export const serviceRegistry = {
+  ServiceRegistryProvider,
+  useServiceRegistry,
+};
+
+export default serviceRegistry;
