@@ -14,12 +14,15 @@ export type MapShellScreenProps = {
   children?: React.ReactNode;
   // Optional dev injection for overlay model so tests and previews can simulate states
   devOverlayModel?: any;
+  // Whether this render is using the dev preview bypass (from ?dev_preview=1)
+  devPreview?: boolean;
 };
 
 export default function MapShellScreen({
   className = "",
   children,
   devOverlayModel,
+  devPreview = false,
 }: MapShellScreenProps) {
   // Dev placeholder state for overlay preview
   const overlayModel = useMemo(() => {
@@ -111,6 +114,14 @@ export default function MapShellScreen({
 
       {/* Overlay slots and page content */}
       <div className="relative z-10 pointer-events-none">
+        {devPreview && (
+          <div
+            data-testid="mapshell-dev-banner"
+            className="fixed top-0 left-0 right-0 bg-yellow-200 text-yellow-900 text-xs p-2 text-center z-40"
+          >
+            DEV PREVIEW: MapShell (dev)
+          </div>
+        )}
         <div className="top-0 left-0 right-0 p-4">{/* top overlay slot */}</div>
 
         <div className="flex justify-center items-center mt-24">
@@ -126,6 +137,7 @@ export default function MapShellScreen({
 
         {/* Stable overlay slots (via MapShellLayout/Slot) */}
         <MapShellLayout>
+          {/* Top-right slot for overlays */}
           <Slot name="topRight">
             <div data-testid="active-overlay" className="pointer-events-auto">
               <ActiveJobOverlay
@@ -138,6 +150,21 @@ export default function MapShellScreen({
               <SettingsOverlay />
             </div>
           </Slot>
+
+          {/* Dev preview: render an additional center overlay for visibility on small screens */}
+          {devPreview && (
+            <Slot name="center">
+              <div
+                data-testid="active-overlay-center"
+                className="pointer-events-auto"
+              >
+                <ActiveJobOverlay
+                  model={overlayModel}
+                  onPrimaryAction={handlePrimaryAction}
+                />
+              </div>
+            </Slot>
+          )}
         </MapShellLayout>
       </div>
     </div>

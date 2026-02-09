@@ -21,5 +21,5 @@ export default function MapShellPage() {
     return <Navigate to="/dashboard" replace />;
   }
 
-  return <MapShellScreen />;
+  return <MapShellScreen devPreview={devPreview} />;
 }
