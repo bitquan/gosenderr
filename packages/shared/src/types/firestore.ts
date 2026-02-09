@@ -499,6 +499,7 @@ export interface FeatureFlags {
     routes: boolean;
     longRoutes: boolean;
     longHaul: boolean;
+    mapShell: boolean;
   };
 
   courier: {
@@ -571,6 +572,7 @@ export const DEFAULT_FEATURE_FLAGS: FeatureFlags = {
     routes: true,
     longRoutes: false,
     longHaul: false,
+    mapShell: false,
   },
   courier: {
     rateCards: true,
@@ -631,7 +633,10 @@ export type SenderrplaceAdStatus =
   | "paused"
   | "rejected"
   | "ended";
-export type SenderrplaceAdPlacement = "top_feed" | "category_spotlight" | "search_boost";
+export type SenderrplaceAdPlacement =
+  | "top_feed"
+  | "category_spotlight"
+  | "search_boost";
 
 export interface SenderrplaceAdDoc {
   sellerId: string;

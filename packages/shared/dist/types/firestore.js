@@ -27,6 +27,7 @@ exports.DEFAULT_FEATURE_FLAGS = {
         routes: true,
         longRoutes: false,
         longHaul: false,
+        mapShell: false,
     },
     courier: {
         rateCards: true,
