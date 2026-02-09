@@ -22,7 +22,7 @@ vi.mock("@/hooks/v2/useAuthUser", () => ({
 }));
 
 // Stub alert to avoid test dialog
-const alertSpy = vi.spyOn(global as any, 'alert').mockImplementation(() => {});
+const alertSpy = vi.spyOn(global as any, "alert").mockImplementation(() => {});
 
 import MapShellScreen from "@/screens/MapShellScreen";
 import { claimJob } from "@/lib/v2/jobs";
@@ -32,12 +32,14 @@ describe("MapShellScreen interactions", () => {
   it("invokes claimJob when Accept Job is clicked (dev) and handles error", async () => {
     render(<MapShellScreen />);
 
-    const overlay = screen.getByTestId('active-overlay');
-    const btn = within(overlay).getByRole('button', { name: /Accept Job/i });
+    const overlay = screen.getByTestId("active-overlay");
+    const btn = within(overlay).getByRole("button", { name: /Accept Job/i });
     fireEvent.click(btn);
 
     // Handler should have been executed and shown an alert due to mocked failure
-    await waitFor(() => expect((alertSpy as any).mock.calls.length).toBeGreaterThanOrEqual(1));
+    await waitFor(() =>
+      expect((alertSpy as any).mock.calls.length).toBeGreaterThanOrEqual(1),
+    );
     alertSpy.mockRestore();
   });
 });

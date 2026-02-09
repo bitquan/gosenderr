@@ -4,6 +4,8 @@ import { useMemo } from "react";
 import { buildMapShellOverlayModel } from "@/lib/mapShell/overlayController";
 import ActiveJobOverlay from "@/components/mapShell/ActiveJobOverlay";
 import SettingsOverlay from "@/components/mapShell/SettingsOverlay";
+import MapShellLayout from "@/components/mapShell/MapShellLayout";
+import { Slot } from "@/components/mapShell/slots";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { claimJob, updateJobStatus } from "@/lib/v2/jobs";
 
@@ -106,21 +108,21 @@ export default function MapShellScreen({
         {/* Children (pages) will render here and may opt-in to overlay slots via context in future work */}
         <div className="p-4 pointer-events-auto">{children}</div>
 
-        {/* Simple visible overlay slots for testing & preview */}
-        <div className="absolute top-20 right-6 w-80 space-y-4 pointer-events-auto">
-          {/* Active overlay (uses overlay model from controller) */}
-          <div data-testid="active-overlay" className="pointer-events-auto">
-            <ActiveJobOverlay
-              model={overlayModel}
-              onPrimaryAction={handlePrimaryAction}
-            />
-          </div>
+        {/* Stable overlay slots (via MapShellLayout/Slot) */}
+        <MapShellLayout>
+          <Slot name="topRight">
+            <div data-testid="active-overlay" className="pointer-events-auto">
+              <ActiveJobOverlay
+                model={overlayModel}
+                onPrimaryAction={handlePrimaryAction}
+              />
+            </div>
 
-          {/* Settings overlay */}
-          <div className="pointer-events-auto">
-            <SettingsOverlay />
-          </div>
-        </div>
+            <div className="pointer-events-auto">
+              <SettingsOverlay />
+            </div>
+          </Slot>
+        </MapShellLayout>
       </div>
     </div>
   );

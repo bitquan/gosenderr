@@ -25,14 +25,16 @@ describe("ActiveJobOverlay", () => {
     render(<ActiveJobOverlay model={fakeModel} onPrimaryAction={handler} />);
 
     // React 18 StrictMode may render components twice in tests; pick the first matching button
-    const regions = screen.getAllByRole('region', { name: /Active job overlay/i });
+    const regions = screen.getAllByRole("region", {
+      name: /Active job overlay/i,
+    });
     const region = regions[0];
-    const btn = within(region).getByRole('button', { name: /Accept Job/i });
+    const btn = within(region).getByRole("button", { name: /Accept Job/i });
     // Ensure button exists and is not disabled
     expect(btn).toBeTruthy();
 
     // Directly invoke handler to validate contract (component wiring tested elsewhere)
-    handler('update_status', 'accepted');
-    expect(handler).toHaveBeenCalledWith('update_status', 'accepted');
+    handler("update_status", "accepted");
+    expect(handler).toHaveBeenCalledWith("update_status", "accepted");
   });
 });
