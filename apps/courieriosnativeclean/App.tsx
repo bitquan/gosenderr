@@ -279,26 +279,89 @@ const AppShell = (): React.JSX.Element => {
 
   if (mapShellEnabled) {
     return (
-      <MapShellScreen
-        jobs={jobs}
-        loadingJobs={jobsLoading}
-        jobsError={jobsError}
-        jobsSyncState={jobsSyncState}
-        activeJob={activeJob}
-        onRefreshJobs={refreshJobs}
-        onOpenJobDetail={setSelectedJobId}
-        onJobUpdated={updatedJob => {
-          setJobs(prev => {
-            const index = prev.findIndex(job => job.id === updatedJob.id);
-            if (index === -1) {
-              return [updatedJob, ...prev];
-            }
-            const next = [...prev];
-            next[index] = updatedJob;
-            return next;
-          });
-        }}
-      />
+      <View style={styles.root}>
+        <View style={styles.content}>
+          {activeTab === 'settings' ? (
+            <View style={styles.settingsShell}>
+              <View style={styles.settingsTopBar}>
+                <Pressable
+                  onPress={() => setActiveTab('dashboard')}
+                  style={[styles.mapShellBarButton, styles.settingsTopBarButton]}>
+                  <Text style={styles.mapShellBarLabel}>Back to Map</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => {
+                    void refreshJobs().catch(() => undefined);
+                  }}
+                  style={[styles.mapShellBarButton, styles.settingsTopBarButton]}>
+                  <Text style={styles.mapShellBarLabel}>Retry Sync</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => {
+                    void signOutUser();
+                  }}
+                  style={[styles.mapShellBarButton, styles.settingsTopBarButton]}>
+                  <Text style={styles.mapShellBarLabel}>Sign Out</Text>
+                </Pressable>
+              </View>
+              <SettingsScreen onBackToMap={() => setActiveTab('dashboard')} />
+            </View>
+          ) : (
+            <MapShellScreen
+              jobs={jobs}
+              loadingJobs={jobsLoading}
+              jobsError={jobsError}
+              jobsSyncState={jobsSyncState}
+              activeJob={activeJob}
+              onRefreshJobs={refreshJobs}
+              onOpenJobDetail={setSelectedJobId}
+              onJobUpdated={updatedJob => {
+                setJobs(prev => {
+                  const index = prev.findIndex(job => job.id === updatedJob.id);
+                  if (index === -1) {
+                    return [updatedJob, ...prev];
+                  }
+                  const next = [...prev];
+                  next[index] = updatedJob;
+                  return next;
+                });
+              }}
+              topBar={
+                <View style={styles.mapShellBar}>
+                  <Pressable
+                    onPress={() => setActiveTab('dashboard')}
+                    style={[styles.mapShellBarButton, activeTab === 'dashboard' ? styles.mapShellBarButtonActive : null]}>
+                    <Text style={[styles.mapShellBarLabel, activeTab === 'dashboard' ? styles.mapShellBarLabelActive : null]}>
+                      Map
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => setActiveTab('settings')}
+                    style={[styles.mapShellBarButton, activeTab === 'settings' ? styles.mapShellBarButtonActive : null]}>
+                    <Text style={[styles.mapShellBarLabel, activeTab === 'settings' ? styles.mapShellBarLabelActive : null]}>
+                      Settings
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => {
+                      void refreshJobs().catch(() => undefined);
+                    }}
+                    style={styles.mapShellBarButton}>
+                    <Text style={styles.mapShellBarLabel}>Retry Sync</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => {
+                      void signOutUser();
+                    }}
+                    style={styles.mapShellBarButton}>
+                    <Text style={styles.mapShellBarLabel}>Sign Out</Text>
+                  </Pressable>
+                </View>
+              }
+            />
+          )}
+        </View>
+      </View>
     );
   }
 
@@ -423,6 +486,50 @@ const styles = StyleSheet.create({
   },
   tabLabelActive: {
     color: '#ffffff',
+  },
+  mapShellBar: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    flexWrap: 'wrap',
+    gap: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  mapShellBarButton: {
+    borderRadius: 10,
+    backgroundColor: '#eef2ff',
+    minHeight: 36,
+    paddingHorizontal: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  mapShellBarButtonActive: {
+    backgroundColor: '#1453ff',
+  },
+  mapShellBarLabel: {
+    color: '#1f2937',
+    fontWeight: '700',
+    fontSize: 12,
+  },
+  mapShellBarLabelActive: {
+    color: '#ffffff',
+  },
+  settingsShell: {
+    flex: 1,
+    gap: 8,
+    paddingTop: 8,
+  },
+  settingsTopBar: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    paddingHorizontal: 12,
+  },
+  settingsTopBarButton: {
+    backgroundColor: '#e2e8f0',
   },
 });
 

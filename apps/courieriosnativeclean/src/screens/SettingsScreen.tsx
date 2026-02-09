@@ -50,7 +50,11 @@ const toDraft = (profile: CourierProfile): CourierProfileDraft => ({
 
 const AVAILABILITY_OPTIONS: CourierAvailability[] = ['available', 'busy', 'offline'];
 
-export const SettingsScreen = (): React.JSX.Element => {
+export const SettingsScreen = ({
+  onBackToMap,
+}: {
+  onBackToMap?: () => void;
+} = {}): React.JSX.Element => {
   const {session, signOutUser} = useAuth();
   const {location: locationService, profile: profileService, featureFlags, analytics} = useServiceRegistry();
   const {state: locationState, requestPermission, startTracking, stopTracking} = locationService.useLocationTracking();
@@ -272,6 +276,13 @@ export const SettingsScreen = (): React.JSX.Element => {
 
   return (
     <ScreenContainer>
+      {onBackToMap ? (
+        <View style={styles.card}>
+          <Text style={styles.title}>MapShell</Text>
+          <Text style={styles.text}>Return to live map flow at any time.</Text>
+          <PrimaryButton label="Back to Map" onPress={onBackToMap} />
+        </View>
+      ) : null}
       <View style={styles.card}>
         <Text style={styles.title}>Account</Text>
         <Text style={styles.text}>Signed in as {session?.email ?? 'unknown'}</Text>

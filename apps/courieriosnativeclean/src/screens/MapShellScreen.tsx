@@ -36,6 +36,7 @@ type MapShellScreenProps = {
   onRefreshJobs: () => Promise<Job[]>;
   onOpenJobDetail: (jobId: string) => void;
   onJobUpdated: (job: Job) => void;
+  topBar?: React.ReactNode;
 };
 
 type Feedback = {
@@ -134,6 +135,7 @@ export const MapShellScreen = ({
   onRefreshJobs,
   onOpenJobDetail,
   onJobUpdated,
+  topBar,
 }: MapShellScreenProps): React.JSX.Element => {
   const {session} = useAuth();
   const {
@@ -482,6 +484,7 @@ export const MapShellScreen = ({
 
       <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
         <View style={styles.topSlot}>
+          {topBar ? <View style={styles.topBarSlot}>{topBar}</View> : null}
           <View style={styles.topCard}>
             <Text style={styles.topTitle}>Senderr MapShell</Text>
             <Text style={styles.topSubtitle}>
@@ -582,6 +585,9 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 12,
     gap: 6,
+  },
+  topBarSlot: {
+    marginBottom: 8,
   },
   topTitle: {
     color: '#f8fafc',
