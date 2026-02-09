@@ -61,3 +61,8 @@ export const auth = authInstance as Auth
 export const storage = storageInstance as FirebaseStorage
 export const functions = functionsInstance as Functions
 export const isFirebaseReady = () => !!dbInstance
+
+export function getDbOrThrow(): Firestore {
+  if (!dbInstance) throw new Error('Firebase not initialized. Ensure Firebase is configured and initialized.');
+  return dbInstance as Firestore;
+}
