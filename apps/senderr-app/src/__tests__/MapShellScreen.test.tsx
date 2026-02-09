@@ -24,6 +24,8 @@ describe("MapShellScreen", () => {
     expect(screen.getByText("child content")).toBeTruthy();
     expect(screen.getByTestId("map-placeholder")).toBeTruthy();
     expect(screen.getByLabelText("Map view")).toBeTruthy();
-    expect(screen.getByText(/Overlay slot — Active Job/i)).toBeTruthy();
+    // Active overlay should be present (dev preview)
+    expect(screen.getByTestId("active-overlay")).toBeTruthy();
+    expect(screen.getByText(/New job offer/i)).toBeTruthy();
   });
 });
