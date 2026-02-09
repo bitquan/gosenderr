@@ -16,6 +16,7 @@ import {ServiceRegistryProvider, useServiceRegistry} from './src/services/servic
 import type {Job} from './src/types/jobs';
 
 type TabKey = 'dashboard' | 'jobs' | 'settings';
+type MapShellView = 'map' | 'settings';
 
 const DEFAULT_JOBS_SYNC_STATE: JobsSyncState = {
   status: 'idle',
@@ -37,6 +38,7 @@ const AppShell = (): React.JSX.Element => {
   const lastSyncErrorRef = useRef<string | null>(null);
   const notificationsEnabled = featureFlagsState.state.flags.notifications;
   const [activeTab, setActiveTab] = useState<TabKey>('dashboard');
+  const [mapShellView, setMapShellView] = useState<MapShellView>('map');
   const [jobs, setJobs] = useState<Job[]>([]);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [jobsLoading, setJobsLoading] = useState(false);
@@ -114,6 +116,7 @@ const AppShell = (): React.JSX.Element => {
     if (!session) {
       setJobs([]);
       setSelectedJobId(null);
+      setMapShellView('map');
       setJobsLoading(false);
       setJobsError(null);
       setJobsSyncState(DEFAULT_JOBS_SYNC_STATE);
@@ -278,6 +281,19 @@ const AppShell = (): React.JSX.Element => {
   }
 
   if (mapShellEnabled) {
+    if (mapShellView === 'settings') {
+      return (
+        <View style={styles.mapShellSettingsRoot}>
+          <View style={styles.mapShellSettingsHeader}>
+            <Pressable onPress={() => setMapShellView('map')} style={styles.mapShellSettingsBackButton}>
+              <Text style={styles.mapShellSettingsBackLabel}>Back to Map</Text>
+            </Pressable>
+          </View>
+          <SettingsScreen />
+        </View>
+      );
+    }
+
     return (
       <MapShellScreen
         jobs={jobs}
@@ -298,6 +314,7 @@ const AppShell = (): React.JSX.Element => {
             return next;
           });
         }}
+        onOpenSettings={() => setMapShellView('settings')}
       />
     );
   }
@@ -396,6 +413,29 @@ const styles = StyleSheet.create({
     color: '#4b5563',
     fontSize: 15,
     fontWeight: '600',
+  },
+  mapShellSettingsRoot: {
+    flex: 1,
+    backgroundColor: '#f8fafc',
+  },
+  mapShellSettingsHeader: {
+    paddingTop: 56,
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+    backgroundColor: '#0f172a',
+  },
+  mapShellSettingsBackButton: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#93c5fd',
+  },
+  mapShellSettingsBackLabel: {
+    color: '#dbeafe',
+    fontSize: 13,
+    fontWeight: '700',
   },
   tabBar: {
     borderTopWidth: 1,

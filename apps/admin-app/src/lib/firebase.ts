@@ -60,12 +60,7 @@ export const storage = storageInstance as FirebaseStorage
 export const functions = functionsInstance as Functions
 export const isFirebaseReady = () => !!dbInstance
 
-// Defensive getter that throws a clear error when Firebase hasn't been initialized yet.
 export function getDbOrThrow(): Firestore {
-  if (!dbInstance) {
-    throw new Error(
-      'Firebase is not initialized. Ensure VITE_FIREBASE_* (or NEXT_PUBLIC_FIREBASE_*) env vars are set for the running app and restart the dev server.'
-    )
-  }
-  return dbInstance
+  if (!dbInstance) throw new Error('Firebase not initialized. Ensure Firebase is configured and initialized.');
+  return dbInstance as Firestore;
 }
