@@ -635,6 +635,18 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    // ========== SENDERRPLACE ADS ==========
+    match /senderrplaceAds/{adId} {
+      // Ads governance is admin-only for now.
+      allow read, create, update, delete: if isAdmin();
+    }
+
+    // ========== SENDERRPLACE SELLER BADGES ==========
+    match /senderrplaceSellerBadges/{sellerId} {
+      // Badge override management is admin-only for now.
+      allow read, create, update, delete: if isAdmin();
+    }
+
     // ========== EQUIPMENT SUBMISSIONS ==========
     match /equipmentSubmissions/{submissionId} {
       // Couriers can read their own submissions
