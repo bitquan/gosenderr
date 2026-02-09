@@ -9,37 +9,65 @@ async function initializeFeatureFlags() {
 
     const flags = {
       marketplace: {
-        enabled: true, // Already in production
+        enabled: true,
         itemListings: true,
         combinedPayments: true,
+        courierOffers: false,
       },
       delivery: {
-        onDemand: true, // Already in production
-        routes: false, // NEW: Enable when ready to test local route batching
-        longRoutes: false, // NEW: Regional routes
-        longHaul: false, // NEW: Interstate logistics
+        onDemand: true,
+        routes: false,
+        longRoutes: false,
+        longHaul: false,
       },
       courier: {
-       featureFlagsControl: true,
-       webPortalEnabled: false,
+        rateCards: true,
         equipmentBadges: true,
         workModes: true,
       },
       seller: {
-        stripeConnect: true, // Already in production
+        stripeConnect: true,
         multiplePhotos: true,
         foodListings: true,
       },
       customer: {
-        liveTracking: true, // Already in production
+        liveTracking: true,
         proofPhotos: true,
-        routeDelivery: false, // NEW: Customer can opt for route delivery discount
-        packageShipping: false, // NEW: Package shipping feature
+        routeDelivery: false,
+        packageShipping: false,
       },
       packageRunner: {
-        enabled: false, // NEW: Enable to allow package runner onboarding
-        onboarding: false, // NEW: Onboarding flow
-        routeAcceptance: false, // NEW: Allow runners to accept routes
+        enabled: false,
+        hubNetwork: false,
+        packageTracking: false,
+      },
+      admin: {
+        courierApproval: true,
+        equipmentReview: true,
+        disputeManagement: true,
+        analytics: true,
+        featureFlagsControl: true,
+        webPortalEnabled: false,
+        systemLogs: false,
+        firebaseExplorer: false,
+      },
+      advanced: {
+        pushNotifications: true,
+        ratingEnforcement: true,
+        autoCancel: true,
+        refunds: true,
+      },
+      ui: {
+        modernStyling: true,
+        darkMode: true,
+        animations: true,
+      },
+      senderrplaceV2: {
+        enabled: false,
+        ads: false,
+        badges: false,
+        bookingLinks: false,
+        adminControls: false,
       },
       updatedAt: new Date().toISOString(),
     };

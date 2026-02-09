@@ -1,8 +1,8 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app'
-import { getFirestore, Firestore } from 'firebase/firestore'
-import { getAuth, Auth } from 'firebase/auth'
-import { getStorage, FirebaseStorage } from 'firebase/storage'
-import { getFunctions, Functions } from 'firebase/functions'
+import { connectFirestoreEmulator, getFirestore, Firestore } from 'firebase/firestore'
+import { connectAuthEmulator, getAuth, Auth } from 'firebase/auth'
+import { connectStorageEmulator, getStorage, FirebaseStorage } from 'firebase/storage'
+import { connectFunctionsEmulator, getFunctions, Functions } from 'firebase/functions'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
@@ -14,6 +14,9 @@ const firebaseConfig = {
 }
 
 const isValidConfig = firebaseConfig.apiKey && firebaseConfig.apiKey.startsWith('AIza')
+const shouldUseEmulators =
+  import.meta.env.DEV &&
+  import.meta.env.VITE_ADMIN_APP_USE_EMULATORS === 'true'
 
 let app: FirebaseApp | undefined
 let dbInstance: Firestore | undefined
@@ -29,19 +32,14 @@ if (isValidConfig) {
     storageInstance = getStorage(app)
     functionsInstance = getFunctions(app)
     
-    // Connect to emulators in development
-    if (import.meta.env.DEV) {
-      const { connectFirestoreEmulator } = await import('firebase/firestore')
-      const { connectAuthEmulator } = await import('firebase/auth')
-      const { connectStorageEmulator } = await import('firebase/storage')
-      const { connectFunctionsEmulator } = await import('firebase/functions')
-      
+    // Connect to emulators only when explicitly enabled.
+    if (shouldUseEmulators) {
       try {
         connectFirestoreEmulator(dbInstance, '127.0.0.1', 8080)
         connectAuthEmulator(authInstance, 'http://127.0.0.1:9099', { disableWarnings: true })
         connectStorageEmulator(storageInstance, '127.0.0.1', 9199)
         connectFunctionsEmulator(functionsInstance, '127.0.0.1', 5001)
-        console.log('Connected to Firebase Emulators')
+        console.log('Connected to Firebase Emulators (admin-app)')
       } catch (e) {
         console.log('Emulators already connected or not available')
       }
