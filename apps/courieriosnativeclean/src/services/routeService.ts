@@ -120,3 +120,9 @@ export const fetchRoadRoute = async (points: RouteCoordinate[]): Promise<RoadRou
 
   return null;
 };
+
+// Export internals for testing
+export const __routeServiceInternals = {
+  decodeGeoJsonCoordinates,
+  parseRoadRoute,
+};

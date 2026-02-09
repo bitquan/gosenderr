@@ -20,7 +20,7 @@ Files touched
 Manual test checklist (handoff)
 
 1. Start the emulator or device and sign in as a courier account.
-2. Seed feature flags so `delivery.mapShell` is enabled (Admin Web or Firestore seed job).
+2. Seed feature flags so `senderrIos.mapShell` is enabled (canonical path; `delivery.mapShell` is still supported as a compatibility fallback) via Admin Web or Firestore seed job.
 3. Observe an assigned job in MapShell, then perform: claim → pickup → delivered.
    - At each step ensure status transitions succeed and UI shows confirmation.
 4. Test proof-required flow: create a job with notes containing "Photo proof required" and attempt to complete delivery; the app should request photo proof and block completion until proof is captured.

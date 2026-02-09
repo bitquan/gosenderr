@@ -211,7 +211,7 @@ export const MapShellScreen = ({
   useEffect(() => {
     setCameraMode('fit_route');
     setRouteState(null);
-  }, [activeJob?.id]);
+  }, [routeLifecycleKey]);
 
   const routeLifecycleKey = useMemo(
     () => `${activeJob?.id ?? 'none'}:${activeJob?.status ?? 'none'}`,
