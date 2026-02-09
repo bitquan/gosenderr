@@ -633,7 +633,10 @@ export type SenderrplaceAdStatus =
   | "paused"
   | "rejected"
   | "ended";
-export type SenderrplaceAdPlacement = "top_feed" | "category_spotlight" | "search_boost";
+export type SenderrplaceAdPlacement =
+  | "top_feed"
+  | "category_spotlight"
+  | "search_boost";
 
 export interface SenderrplaceAdDoc {
   sellerId: string;

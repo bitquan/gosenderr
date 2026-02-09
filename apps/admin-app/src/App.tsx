@@ -148,12 +148,32 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 function AdminWebAccessGate({ children }: { children: React.ReactNode }) {
-  const { flags, loading } = useFeatureFlags()
+  const { flags, loading, error } = useFeatureFlags()
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#F8F9FF]">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center px-6">
+        <div className="max-w-lg text-left bg-white rounded-2xl shadow-xl p-6 border border-gray-100 space-y-4">
+          <div className="text-3xl">⚠️</div>
+          <h1 className="text-2xl font-bold text-gray-900">Configuration Error</h1>
+          <p className="text-gray-600">
+            The admin web app could not initialize a required service: <span className="font-mono">{error.message}</span>
+          </p>
+          <p className="text-sm text-gray-500">Try the following:</p>
+          <ul className="list-disc list-inside text-sm text-gray-500">
+            <li>Make sure env vars are set (check <span className="font-mono">apps/admin-app/.env.local</span> or repo root <span className="font-mono">.env.local</span>).</li>
+            <li>Restart the dev server after changing env.</li>
+            <li>Use the Admin Desktop app as a fallback if needed.</li>
+          </ul>
+        </div>
       </div>
     )
   }

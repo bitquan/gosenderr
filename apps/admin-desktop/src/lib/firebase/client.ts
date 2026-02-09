@@ -4,18 +4,46 @@ import { getFunctions, Functions } from "firebase/functions";
 import { getStorage, FirebaseStorage } from "firebase/storage";
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "",
+  apiKey:
+    import.meta.env.VITE_FIREBASE_API_KEY ||
+    import.meta.env.NEXT_PUBLIC_FIREBASE_API_KEY ||
+    "",
+  authDomain:
+    import.meta.env.VITE_FIREBASE_AUTH_DOMAIN ||
+    import.meta.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ||
+    "",
+  projectId:
+    import.meta.env.VITE_FIREBASE_PROJECT_ID ||
+    import.meta.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ||
+    "",
+  storageBucket:
+    import.meta.env.VITE_FIREBASE_STORAGE_BUCKET ||
+    import.meta.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ||
+    "",
+  messagingSenderId:
+    import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID ||
+    import.meta.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID ||
+    "",
+  appId:
+    import.meta.env.VITE_FIREBASE_APP_ID ||
+    import.meta.env.NEXT_PUBLIC_FIREBASE_APP_ID ||
+    "",
 };
 
 // Only initialize on client side (not during build/SSR)
 const isBrowser = typeof window !== "undefined";
 const isValidConfig =
-  firebaseConfig.apiKey && firebaseConfig.apiKey.startsWith("AIza");
+  Boolean(firebaseConfig.projectId) ||
+  (firebaseConfig.apiKey && firebaseConfig.apiKey.startsWith("AIza"));
+
+if (isBrowser && !isValidConfig) {
+  console.error(
+    "Firebase config appears missing or incomplete. Ensure VITE_FIREBASE_* or NEXT_PUBLIC_FIREBASE_* variables are set in your .env." +
+      ` Current: apiKey=${
+        firebaseConfig.apiKey ? "set" : "missing"
+      }, projectId=${firebaseConfig.projectId || "missing"}`,
+  );
+}
 
 let app: FirebaseApp | undefined;
 let dbInstance: Firestore | undefined;
