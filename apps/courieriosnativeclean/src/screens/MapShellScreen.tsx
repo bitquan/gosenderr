@@ -325,7 +325,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#0b1220',
   },
   topSlot: {
-    paddingTop: 16,
+    paddingTop: 52,
     paddingHorizontal: 12,
   },
   topCard: {
