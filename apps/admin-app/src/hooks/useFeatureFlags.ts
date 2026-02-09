@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { doc, onSnapshot } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { DEFAULT_FEATURE_FLAGS } from "@gosenderr/shared";
 import type { FeatureFlags } from "@gosenderr/shared";
@@ -11,9 +11,11 @@ export function useFeatureFlags() {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onSnapshot(
-      doc(db, "featureFlags", "config"),
-      (snapshot) => {
+    let mounted = true;
+
+    getDoc(doc(db, "featureFlags", "config"))
+      .then((snapshot) => {
+        if (!mounted) return;
         if (snapshot.exists()) {
           setFlags(snapshot.data() as FeatureFlags);
         } else {
@@ -21,15 +23,19 @@ export function useFeatureFlags() {
           setFlags(DEFAULT_FEATURE_FLAGS);
         }
         setLoading(false);
-      },
-      (err) => {
+      })
+      .catch((err) => {
+        if (!mounted) return;
         console.error("Error loading feature flags:", err);
         setError(err as Error);
+        // Permission errors should not crash admin shell.
+        setFlags(DEFAULT_FEATURE_FLAGS);
         setLoading(false);
-      },
-    );
+      });
 
-    return () => unsubscribe();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   return { flags, loading, error };
