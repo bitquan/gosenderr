@@ -156,8 +156,6 @@ export default function MapShellScreen({
               <SettingsOverlay />
             </div>
           </Slot>
-
-
         </MapShellLayout>
       </div>
     </div>

@@ -1,7 +1,13 @@
 /* @vitest-environment jsdom */
 import "@testing-library/jest-dom/vitest";
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, within, fireEvent, waitFor } from "@testing-library/react";
+import {
+  render,
+  screen,
+  within,
+  fireEvent,
+  waitFor,
+} from "@testing-library/react";
 
 // Mock MapboxMap to avoid DOM/mapbox dependency in unit tests
 vi.mock("@/components/v2/MapboxMap", () => ({
@@ -35,7 +41,9 @@ describe("MapShellScreen dev-mode actions", () => {
     const btn = within(overlay).getByRole("button", { name: /Accept Job/i });
     fireEvent.click(btn);
 
-    await waitFor(() => expect((alertSpy as any).mock.calls.length).toBeGreaterThanOrEqual(1));
+    await waitFor(() =>
+      expect((alertSpy as any).mock.calls.length).toBeGreaterThanOrEqual(1),
+    );
 
     // Claim should not be called in dev preview
     expect((claimJob as any).mock.calls.length).toBe(0);
