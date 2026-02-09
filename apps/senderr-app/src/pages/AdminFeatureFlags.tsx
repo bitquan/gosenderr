@@ -3,59 +3,7 @@ import { doc, onSnapshot, updateDoc } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { Card, CardHeader, CardTitle, CardContent } from '../components/Card'
 import { Link } from 'react-router-dom'
-
-interface FeatureFlags {
-  marketplace: {
-    enabled: boolean
-    itemListings: boolean
-    combinedPayments: boolean
-  }
-  delivery: {
-    onDemand: boolean
-    routes: boolean
-    longRoutes: boolean
-    longHaul: boolean
-  }
-  courier: {
-    rateCards: boolean
-    equipmentBadges: boolean
-    workModes: boolean
-  }
-  seller: {
-    stripeConnect: boolean
-    multiplePhotos: boolean
-    foodListings: boolean
-  }
-  customer: {
-    liveTracking: boolean
-    proofPhotos: boolean
-    routeDelivery: boolean
-    packageShipping: boolean
-  }
-  packageRunner: {
-    enabled: boolean
-    hubNetwork: boolean
-    packageTracking: boolean
-  }
-  admin: {
-    courierApproval: boolean
-    equipmentReview: boolean
-    disputeManagement: boolean
-    analytics: boolean
-    featureFlagsControl: boolean
-  }
-  advanced: {
-    pushNotifications: boolean
-    ratingEnforcement: boolean
-    autoCancel: boolean
-    refunds: boolean
-  }
-  ui: {
-    modernStyling: boolean
-    darkMode: boolean
-    animations: boolean
-  }
-}
+import type { FeatureFlags } from '@gosenderr/shared'
 
 export default function AdminFeatureFlagsPage() {
   const [flags, setFlags] = useState<FeatureFlags | null>(null)
