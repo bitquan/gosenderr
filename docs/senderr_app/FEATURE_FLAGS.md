@@ -26,6 +26,11 @@ Feature flags provide a safe rollout and rollback path for high-risk iOS courier
   - Default: `true`
   - Gated flow: job status command actions.
   - Removal criteria: remove after status transitions are fully stable in production.
+- `mapShell`
+  - Owner: `senderr-ios`
+  - Default: `true`
+  - Gated flow: map-shell-first courier UX and in-shell overlays.
+  - Removal criteria: remove after map shell fully replaces tab shell in production.
 
 ## Remote source
 Firestore document:
@@ -37,6 +42,7 @@ Supported config paths:
 - `senderrIos.notifications`
 - `senderrIos.mapRouting`
 - `senderrIos.jobStatusActions`
+- `senderrIos.mapShell`
 
 Compatibility fallbacks:
 - `courier.workModes` -> `trackingUpload`
@@ -49,3 +55,7 @@ Compatibility fallbacks:
 3. Roll out gradually in prod via remote config.
 4. If incident: toggle flag OFF remotely (no app redeploy needed).
 5. After stability period: remove dead flag and gating code.
+
+## MapShell rollout + fallback
+
+See `docs/senderr_app/MAP_SHELL_ACCEPTANCE_MATRIX.md` for required rollout gates and rollback criteria.
