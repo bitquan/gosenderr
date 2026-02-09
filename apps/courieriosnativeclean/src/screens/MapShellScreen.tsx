@@ -1,5 +1,5 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react';
-import {StyleSheet, Text, View} from 'react-native';
+import {Pressable, StyleSheet, Text, View} from 'react-native';
 
 import {MapShellSurface} from '../components/MapShellSurface';
 import {PrimaryButton} from '../components/PrimaryButton';
@@ -11,6 +11,11 @@ import type {
   JobsSyncState,
 } from '../services/ports/jobsPort';
 import {buildMapShellOverlayModel, type MapShellState} from './mapShellOverlayController';
+import {
+  buildMapShellRouteSummary,
+  formatRouteDistance,
+  type MapShellCameraMode,
+} from './viewModels/mapShellRouteView';
 import {
   formatLocationSampleTime,
   formatSyncTime,
@@ -79,6 +84,7 @@ export const MapShellScreen = ({
 
   const [actionBusy, setActionBusy] = useState(false);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
+  const [cameraMode, setCameraMode] = useState<MapShellCameraMode>('fit_route');
   const latestJob = useMemo(() => jobs[0] ?? null, [jobs]);
   const syncDegraded = isSyncDegraded(jobsSyncState);
 
@@ -104,6 +110,20 @@ export const MapShellScreen = ({
 
   const previousStateRef = useRef<MapShellState | null>(null);
   const latestKnownStatus = activeJob?.status ?? latestJob?.status ?? 'none';
+  const routeSummary = useMemo(
+    () => buildMapShellRouteSummary(activeJob, locationState.lastLocation),
+    [activeJob, locationState.lastLocation],
+  );
+  const displayEtaMinutes = routeSummary.etaMinutes ?? activeJob?.etaMinutes ?? null;
+  const cameraLabels: Record<MapShellCameraMode, string> = {
+    follow_courier: 'Follow',
+    fit_route: 'Fit',
+    manual: 'Manual',
+  };
+
+  useEffect(() => {
+    setCameraMode('fit_route');
+  }, [activeJob?.id]);
 
   useEffect(() => {
     if (previousStateRef.current === overlay.state) {
@@ -246,6 +266,9 @@ export const MapShellScreen = ({
       <MapShellSurface
         activeJob={activeJob}
         courierLocation={locationState.lastLocation}
+        routeCoordinates={routeSummary.coordinates}
+        cameraMode={cameraMode}
+        onCameraModeChange={setCameraMode}
       />
 
       <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
@@ -258,6 +281,10 @@ export const MapShellScreen = ({
             <Text style={styles.topSubtitle}>
               Last sync: {formatSyncTime(jobsSyncState.lastSyncedAt)}
             </Text>
+            <Text style={styles.topSubtitle}>
+              {routeSummary.legLabel} · {formatRouteDistance(routeSummary.distanceMeters)}
+              {displayEtaMinutes ? ` · ETA ${displayEtaMinutes} min` : ''}
+            </Text>
             {activeJob ? (
               <View style={styles.jobMetaRow}>
                 <Text style={styles.jobMetaText} numberOfLines={1}>
@@ -266,6 +293,21 @@ export const MapShellScreen = ({
                 <StatusBadge status={activeJob.status} />
               </View>
             ) : null}
+            <View style={styles.cameraRow}>
+              {(Object.keys(cameraLabels) as MapShellCameraMode[]).map(mode => {
+                const active = cameraMode === mode;
+                return (
+                  <Pressable
+                    key={mode}
+                    style={[styles.cameraChip, active ? styles.cameraChipActive : null]}
+                    onPress={() => setCameraMode(mode)}>
+                    <Text style={[styles.cameraChipText, active ? styles.cameraChipTextActive : null]}>
+                      {cameraLabels[mode]}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
           </View>
         </View>
 
@@ -286,6 +328,11 @@ export const MapShellScreen = ({
             <Text style={styles.panelMeta}>
               Last location: {formatLocationSampleTime(locationState.lastLocation?.timestamp ?? null)}
             </Text>
+            <Text style={styles.panelMeta}>
+              Route: {routeSummary.legLabel} · {formatRouteDistance(routeSummary.distanceMeters)}
+              {displayEtaMinutes ? ` · ETA ${displayEtaMinutes} min` : ''}
+            </Text>
+            <Text style={styles.panelMeta}>Camera: {cameraLabels[cameraMode]}</Text>
             {loadingJobs ? (
               <Text style={styles.panelMeta}>Refreshing jobs...</Text>
             ) : null}
@@ -351,6 +398,30 @@ const styles = StyleSheet.create({
   centerSlot: {
     alignItems: 'center',
     marginTop: 10,
+  },
+  cameraRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 6,
+  },
+  cameraChip: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.65)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  cameraChipActive: {
+    backgroundColor: '#2563eb',
+    borderColor: '#2563eb',
+  },
+  cameraChipText: {
+    color: '#cbd5e1',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  cameraChipTextActive: {
+    color: '#eff6ff',
   },
   warningChip: {
     backgroundColor: 'rgba(180, 83, 9, 0.92)',
