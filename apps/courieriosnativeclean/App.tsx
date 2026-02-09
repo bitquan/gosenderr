@@ -7,6 +7,7 @@ import {DashboardScreen} from './src/screens/DashboardScreen';
 import {JobDetailScreen} from './src/screens/JobDetailScreen';
 import {JobsScreen} from './src/screens/JobsScreen';
 import {LoginScreen} from './src/screens/LoginScreen';
+import {MapShellScreen} from './src/screens/MapShellScreen';
 import {SettingsScreen} from './src/screens/SettingsScreen';
 import {configureRuntime, type NativeRuntimeConfig} from './src/config/runtime';
 import {getFirebaseServices, isFirebaseReady} from './src/services/firebase';
@@ -248,6 +249,7 @@ const AppShell = (): React.JSX.Element => {
   const activeJobs = useMemo(() => jobs.filter(job => job.status !== 'delivered' && job.status !== 'cancelled'), [jobs]);
   const activeJobsCount = activeJobs.length;
   const activeJob = activeJobs[0] ?? null;
+  const mapShellEnabled = featureFlagsState.state.flags.mapShell;
 
   if (initializing) {
     return (
@@ -271,6 +273,20 @@ const AppShell = (): React.JSX.Element => {
           setJobs(prev => prev.map(job => (job.id === updatedJob.id ? updatedJob : job)));
           setSelectedJobId(updatedJob.id);
         }}
+      />
+    );
+  }
+
+  if (mapShellEnabled) {
+    return (
+      <MapShellScreen
+        jobs={jobs}
+        loadingJobs={jobsLoading}
+        jobsError={jobsError}
+        jobsSyncState={jobsSyncState}
+        activeJob={activeJob}
+        onRefreshJobs={refreshJobs}
+        onOpenJobDetail={setSelectedJobId}
       />
     );
   }
