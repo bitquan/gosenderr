@@ -60,6 +60,12 @@ export default function MapShellScreen({
       // For demo, use the dev pending job id
       const jobId = "dev_job_1";
 
+      // Dev placeholders should not call real backend resources — skip in demo mode
+      if (devPreview || jobId.startsWith("dev_")) {
+        alert("Demo mode: action skipped (no backend calls in dev preview)");
+        return;
+      }
+
       if (action === "update_status" && nextStatus === "accepted") {
         // Claim the job (uses agreedFee=0 for demo)
         await claimJob(jobId, uid, 0);
@@ -151,20 +157,7 @@ export default function MapShellScreen({
             </div>
           </Slot>
 
-          {/* Dev preview: render an additional center overlay for visibility on small screens */}
-          {devPreview && (
-            <Slot name="center">
-              <div
-                data-testid="active-overlay-center"
-                className="pointer-events-auto"
-              >
-                <ActiveJobOverlay
-                  model={overlayModel}
-                  onPrimaryAction={handlePrimaryAction}
-                />
-              </div>
-            </Slot>
-          )}
+
         </MapShellLayout>
       </div>
     </div>

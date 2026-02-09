@@ -28,7 +28,7 @@ function MapShellOverlayLayer() {
       </div>
 
       <div
-        className="absolute top-20 right-6 w-80 space-y-4 pointer-events-auto"
+        className="absolute top-20 right-6 space-y-4 pointer-events-auto sm:right-6 sm:w-80 w-[calc(100%-2rem)] left-4 right-4 mx-auto"
         data-testid="slot-top-right"
       >
         {slots.topRight}

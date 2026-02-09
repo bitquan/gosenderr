@@ -14,6 +14,7 @@ describe("MapShellScreen dev preview", () => {
     render(<MapShellScreen devPreview={true} />);
 
     expect(screen.getByTestId("mapshell-dev-banner")).toBeTruthy();
-    expect(screen.getByTestId("active-overlay-center")).toBeTruthy();
+    // Ensure top-right active overlay is present and visible on small screens
+    expect(screen.getByTestId("active-overlay")).toBeTruthy();
   });
 });
