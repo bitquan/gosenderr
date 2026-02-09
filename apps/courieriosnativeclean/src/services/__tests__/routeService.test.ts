@@ -1,19 +1,19 @@
-import {__routeServiceInternals} from '../routeService';
+import {testExports} from '../routeService';
 
 describe('routeService', () => {
   describe('parseRoadRoute', () => {
     it('returns null when payload has no routes', () => {
-      const result = __routeServiceInternals.parseRoadRoute({});
+      const result = testExports.parseRoadRoute({});
       expect(result).toBeNull();
     });
 
     it('returns null when payload has empty routes array', () => {
-      const result = __routeServiceInternals.parseRoadRoute({routes: []});
+      const result = testExports.parseRoadRoute({routes: []});
       expect(result).toBeNull();
     });
 
     it('returns null when coordinates array is missing', () => {
-      const result = __routeServiceInternals.parseRoadRoute({
+      const result = testExports.parseRoadRoute({
         routes: [
           {
             distance: 1000,
@@ -25,7 +25,7 @@ describe('routeService', () => {
     });
 
     it('returns null when coordinates array has fewer than 2 points', () => {
-      const result = __routeServiceInternals.parseRoadRoute({
+      const result = testExports.parseRoadRoute({
         routes: [
           {
             geometry: {coordinates: [[1.0, 2.0]]},
@@ -38,7 +38,7 @@ describe('routeService', () => {
     });
 
     it('returns null when distance is not finite', () => {
-      const result = __routeServiceInternals.parseRoadRoute({
+      const result = testExports.parseRoadRoute({
         routes: [
           {
             geometry: {
@@ -56,7 +56,7 @@ describe('routeService', () => {
     });
 
     it('returns null when duration is not finite', () => {
-      const result = __routeServiceInternals.parseRoadRoute({
+      const result = testExports.parseRoadRoute({
         routes: [
           {
             geometry: {
@@ -74,7 +74,7 @@ describe('routeService', () => {
     });
 
     it('parses valid GeoJSON route with coordinates, distance, and duration', () => {
-      const result = __routeServiceInternals.parseRoadRoute({
+      const result = testExports.parseRoadRoute({
         routes: [
           {
             geometry: {
@@ -102,7 +102,7 @@ describe('routeService', () => {
     });
 
     it('skips invalid coordinate entries in the coordinates array', () => {
-      const result = __routeServiceInternals.parseRoadRoute({
+      const result = testExports.parseRoadRoute({
         routes: [
           {
             geometry: {
@@ -134,15 +134,15 @@ describe('routeService', () => {
 
   describe('decodeGeoJsonCoordinates', () => {
     it('returns empty array for non-array input', () => {
-      expect(__routeServiceInternals.decodeGeoJsonCoordinates(null)).toEqual([]);
-      expect(__routeServiceInternals.decodeGeoJsonCoordinates(undefined)).toEqual([]);
-      expect(__routeServiceInternals.decodeGeoJsonCoordinates('string')).toEqual([]);
-      expect(__routeServiceInternals.decodeGeoJsonCoordinates(123)).toEqual([]);
-      expect(__routeServiceInternals.decodeGeoJsonCoordinates({})).toEqual([]);
+      expect(testExports.decodeGeoJsonCoordinates(null)).toEqual([]);
+      expect(testExports.decodeGeoJsonCoordinates(undefined)).toEqual([]);
+      expect(testExports.decodeGeoJsonCoordinates('string')).toEqual([]);
+      expect(testExports.decodeGeoJsonCoordinates(123)).toEqual([]);
+      expect(testExports.decodeGeoJsonCoordinates({})).toEqual([]);
     });
 
     it('skips entries with fewer than 2 elements', () => {
-      const result = __routeServiceInternals.decodeGeoJsonCoordinates([
+      const result = testExports.decodeGeoJsonCoordinates([
         [1.0, 2.0],
         [3.0], // only 1 element
         [5.0, 6.0],
@@ -158,7 +158,7 @@ describe('routeService', () => {
     });
 
     it('skips entries with non-finite coordinates', () => {
-      const result = __routeServiceInternals.decodeGeoJsonCoordinates([
+      const result = testExports.decodeGeoJsonCoordinates([
         [1.0, 2.0],
         [NaN, 4.0],
         [5.0, Infinity],
@@ -172,7 +172,7 @@ describe('routeService', () => {
     });
 
     it('decodes valid GeoJSON coordinates [lng, lat] to {latitude, longitude}', () => {
-      const result = __routeServiceInternals.decodeGeoJsonCoordinates([
+      const result = testExports.decodeGeoJsonCoordinates([
         [-122.4194, 37.7749],
         [-122.4084, 37.7849],
         [-122.3974, 37.7949],
