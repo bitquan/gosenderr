@@ -6,7 +6,7 @@ If you follow this file exactly, you avoid the common setup and branch mistakes.
 
 > Doc metadata
 > - Owner: `@bitquan`
-> - Last verified: `2026-02-08`
+> - Last verified: `2026-02-09`
 > - Review cadence: `monthly`
 > - Status: `up to date`
 
@@ -93,6 +93,27 @@ git pull --ff-only origin senderr_app
 git checkout -b codex/issue-<issue-number>-<short-slug>
 bash scripts/setup-branch-copilot.sh
 ```
+
+
+## 3b) Copilot implementation model (required)
+
+Use this split so execution stays consistent:
+
+- You + chat agent: issue planning, acceptance criteria, PR/merge coordination.
+- VS Code Copilot agent: code changes, tests, local fixes inside the chosen worktree.
+
+Workflow:
+
+1. Select the stable worktree by domain (Senderr: `senderr-shell` / `senderr-settings` / `senderr-ops`; Senderrplace/Admin equivalents).
+2. Run sync first:
+   - `bash scripts/worktree-sync.sh`
+3. Run implementation in that worktree only.
+4. Write a short change log line in:
+   - `docs/dev/worktree-logs/<worktree>.md`
+5. Use `senderr-live` only for latest merged baseline testing.
+6. Only stack unmerged branches on `senderr-live` when explicitly needed for cross-feature QA, then unstack after validation.
+
+This is the default model for all apps in this monorepo.
 
 ## 4) Day-to-day git commands
 
