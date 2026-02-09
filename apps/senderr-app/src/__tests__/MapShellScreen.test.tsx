@@ -1,5 +1,5 @@
 /* @vitest-environment jsdom */
-import '@testing-library/jest-dom/vitest'
+import "@testing-library/jest-dom/vitest";
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 
@@ -21,9 +21,9 @@ describe("MapShellScreen", () => {
       </MapShellScreen>,
     );
 
-    expect(screen.getByText("child content")).toBeInTheDocument();
-    expect(screen.getByTestId("map-placeholder")).toBeInTheDocument();
-    expect(screen.getByLabelText("Map view")).toBeInTheDocument();
-    expect(screen.getByText(/Overlay slot — Active Job/i)).toBeInTheDocument();
+    expect(screen.getByText("child content")).toBeTruthy();
+    expect(screen.getByTestId("map-placeholder")).toBeTruthy();
+    expect(screen.getByLabelText("Map view")).toBeTruthy();
+    expect(screen.getByText(/Overlay slot — Active Job/i)).toBeTruthy();
   });
 });
