@@ -1,19 +1,21 @@
-import React, {useMemo, useState} from 'react';
-import {FlatList, Pressable, StyleSheet, Text, View} from 'react-native';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
+import {StyleSheet, Text, View} from 'react-native';
 
 import {MapShellSurface} from '../components/MapShellSurface';
 import {PrimaryButton} from '../components/PrimaryButton';
 import {StatusBadge} from '../components/StatusBadge';
+import {useAuth} from '../context/AuthContext';
 import {useServiceRegistry} from '../services/serviceRegistry';
-import type {JobsSyncState} from '../services/ports/jobsPort';
+import type {
+  JobStatusCommandResult,
+  JobsSyncState,
+} from '../services/ports/jobsPort';
+import {buildMapShellOverlayModel, type MapShellState} from './mapShellOverlayController';
 import {
-  deriveSyncHealth,
   formatLocationSampleTime,
   formatSyncTime,
 } from './viewModels/jobsViewState';
 import type {Job} from '../types/jobs';
-
-type MapShellPanel = 'overview' | 'jobs' | 'settings';
 
 type MapShellScreenProps = {
   jobs: Job[];
@@ -23,48 +25,34 @@ type MapShellScreenProps = {
   activeJob: Job | null;
   onRefreshJobs: () => Promise<Job[]>;
   onOpenJobDetail: (jobId: string) => void;
+  onJobUpdated: (job: Job) => void;
 };
 
-const LOCATION_STALE_THRESHOLD_MS = 45_000;
+type Feedback = {
+  message: string;
+  tone: 'error' | 'info';
+};
 
-const toTrackingHealth = (
-  tracking: boolean,
-  hasError: string | null,
-  lastSampleAt: number | null,
-): {title: string; detail: string} => {
-  if (hasError) {
-    return {
-      title: 'Error',
-      detail: hasError,
-    };
+const isSyncDegraded = (syncState: JobsSyncState): boolean =>
+  syncState.status === 'reconnecting' ||
+  syncState.status === 'stale' ||
+  syncState.status === 'error';
+
+const toFeedbackFromResult = (
+  result: JobStatusCommandResult,
+): Feedback | null => {
+  if (result.kind === 'success') {
+    if (result.message) {
+      return {message: result.message, tone: 'info'};
+    }
+    return {message: 'Status updated.', tone: 'info'};
   }
 
-  if (!tracking) {
-    return {
-      title: 'Paused',
-      detail: 'Tracking is currently paused.',
-    };
+  if (result.kind === 'retryable_error') {
+    return {message: result.message, tone: 'info'};
   }
 
-  if (!lastSampleAt) {
-    return {
-      title: 'Starting',
-      detail: 'Waiting for your first location sample.',
-    };
-  }
-
-  const ageMs = Date.now() - lastSampleAt;
-  if (ageMs > LOCATION_STALE_THRESHOLD_MS) {
-    return {
-      title: 'Stale',
-      detail: `Last sample is ${Math.round(ageMs / 1000)}s old.`,
-    };
-  }
-
-  return {
-    title: 'Healthy',
-    detail: 'Tracking is running normally.',
-  };
+  return {message: result.message, tone: 'error'};
 };
 
 export const MapShellScreen = ({
@@ -75,57 +63,183 @@ export const MapShellScreen = ({
   activeJob,
   onRefreshJobs,
   onOpenJobDetail,
+  onJobUpdated,
 }: MapShellScreenProps): React.JSX.Element => {
-  const {location: locationService} = useServiceRegistry();
+  const {session} = useAuth();
+  const {
+    analytics,
+    jobs: jobsService,
+    location: locationService,
+  } = useServiceRegistry();
   const {
     state: locationState,
     requestPermission,
     startTracking,
-    stopTracking,
   } = locationService.useLocationTracking();
-  const [panel, setPanel] = useState<MapShellPanel>('overview');
-  const [panelBusy, setPanelBusy] = useState(false);
 
-  const activeJobs = useMemo(
+  const [actionBusy, setActionBusy] = useState(false);
+  const [feedback, setFeedback] = useState<Feedback | null>(null);
+  const latestJob = useMemo(() => jobs[0] ?? null, [jobs]);
+  const syncDegraded = isSyncDegraded(jobsSyncState);
+
+  const overlay = useMemo(
     () =>
-      jobs.filter(
-        job => job.status !== 'delivered' && job.status !== 'cancelled',
-      ),
-    [jobs],
+      buildMapShellOverlayModel({
+        activeJob,
+        latestJob,
+        jobsSyncState,
+        courierLocation: locationState.lastLocation,
+        tracking: locationState.tracking,
+        hasPermission: locationState.hasPermission,
+      }),
+    [
+      activeJob,
+      jobsSyncState,
+      latestJob,
+      locationState.hasPermission,
+      locationState.lastLocation,
+      locationState.tracking,
+    ],
   );
-  const syncHealth = deriveSyncHealth(jobsSyncState);
-  const trackingHealth = toTrackingHealth(
-    locationState.tracking,
-    locationState.error,
-    locationState.lastLocation?.timestamp ?? null,
-  );
+
+  const previousStateRef = useRef<MapShellState | null>(null);
+  const latestKnownStatus = activeJob?.status ?? latestJob?.status ?? 'none';
+
+  useEffect(() => {
+    if (previousStateRef.current === overlay.state) {
+      return;
+    }
+
+    void analytics.track('map_shell_state_transition', {
+      from_state: previousStateRef.current ?? 'none',
+      to_state: overlay.state,
+      job_status: latestKnownStatus,
+      sync_status: jobsSyncState.status,
+    });
+    previousStateRef.current = overlay.state;
+  }, [analytics, jobsSyncState.status, latestKnownStatus, overlay.state]);
 
   const runRefresh = async (): Promise<void> => {
-    setPanelBusy(true);
     try {
       await onRefreshJobs();
-    } finally {
-      setPanelBusy(false);
+      setFeedback(null);
+    } catch (error) {
+      setFeedback({
+        message: error instanceof Error ? error.message : 'Unable to refresh jobs.',
+        tone: 'error',
+      });
     }
+  };
+
+  const runRequestPermission = async (): Promise<void> => {
+    const granted = await requestPermission();
+    setFeedback(
+      granted
+        ? {message: 'Location permission granted.', tone: 'info'}
+        : {
+            message:
+              'Location permission denied. Open settings to continue.',
+            tone: 'error',
+          },
+    );
   };
 
   const runStartTracking = async (): Promise<void> => {
-    setPanelBusy(true);
-    try {
-      if (!locationState.hasPermission) {
-        const granted = await requestPermission();
-        if (!granted) {
-          return;
-        }
+    if (!locationState.hasPermission) {
+      const granted = await requestPermission();
+      if (!granted) {
+        setFeedback({
+          message:
+            'Location permission denied. Open settings to continue.',
+          tone: 'error',
+        });
+        return;
       }
-      await startTracking();
+    }
+
+    await startTracking();
+    setFeedback({message: 'Tracking started.', tone: 'info'});
+  };
+
+  const runStatusUpdate = async (): Promise<void> => {
+    if (!session) {
+      setFeedback({message: 'Session expired. Please sign in again.', tone: 'error'});
+      return;
+    }
+
+    if (!overlay.nextStatus) {
+      setFeedback({message: 'No status transition available.', tone: 'error'});
+      return;
+    }
+
+    const job = activeJob ?? latestJob;
+    if (!job) {
+      setFeedback({message: 'No active job found.', tone: 'error'});
+      return;
+    }
+
+    const result = await jobsService.updateJobStatus(
+      session,
+      job.id,
+      overlay.nextStatus,
+    );
+
+    if (result.job) {
+      onJobUpdated(result.job);
+    }
+
+    setFeedback(toFeedbackFromResult(result));
+  };
+
+  const runPrimaryAction = async (): Promise<void> => {
+    setActionBusy(true);
+    try {
+      switch (overlay.primaryAction) {
+        case 'refresh_jobs':
+          await runRefresh();
+          break;
+        case 'request_location_permission':
+          await runRequestPermission();
+          break;
+        case 'start_tracking':
+          await runStartTracking();
+          break;
+        case 'open_job_detail': {
+          const job = activeJob ?? latestJob;
+          if (job) {
+            onOpenJobDetail(job.id);
+          } else {
+            setFeedback({message: 'No active job found.', tone: 'error'});
+          }
+          break;
+        }
+        case 'update_status':
+          await runStatusUpdate();
+          break;
+        default:
+          break;
+      }
+    } catch (error) {
+      setFeedback({
+        message:
+          error instanceof Error
+            ? error.message
+            : 'Unable to complete map-shell action.',
+        tone: 'error',
+      });
     } finally {
-      setPanelBusy(false);
+      setActionBusy(false);
     }
   };
 
-  const showSyncWarning =
-    syncHealth.tone === 'degraded' || syncHealth.tone === 'error';
+  const toneStyle =
+    overlay.tone === 'error'
+      ? styles.panelToneError
+      : overlay.tone === 'warning'
+        ? styles.panelToneWarning
+        : overlay.tone === 'success'
+          ? styles.panelToneSuccess
+          : styles.panelToneNeutral;
 
   return (
     <View style={styles.root}>
@@ -139,185 +253,63 @@ export const MapShellScreen = ({
           <View style={styles.topCard}>
             <Text style={styles.topTitle}>Senderr MapShell</Text>
             <Text style={styles.topSubtitle}>
-              Active jobs: {activeJobs.length} · Sync: {syncHealth.title}
+              State: {overlay.state.replace(/_/g, ' ')}
             </Text>
-            <View style={styles.tabRow}>
-              <MapShellTab
-                label="Overview"
-                active={panel === 'overview'}
-                onPress={() => setPanel('overview')}
-              />
-              <MapShellTab
-                label="Jobs"
-                active={panel === 'jobs'}
-                onPress={() => setPanel('jobs')}
-              />
-              <MapShellTab
-                label="Settings"
-                active={panel === 'settings'}
-                onPress={() => setPanel('settings')}
-              />
-            </View>
+            <Text style={styles.topSubtitle}>
+              Last sync: {formatSyncTime(jobsSyncState.lastSyncedAt)}
+            </Text>
+            {activeJob ? (
+              <View style={styles.jobMetaRow}>
+                <Text style={styles.jobMetaText} numberOfLines={1}>
+                  {activeJob.customerName}
+                </Text>
+                <StatusBadge status={activeJob.status} />
+              </View>
+            ) : null}
           </View>
         </View>
 
         <View pointerEvents="box-none" style={styles.centerSlot}>
-          {showSyncWarning ? (
+          {syncDegraded ? (
             <View style={styles.warningChip}>
               <Text style={styles.warningText}>
-                Sync {syncHealth.title}: {syncHealth.message}
+                Sync {jobsSyncState.status}: {jobsSyncState.message ?? 'Retry required'}
               </Text>
             </View>
           ) : null}
         </View>
 
         <View style={styles.bottomSlot}>
-          <View style={styles.panelCard}>
-            {panel === 'overview' ? (
-              <>
-                <Text style={styles.panelTitle}>Operations Overview</Text>
-                <Text style={styles.panelText}>
-                  Last location:{' '}
-                  {formatLocationSampleTime(
-                    locationState.lastLocation?.timestamp ?? null,
-                  )}
-                </Text>
-                <Text style={styles.panelText}>
-                  Tracking: {trackingHealth.title}
-                </Text>
-                <Text style={styles.panelText}>{trackingHealth.detail}</Text>
-                <Text style={styles.panelText}>
-                  Last sync: {formatSyncTime(jobsSyncState.lastSyncedAt)}
-                </Text>
-                <View style={styles.actionsRow}>
-                  <PrimaryButton
-                    label={
-                      locationState.tracking
-                        ? 'Tracking active'
-                        : 'Start tracking'
-                    }
-                    disabled={locationState.tracking || panelBusy}
-                    onPress={() => {
-                      void runStartTracking();
-                    }}
-                  />
-                  <PrimaryButton
-                    label="Stop"
-                    variant="secondary"
-                    disabled={!locationState.tracking || panelBusy}
-                    onPress={() => stopTracking()}
-                  />
-                  <PrimaryButton
-                    label={panelBusy ? 'Refreshing...' : 'Refresh jobs'}
-                    variant="secondary"
-                    disabled={panelBusy}
-                    onPress={() => {
-                      void runRefresh();
-                    }}
-                  />
-                </View>
-              </>
+          <View style={[styles.panelCard, toneStyle]}>
+            <Text style={styles.panelTitle}>{overlay.title}</Text>
+            <Text style={styles.panelText}>{overlay.description}</Text>
+            <Text style={styles.panelMeta}>
+              Last location: {formatLocationSampleTime(locationState.lastLocation?.timestamp ?? null)}
+            </Text>
+            {loadingJobs ? (
+              <Text style={styles.panelMeta}>Refreshing jobs...</Text>
             ) : null}
-
-            {panel === 'jobs' ? (
-              <>
-                <Text style={styles.panelTitle}>Active Jobs</Text>
-                {loadingJobs && activeJobs.length === 0 ? (
-                  <Text style={styles.panelText}>Loading jobs...</Text>
-                ) : null}
-                {!loadingJobs && jobsError && activeJobs.length === 0 ? (
-                  <Text style={styles.panelError}>{jobsError}</Text>
-                ) : null}
-                {!loadingJobs && !jobsError && activeJobs.length === 0 ? (
-                  <Text style={styles.panelText}>
-                    No active jobs right now.
-                  </Text>
-                ) : null}
-                {activeJobs.length > 0 ? (
-                  <FlatList
-                    data={activeJobs}
-                    keyExtractor={item => item.id}
-                    style={styles.jobsList}
-                    renderItem={({item}) => (
-                      <Pressable
-                        style={styles.jobRow}
-                        onPress={() => onOpenJobDetail(item.id)}>
-                        <View style={styles.jobRowHeader}>
-                          <Text style={styles.jobCustomer}>
-                            {item.customerName}
-                          </Text>
-                          <StatusBadge status={item.status} />
-                        </View>
-                        <Text style={styles.jobAddress} numberOfLines={1}>
-                          {item.pickupAddress}
-                        </Text>
-                        <Text style={styles.jobAddress} numberOfLines={1}>
-                          {item.dropoffAddress}
-                        </Text>
-                      </Pressable>
-                    )}
-                  />
-                ) : null}
-              </>
+            {!loadingJobs && jobsError ? (
+              <Text style={styles.panelError}>{jobsError}</Text>
             ) : null}
-
-            {panel === 'settings' ? (
-              <>
-                <Text style={styles.panelTitle}>MapShell Settings</Text>
-                <Text style={styles.panelText}>
-                  This shell keeps all primary actions on-map. Full profile
-                  settings migration lands in the next issue.
-                </Text>
-                <View style={styles.actionsRow}>
-                  <PrimaryButton
-                    label={
-                      locationState.tracking
-                        ? 'Stop tracking'
-                        : 'Start tracking'
-                    }
-                    onPress={() => {
-                      if (locationState.tracking) {
-                        stopTracking();
-                        return;
-                      }
-                      void runStartTracking();
-                    }}
-                  />
-                  <PrimaryButton
-                    label={panelBusy ? 'Refreshing...' : 'Refresh'}
-                    variant="secondary"
-                    disabled={panelBusy}
-                    onPress={() => {
-                      void runRefresh();
-                    }}
-                  />
-                </View>
-              </>
+            {feedback ? (
+              <Text style={feedback.tone === 'error' ? styles.panelError : styles.panelInfo}>
+                {feedback.message}
+              </Text>
             ) : null}
+            <PrimaryButton
+              label={actionBusy ? 'Working...' : overlay.primaryLabel}
+              disabled={actionBusy}
+              onPress={() => {
+                void runPrimaryAction();
+              }}
+            />
           </View>
         </View>
       </View>
     </View>
   );
 };
-
-const MapShellTab = ({
-  label,
-  active,
-  onPress,
-}: {
-  label: string;
-  active: boolean;
-  onPress: () => void;
-}): React.JSX.Element => (
-  <Pressable
-    onPress={onPress}
-    style={[styles.tabButton, active ? styles.tabButtonActive : null]}>
-    <Text style={[styles.tabLabel, active ? styles.tabLabelActive : null]}>
-      {label}
-    </Text>
-  </Pressable>
-);
 
 const styles = StyleSheet.create({
   root: {
@@ -332,7 +324,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(15, 23, 42, 0.86)',
     borderRadius: 14,
     padding: 12,
-    gap: 8,
+    gap: 6,
   },
   topTitle: {
     color: '#f8fafc',
@@ -343,28 +335,18 @@ const styles = StyleSheet.create({
     color: '#cbd5e1',
     fontSize: 12,
   },
-  tabRow: {
+  jobMetaRow: {
     flexDirection: 'row',
-    gap: 8,
-  },
-  tabButton: {
-    flex: 1,
-    minHeight: 34,
-    borderRadius: 10,
+    justifyContent: 'space-between',
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(30, 41, 59, 0.7)',
+    gap: 8,
+    marginTop: 4,
   },
-  tabButtonActive: {
-    backgroundColor: '#2563eb',
-  },
-  tabLabel: {
-    color: '#cbd5e1',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  tabLabelActive: {
+  jobMetaText: {
     color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '700',
+    flex: 1,
   },
   centerSlot: {
     alignItems: 'center',
@@ -388,12 +370,22 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   panelCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderRadius: 16,
     padding: 14,
-    minHeight: 210,
-    maxHeight: 320,
+    minHeight: 220,
     gap: 8,
+  },
+  panelToneNeutral: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+  },
+  panelToneWarning: {
+    backgroundColor: 'rgba(254, 243, 199, 0.98)',
+  },
+  panelToneError: {
+    backgroundColor: 'rgba(254, 226, 226, 0.98)',
+  },
+  panelToneSuccess: {
+    backgroundColor: 'rgba(220, 252, 231, 0.98)',
   },
   panelTitle: {
     color: '#0f172a',
@@ -404,39 +396,16 @@ const styles = StyleSheet.create({
     color: '#334155',
     fontSize: 13,
   },
+  panelMeta: {
+    color: '#475569',
+    fontSize: 12,
+  },
   panelError: {
     color: '#b91c1c',
     fontWeight: '600',
   },
-  actionsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 6,
-  },
-  jobsList: {
-    flexGrow: 0,
-  },
-  jobRow: {
-    borderWidth: 1,
-    borderColor: '#dbe3f0',
-    borderRadius: 10,
-    padding: 10,
-    gap: 2,
-    marginTop: 6,
-  },
-  jobRowHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  jobCustomer: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#0f172a',
-  },
-  jobAddress: {
-    color: '#475569',
-    fontSize: 12,
+  panelInfo: {
+    color: '#1d4ed8',
+    fontWeight: '600',
   },
 });

@@ -287,6 +287,17 @@ const AppShell = (): React.JSX.Element => {
         activeJob={activeJob}
         onRefreshJobs={refreshJobs}
         onOpenJobDetail={setSelectedJobId}
+        onJobUpdated={updatedJob => {
+          setJobs(prev => {
+            const index = prev.findIndex(job => job.id === updatedJob.id);
+            if (index === -1) {
+              return [updatedJob, ...prev];
+            }
+            const next = [...prev];
+            next[index] = updatedJob;
+            return next;
+          });
+        }}
       />
     );
   }
