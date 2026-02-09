@@ -1,4 +1,5 @@
 /// <reference types="vitest/globals" />
+import "@testing-library/jest-dom";
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import MapShellScreen from "../screens/MapShellScreen";
