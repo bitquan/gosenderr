@@ -15,6 +15,7 @@ const FEATURE_FLAGS = [
   { name: 'Long Routes', description: 'Enable regional routes (50-200mi)', enabled: true, category: 'delivery' },
   { name: 'Long Haul', description: 'Enable interstate routes (200+mi)', enabled: true, category: 'delivery' },
   { name: 'Live Tracking', description: 'Real-time delivery tracking on map', enabled: true, category: 'delivery' },
+  { name: 'Map Shell', description: 'Map-first courier experience (MapShell)', enabled: false, category: 'delivery' },
   
   // Courier
   { name: 'Courier Rate Cards', description: 'Custom rate cards per courier', enabled: true, category: 'system' },
@@ -121,7 +122,8 @@ export const FEATURE_FLAGS_CONFIG = {
     onDemand: true,
     routes: true,
     longRoutes: true,
-    longHaul: true
+    longHaul: true,
+    mapShell: false
   },
   courier: {
     rateCards: true,

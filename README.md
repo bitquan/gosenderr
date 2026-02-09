@@ -117,6 +117,17 @@ cd ../..
 
 4. **Run development servers:**
 
+### Stable Testing Worktree (Recommended)
+
+Use `senderr-live` for latest-features testing so you are never blocked by stale issue branches.
+
+```bash
+cd /Users/papadev/dev/apps/Gosenderr_local/worktrees/senderr-live
+bash scripts/sync-local.sh --install
+```
+
+This keeps a clean worktree aligned to `origin/senderr_app` for reliable local testing while issue worktrees continue active development.
+
 ### 🎯 Phase 1: Admin Desktop App (Electron)
 
 **One-command startup** for Phase 1 Admin Desktop development:
