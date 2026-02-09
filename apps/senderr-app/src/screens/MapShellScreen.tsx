@@ -40,7 +40,8 @@ export default function MapShellScreen({
     >
       {/* Map surface (background) */}
       <div className="absolute inset-0 z-0" role="region" aria-label="Map view">
-        <MapboxMap />
+        {/* Make the map fill the viewport */}
+        <MapboxMap height="100vh" />
       </div>
 
       {/* Overlay slots and page content */}
@@ -64,7 +65,7 @@ export default function MapShellScreen({
           <div data-testid="active-overlay" className="pointer-events-auto">
             <ActiveJobOverlay
               model={overlayModel}
-              onPrimaryAction={(a) => console.log('primary action', a)}
+              onPrimaryAction={(a) => console.log("primary action", a)}
             />
           </div>
 
