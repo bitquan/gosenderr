@@ -223,6 +223,77 @@
         "clear": false
       }
     },
+    {
+      "label": "Dev: iOS Open Xcode (live + issue)",
+      "type": "shell",
+      "command": "/Users/papadev/dev/apps/Gosenderr_local/scripts/open-senderr-xcode.sh ${input:issueNumber}",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "focus": false,
+        "clear": false
+      }
+    },
+    {
+      "label": "Dev: iOS Pods Clean Install",
+      "type": "shell",
+      "command": "bash scripts/ios-senderr.sh clean-install",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true,
+        "clear": false
+      }
+    },
+    {
+      "label": "Dev: iOS Bootstrap Issue (plist + pods)",
+      "type": "shell",
+      "command": "/Users/papadev/dev/apps/Gosenderr_local/scripts/bootstrap-senderr-worktree.sh ${input:issueNumber} --with-pods",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true,
+        "clear": false
+      }
+    },
+    {
+      "label": "Dev: iOS Metro (Issue, Reset Cache)",
+      "type": "shell",
+      "command": "cd /Users/papadev/dev/apps/Gosenderr_local/worktrees/issue-${input:issueNumber}/apps/courieriosnativeclean && npx react-native start --reset-cache",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^.*$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*Welcome to Metro.*",
+          "endsPattern": ".*waiting on.*"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": false,
+        "clear": true
+      }
+    },
+    {
+      "label": "Profile: Senderr Native (Xcode + Metro)",
+      "dependsOn": [
+        "Dev: iOS Open Xcode (live + issue)",
+        "Dev: iOS Metro (Issue, Reset Cache)"
+      ],
+      "dependsOrder": "parallel",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
 
     // ==================== CHECKS ====================
     {
@@ -411,6 +482,14 @@
         "reveal": "always",
         "panel": "shared"
       }
+    }
+  ],
+  "inputs": [
+    {
+      "id": "issueNumber",
+      "type": "promptString",
+      "description": "Issue number (example: 265)",
+      "default": "265"
     }
   ]
 }
