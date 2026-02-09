@@ -21,6 +21,7 @@ export function CreateJobModal({ isOpen, onClose, onJobCreated }: CreateJobModal
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [jobType, setJobType] = useState<'package' | 'food'>('package')
+  const [jobMode, setJobMode] = useState<'regular' | 'test'>('test')
   
   const [pickupQuery, setPickupQuery] = useState('')
   const [pickupSuggestions, setPickupSuggestions] = useState<LocationSuggestion[]>([])
@@ -154,7 +155,7 @@ export function CreateJobModal({ isOpen, onClose, onJobCreated }: CreateJobModal
         vehicleType: jobType === 'package' ? 'car' : 'scooter',
         description: description || '',
         createdAt: new Date(),
-        testRecord: true,
+        testRecord: jobMode === 'test',
         createdByAdmin: true,
       }
 
@@ -168,6 +169,7 @@ export function CreateJobModal({ isOpen, onClose, onJobCreated }: CreateJobModal
       setEstimatedFee('')
       setDescription('')
       setJobType('package')
+      setJobMode('test')
       
       onJobCreated()
       onClose()
@@ -184,7 +186,7 @@ export function CreateJobModal({ isOpen, onClose, onJobCreated }: CreateJobModal
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-900">+ Create Test Job</h2>
+          <h2 className="text-2xl font-bold text-gray-900">+ Create Job</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 text-2xl"
@@ -219,6 +221,35 @@ export function CreateJobModal({ isOpen, onClose, onJobCreated }: CreateJobModal
                   className="w-4 h-4"
                 />
                 <span className="text-gray-700">🍔 Food Delivery</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Job Mode */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-900 mb-3">
+              Job Mode
+            </label>
+            <div className="flex gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  value="test"
+                  checked={jobMode === 'test'}
+                  onChange={(e) => setJobMode(e.target.value as 'regular' | 'test')}
+                  className="w-4 h-4"
+                />
+                <span className="text-gray-700">🧪 Test Job</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  value="regular"
+                  checked={jobMode === 'regular'}
+                  onChange={(e) => setJobMode(e.target.value as 'regular' | 'test')}
+                  className="w-4 h-4"
+                />
+                <span className="text-gray-700">✅ Regular Job</span>
               </label>
             </div>
           </div>
