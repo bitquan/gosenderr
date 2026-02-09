@@ -441,3 +441,21 @@ Append-only log used for session recovery.
 - Blockers: None
 - Next:
   - Monitor CI on #234 and merge to senderr_app when green
+
+---
+
+## 2026-02-09 17:41 local (2026-02-09 22:41 UTC)
+
+- Status: `in_progress`
+- Summary: stabilize MapShell
+- Branch: `codex/issue-265-turn-by-turn-camera`
+- Commit: `1cd4717`
+- Issue: `#265`
+- PR: `n/a`
+- Files:
+  - `apps/courieriosnativeclean/src/services/jobsService.ts`
+  - `apps/courieriosnativeclean/src/screens/MapShellScreen.tsx`
+  - `docs/senderr_app/MapShell.md`
+- Blockers: None
+- Next:
+  - Open PR: codex/issue-265-turn-by-turn-camera -> senderr_app

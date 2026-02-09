@@ -36,6 +36,7 @@ type MapShellScreenProps = {
   onRefreshJobs: () => Promise<Job[]>;
   onOpenJobDetail: (jobId: string) => void;
   onJobUpdated: (job: Job) => void;
+  onOpenSettings: () => void;
 };
 
 type Feedback = {
@@ -134,6 +135,7 @@ export const MapShellScreen = ({
   onRefreshJobs,
   onOpenJobDetail,
   onJobUpdated,
+  onOpenSettings,
 }: MapShellScreenProps): React.JSX.Element => {
   const {session} = useAuth();
   const {
@@ -517,6 +519,11 @@ export const MapShellScreen = ({
                 );
               })}
             </View>
+            <View style={styles.headerActionsRow}>
+              <Pressable style={styles.settingsChip} onPress={onOpenSettings}>
+                <Text style={styles.settingsChipText}>Settings</Text>
+              </Pressable>
+            </View>
           </View>
         </View>
 
@@ -613,6 +620,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     marginTop: 6,
+  },
+  headerActionsRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 2,
+  },
+  settingsChip: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(191, 219, 254, 0.75)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  settingsChipText: {
+    color: '#dbeafe',
+    fontSize: 12,
+    fontWeight: '700',
   },
   cameraChip: {
     borderRadius: 999,
