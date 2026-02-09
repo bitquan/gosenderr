@@ -27,6 +27,7 @@ import EquipmentPage from './pages/equipment/page'
 import SetupPage from './pages/setup/page'
 import EarningsPage from './pages/earnings/page'
 import ProfilePage from './pages/Profile'
+import MapShellPage from './pages/map-shell'
 import { StripeModeBanner } from './components/StripeModeBanner'
 
 function ProtectedRoute() {
@@ -101,6 +102,7 @@ function App() {
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/support" element={<SupportPage />} />
+              <Route path="/map-shell" element={<MapShellPage />} />
               <Route path="/onboarding" element={<OnboardingPage />} />
               <Route path="/onboarding/stripe" element={<StripeOnboardingPage />} />
             </Route>
