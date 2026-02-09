@@ -15,9 +15,17 @@ export type MapShellRouteSummary = {
   legLabel: string;
 };
 
+export type MapShellRoutePlan = {
+  points: RouteCoordinate[];
+  legLabel: string;
+};
+
 const toRadians = (value: number): number => (value * Math.PI) / 180;
 
-const distanceMeters = (from: RouteCoordinate, to: RouteCoordinate): number => {
+export const distanceMeters = (
+  from: RouteCoordinate,
+  to: RouteCoordinate,
+): number => {
   const earthRadius = 6_371_000;
   const latitudeDelta = toRadians(to.latitude - from.latitude);
   const longitudeDelta = toRadians(to.longitude - from.longitude);
@@ -69,7 +77,7 @@ const uniqueCoordinates = (points: RouteCoordinate[]): RouteCoordinate[] => {
   return next;
 };
 
-const calculateDistance = (coordinates: RouteCoordinate[]): number => {
+export const calculateRouteDistance = (coordinates: RouteCoordinate[]): number => {
   if (coordinates.length < 2) {
     return 0;
   }
@@ -81,7 +89,7 @@ const calculateDistance = (coordinates: RouteCoordinate[]): number => {
   return total;
 };
 
-const estimateEtaMinutes = (distance: number): number | null => {
+export const estimateEtaMinutes = (distance: number): number | null => {
   if (distance <= 0) {
     return null;
   }
@@ -90,21 +98,16 @@ const estimateEtaMinutes = (distance: number): number | null => {
   return Math.max(1, minutes);
 };
 
-export const buildMapShellRouteSummary = (
+export const buildMapShellRoutePlan = (
   activeJob: Job | null,
   courierLocation: LocationSnapshot | null,
-): MapShellRouteSummary => {
+): MapShellRoutePlan => {
   const courier = toCoordinate(courierLocation);
   const pickup = toCoordinate(activeJob?.pickupLocation ?? null);
   const dropoff = toCoordinate(activeJob?.dropoffLocation ?? null);
 
   if (!activeJob || activeJob.status === 'cancelled' || activeJob.status === 'delivered') {
-    return {
-      coordinates: courier ? [courier] : [],
-      distanceMeters: 0,
-      etaMinutes: null,
-      legLabel: 'Waiting for active job',
-    };
+    return {points: courier ? [courier] : [], legLabel: 'Waiting for active job'};
   }
 
   const points: RouteCoordinate[] = [];
@@ -141,14 +144,23 @@ export const buildMapShellRouteSummary = (
     }
   }
 
-  const coordinates = uniqueCoordinates(points);
-  const totalDistance = calculateDistance(coordinates);
-
   return {
-    coordinates,
+    points: uniqueCoordinates(points),
+    legLabel,
+  };
+};
+
+export const buildMapShellRouteSummary = (
+  activeJob: Job | null,
+  courierLocation: LocationSnapshot | null,
+): MapShellRouteSummary => {
+  const plan = buildMapShellRoutePlan(activeJob, courierLocation);
+  const totalDistance = calculateRouteDistance(plan.points);
+  return {
+    coordinates: plan.points,
     distanceMeters: totalDistance,
     etaMinutes: estimateEtaMinutes(totalDistance),
-    legLabel,
+    legLabel: plan.legLabel,
   };
 };
 
