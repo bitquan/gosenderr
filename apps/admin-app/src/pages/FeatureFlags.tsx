@@ -3,8 +3,8 @@ import {
   collection,
   doc,
   getDoc,
+  getDocs,
   limit,
-  onSnapshot,
   orderBy,
   query,
   serverTimestamp,
@@ -190,10 +190,10 @@ export default function FeatureFlagsPage() {
   const [badgeSaving, setBadgeSaving] = useState(false);
 
   useEffect(() => {
-    const ref = doc(db, "featureFlags", "config");
-    const unsubscribe = onSnapshot(
-      ref,
-      (snapshot) => {
+    let mounted = true;
+    getDoc(doc(db, "featureFlags", "config"))
+      .then((snapshot) => {
+        if (!mounted) return;
         if (snapshot.exists()) {
           const config = normalizeFlags(snapshot.data() as FeatureFlags);
           setFlags(config);
@@ -203,26 +203,26 @@ export default function FeatureFlagsPage() {
           setEditedFlags(DEFAULT_FEATURE_FLAGS);
         }
         setLoading(false);
-      },
-      (snapshotError) => {
+      })
+      .catch((snapshotError) => {
+        if (!mounted) return;
         console.error("Error loading feature flags:", snapshotError);
         setError("Failed to load feature flags.");
+        setFlags(DEFAULT_FEATURE_FLAGS);
+        setEditedFlags(DEFAULT_FEATURE_FLAGS);
         setLoading(false);
-      },
-    );
-
-    return () => unsubscribe();
+      });
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   useEffect(() => {
-    const adsQuery = query(
-      collection(db, "senderrplaceAds"),
-      orderBy("createdAt", "desc"),
-      limit(100),
-    );
-    const unsubscribe = onSnapshot(
-      adsQuery,
-      (snapshot) => {
+    let mounted = true;
+    const adsQuery = query(collection(db, "senderrplaceAds"), orderBy("createdAt", "desc"), limit(100));
+    getDocs(adsQuery)
+      .then((snapshot) => {
+        if (!mounted) return;
         const nextAds = snapshot.docs.map((adDoc) => {
           const data = adDoc.data() as Record<string, unknown>;
           return {
@@ -244,8 +244,9 @@ export default function FeatureFlagsPage() {
         setAds(nextAds);
         setAdsLoading(false);
         setAdActionError(null);
-      },
-      (snapshotError) => {
+      })
+      .catch((snapshotError) => {
+        if (!mounted) return;
         console.error("Error loading senderrplace ads:", snapshotError);
         if (isPermissionDenied(snapshotError)) {
           setAdActionError("Ads require admin access.");
@@ -254,21 +255,18 @@ export default function FeatureFlagsPage() {
         }
         setAdActionError("Failed to load ads.");
         setAdsLoading(false);
-      },
-    );
-
-    return () => unsubscribe();
+      });
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   useEffect(() => {
-    const badgesQuery = query(
-      collection(db, "senderrplaceSellerBadges"),
-      orderBy("updatedAt", "desc"),
-      limit(100),
-    );
-    const unsubscribe = onSnapshot(
-      badgesQuery,
-      (snapshot) => {
+    let mounted = true;
+    const badgesQuery = query(collection(db, "senderrplaceSellerBadges"), orderBy("updatedAt", "desc"), limit(100));
+    getDocs(badgesQuery)
+      .then((snapshot) => {
+        if (!mounted) return;
         const nextDocs = snapshot.docs.map((badgeDoc) => {
           const data = badgeDoc.data() as Record<string, unknown>;
           const badgeEntries = Array.isArray(data.badges)
@@ -287,8 +285,9 @@ export default function FeatureFlagsPage() {
         setBadges(nextDocs);
         setBadgesLoading(false);
         setBadgeActionError(null);
-      },
-      (snapshotError) => {
+      })
+      .catch((snapshotError) => {
+        if (!mounted) return;
         console.error("Error loading seller badges:", snapshotError);
         if (isPermissionDenied(snapshotError)) {
           setBadgeActionError("Seller badge overrides require admin access.");
@@ -297,10 +296,10 @@ export default function FeatureFlagsPage() {
         }
         setBadgeActionError("Failed to load badge overrides.");
         setBadgesLoading(false);
-      },
-    );
-
-    return () => unsubscribe();
+      });
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const hasChanges = useMemo(
