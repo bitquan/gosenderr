@@ -1,15 +1,19 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {StyleSheet, Text, View} from 'react-native';
-import MapView, {Marker, type Region} from 'react-native-maps';
+import MapView, {Marker, Polyline, type Region} from 'react-native-maps';
 
 import {validateMapsConfig} from '../config/maps';
 import {useServiceRegistry} from '../services/serviceRegistry';
 import type {LocationSnapshot} from '../services/ports/locationPort';
+import type {MapShellCameraMode, RouteCoordinate} from '../screens/viewModels/mapShellRouteView';
 import type {Job} from '../types/jobs';
 
 type MapShellSurfaceProps = {
   activeJob: Job | null;
   courierLocation: LocationSnapshot | null;
+  routeCoordinates: RouteCoordinate[];
+  cameraMode: MapShellCameraMode;
+  onCameraModeChange: (mode: MapShellCameraMode) => void;
 };
 
 type MapPoint = {
@@ -43,6 +47,9 @@ const buildRegion = (point: MapPoint | undefined): Region => {
 export const MapShellSurface = ({
   activeJob,
   courierLocation,
+  routeCoordinates,
+  cameraMode,
+  onCameraModeChange,
 }: MapShellSurfaceProps): React.JSX.Element => {
   const {featureFlags} = useServiceRegistry();
   const {state: flagsState} = featureFlags.useFeatureFlags();
@@ -87,54 +94,81 @@ export const MapShellSurface = ({
     return next;
   }, [activeJob, courierLocation]);
 
-  useEffect(() => {
-    if (
-      !mapRoutingEnabled ||
-      !mapReady ||
-      !mapRef.current ||
-      points.length < 2
-    ) {
-      return;
-    }
-
-    mapRef.current.fitToCoordinates(
+  const markerCoordinates = useMemo(
+    () =>
       points.map(point => ({
         latitude: point.latitude,
         longitude: point.longitude,
       })),
-      {
-        animated: true,
-        edgePadding: {
-          top: 96,
-          right: 64,
-          bottom: 240,
-          left: 64,
-        },
-      },
-    );
-  }, [mapReady, mapRoutingEnabled, points]);
+    [points],
+  );
 
   useEffect(() => {
     if (
       !mapRoutingEnabled ||
       !mapReady ||
       !mapRef.current ||
-      points.length !== 1
+      cameraMode !== 'fit_route'
     ) {
       return;
     }
 
-    const point = points[0];
-    mapRef.current.animateToRegion(
+    const coordinates = routeCoordinates.length >= 2 ? routeCoordinates : markerCoordinates;
+    if (coordinates.length >= 2) {
+      mapRef.current.fitToCoordinates(coordinates, {
+        animated: true,
+        edgePadding: {
+          top: 160,
+          right: 72,
+          bottom: 260,
+          left: 72,
+        },
+      });
+      return;
+    }
+
+    if (coordinates.length === 1) {
+      const point = coordinates[0];
+      mapRef.current.animateToRegion(
+        {
+          latitude: point.latitude,
+          longitude: point.longitude,
+          latitudeDelta: 0.02,
+          longitudeDelta: 0.02,
+        },
+        350,
+      );
+    }
+  }, [
+    cameraMode,
+    mapReady,
+    mapRoutingEnabled,
+    markerCoordinates,
+    routeCoordinates,
+  ]);
+
+  useEffect(() => {
+    if (
+      !mapRoutingEnabled ||
+      !mapReady ||
+      !mapRef.current ||
+      cameraMode !== 'follow_courier' ||
+      !courierLocation
+    ) {
+      return;
+    }
+
+    mapRef.current.animateCamera(
       {
-        latitude: point.latitude,
-        longitude: point.longitude,
-        latitudeDelta: 0.015,
-        longitudeDelta: 0.015,
+        center: {
+          latitude: courierLocation.latitude,
+          longitude: courierLocation.longitude,
+        },
+        zoom: 15,
       },
-      350,
+      {duration: 300},
     );
-  }, [mapReady, mapRoutingEnabled, points]);
+  }, [cameraMode, courierLocation, mapReady, mapRoutingEnabled]);
 
   if (!mapRoutingEnabled) {
     return (
@@ -157,6 +191,11 @@ export const MapShellSurface = ({
         initialRegion={buildRegion(points[0])}
         rotateEnabled
         pitchEnabled
+        onPanDrag={() => {
+          if (cameraMode !== 'manual') {
+            onCameraModeChange('manual');
+          }
+        }}
         toolbarEnabled={false}
         onMapReady={() => setMapReady(true)}>
         {points.map(point => (
@@ -170,6 +209,15 @@ export const MapShellSurface = ({
             pinColor={point.color}
           />
         ))}
+        {routeCoordinates.length >= 2 ? (
+          <Polyline
+            coordinates={routeCoordinates}
+            strokeColor="#2563eb"
+            strokeWidth={4}
+            lineCap="round"
+            lineJoin="round"
+          />
+        ) : null}
       </MapView>
 
       <View pointerEvents="none" style={styles.mapStatus}>
