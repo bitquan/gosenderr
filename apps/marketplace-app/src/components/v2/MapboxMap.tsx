@@ -1,14 +1,19 @@
 
 import { useEffect, useRef, useState } from "react";
-import { GeoPoint, CourierLocation, JobProofPhoto } from "@/lib/v2/types";
+import { GeoPoint, CourierLocation } from "@/lib/v2/types";
 import { getMapboxToken } from "@/lib/mapbox/mapbox";
+
+interface ProofMarkerData {
+  url: string;
+  location?: { lat: number; lng: number } | null;
+}
 
 interface MapboxMapProps {
   pickup: GeoPoint;
   dropoff: GeoPoint;
   courierLocation?: CourierLocation | null;
-  pickupProof?: JobProofPhoto | null;
-  dropoffProof?: JobProofPhoto | null;
+  pickupProof?: ProofMarkerData | null;
+  dropoffProof?: ProofMarkerData | null;
   height?: string;
 }
 
@@ -24,6 +29,13 @@ export function MapboxMap({
   const mapRef = useRef<any>(null);
   const markersRef = useRef<{ pickup?: any; dropoff?: any; courier?: any; pickupProof?: any; dropoffProof?: any }>({});
   const [hasToken, setHasToken] = useState<boolean | null>(null);
+
+  const hasCourierLocation =
+    !!courierLocation &&
+    typeof courierLocation.lat === "number" &&
+    typeof courierLocation.lng === "number";
+  const useMovingPickupProofMarker =
+    !!pickupProof?.url && !dropoffProof?.url && hasCourierLocation;
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -60,6 +72,19 @@ export function MapboxMap({
         mapRef.current = map;
 
         map.on("load", () => {
+          const createPhotoMarker = (url: string) => {
+            const el = document.createElement("div");
+            el.style.width = "48px";
+            el.style.height = "48px";
+            el.style.borderRadius = "12px";
+            el.style.border = "2px solid #ffffff";
+            el.style.backgroundImage = `url(${url})`;
+            el.style.backgroundSize = "cover";
+            el.style.backgroundPosition = "center";
+            el.style.boxShadow = "0 6px 14px rgba(0,0,0,0.2)";
+            return el;
+          };
+
           // Add pickup marker (green)
           markersRef.current.pickup = new mapboxgl.Marker({ color: "#16a34a" })
             .setLngLat([pickup.lng, pickup.lat])
@@ -71,32 +96,6 @@ export function MapboxMap({
             .addTo(map);
 
           // Add dropoff marker (red)
-                    const createPhotoMarker = (url: string) => {
-                      const el = document.createElement("div");
-                      el.style.width = "48px";
-                      el.style.height = "48px";
-                      el.style.borderRadius = "12px";
-                      el.style.border = "2px solid #ffffff";
-                      el.style.backgroundImage = `url(${url})`;
-                      el.style.backgroundSize = "cover";
-                      el.style.backgroundPosition = "center";
-                      el.style.boxShadow = "0 6px 14px rgba(0,0,0,0.2)";
-                      return el;
-                    };
-
-                    if (pickupProof?.location) {
-                      markersRef.current.pickupProof = new mapboxgl.Marker({ element: createPhotoMarker(pickupProof.url) })
-                        .setLngLat([pickupProof.location.lng, pickupProof.location.lat])
-                        .setPopup(new mapboxgl.Popup().setHTML("<strong>Pickup photo</strong>"))
-                        .addTo(map);
-                    }
-
-                    if (dropoffProof?.location) {
-                      markersRef.current.dropoffProof = new mapboxgl.Marker({ element: createPhotoMarker(dropoffProof.url) })
-                        .setLngLat([dropoffProof.location.lng, dropoffProof.location.lat])
-                        .setPopup(new mapboxgl.Popup().setHTML("<strong>Dropoff photo</strong>"))
-                        .addTo(map);
-                    }
           markersRef.current.dropoff = new mapboxgl.Marker({ color: "#dc2626" })
             .setLngLat([dropoff.lng, dropoff.lat])
             .setPopup(
@@ -140,6 +139,24 @@ export function MapboxMap({
                     "line-opacity": 0.75,
                   },
                 });
+              }
+
+              if (pickupProof?.url && pickupProof?.location) {
+                markersRef.current.pickupProof = new mapboxgl.Marker({
+                  element: createPhotoMarker(pickupProof.url),
+                })
+                  .setLngLat([pickupProof.location.lng, pickupProof.location.lat])
+                  .setPopup(new mapboxgl.Popup().setHTML("<strong>Pickup photo</strong>"))
+                  .addTo(map);
+              }
+
+              if (dropoffProof?.url && dropoffProof?.location) {
+                markersRef.current.dropoffProof = new mapboxgl.Marker({
+                  element: createPhotoMarker(dropoffProof.url),
+                })
+                  .setLngLat([dropoffProof.location.lng, dropoffProof.location.lat])
+                  .setPopup(new mapboxgl.Popup().setHTML("<strong>Dropoff photo</strong>"))
+                  .addTo(map);
               }
             } catch (error) {
               console.error("Error fetching route:", error);
@@ -219,7 +236,15 @@ export function MapboxMap({
     const mapboxgl = window.mapboxgl;
     if (!mapboxgl) return;
 
-    if (courierLocation && courierLocation.lat && courierLocation.lng) {
+    if (useMovingPickupProofMarker) {
+      if (markersRef.current.courier) {
+        markersRef.current.courier.remove();
+        markersRef.current.courier = null;
+      }
+      return;
+    }
+
+    if (hasCourierLocation && courierLocation) {
       if (markersRef.current.courier) {
         // Update existing marker position
         markersRef.current.courier.setLngLat([
@@ -240,7 +265,12 @@ export function MapboxMap({
         markersRef.current.courier = null;
       }
     }
-  }, [courierLocation?.lat, courierLocation?.lng]);
+  }, [
+    courierLocation?.lat,
+    courierLocation?.lng,
+    hasCourierLocation,
+    useMovingPickupProofMarker,
+  ]);
 
   useEffect(() => {
     if (!mapRef.current) return;
@@ -262,24 +292,38 @@ export function MapboxMap({
       return el;
     };
 
-    if (pickupProof?.location) {
+    const pickupMarkerLocation = useMovingPickupProofMarker
+      ? {
+          lat: courierLocation!.lat,
+          lng: courierLocation!.lng,
+        }
+      : pickupProof?.location;
+
+    if (pickupProof?.url && pickupMarkerLocation) {
+      const popupText = useMovingPickupProofMarker
+        ? "<strong>Package in transit</strong><br/>Live with your senderr"
+        : "<strong>Pickup photo</strong>";
+
       if (markersRef.current.pickupProof) {
         markersRef.current.pickupProof.setLngLat([
-          pickupProof.location.lng,
-          pickupProof.location.lat,
+          pickupMarkerLocation.lng,
+          pickupMarkerLocation.lat,
         ]);
       } else {
         markersRef.current.pickupProof = new mapboxgl.Marker({ element: createPhotoMarker(pickupProof.url) })
-          .setLngLat([pickupProof.location.lng, pickupProof.location.lat])
-          .setPopup(new mapboxgl.Popup().setHTML("<strong>Pickup photo</strong>"))
+          .setLngLat([pickupMarkerLocation.lng, pickupMarkerLocation.lat])
+          .setPopup(new mapboxgl.Popup().setHTML(popupText))
           .addTo(mapRef.current);
       }
+      markersRef.current.pickupProof.setPopup(
+        new mapboxgl.Popup().setHTML(popupText),
+      );
     } else if (markersRef.current.pickupProof) {
       markersRef.current.pickupProof.remove();
       markersRef.current.pickupProof = null;
     }
 
-    if (dropoffProof?.location) {
+    if (dropoffProof?.url && dropoffProof?.location) {
       if (markersRef.current.dropoffProof) {
         markersRef.current.dropoffProof.setLngLat([
           dropoffProof.location.lng,
@@ -302,6 +346,9 @@ export function MapboxMap({
     dropoffProof?.url,
     dropoffProof?.location?.lat,
     dropoffProof?.location?.lng,
+    courierLocation?.lat,
+    courierLocation?.lng,
+    useMovingPickupProofMarker,
   ]);
 
   if (hasToken === false) {

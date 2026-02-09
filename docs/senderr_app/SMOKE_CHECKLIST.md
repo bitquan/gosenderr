@@ -50,7 +50,9 @@ npx react-native start --reset-cache
 
 Expected:
 - App boots without immediate red screen
-- Core shell routes load (Dashboard / Jobs / Settings)
+- MapShell loads as the primary surface when `featureFlags.senderrIos.mapShell=true`
+- Top + bottom map overlays render without blocking map interactions
+- Settings bottom-sheet opens/closes without resetting active job/session map state
 
 ## 5) Physical device smoke (when testing on phone)
 
@@ -65,19 +67,23 @@ Expected:
 - Device reaches Metro
 - App launches and loads JS bundle
 
-## 6) UX reliability smoke (issues #206/#208/#209)
+## 6) MapShell state reliability smoke (issues #250/#251/#252)
 
 Validate these states before merge:
 
-- Dashboard
-  - Loading / empty / error state cards appear correctly for jobs.
-  - Tracking card shows `Tracking status`, `Upload health`, and `Last sync`.
-  - Retry button appears when tracking/sync health is degraded or error.
-- Jobs
-  - Sync card updates tone and message for `live`, `reconnecting`, and `error`.
-  - Manual `Retry sync` is available on degraded/error sync states.
-  - Empty and error states expose clear recovery actions.
-- Settings
-  - Courier profile loads from Firebase/local fallback and can be saved.
-  - Package and food rate cards validate and persist.
-  - In non-prod builds, `Feature Flags (Debug)` shows effective flag values and refresh works.
+- `offer`
+  - Pending job renders pickup/dropoff context and `Accept Job` action.
+- `accepted` / `enroute_pickup` / `arrived_pickup`
+  - Route summary updates and state transitions reach `Confirm Pickup`.
+- `picked_up` / `enroute_dropoff` / `arrived_dropoff`
+  - Route and ETA stay visible; completion action is available at dropoff arrival.
+- `proof_required`
+  - Proof-required state surfaces warning tone before completion.
+- `offline_reconnect`
+  - Reconnect state appears when sync is `reconnecting`, `stale`, or `error`.
+  - `Retry Sync` action remains available.
+
+Location and settings checks:
+- In-shell location chip supports repeated `Enable location` -> `Start tracking` -> `Stop tracking`.
+- Settings/profile overlay can be opened from map shell and closed without leaving map context.
+- Profile save and feature flag debug behavior still work from overlay.
