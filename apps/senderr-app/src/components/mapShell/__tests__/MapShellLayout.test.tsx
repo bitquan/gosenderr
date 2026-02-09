@@ -30,6 +30,23 @@ describe("MapShellLayout slots", () => {
     );
 
     const slotContainer = within(container).getByTestId("slot-center");
-    expect(within(slotContainer).getByTestId("slot-center-content")).toBeTruthy();
+    expect(
+      within(slotContainer).getByTestId("slot-center-content"),
+    ).toBeTruthy();
+  });
+
+  it("renders bottomRight slot content", () => {
+    const { container } = render(
+      <MapShellLayout>
+        <Slot name="bottomRight">
+          <div data-testid="slot-bottom-right-content">BR</div>
+        </Slot>
+      </MapShellLayout>,
+    );
+
+    const slotContainer = within(container).getByTestId("slot-bottom-right");
+    expect(
+      within(slotContainer).getByTestId("slot-bottom-right-content"),
+    ).toBeTruthy();
   });
 });

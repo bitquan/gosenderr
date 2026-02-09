@@ -30,9 +30,9 @@ import { fireEvent, waitFor, within } from "@testing-library/react";
 
 describe("MapShellScreen interactions", () => {
   it("invokes claimJob when Accept Job is clicked (dev) and handles error", async () => {
-    render(<MapShellScreen />);
+    const { container, unmount } = render(<MapShellScreen />);
 
-    const overlay = screen.getByTestId("active-overlay");
+    const overlay = within(container).getByTestId("active-overlay");
     const btn = within(overlay).getByRole("button", { name: /Accept Job/i });
     fireEvent.click(btn);
 
@@ -40,6 +40,72 @@ describe("MapShellScreen interactions", () => {
     await waitFor(() =>
       expect((alertSpy as any).mock.calls.length).toBeGreaterThanOrEqual(1),
     );
+    alertSpy.mockClear();
+
+    // Unmount first render before subsequent renders to avoid duplicate nodes
+    unmount();
+
+    // Now simulate accepted state and request location permission failing
+    const acceptedModel = {
+      state: "accepted",
+      title: "Job accepted",
+      description: "Enable location",
+      primaryLabel: "Enable Location",
+      primaryAction: "request_location_permission",
+      nextStatus: null,
+      tone: "neutral",
+    } as any;
+
+    const { container: c2, unmount: u2 } = render(
+      <MapShellScreen devOverlayModel={acceptedModel} />,
+    );
+    const accOverlay = within(c2).getByTestId("active-overlay");
+    const accBtn = within(accOverlay).getByRole("button", {
+      name: /Enable Location/i,
+    });
+
+    // Mock permission failure
+    (navigator as any).geolocation = {
+      getCurrentPosition: (_s: any, err: any) =>
+        err({ code: 1, message: "Permission denied" }),
+    };
+
+    fireEvent.click(accBtn);
+    await waitFor(() =>
+      expect((alertSpy as any).mock.calls.length).toBeGreaterThanOrEqual(1),
+    );
+
+    alertSpy.mockClear();
+
+    u2();
+
+    // Now simulate accepted state with permission granted
+    const acceptedModel2 = {
+      ...acceptedModel,
+      primaryLabel: "Start Tracking",
+      primaryAction: "start_tracking",
+    } as any;
+    const { container: c3, unmount: u3 } = render(
+      <MapShellScreen devOverlayModel={acceptedModel2} />,
+    );
+    const accOverlay2 = within(c3).getByTestId("active-overlay");
+    const accBtn2 = within(accOverlay2).getByRole("button", {
+      name: /Start Tracking/i,
+    });
+
+    (navigator as any).geolocation = {
+      getCurrentPosition: (s: any) =>
+        s({ coords: { latitude: 1, longitude: 2 } }),
+    };
+
+    fireEvent.click(accBtn2);
+    await waitFor(() =>
+      expect((alertSpy as any).mock.calls.length).toBeGreaterThanOrEqual(1),
+    );
+
+    u3();
+
+    alertSpy.mockRestore();
     alertSpy.mockRestore();
   });
 });

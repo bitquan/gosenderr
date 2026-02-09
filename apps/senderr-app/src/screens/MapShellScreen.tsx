@@ -12,14 +12,19 @@ import { claimJob, updateJobStatus } from "@/lib/v2/jobs";
 export type MapShellScreenProps = {
   className?: string;
   children?: React.ReactNode;
+  // Optional dev injection for overlay model so tests and previews can simulate states
+  devOverlayModel?: any;
 };
 
 export default function MapShellScreen({
   className = "",
   children,
+  devOverlayModel,
 }: MapShellScreenProps) {
   // Dev placeholder state for overlay preview
   const overlayModel = useMemo(() => {
+    if (devOverlayModel) return devOverlayModel;
+
     const pendingJob = {
       id: "dev_job_1",
       status: "pending",
@@ -35,7 +40,7 @@ export default function MapShellScreen({
       tracking: false,
       hasPermission: false,
     });
-  }, []);
+  }, [devOverlayModel]);
 
   const { uid } = useAuthUser();
 
@@ -65,13 +70,24 @@ export default function MapShellScreen({
         return;
       }
 
-      if (action === "start_tracking") {
-        alert("Starting tracking (dev)");
-        return;
-      }
-
-      if (action === "request_location_permission") {
-        alert("Please enable location permission in your browser (dev)");
+      if (
+        action === "start_tracking" ||
+        action === "request_location_permission"
+      ) {
+        try {
+          await import("@/lib/location").then(async (mod) => {
+            try {
+              await mod.requestLocation();
+              alert("Starting tracking (dev)");
+            } catch (err) {
+              console.error("Location request failed", err);
+              alert("Please enable location permission in your browser (dev)");
+            }
+          });
+        } catch (err) {
+          console.error("Location helper failed", err);
+          alert("Please enable location permission in your browser (dev)");
+        }
         return;
       }
 
