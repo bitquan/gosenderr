@@ -15,6 +15,7 @@ describe('featureFlagsService', () => {
         notifications: true,
         mapRouting: false,
         jobStatusActions: false,
+        mapShell: false,
       },
     });
 
@@ -22,6 +23,7 @@ describe('featureFlagsService', () => {
     expect(parsed.notifications).toBe(true);
     expect(parsed.mapRouting).toBe(false);
     expect(parsed.jobStatusActions).toBe(false);
+    expect(parsed.mapShell).toBe(false);
   });
 
   it('falls back to global flags when senderrIos namespace is absent', () => {
@@ -34,11 +36,13 @@ describe('featureFlagsService', () => {
       },
       delivery: {
         routes: false,
+        mapShell: false,
       },
     });
 
     expect(parsed.trackingUpload).toBe(false);
     expect(parsed.notifications).toBe(false);
     expect(parsed.mapRouting).toBe(false);
+    expect(parsed.mapShell).toBe(false);
   });
 });
