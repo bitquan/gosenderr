@@ -10,17 +10,21 @@ import type {
   JobStatusCommandResult,
   JobsSyncState,
 } from '../services/ports/jobsPort';
+import {fetchRoadRoute} from '../services/routeService';
 import {buildMapShellOverlayModel, type MapShellState} from './mapShellOverlayController';
 import {
+  buildMapShellRoutePlan,
   buildMapShellRouteSummary,
+  calculateRouteDistance,
+  estimateEtaMinutes,
   formatRouteDistance,
   type MapShellCameraMode,
+  type RouteCoordinate,
 } from './viewModels/mapShellRouteView';
 import {
   formatLocationSampleTime,
   formatSyncTime,
 } from './viewModels/jobsViewState';
-import {SettingsScreen} from './SettingsScreen';
 import type {Job} from '../types/jobs';
 
 type MapShellScreenProps = {
@@ -39,10 +43,70 @@ type Feedback = {
   tone: 'error' | 'info';
 };
 
+type ResolvedRouteState = {
+  coordinates: RouteCoordinate[];
+  distanceMeters: number;
+  etaMinutes: number | null;
+  source: 'road' | 'direct';
+};
+
+const OFF_ROUTE_THRESHOLD_METERS = 120;
+const ROUTE_REFRESH_COOLDOWN_MS = 12_000;
+
 const isSyncDegraded = (syncState: JobsSyncState): boolean =>
   syncState.status === 'reconnecting' ||
   syncState.status === 'stale' ||
   syncState.status === 'error';
+
+const distancePointToSegmentMeters = (
+  point: RouteCoordinate,
+  start: RouteCoordinate,
+  end: RouteCoordinate,
+): number => {
+  const latitudeScale = 111_320;
+  const longitudeScale = latitudeScale * Math.cos((point.latitude * Math.PI) / 180);
+
+  const px = point.longitude * longitudeScale;
+  const py = point.latitude * latitudeScale;
+  const sx = start.longitude * longitudeScale;
+  const sy = start.latitude * latitudeScale;
+  const ex = end.longitude * longitudeScale;
+  const ey = end.latitude * latitudeScale;
+
+  const dx = ex - sx;
+  const dy = ey - sy;
+  if (dx === 0 && dy === 0) {
+    return Math.sqrt((px - sx) ** 2 + (py - sy) ** 2);
+  }
+
+  const t = Math.max(0, Math.min(1, ((px - sx) * dx + (py - sy) * dy) / (dx ** 2 + dy ** 2)));
+  const closestX = sx + t * dx;
+  const closestY = sy + t * dy;
+  return Math.sqrt((px - closestX) ** 2 + (py - closestY) ** 2);
+};
+
+const distanceToPolylineMeters = (
+  point: RouteCoordinate,
+  coordinates: RouteCoordinate[],
+): number => {
+  if (coordinates.length < 2) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  let minDistance = Number.POSITIVE_INFINITY;
+  for (let index = 1; index < coordinates.length; index += 1) {
+    const segmentDistance = distancePointToSegmentMeters(
+      point,
+      coordinates[index - 1],
+      coordinates[index],
+    );
+    if (segmentDistance < minDistance) {
+      minDistance = segmentDistance;
+    }
+  }
+
+  return minDistance;
+};
 
 const toFeedbackFromResult = (
   result: JobStatusCommandResult,
@@ -81,13 +145,15 @@ export const MapShellScreen = ({
     state: locationState,
     requestPermission,
     startTracking,
-    stopTracking,
   } = locationService.useLocationTracking();
 
   const [actionBusy, setActionBusy] = useState(false);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [cameraMode, setCameraMode] = useState<MapShellCameraMode>('fit_route');
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [routeState, setRouteState] = useState<ResolvedRouteState | null>(null);
+  const [routeBusy, setRouteBusy] = useState(false);
+  const lastRouteFetchAtRef = useRef(0);
+  const routeRequestInFlightRef = useRef(false);
   const latestJob = useMemo(() => jobs[0] ?? null, [jobs]);
   const syncDegraded = isSyncDegraded(jobsSyncState);
 
@@ -113,9 +179,25 @@ export const MapShellScreen = ({
 
   const previousStateRef = useRef<MapShellState | null>(null);
   const latestKnownStatus = activeJob?.status ?? latestJob?.status ?? 'none';
-  const routeSummary = useMemo(
+  const baseRouteSummary = useMemo(
     () => buildMapShellRouteSummary(activeJob, locationState.lastLocation),
     [activeJob, locationState.lastLocation],
+  );
+  const routePlan = useMemo(
+    () => buildMapShellRoutePlan(activeJob, locationState.lastLocation),
+    [activeJob, locationState.lastLocation],
+  );
+  const routeSummary = useMemo(
+    () =>
+      routeState
+        ? {
+            coordinates: routeState.coordinates,
+            distanceMeters: routeState.distanceMeters,
+            etaMinutes: routeState.etaMinutes,
+            legLabel: baseRouteSummary.legLabel,
+          }
+        : baseRouteSummary,
+    [baseRouteSummary, routeState],
   );
   const displayEtaMinutes = routeSummary.etaMinutes ?? activeJob?.etaMinutes ?? null;
   const cameraLabels: Record<MapShellCameraMode, string> = {
@@ -126,7 +208,131 @@ export const MapShellScreen = ({
 
   useEffect(() => {
     setCameraMode('fit_route');
+    setRouteState(null);
   }, [activeJob?.id]);
+
+  const routeLifecycleKey = useMemo(
+    () => `${activeJob?.id ?? 'none'}:${activeJob?.status ?? 'none'}`,
+    [activeJob?.id, activeJob?.status],
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    const shouldFetchRoute =
+      Boolean(activeJob) &&
+      routePlan.points.length >= 2 &&
+      activeJob?.status !== 'cancelled' &&
+      activeJob?.status !== 'delivered';
+
+    if (!shouldFetchRoute) {
+      setRouteState(null);
+      return;
+    }
+    if (routeState) {
+      return;
+    }
+
+    const refreshRoute = async (): Promise<void> => {
+      if (routeRequestInFlightRef.current) {
+        return;
+      }
+      routeRequestInFlightRef.current = true;
+      setRouteBusy(true);
+      try {
+        const roadRoute = await fetchRoadRoute(routePlan.points);
+        if (cancelled) {
+          return;
+        }
+
+        if (roadRoute) {
+          setRouteState({
+            coordinates: roadRoute.coordinates,
+            distanceMeters: roadRoute.distanceMeters,
+            etaMinutes: Math.max(1, Math.round(roadRoute.durationSeconds / 60)),
+            source: 'road',
+          });
+        } else {
+          const fallbackDistance = calculateRouteDistance(routePlan.points);
+          setRouteState({
+            coordinates: routePlan.points,
+            distanceMeters: fallbackDistance,
+            etaMinutes: estimateEtaMinutes(fallbackDistance),
+            source: 'direct',
+          });
+        }
+
+        lastRouteFetchAtRef.current = Date.now();
+      } finally {
+        routeRequestInFlightRef.current = false;
+        if (!cancelled) {
+          setRouteBusy(false);
+        }
+      }
+    };
+
+    void refreshRoute();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeJob, routeLifecycleKey, routePlan.points, routeState]);
+
+  useEffect(() => {
+    if (
+      !activeJob ||
+      activeJob.status === 'cancelled' ||
+      activeJob.status === 'delivered' ||
+      !locationState.lastLocation ||
+      !routeState ||
+      routeState.source !== 'road' ||
+      routeState.coordinates.length < 2
+    ) {
+      return;
+    }
+
+    const point: RouteCoordinate = {
+      latitude: locationState.lastLocation.latitude,
+      longitude: locationState.lastLocation.longitude,
+    };
+    const distanceOffRoute = distanceToPolylineMeters(point, routeState.coordinates);
+    const cooldownElapsed =
+      Date.now() - lastRouteFetchAtRef.current >= ROUTE_REFRESH_COOLDOWN_MS;
+    if (!cooldownElapsed || distanceOffRoute <= OFF_ROUTE_THRESHOLD_METERS) {
+      return;
+    }
+
+    let cancelled = false;
+    const reroute = async (): Promise<void> => {
+      if (routeRequestInFlightRef.current) {
+        return;
+      }
+      routeRequestInFlightRef.current = true;
+      setRouteBusy(true);
+      try {
+        const roadRoute = await fetchRoadRoute(routePlan.points);
+        if (cancelled || !roadRoute) {
+          return;
+        }
+
+        setRouteState({
+          coordinates: roadRoute.coordinates,
+          distanceMeters: roadRoute.distanceMeters,
+          etaMinutes: Math.max(1, Math.round(roadRoute.durationSeconds / 60)),
+          source: 'road',
+        });
+        lastRouteFetchAtRef.current = Date.now();
+      } finally {
+        routeRequestInFlightRef.current = false;
+        if (!cancelled) {
+          setRouteBusy(false);
+        }
+      }
+    };
+
+    void reroute();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeJob, locationState.lastLocation, routePlan.points, routeState]);
 
   useEffect(() => {
     if (previousStateRef.current === overlay.state) {
@@ -182,11 +388,6 @@ export const MapShellScreen = ({
 
     await startTracking();
     setFeedback({message: 'Tracking started.', tone: 'info'});
-  };
-
-  const runStopTracking = (): void => {
-    stopTracking();
-    setFeedback({message: 'Tracking stopped.', tone: 'info'});
   };
 
   const runStatusUpdate = async (): Promise<void> => {
@@ -316,13 +517,6 @@ export const MapShellScreen = ({
                 );
               })}
             </View>
-            <View style={styles.topActionRow}>
-              <Pressable
-                style={styles.topActionButton}
-                onPress={() => setSettingsOpen(true)}>
-                <Text style={styles.topActionLabel}>Open Settings</Text>
-              </Pressable>
-            </View>
           </View>
         </View>
 
@@ -348,6 +542,7 @@ export const MapShellScreen = ({
               {displayEtaMinutes ? ` · ETA ${displayEtaMinutes} min` : ''}
             </Text>
             <Text style={styles.panelMeta}>Camera: {cameraLabels[cameraMode]}</Text>
+            {routeBusy ? <Text style={styles.panelMeta}>Route: recalculating...</Text> : null}
             {loadingJobs ? (
               <Text style={styles.panelMeta}>Refreshing jobs...</Text>
             ) : null}
@@ -359,34 +554,6 @@ export const MapShellScreen = ({
                 {feedback.message}
               </Text>
             ) : null}
-            <View style={styles.quickActionRow}>
-              <Pressable
-                style={styles.quickActionChip}
-                onPress={() => {
-                  if (!locationState.hasPermission) {
-                    void runRequestPermission();
-                    return;
-                  }
-                  if (!locationState.tracking) {
-                    void runStartTracking();
-                    return;
-                  }
-                  runStopTracking();
-                }}>
-                <Text style={styles.quickActionLabel}>
-                  {!locationState.hasPermission
-                    ? 'Enable location'
-                    : locationState.tracking
-                      ? 'Stop tracking'
-                      : 'Start tracking'}
-                </Text>
-              </Pressable>
-              <Pressable
-                style={styles.quickActionChip}
-                onPress={() => setSettingsOpen(true)}>
-                <Text style={styles.quickActionLabel}>Settings</Text>
-              </Pressable>
-            </View>
             <PrimaryButton
               label={actionBusy ? 'Working...' : overlay.primaryLabel}
               disabled={actionBusy}
@@ -397,22 +564,6 @@ export const MapShellScreen = ({
           </View>
         </View>
       </View>
-      {settingsOpen ? (
-        <View style={styles.settingsLayer}>
-          <Pressable
-            style={styles.settingsBackdrop}
-            onPress={() => setSettingsOpen(false)}
-          />
-          <View style={styles.settingsSheet}>
-            <SettingsScreen />
-            <Pressable
-              style={styles.settingsCloseButton}
-              onPress={() => setSettingsOpen(false)}>
-              <Text style={styles.settingsCloseLabel}>Close settings</Text>
-            </Pressable>
-          </View>
-        </View>
-      ) : null}
     </View>
   );
 };
@@ -457,23 +608,6 @@ const styles = StyleSheet.create({
   centerSlot: {
     alignItems: 'center',
     marginTop: 10,
-  },
-  topActionRow: {
-    flexDirection: 'row',
-    marginTop: 6,
-  },
-  topActionButton: {
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.65)',
-    backgroundColor: 'rgba(30, 41, 59, 0.65)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  topActionLabel: {
-    color: '#e2e8f0',
-    fontSize: 12,
-    fontWeight: '700',
   },
   cameraRow: {
     flexDirection: 'row',
@@ -554,50 +688,5 @@ const styles = StyleSheet.create({
   panelInfo: {
     color: '#1d4ed8',
     fontWeight: '600',
-  },
-  quickActionRow: {
-    flexDirection: 'row',
-    gap: 8,
-    flexWrap: 'wrap',
-  },
-  quickActionChip: {
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: '#cbd5e1',
-    backgroundColor: '#ffffff',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  quickActionLabel: {
-    color: '#0f172a',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  settingsLayer: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'flex-end',
-  },
-  settingsBackdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(15, 23, 42, 0.55)',
-  },
-  settingsSheet: {
-    height: '86%',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    overflow: 'hidden',
-    backgroundColor: '#ffffff',
-  },
-  settingsCloseButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#e2e8f0',
-    backgroundColor: '#f8fafc',
-  },
-  settingsCloseLabel: {
-    color: '#0f172a',
-    fontWeight: '700',
-    textAlign: 'center',
   },
 });
