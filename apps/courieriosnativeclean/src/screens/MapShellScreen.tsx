@@ -20,6 +20,7 @@ import {
   formatLocationSampleTime,
   formatSyncTime,
 } from './viewModels/jobsViewState';
+import {SettingsScreen} from './SettingsScreen';
 import type {Job} from '../types/jobs';
 
 type MapShellScreenProps = {
@@ -80,11 +81,13 @@ export const MapShellScreen = ({
     state: locationState,
     requestPermission,
     startTracking,
+    stopTracking,
   } = locationService.useLocationTracking();
 
   const [actionBusy, setActionBusy] = useState(false);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [cameraMode, setCameraMode] = useState<MapShellCameraMode>('fit_route');
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const latestJob = useMemo(() => jobs[0] ?? null, [jobs]);
   const syncDegraded = isSyncDegraded(jobsSyncState);
 
@@ -179,6 +182,11 @@ export const MapShellScreen = ({
 
     await startTracking();
     setFeedback({message: 'Tracking started.', tone: 'info'});
+  };
+
+  const runStopTracking = (): void => {
+    stopTracking();
+    setFeedback({message: 'Tracking stopped.', tone: 'info'});
   };
 
   const runStatusUpdate = async (): Promise<void> => {
@@ -308,6 +316,13 @@ export const MapShellScreen = ({
                 );
               })}
             </View>
+            <View style={styles.topActionRow}>
+              <Pressable
+                style={styles.topActionButton}
+                onPress={() => setSettingsOpen(true)}>
+                <Text style={styles.topActionLabel}>Open Settings</Text>
+              </Pressable>
+            </View>
           </View>
         </View>
 
@@ -344,6 +359,34 @@ export const MapShellScreen = ({
                 {feedback.message}
               </Text>
             ) : null}
+            <View style={styles.quickActionRow}>
+              <Pressable
+                style={styles.quickActionChip}
+                onPress={() => {
+                  if (!locationState.hasPermission) {
+                    void runRequestPermission();
+                    return;
+                  }
+                  if (!locationState.tracking) {
+                    void runStartTracking();
+                    return;
+                  }
+                  runStopTracking();
+                }}>
+                <Text style={styles.quickActionLabel}>
+                  {!locationState.hasPermission
+                    ? 'Enable location'
+                    : locationState.tracking
+                      ? 'Stop tracking'
+                      : 'Start tracking'}
+                </Text>
+              </Pressable>
+              <Pressable
+                style={styles.quickActionChip}
+                onPress={() => setSettingsOpen(true)}>
+                <Text style={styles.quickActionLabel}>Settings</Text>
+              </Pressable>
+            </View>
             <PrimaryButton
               label={actionBusy ? 'Working...' : overlay.primaryLabel}
               disabled={actionBusy}
@@ -354,6 +397,22 @@ export const MapShellScreen = ({
           </View>
         </View>
       </View>
+      {settingsOpen ? (
+        <View style={styles.settingsLayer}>
+          <Pressable
+            style={styles.settingsBackdrop}
+            onPress={() => setSettingsOpen(false)}
+          />
+          <View style={styles.settingsSheet}>
+            <SettingsScreen />
+            <Pressable
+              style={styles.settingsCloseButton}
+              onPress={() => setSettingsOpen(false)}>
+              <Text style={styles.settingsCloseLabel}>Close settings</Text>
+            </Pressable>
+          </View>
+        </View>
+      ) : null}
     </View>
   );
 };
@@ -398,6 +457,23 @@ const styles = StyleSheet.create({
   centerSlot: {
     alignItems: 'center',
     marginTop: 10,
+  },
+  topActionRow: {
+    flexDirection: 'row',
+    marginTop: 6,
+  },
+  topActionButton: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.65)',
+    backgroundColor: 'rgba(30, 41, 59, 0.65)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  topActionLabel: {
+    color: '#e2e8f0',
+    fontSize: 12,
+    fontWeight: '700',
   },
   cameraRow: {
     flexDirection: 'row',
@@ -478,5 +554,50 @@ const styles = StyleSheet.create({
   panelInfo: {
     color: '#1d4ed8',
     fontWeight: '600',
+  },
+  quickActionRow: {
+    flexDirection: 'row',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  quickActionChip: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+    backgroundColor: '#ffffff',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  quickActionLabel: {
+    color: '#0f172a',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  settingsLayer: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'flex-end',
+  },
+  settingsBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(15, 23, 42, 0.55)',
+  },
+  settingsSheet: {
+    height: '86%',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    overflow: 'hidden',
+    backgroundColor: '#ffffff',
+  },
+  settingsCloseButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#e2e8f0',
+    backgroundColor: '#f8fafc',
+  },
+  settingsCloseLabel: {
+    color: '#0f172a',
+    fontWeight: '700',
+    textAlign: 'center',
   },
 });
