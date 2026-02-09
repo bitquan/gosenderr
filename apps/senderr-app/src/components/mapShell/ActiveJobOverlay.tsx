@@ -6,7 +6,7 @@ export default function ActiveJobOverlay({
   onPrimaryAction,
 }: {
   model: MapShellOverlayModel;
-  onPrimaryAction?: (action: string) => void;
+  onPrimaryAction?: (action: string, nextStatus?: string | null) => void;
 }) {
   const toneClass =
     {
@@ -27,7 +27,9 @@ export default function ActiveJobOverlay({
       <div className="mt-3 flex gap-2">
         <button
           className="px-3 py-2 bg-blue-600 text-white rounded"
-          onClick={() => onPrimaryAction?.(model.primaryAction)}
+          onClick={() =>
+            onPrimaryAction?.(model.primaryAction, model.nextStatus)
+          }
         >
           {model.primaryLabel}
         </button>

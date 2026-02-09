@@ -4,6 +4,8 @@ import { useMemo } from "react";
 import { buildMapShellOverlayModel } from "@/lib/mapShell/overlayController";
 import ActiveJobOverlay from "@/components/mapShell/ActiveJobOverlay";
 import SettingsOverlay from "@/components/mapShell/SettingsOverlay";
+import { useAuthUser } from "@/hooks/v2/useAuthUser";
+import { claimJob, updateJobStatus } from "@/lib/v2/jobs";
 
 export type MapShellScreenProps = {
   className?: string;
@@ -32,6 +34,51 @@ export default function MapShellScreen({
       hasPermission: false,
     });
   }, []);
+
+  const { uid } = useAuthUser();
+
+  const handlePrimaryAction = async (
+    action: string,
+    nextStatus?: string | null,
+  ) => {
+    try {
+      if (!uid) {
+        alert("Please sign in to perform this action");
+        return;
+      }
+
+      // For demo, use the dev pending job id
+      const jobId = "dev_job_1";
+
+      if (action === "update_status" && nextStatus === "accepted") {
+        // Claim the job (uses agreedFee=0 for demo)
+        await claimJob(jobId, uid, 0);
+        alert("Job claimed (dev)");
+        return;
+      }
+
+      if (action === "update_status" && nextStatus) {
+        await updateJobStatus(jobId, nextStatus as any, uid);
+        alert("Job status updated (dev)");
+        return;
+      }
+
+      if (action === "start_tracking") {
+        alert("Starting tracking (dev)");
+        return;
+      }
+
+      if (action === "request_location_permission") {
+        alert("Please enable location permission in your browser (dev)");
+        return;
+      }
+
+      console.log("Unhandled action", action, nextStatus);
+    } catch (err) {
+      console.error("Action failed", err);
+      alert(`Action failed: ${(err as Error).message}`);
+    }
+  };
 
   return (
     <div
@@ -65,7 +112,7 @@ export default function MapShellScreen({
           <div data-testid="active-overlay" className="pointer-events-auto">
             <ActiveJobOverlay
               model={overlayModel}
-              onPrimaryAction={(a) => console.log("primary action", a)}
+              onPrimaryAction={handlePrimaryAction}
             />
           </div>
 
