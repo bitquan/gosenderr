@@ -1,1 +1,1 @@
-export { app, db, storage, functions, isFirebaseReady } from "../firebase";
+export { app, db, storage, functions, isFirebaseReady, getDbOrThrow } from "../firebase";
