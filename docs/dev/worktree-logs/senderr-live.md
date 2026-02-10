@@ -88,7 +88,7 @@ Last verified: 2026-02-09
 - Follow-up: verify CI + lint/type-check before merge
 
 - Branch: senderr-app/docs-background-tracking-1
-- Issue/PR: #279
+- Issue/PR: #279/#289
 - Scope: background tracking acceptance + roadmap refresh
 - Files touched: docs/senderr_app/MAP_SHELL_ACCEPTANCE_MATRIX.md, docs/senderr_app/SMOKE_CHECKLIST.md, docs/senderr_app/ROADMAP.md, .github/copilot/branches/senderr-app-docs-background-tracking-1.md
 - Behavior change: docs-only (acceptance and smoke updates)

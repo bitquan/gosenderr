@@ -619,3 +619,22 @@ Append-only log used for session recovery.
 - Blockers: None
 - Next:
   - Open PR for #279
+
+---
+
+## 2026-02-10 11:17 local (2026-02-10 16:17 UTC)
+
+- Status: `in_progress`
+- Summary: Opened PR #289 for background tracking acceptance docs
+- Branch: `senderr-app/docs-background-tracking-1`
+- Commit: `dc6d529`
+- Issue: `#279`
+- PR: `#289`
+- Files:
+  - `docs/senderr_app/MAP_SHELL_ACCEPTANCE_MATRIX.md`
+  - `docs/senderr_app/SMOKE_CHECKLIST.md`
+  - `docs/senderr_app/ROADMAP.md`
+  - `.github/copilot/branches/senderr-app-docs-background-tracking-1.md`
+- Blockers: None
+- Next:
+  - Wait for docs verification / review
