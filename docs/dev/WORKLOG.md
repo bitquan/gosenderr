@@ -459,3 +459,21 @@ Append-only log used for session recovery.
 - Blockers: None
 - Next:
   - Open PR: codex/issue-265-turn-by-turn-camera -> senderr_app
+
+---
+
+## 2026-02-10 01:48 local (2026-02-10 06:48 UTC)
+
+- Status: `in_progress`
+- Summary: added location upload retry integration test + emulator nightly job, branch profile
+- Branch: `codex/issue-266-bg-tracking-6h`
+- Commit: `28310ce`
+- Issue: `#266`
+- PR: `#277`
+- Files:
+  - `apps/courieriosnativeclean/src/services/*`
+  - `.github/copilot/branches/codex-issue-266-bg-tracking-6h.md`
+  - `.github/workflows/integration-emulator-nightly.yml`
+- Blockers: None
+- Next:
+  - Verify CI emulator job runs and merge to senderr_app when green
