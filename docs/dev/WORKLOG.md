@@ -635,3 +635,21 @@ Append-only log used for session recovery.
 - Blockers: None
 - Next:
   - Push branch and open PR for #270
+
+---
+
+## 2026-02-10 10:59 local (2026-02-10 15:59 UTC)
+
+- Status: `in_progress`
+- Summary: Opened PR #288 for MapShell acceptance docs
+- Branch: `senderr-app/docs-mapshell-acceptance-1`
+- Commit: `8adf351`
+- Issue: `#270`
+- PR: `#288`
+- Files:
+  - `docs/senderr_app/MAP_SHELL_ACCEPTANCE_MATRIX.md`
+  - `docs/senderr_app/SMOKE_CHECKLIST.md`
+  - `.github/copilot/branches/senderr-app-docs-mapshell-acceptance-1.md`
+- Blockers: None
+- Next:
+  - Wait for docs verification / review
