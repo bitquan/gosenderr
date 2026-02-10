@@ -2,8 +2,15 @@ name: Nightly Emulator Integration Tests
 
 on:
   schedule:
-    - cron: '0 3 * * *' # daily at 03:00 UTC
+    - cron: "0 3 * * *" # daily at 03:00 UTC
   workflow_dispatch: {}
+  push:
+    branches:
+      - senderr_app
+    paths:
+      - 'apps/courieriosnativeclean/**'
+      - 'firebase/**'
+      - '.github/workflows/integration-emulator-nightly.yml'
 
 jobs:
   emulator-integration:

@@ -7,7 +7,7 @@ jest.mock('@react-native-async-storage/async-storage', () => {
   return {
     __esModule: true,
     default: {
-      getItem: jest.fn(async (k: string) => (store[k] ?? null)),
+      getItem: jest.fn(async (k: string) => store[k] ?? null),
       setItem: jest.fn(async (k: string, v: string) => {
         store[k] = v;
       }),
@@ -70,7 +70,9 @@ describe('locationUploadService retry scheduling (service-level)', () => {
     } as any);
 
     // The first flush should fail (simulated by our mock) and schedule a retry
-    await expect(sut.flushQueuedLocationsForSession(uid)).rejects.toThrow('transient');
+    await expect(sut.flushQueuedLocationsForSession(uid)).rejects.toThrow(
+      'transient',
+    );
 
     expect(mockTelemetry.track).toHaveBeenCalledWith(
       'location_upload_retry_scheduled',
