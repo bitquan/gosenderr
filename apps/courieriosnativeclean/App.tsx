@@ -21,6 +21,7 @@ import type {
   JobsSubscription,
   JobsSyncState,
 } from './src/services/ports/jobsPort';
+import type { LocationSnapshot } from './src/services/ports/locationPort';
 import {
   ServiceRegistryProvider,
   useServiceRegistry,
@@ -265,7 +266,7 @@ const AppShell = (): React.JSX.Element => {
         try {
           await mod.enqueueLocation(
             session.uid,
-            locationController.state.lastLocation!,
+            locationController.state.lastLocation as unknown as LocationSnapshot,
           );
           await mod.flushQueuedLocationsForSession(session.uid);
         } catch (err) {
