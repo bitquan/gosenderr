@@ -1,6 +1,8 @@
 import {afterAll, beforeAll, describe, expect, it, jest} from '@jest/globals';
 
 // Provide a simple in-memory AsyncStorage implementation for integration runs
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 jest.mock('@react-native-async-storage/async-storage', () => {
   const store: Record<string, string> = {};
   return {
@@ -109,9 +111,7 @@ describe('locationUploadService integration (Firestore emulator)', () => {
       expect(typeof data!.location.lng).toBe('number');
 
       // The queue should be cleared (getItem returns null after remove)
-      const storage =
-        require('@react-native-async-storage/async-storage').default;
-      const raw = await storage.getItem('@senderr/location-upload-queue');
+      const raw = await AsyncStorage.getItem('@senderr/location-upload-queue');
       expect(raw).toBeNull();
     },
   );

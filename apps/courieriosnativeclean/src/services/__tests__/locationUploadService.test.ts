@@ -28,6 +28,7 @@ jest.mock('../firebase', () => ({
   getFirebaseServices: () => ({db: {}}),
 }));
 
+import * as firestore from 'firebase/firestore';
 import * as sut from '../locationUploadService';
 
 import type {EnqueuedLocation} from '../locationUploadService';
@@ -72,7 +73,6 @@ describe('locationUploadService queue', () => {
       ]),
     );
 
-    const firestore = require('firebase/firestore');
     jest.spyOn(firestore, 'updateDoc').mockResolvedValue(undefined);
 
     const result = await sut.flushQueuedLocationsForSession('user_42');
@@ -104,7 +104,6 @@ describe('locationUploadService queue', () => {
     sut.setLocationUploadAnalytics(mockAnalytics as any);
 
     const error = new Error('network');
-    const firestore = require('firebase/firestore');
     jest.spyOn(firestore, 'updateDoc').mockRejectedValue(error);
 
     await expect(sut.flushQueuedLocationsForSession('user_99')).rejects.toThrow(
@@ -155,7 +154,6 @@ describe('locationUploadService queue', () => {
         {uid: 'tuser', latitude: 1, longitude: 2, timestamp: now, attempts: 0},
       ]),
     );
-    const firestore = require('firebase/firestore');
     jest.spyOn(firestore, 'updateDoc').mockResolvedValue(undefined);
 
     const res = await sut.flushQueuedLocationsForSession('tuser');
@@ -192,7 +190,6 @@ describe('locationUploadService queue', () => {
         },
       ]),
     );
-    const firestore = require('firebase/firestore');
     jest.spyOn(firestore, 'updateDoc').mockRejectedValue(new Error('network'));
 
     await expect(sut.flushQueuedLocationsForSession('dropper')).rejects.toThrow(
