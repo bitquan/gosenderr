@@ -1,11 +1,11 @@
 import {afterAll, beforeAll, describe, expect, it} from '@jest/globals';
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
 jest.mock('@react-native-async-storage/async-storage', () => {
   const store: Record<string, string> = {};
   return {
     __esModule: true,
     default: {
-      getItem: jest.fn(async (k: string) => (store[k] ?? null)),
+      getItem: jest.fn(async (k: string) => store[k] ?? null),
       setItem: jest.fn(async (k: string, v: string) => {
         store[k] = v;
       }),
@@ -17,9 +17,23 @@ jest.mock('@react-native-async-storage/async-storage', () => {
 });
 
 import {initializeApp, deleteApp, type FirebaseApp} from 'firebase/app';
-import {connectFirestoreEmulator, getFirestore, type Firestore} from 'firebase/firestore';
-import {connectAuthEmulator, createUserWithEmailAndPassword, getAuth, signInWithEmailAndPassword, signOut, type Auth} from 'firebase/auth';
-import {initializeApp as initializeAdminApp, getApps as getAdminApps} from 'firebase-admin/app';
+import {
+  connectFirestoreEmulator,
+  getFirestore,
+  type Firestore,
+} from 'firebase/firestore';
+import {
+  connectAuthEmulator,
+  createUserWithEmailAndPassword,
+  getAuth,
+  signInWithEmailAndPassword,
+  signOut,
+  type Auth,
+} from 'firebase/auth';
+import {
+  initializeApp as initializeAdminApp,
+  getApps as getAdminApps,
+} from 'firebase-admin/app';
 import {getFirestore as getAdminFirestore} from 'firebase-admin/firestore';
 
 import {configureRuntime} from '../../config/runtime';
@@ -29,7 +43,10 @@ const FIRESTORE_HOST = process.env.FIRESTORE_EMULATOR_HOST ?? '';
 const AUTH_HOST = process.env.FIREBASE_AUTH_EMULATOR_HOST ?? '';
 const [firestoreHost, firestorePortText] = FIRESTORE_HOST.split(':');
 const firestorePort = Number(firestorePortText);
-const hasEmulator = Boolean(firestoreHost) && Number.isFinite(firestorePort) && Boolean(AUTH_HOST);
+const hasEmulator =
+  Boolean(firestoreHost) &&
+  Number.isFinite(firestorePort) &&
+  Boolean(AUTH_HOST);
 
 const maybeIt = hasEmulator ? it : it.skip;
 
@@ -53,7 +70,10 @@ describe('locationUploadService e2e retry (Firestore emulator)', () => {
       },
     });
 
-    app = initializeApp({apiKey: 'demo-key', appId: '1:demo:web:demo', projectId: 'demo-senderr'}, `location-e2e-${Date.now()}`);
+    app = initializeApp(
+      {apiKey: 'demo-key', appId: '1:demo:web:demo', projectId: 'demo-senderr'},
+      `location-e2e-${Date.now()}`,
+    );
 
     auth = getAuth(app);
     connectAuthEmulator(auth, `http://${AUTH_HOST}`);
@@ -70,7 +90,11 @@ describe('locationUploadService e2e retry (Firestore emulator)', () => {
     const testEmail = `e2e-${Date.now()}@example.com`;
     const testPassword = 'Password123!';
     await createUserWithEmailAndPassword(auth, testEmail, testPassword);
-    const signIn = await signInWithEmailAndPassword(auth, testEmail, testPassword);
+    const signIn = await signInWithEmailAndPassword(
+      auth,
+      testEmail,
+      testPassword,
+    );
     uid = signIn.user.uid;
     await signOut(auth);
 
@@ -117,8 +141,7 @@ describe('locationUploadService e2e retry (Firestore emulator)', () => {
     expect(typeof data!.location.lng).toBe('number');
 
     // Queue cleared
-    const storage = require('@react-native-async-storage/async-storage').default;
-    const raw = await storage.getItem('@senderr/location-upload-queue');
+    const raw = await AsyncStorage.getItem('@senderr/location-upload-queue');
     expect(raw).toBeNull();
   });
 });
