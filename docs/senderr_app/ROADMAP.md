@@ -1,18 +1,23 @@
 # Senderr iOS Roadmap
 
-Last updated: 2026-02-08  
+Last updated: 2026-02-10  
 Source: GitHub issues labeled `scope:courier`
 
 ## Snapshot
 
-- Total `scope:courier` issues: `44`
-- Closed: `44`
-- Open: `0`
-- Completion: `100.0%`
+- Total `scope:courier` issues: `30`
+- Closed: `24`
+- Open: `6`
+- Completion: `80.0%`
 
 ## Active Queue (Open)
 
-- None
+- `#279` docs(senderr): add acceptance matrix entries for background tracking
+- `#278` chore(senderr): add telemetry + retries tuning for location uploader
+- `#270` test+docs(senderr_app): acceptance matrix and rollout gates for native MapShell
+- `#269` feat(senderr_app): earnings + payouts overlays in MapShell
+- `#268` feat(senderr_app): production-ready job notifications (APNs/FCM)
+- `#267` feat(senderr_app): enforce pickup/dropoff proof with geo-validation
 
 ## Recently Completed (Most Recent)
 

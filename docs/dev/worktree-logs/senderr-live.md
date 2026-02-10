@@ -86,3 +86,12 @@ Last verified: 2026-02-09
 - Commands run: none
 - Test result: not run (implementation-first)
 - Follow-up: verify CI + lint/type-check before merge
+
+- Branch: senderr-app/docs-background-tracking-1
+- Issue/PR: #279
+- Scope: background tracking acceptance + roadmap refresh
+- Files touched: docs/senderr_app/MAP_SHELL_ACCEPTANCE_MATRIX.md, docs/senderr_app/SMOKE_CHECKLIST.md, docs/senderr_app/ROADMAP.md, .github/copilot/branches/senderr-app-docs-background-tracking-1.md
+- Behavior change: docs-only (acceptance and smoke updates)
+- Commands run: bash scripts/worktree-sync.sh
+- Test result: not run (docs update)
+- Follow-up: open PR and run docs verification

@@ -1,7 +1,12 @@
 # MapShell Acceptance Matrix
 
-Last updated: 2026-02-09  
-Scope: issues #250, #251, #252
+> Doc metadata
+> - Owner: `@bitquan`
+> - Last verified: `2026-02-10`
+> - Review cadence: `monthly`
+
+Last updated: 2026-02-10  
+Scope: issues #250, #251, #252, #279
 
 ## Purpose
 Define release-quality acceptance for MapShell as the canonical courier UX, including state regressions, rollout gates, and rollback criteria.
@@ -33,6 +38,14 @@ Define release-quality acceptance for MapShell as the canonical courier UX, incl
   - load profile
   - validate fields
   - save profile
+
+## Background Tracking Acceptance (Issue #279)
+
+- Tracking continues when app is backgrounded for at least 2 minutes.
+- Returning to foreground preserves tracking state and latest location timestamp.
+- Offline or flaky network queues location updates and flushes in order on reconnect.
+- No duplicate or out-of-order points after reconnect flush.
+- Background tracking smoke runs include background -> resume -> queue flush checks.
 
 ## CI Regression Coverage
 
