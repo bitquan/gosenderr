@@ -27,6 +27,8 @@ export default function CourierJobDetail() {
   const { job: jobDoc, loading: jobLoading } = useJob(jobId);
   const { userDoc } = useUserDoc();
   const { startNavigation, isNavigating } = useNavigation();
+  const courierLocation = userDoc?.courierProfile?.currentLocation ?? null;
+  const hasLocation = Boolean(courierLocation);
 
   if (jobLoading) {
     return (
@@ -73,14 +75,16 @@ export default function CourierJobDetail() {
     "arrived_dropoff",
   ].includes(job.status);
   
-  const handleStartNavigation = async (destination: 'pickup' | 'dropoff') => {
-    if (!userDoc?.location) {
-      alert('Unable to get your current location. Please enable location services.');
+  const handleStartNavigation = async (destination: "pickup" | "dropoff") => {
+    if (!courierLocation) {
+      alert(
+        "Unable to get your current location. Please enable location services.",
+      );
       return;
     }
 
-    const targetLocation = destination === 'pickup' ? job.pickup : job.dropoff;
-    await startNavigation(job, userDoc.location, targetLocation);
+    const targetLocation = destination === "pickup" ? job.pickup : job.dropoff;
+    await startNavigation(job, courierLocation, targetLocation);
   };
 
   return (
@@ -137,7 +141,7 @@ export default function CourierJobDetail() {
           <MapboxMap
             pickup={job.pickup}
             dropoff={job.dropoff}
-            courierLocation={userDoc?.location || null}
+            courierLocation={courierLocation}
             height="300px"
           />
         </div>
@@ -150,10 +154,10 @@ export default function CourierJobDetail() {
         {/* Navigation Buttons */}
         <div className="grid grid-cols-2 gap-3">
           <button
-            onClick={() => handleStartNavigation('pickup')}
+            onClick={() => handleStartNavigation("pickup")}
             disabled={
               isNavigating ||
-              !userDoc?.location ||
+              !hasLocation ||
               isPaymentLocked ||
               !canNavigateToPickup
             }
@@ -174,10 +178,10 @@ export default function CourierJobDetail() {
             </div>
           </button>
           <button
-            onClick={() => handleStartNavigation('dropoff')}
+            onClick={() => handleStartNavigation("dropoff")}
             disabled={
               isNavigating ||
-              !userDoc?.location ||
+              !hasLocation ||
               isPaymentLocked ||
               !canNavigateToDropoff
             }

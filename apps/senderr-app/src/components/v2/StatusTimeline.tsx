@@ -6,7 +6,7 @@ interface StatusTimelineProps {
 }
 
 const steps: { status: JobStatus; label: string }[] = [
-  { status: "open", label: "Send Posted" },
+  { status: "open", label: "Accept Job" },
   { status: "assigned", label: "Start Heading to Pickup" },
   { status: "enroute_pickup", label: "Mark Arrived at Pickup" },
   { status: "arrived_pickup", label: "Mark Package Picked Up" },
