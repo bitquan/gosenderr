@@ -29,7 +29,7 @@ const DEFAULT_JOBS_SYNC_STATE: JobsSyncState = {
 
 const AppShell = (): React.JSX.Element => {
   const {session, initializing} = useAuth();
-  const {jobs: jobsService, notifications: notificationsService, analytics, featureFlags} =
+  const {jobs: jobsService, notifications: notificationsService, analytics, featureFlags, location: locationService} =
     useServiceRegistry();
   const featureFlagsState = featureFlags.useFeatureFlags();
   const jobsSubscriptionRef = useRef<JobsSubscription | null>(null);
@@ -221,6 +221,39 @@ const AppShell = (): React.JSX.Element => {
       cancelled = true;
     };
   }, [notificationsEnabled, notificationsService, session]);
+
+  // Location uploader: enqueue location snapshots and attempt to flush them to the server.
+  // Uses dynamic import to keep startup small and allow the module to be easily mocked in tests.
+  useEffect(() => {
+    if (!session) return undefined;
+
+    const locationController = locationService.useLocationTracking();
+
+    // On any new lastLocation, enqueue and attempt an immediate flush
+    if (locationController.state.lastLocation) {
+      void import('./src/services/locationUploadService').then(async mod => {
+        try {
+          await mod.enqueueLocation(session.uid, locationController.state.lastLocation as any);
+          await mod.flushQueuedLocationsForSession(session.uid);
+        } catch (err) {
+          console.warn('[locationUploader] initial flush failed:', err);
+        }
+      });
+    }
+
+    // Periodic flush (every 30s) while the session is active
+    const interval = setInterval(() => {
+      void import('./src/services/locationUploadService').then(mod => {
+        void mod.flushQueuedLocationsForSession(session.uid).catch(err =>
+          console.warn('[locationUploader] periodic flush failed', err),
+        );
+      });
+    }, 30_000);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [session?.uid, locationService]);
 
   const refreshJobs = useCallback(async (): Promise<Job[]> => {
     if (!session) {
