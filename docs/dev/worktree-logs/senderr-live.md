@@ -3,6 +3,7 @@
 Last verified: 2026-02-09
 
 ## 2026-02-09
+
 - Branch: local/wt-senderr-live
 - Issue/PR: baseline setup
 - Scope: worktree standardization
@@ -13,6 +14,7 @@ Last verified: 2026-02-09
 - Follow-up: use this log for every push from this worktree
 
 ## 2026-02-10
+
 - Branch: senderr-app/feature/map-job-flow-1
 - Issue/PR: #284
 - Scope: MapShell live job flow wiring
