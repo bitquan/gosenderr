@@ -12,7 +12,7 @@ type Mode = "view" | "edit-package" | "edit-food";
 
 export default function RateCardsPage() {
   const navigate = useNavigate();
-  const [_searchParams] = useSearchParams();
+  useSearchParams();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [mode, setMode] = useState<Mode>("view");
