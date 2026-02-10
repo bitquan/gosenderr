@@ -12,9 +12,7 @@ export default function MapShellPage() {
 
   if (loading) return null;
 
-  const flagEnabled = !!(
-    flags?.delivery && (flags.delivery as any).mapShell === true
-  );
+  const flagEnabled = flags?.delivery?.mapShell === true;
 
   if (!devPreview && !flagEnabled) {
     // Not allowed: redirect to dashboard

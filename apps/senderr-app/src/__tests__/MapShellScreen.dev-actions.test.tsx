@@ -10,6 +10,25 @@ vi.mock("@/components/v2/MapboxMap", () => ({
   },
 }));
 
+vi.mock("@/hooks/v2/useOpenJobs", () => ({
+  useOpenJobs: () => ({
+    jobs: [],
+    loading: false,
+    syncState: { status: "ok" },
+  }),
+}));
+
+vi.mock("@/hooks/v2/useUserDoc", () => ({
+  useUserDoc: () => ({ userDoc: null, loading: false }),
+}));
+
+vi.mock("@/hooks/v2/useCourierLocationWriter", () => ({
+  useCourierLocationWriter: () => ({
+    isTracking: false,
+    permissionDenied: false,
+  }),
+}));
+
 // Mock jobs functions so we don't call real Firebase in tests
 vi.mock("@/lib/v2/jobs", () => ({
   claimJob: vi.fn(async () => Promise.reject(new Error("not found"))),

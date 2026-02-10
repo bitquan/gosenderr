@@ -477,3 +477,20 @@ Append-only log used for session recovery.
 - Blockers: None
 - Next:
   - Verify CI emulator job runs and merge to senderr_app when green
+
+---
+
+## 2026-02-10 09:52 local (2026-02-10 14:52 UTC)
+
+- Status: `in_progress`
+- Summary: Fix courier location typing for job detail
+- Branch: `senderr-app/feature/job-lifecycle-1`
+- Commit: `11cb16f`
+- Issue: `#285`
+- PR: `#285`
+- Files:
+  - `apps/senderr-app/src/pages/jobs/[jobId]/page.tsx`
+  - `docs/dev/worktree-logs/senderr-live.md`
+- Blockers: None
+- Next:
+  - Rerun CI for PR #285
