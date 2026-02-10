@@ -265,7 +265,7 @@ const AppShell = (): React.JSX.Element => {
         try {
           await mod.enqueueLocation(
             session.uid,
-            locationController.state.lastLocation as any,
+            locationController.state.lastLocation as unknown as LocationSnapshot,
           );
           await mod.flushQueuedLocationsForSession(session.uid);
         } catch (err) {
