@@ -77,7 +77,7 @@ describe("mapShellOverlayController", () => {
     expect(state).toBe("proof_required");
   });
 
-  it("maps arrived_dropoff to delivered transition action", () => {
+  it("maps arrived_dropoff to completed transition action", () => {
     const overlay = buildMapShellOverlayModel({
       activeJob: {
         ...pendingJob,
@@ -95,6 +95,6 @@ describe("mapShellOverlayController", () => {
 
     expect(overlay.state).toBe("arrived_dropoff");
     expect(overlay.primaryAction).toBe("update_status");
-    expect(overlay.nextStatus).toBe("delivered");
+    expect(overlay.nextStatus).toBe("completed");
   });
 });

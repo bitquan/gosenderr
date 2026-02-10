@@ -1,9 +1,19 @@
 export type JobStatus =
+  | "open"
+  | "assigned"
+  | "enroute_pickup"
+  | "arrived_pickup"
+  | "picked_up"
+  | "enroute_dropoff"
+  | "arrived_dropoff"
+  | "completed"
+  | "cancelled"
+  | "disputed"
+  | "expired"
+  | "failed"
   | "pending"
   | "accepted"
-  | "picked_up"
   | "delivered"
-  | "cancelled"
   | "created"
   | string;
 
@@ -119,23 +129,44 @@ export const deriveMapShellState = ({
 
   const job = activeJob ?? latestJob;
   if (!job || job.status === "cancelled") return "idle";
-  if (job.status === "delivered") return "completed";
-  if (job.status === "pending") return "offer";
+  if (job.status === "completed" || job.status === "delivered")
+    return "completed";
+  if (job.status === "open" || job.status === "pending") return "offer";
 
-  if (job.status === "accepted") {
-    if (hasArrived(courierLocation, job.pickupLocation))
-      return "arrived_pickup";
-    if (tracking && courierLocation) return "enroute_pickup";
+  if (job.status === "assigned" || job.status === "accepted") {
+    if (tracking && courierLocation) {
+      if (hasArrived(courierLocation, job.pickupLocation))
+        return "arrived_pickup";
+      return "enroute_pickup";
+    }
     return "accepted";
   }
 
+  if (job.status === "enroute_pickup") return "enroute_pickup";
+  if (job.status === "arrived_pickup") return "arrived_pickup";
+
   if (job.status === "picked_up") {
+    if (tracking && courierLocation) {
+      if (hasArrived(courierLocation, job.dropoffLocation)) {
+        if (requiresProof(job)) return "proof_required";
+        return "arrived_dropoff";
+      }
+      return "enroute_dropoff";
+    }
+    return "picked_up";
+  }
+
+  if (job.status === "enroute_dropoff") {
     if (hasArrived(courierLocation, job.dropoffLocation)) {
       if (requiresProof(job)) return "proof_required";
       return "arrived_dropoff";
     }
-    if (tracking && courierLocation) return "enroute_dropoff";
-    return "picked_up";
+    return "enroute_dropoff";
+  }
+
+  if (job.status === "arrived_dropoff") {
+    if (requiresProof(job)) return "proof_required";
+    return "arrived_dropoff";
   }
 
   return "idle";
@@ -174,7 +205,7 @@ export const buildMapShellOverlayModel = (
         description: "Accept this job to start pickup workflow.",
         primaryLabel: "Accept Job",
         primaryAction: "update_status",
-        nextStatus: "accepted",
+        nextStatus: "assigned",
         tone: "warning",
       };
     case "accepted":
@@ -246,7 +277,7 @@ export const buildMapShellOverlayModel = (
         description: "Complete delivery to close this job.",
         primaryLabel: "Complete Delivery",
         primaryAction: "update_status",
-        nextStatus: "delivered",
+        nextStatus: "completed",
         tone: "success",
       };
     case "proof_required":
@@ -256,7 +287,7 @@ export const buildMapShellOverlayModel = (
         description: "Capture required proof, then complete the delivery.",
         primaryLabel: "Complete Delivery",
         primaryAction: "update_status",
-        nextStatus: "delivered",
+        nextStatus: "completed",
         tone: "warning",
       };
     case "completed":
