@@ -497,6 +497,41 @@ Append-only log used for session recovery.
 
 ---
 
+## 2026-02-10 10:18 local (2026-02-10 15:18 UTC)
+
+- Status: `in_progress`
+- Summary: Align onboarding prefill and profile data sources
+- Branch: `senderr-app/feature/onboarding-profile-1`
+- Commit: `e05cdcb`
+- Issue: `TBD`
+- PR: `TBD`
+- Files:
+  - `apps/senderr-app/src/pages/onboarding/page.tsx`
+  - `apps/senderr-app/src/pages/Profile.tsx`
+  - `docs/dev/worktree-logs/senderr-live.md`
+  - `.github/copilot/branches/senderr-app-feature-onboarding-profile-1.md`
+- Blockers: None
+- Next:
+  - Open PR for onboarding/profile work
+
+---
+
+## 2026-02-10 10:19 local (2026-02-10 15:19 UTC)
+
+- Status: `in_progress`
+- Summary: Open PR #286 for onboarding/profile
+- Branch: `senderr-app/feature/onboarding-profile-1`
+- Commit: `b67f73c`
+- Issue: `#286`
+- PR: `#286`
+- Files:
+  - `docs/dev/worktree-logs/senderr-live.md`
+- Blockers: None
+- Next:
+  - Start payments & recharging branch
+
+---
+
 ## 2026-02-10 10:26 local (2026-02-10 15:26 UTC)
 
 - Status: `in_progress`
@@ -528,3 +563,40 @@ Append-only log used for session recovery.
 - Blockers: None
 - Next:
   - Check CI for PRs #286/#287
+
+---
+
+## 2026-02-10 10:33 local (2026-02-10 15:33 UTC)
+
+- Status: `in_progress`
+- Summary: Fix onboarding payload typing for rate cards
+- Branch: `senderr-app/feature/onboarding-profile-1`
+- Commit: `0e53186`
+- Issue: `#286`
+- PR: `#286`
+- Files:
+  - `apps/senderr-app/src/pages/onboarding/page.tsx`
+  - `docs/dev/worktree-logs/senderr-live.md`
+- Blockers: None
+- Next:
+  - Rerun CI for PR #286
+
+---
+
+## 2026-02-10 10:45 local (2026-02-10 15:45 UTC)
+
+- Status: `in_progress`
+- Summary: Resolve branch conflicts after syncing senderr_app
+- Branch: `senderr-app/feature/onboarding-profile-1`
+- Commit: `81410ac`
+- Issue: `#286`
+- PR: `#286`
+- Files:
+  - `docs/dev/SESSION_STATE.md`
+  - `docs/dev/WORKLOG.md`
+  - `docs/dev/worktree-logs/senderr-live.md`
+  - `.github/copilot/branches/senderr-app-feature-payments-recharging-1.md`
+  - `apps/senderr-app/src/pages/earnings/page.tsx`
+- Blockers: None
+- Next:
+  - Check CI for PR #286
