@@ -600,3 +600,56 @@ Append-only log used for session recovery.
 - Blockers: None
 - Next:
   - Check CI for PR #286
+
+---
+
+## 2026-02-10 10:57 local (2026-02-10 15:57 UTC)
+
+- Status: `in_progress`
+- Summary: Update MapShell acceptance matrix and smoke checklist metadata
+- Branch: `senderr-app/docs/mapshell-acceptance-1`
+- Commit: `9bd64f8`
+- Issue: `#270`
+- PR: `TBD`
+- Files:
+  - `docs/senderr_app/MAP_SHELL_ACCEPTANCE_MATRIX.md`
+  - `docs/senderr_app/SMOKE_CHECKLIST.md`
+  - `.github/copilot/branches/senderr-app-docs-mapshell-acceptance-1.md`
+- Blockers: None
+- Next:
+  - Continue #270 docs updates and open PR
+
+---
+
+## 2026-02-10 10:58 local (2026-02-10 15:58 UTC)
+
+- Status: `in_progress`
+- Summary: Rename docs branch for remote push
+- Branch: `senderr-app/docs-mapshell-acceptance-1`
+- Commit: `46bfd9e`
+- Issue: `#270`
+- PR: `TBD`
+- Files:
+  - `.github/copilot/branches/senderr-app-docs-mapshell-acceptance-1.md`
+  - `docs/dev/worktree-logs/senderr-live.md`
+- Blockers: None
+- Next:
+  - Push branch and open PR for #270
+
+---
+
+## 2026-02-10 10:59 local (2026-02-10 15:59 UTC)
+
+- Status: `in_progress`
+- Summary: Opened PR #288 for MapShell acceptance docs
+- Branch: `senderr-app/docs-mapshell-acceptance-1`
+- Commit: `8adf351`
+- Issue: `#270`
+- PR: `#288`
+- Files:
+  - `docs/senderr_app/MAP_SHELL_ACCEPTANCE_MATRIX.md`
+  - `docs/senderr_app/SMOKE_CHECKLIST.md`
+  - `.github/copilot/branches/senderr-app-docs-mapshell-acceptance-1.md`
+- Blockers: None
+- Next:
+  - Wait for docs verification / review

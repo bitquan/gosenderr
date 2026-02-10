@@ -86,3 +86,12 @@ Last verified: 2026-02-09
 - Commands run: none
 - Test result: not run (implementation-first)
 - Follow-up: verify CI + lint/type-check before merge
+
+- Branch: senderr-app/docs-mapshell-acceptance-1
+- Issue/PR: #270/#288
+- Scope: MapShell acceptance matrix + smoke checklist updates
+- Files touched: docs/senderr_app/MAP_SHELL_ACCEPTANCE_MATRIX.md, docs/senderr_app/SMOKE_CHECKLIST.md, .github/copilot/branches/senderr-app-docs-mapshell-acceptance-1.md
+- Behavior change: docs-only (rollout gates + metadata)
+- Commands run: bash scripts/worktree-sync.sh
+- Test result: not run (docs update)
+- Follow-up: run docs verification before PR
