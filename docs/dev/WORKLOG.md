@@ -494,3 +494,22 @@ Append-only log used for session recovery.
 - Blockers: None
 - Next:
   - Rerun CI for PR #285
+
+---
+
+## 2026-02-10 10:18 local (2026-02-10 15:18 UTC)
+
+- Status: `in_progress`
+- Summary: Align onboarding prefill and profile data sources
+- Branch: `senderr-app/feature/onboarding-profile-1`
+- Commit: `e05cdcb`
+- Issue: `TBD`
+- PR: `TBD`
+- Files:
+  - `apps/senderr-app/src/pages/onboarding/page.tsx`
+  - `apps/senderr-app/src/pages/Profile.tsx`
+  - `docs/dev/worktree-logs/senderr-live.md`
+  - `.github/copilot/branches/senderr-app-feature-onboarding-profile-1.md`
+- Blockers: None
+- Next:
+  - Open PR for onboarding/profile work

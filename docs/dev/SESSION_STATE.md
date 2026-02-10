@@ -4,20 +4,20 @@ This file is the canonical handoff state when a chat/session is interrupted.
 
 ## Last Updated
 
-- Local: 2026-02-10 09:52
-- UTC: 2026-02-10 14:52
+- Local: 2026-02-10 10:18
+- UTC: 2026-02-10 15:18
 
 ## Current Focus
 
-- Active issue: #285
-- Active PR: #285
-- Objective: Fix courier location typing for job detail
+- Active issue: TBD
+- Active PR: TBD
+- Objective: Align onboarding prefill and profile data sources
 
 ## Branch + Commit
 
-- Branch: `senderr-app/feature/job-lifecycle-1`
-- Commit: `11cb16f`
-- Working tree: dirty
+- Branch: `senderr-app/feature/onboarding-profile-1`
+- Commit: `e05cdcb`
+- Working tree: clean
 
 ## Blockers
 
@@ -25,7 +25,7 @@ This file is the canonical handoff state when a chat/session is interrupted.
 
 ## Next Actions
 
-1. Rerun CI for PR #285
+1. Open PR for onboarding/profile work
 2. Re-open `docs/dev/WORKLOG.md` and append after each meaningful change.
 3. Keep this file current at task boundaries.
 
@@ -33,7 +33,7 @@ This file is the canonical handoff state when a chat/session is interrupted.
 
 ```bash
 cd /Users/papadev/dev/apps/Gosenderr_local/worktrees/senderr-live
-git checkout senderr-app/feature/job-lifecycle-1
+git checkout senderr-app/feature/onboarding-profile-1
 git pull --rebase
 sed -n '1,200p' docs/dev/SESSION_STATE.md
 sed -n '1,200p' docs/dev/WORKLOG.md
