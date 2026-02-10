@@ -32,6 +32,15 @@ Last verified: 2026-02-09
 - Test result: not run (implementation-first)
 - Follow-up: verify CI + lint/type-check before merge
 
+- Branch: senderr-app/feature/onboarding-profile-1
+- Issue/PR: TBD
+- Scope: onboarding + profile alignment
+- Files touched: apps/senderr-app/src/pages/onboarding/page.tsx, apps/senderr-app/src/pages/Profile.tsx
+- Behavior change: prefill onboarding fields, tighten validation, modernize profile data sources
+- Commands run: none
+- Test result: not run (implementation-first)
+- Follow-up: open PR + verify CI
+
 - Branch: senderr-app/feature/job-lifecycle-1
 - Issue/PR: #285
 - Scope: courier location typing fix for job detail
