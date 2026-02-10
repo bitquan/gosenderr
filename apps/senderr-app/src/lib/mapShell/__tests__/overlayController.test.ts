@@ -2,13 +2,18 @@ import {
   buildMapShellOverlayModel,
   deriveMapShellState,
 } from "../overlayController.ts";
+import type {
+  Job,
+  JobsSyncState,
+  LocationSnapshot,
+} from "../overlayController";
 import { describe, it, expect } from "vitest";
 
 const baseSyncState = { status: "ok" } as const;
 
-const pendingJob = {
+const pendingJob: Job = {
   id: "job_1",
-  status: "pending" as const,
+  status: "pending",
   pickupLocation: { latitude: 37.7901, longitude: -122.4002 },
   dropoffLocation: { latitude: 37.7911, longitude: -122.4012 },
 };
@@ -16,9 +21,9 @@ const pendingJob = {
 describe("mapShellOverlayController", () => {
   it("returns offline_reconnect when sync is degraded", () => {
     const state = deriveMapShellState({
-      activeJob: pendingJob as any,
-      latestJob: pendingJob as any,
-      jobsSyncState: { status: "reconnecting" } as any,
+      activeJob: pendingJob,
+      latestJob: pendingJob,
+      jobsSyncState: { status: "reconnecting" } as JobsSyncState,
       courierLocation: null,
       tracking: false,
     });
@@ -28,9 +33,9 @@ describe("mapShellOverlayController", () => {
 
   it("returns offer state for pending jobs", () => {
     const state = deriveMapShellState({
-      activeJob: pendingJob as any,
-      latestJob: pendingJob as any,
-      jobsSyncState: baseSyncState as any,
+      activeJob: pendingJob,
+      latestJob: pendingJob,
+      jobsSyncState: baseSyncState as JobsSyncState,
       courierLocation: null,
       tracking: false,
     });
@@ -40,13 +45,13 @@ describe("mapShellOverlayController", () => {
 
   it("returns arrived_pickup when courier is close to pickup", () => {
     const state = deriveMapShellState({
-      activeJob: { ...pendingJob, status: "accepted" } as any,
-      latestJob: pendingJob as any,
-      jobsSyncState: baseSyncState as any,
+      activeJob: { ...pendingJob, status: "accepted" } as Job,
+      latestJob: pendingJob,
+      jobsSyncState: baseSyncState as JobsSyncState,
       courierLocation: {
         latitude: 37.79011,
         longitude: -122.40021,
-      },
+      } as LocationSnapshot,
       tracking: true,
     });
 
@@ -59,13 +64,13 @@ describe("mapShellOverlayController", () => {
         ...pendingJob,
         status: "picked_up",
         notes: "Photo proof required at dropoff",
-      } as any,
-      latestJob: pendingJob as any,
-      jobsSyncState: baseSyncState as any,
+      } as Job,
+      latestJob: pendingJob,
+      jobsSyncState: baseSyncState as JobsSyncState,
       courierLocation: {
         latitude: 37.79111,
         longitude: -122.40121,
-      },
+      } as LocationSnapshot,
       tracking: true,
     });
 
@@ -77,13 +82,13 @@ describe("mapShellOverlayController", () => {
       activeJob: {
         ...pendingJob,
         status: "picked_up",
-      } as any,
-      latestJob: pendingJob as any,
-      jobsSyncState: baseSyncState as any,
+      } as Job,
+      latestJob: pendingJob,
+      jobsSyncState: baseSyncState as JobsSyncState,
       courierLocation: {
         latitude: 37.79111,
         longitude: -122.40121,
-      },
+      } as LocationSnapshot,
       tracking: true,
       hasPermission: true,
     });

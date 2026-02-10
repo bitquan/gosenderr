@@ -10,7 +10,11 @@ import {useAuth} from '../context/AuthContext';
 import {useServiceRegistry} from '../services/serviceRegistry';
 import type {JobsSyncState} from '../services/ports/jobsPort';
 import type {LocationSnapshot} from '../services/ports/locationPort';
-import {deriveSyncHealth, formatLocationSampleTime, formatSyncTime} from './viewModels/jobsViewState';
+import {
+  deriveSyncHealth,
+  formatLocationSampleTime,
+  formatSyncTime,
+} from './viewModels/jobsViewState';
 import type {Job} from '../types/jobs';
 
 type DashboardScreenProps = {
@@ -36,7 +40,10 @@ type TrackingHealth = {
 
 const LOCATION_STALE_THRESHOLD_MS = 45_000;
 
-const JobsMapCardFallback = ({activeJob, courierLocation}: JobsMapCardProps): React.JSX.Element => (
+const JobsMapCardFallback = ({
+  activeJob,
+  courierLocation,
+}: JobsMapCardProps): React.JSX.Element => (
   <View style={styles.card}>
     <Text style={styles.sectionTitle}>Map Validation</Text>
     <Text style={styles.subtitle}>
@@ -49,8 +56,6 @@ const JobsMapCardFallback = ({activeJob, courierLocation}: JobsMapCardProps): Re
 
 const loadJobsMapCard = (): React.ComponentType<JobsMapCardProps> => {
   try {
-    // Metro can serve stale module state after path/branch changes.
-    // Resolve lazily so dashboard stays alive with a clear fallback.
     // Metro can serve stale module state after path/branch changes.
     // Resolve lazily so dashboard stays alive with a clear fallback.
     // Use dynamic import via require behind a lint exception (map module is optional at runtime)
@@ -75,7 +80,12 @@ export const DashboardScreen = ({
   const JobsMapCard = loadJobsMapCard();
   const {session} = useAuth();
   const {location: locationService, analytics} = useServiceRegistry();
-  const {state: locationState, requestPermission, startTracking, stopTracking} = locationService.useLocationTracking();
+  const {
+    state: locationState,
+    requestPermission,
+    startTracking,
+    stopTracking,
+  } = locationService.useLocationTracking();
   const lastTrackingError = useRef<string | null>(null);
 
   const syncHealth = deriveSyncHealth(jobsSyncState);
@@ -105,7 +115,16 @@ export const DashboardScreen = ({
       };
     }
 
-    const locationAge = Date.now() - locationState.lastLocation.timestamp;
+    const lastTs = locationState.lastLocation.timestamp;
+    if (!lastTs) {
+      return {
+        label: 'Starting',
+        detail: 'Waiting for first location sample.',
+        tone: 'degraded',
+      };
+    }
+
+    const locationAge = Date.now() - lastTs;
     if (locationAge > LOCATION_STALE_THRESHOLD_MS) {
       return {
         label: 'Stale',
@@ -135,15 +154,26 @@ export const DashboardScreen = ({
       detail: 'Tracking and sync are healthy.',
       tone: 'good',
     };
-  }, [locationState.error, locationState.lastLocation, locationState.tracking, syncHealth.tone]);
+  }, [
+    locationState.error,
+    locationState.lastLocation,
+    locationState.tracking,
+    syncHealth.tone,
+  ]);
 
   useEffect(() => {
-    if (locationState.error && locationState.error !== lastTrackingError.current) {
+    if (
+      locationState.error &&
+      locationState.error !== lastTrackingError.current
+    ) {
       lastTrackingError.current = locationState.error;
       void analytics.track('tracking_error', {
         message: locationState.error.slice(0, 100),
       });
-      void analytics.recordError(new Error(locationState.error), 'tracking_state_error');
+      void analytics.recordError(
+        new Error(locationState.error),
+        'tracking_state_error',
+      );
     }
 
     if (!locationState.error) {
@@ -191,8 +221,12 @@ export const DashboardScreen = ({
   return (
     <ScreenContainer>
       <View style={styles.card}>
-        <Text style={styles.title}>Welcome back, {session?.displayName ?? 'Courier'}</Text>
-        <Text style={styles.subtitle}>{session?.email ?? 'No active session'}</Text>
+        <Text style={styles.title}>
+          Welcome back, {session?.displayName ?? 'Courier'}
+        </Text>
+        <Text style={styles.subtitle}>
+          {session?.email ?? 'No active session'}
+        </Text>
       </View>
 
       <View style={styles.card}>
@@ -225,7 +259,9 @@ export const DashboardScreen = ({
           />
         ) : null}
 
-        {activeJobsCount > 0 ? <Text style={styles.metric}>{activeJobsCount} active jobs</Text> : null}
+        {activeJobsCount > 0 ? (
+          <Text style={styles.metric}>{activeJobsCount} active jobs</Text>
+        ) : null}
 
         {activeJobsCount > 0 && jobsError ? (
           <ErrorState
@@ -237,23 +273,31 @@ export const DashboardScreen = ({
           />
         ) : null}
 
-        <PrimaryButton
-          label="Open Jobs"
-          onPress={onOpenJobs}
-        />
+        <PrimaryButton label="Open Jobs" onPress={onOpenJobs} />
       </View>
 
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Location tracking</Text>
-        <Text style={styles.subtitle}>Tracking status: {trackingHealth.label}</Text>
+        <Text style={styles.subtitle}>
+          Tracking status: {trackingHealth.label}
+        </Text>
         <Text style={styles.subtitle}>{trackingHealth.detail}</Text>
-        <Text style={styles.subtitle}>Last location sample: {formatLocationSampleTime(locationState.lastLocation?.timestamp ?? null)}</Text>
+        <Text style={styles.subtitle}>
+          Last location sample:{' '}
+          {formatLocationSampleTime(
+            locationState.lastLocation?.timestamp ?? null,
+          )}
+        </Text>
         <Text style={styles.subtitle}>Upload health: {syncHealth.title}</Text>
-        <Text style={styles.subtitle}>Last sync: {formatSyncTime(jobsSyncState.lastSyncedAt)}</Text>
+        <Text style={styles.subtitle}>
+          Last sync: {formatSyncTime(jobsSyncState.lastSyncedAt)}
+        </Text>
 
         <View style={styles.row}>
           <PrimaryButton
-            label={locationState.tracking ? 'Tracking active' : 'Start tracking'}
+            label={
+              locationState.tracking ? 'Tracking active' : 'Start tracking'
+            }
             disabled={locationState.tracking}
             onPress={handleStartTracking}
           />
@@ -263,7 +307,8 @@ export const DashboardScreen = ({
             disabled={!locationState.tracking}
             onPress={handleStopTracking}
           />
-          {trackingHealth.tone === 'error' || trackingHealth.tone === 'degraded' ? (
+          {trackingHealth.tone === 'error' ||
+          trackingHealth.tone === 'degraded' ? (
             <PrimaryButton
               label="Retry"
               variant="secondary"
@@ -273,7 +318,10 @@ export const DashboardScreen = ({
         </View>
       </View>
 
-      <JobsMapCard activeJob={activeJob} courierLocation={locationState.lastLocation} />
+      <JobsMapCard
+        activeJob={activeJob}
+        courierLocation={locationState.lastLocation}
+      />
     </ScreenContainer>
   );
 };

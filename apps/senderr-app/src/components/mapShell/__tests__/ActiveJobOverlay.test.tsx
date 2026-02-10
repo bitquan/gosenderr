@@ -1,7 +1,8 @@
 /* @vitest-environment jsdom */
 import "@testing-library/jest-dom/vitest";
-import { render, screen, fireEvent, within } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
+import type { MapShellOverlayModel } from "@/lib/mapShell/overlayController";
 import ActiveJobOverlay from "@/components/mapShell/ActiveJobOverlay";
 
 const fakeModel = {
@@ -12,7 +13,7 @@ const fakeModel = {
   primaryAction: "update_status",
   nextStatus: "accepted",
   tone: "warning",
-} as any;
+} as unknown as MapShellOverlayModel;
 
 describe("ActiveJobOverlay", () => {
   it("renders title and primary button", () => {

@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { LoadingState } from "@gosenderr/ui";
 import { PackageRateCardBuilder } from "@/components/v2/PackageRateCardBuilder";
@@ -13,16 +12,21 @@ type Mode = "view" | "edit-package" | "edit-food";
 
 export default function RateCardsPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+
+  // Minimal local `User` type to avoid importing firebase types in this file
+  type FirebaseUser = { uid: string; email?: string | null };
+
+  useSearchParams();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [mode, setMode] = useState<Mode>("view");
   const [packageRateCard, setPackageRateCard] =
     useState<PackageRateCard | null>(null);
   const [foodRateCard, setFoodRateCard] = useState<FoodRateCard | null>(null);
   const [packagesEnabled, setPackagesEnabled] = useState(false);
   const [foodEnabled, setFoodEnabled] = useState(false);
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  // Using local Firebase user shape above (`FirebaseUser`) to avoid importing auth types inline
 
   useEffect(() => {
     const auth = getAuthSafe();
@@ -165,7 +169,6 @@ export default function RateCardsPage() {
 
   const hasAnyRateCard = packageRateCard || foodRateCard;
 
-
   return (
     <div className="min-h-screen bg-[#F8F9FF]">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-6">
@@ -192,16 +195,40 @@ export default function RateCardsPage() {
         {/* Status Overview */}
         {hasAnyRateCard && (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-2">
-            <div className={`rounded-xl p-4 ${packagesEnabled ? 'bg-emerald-50 border-2 border-emerald-300' : 'bg-gray-50 border-2 border-gray-200'}`}>
-              <div className="text-sm font-medium text-gray-600 mb-1">Package Delivery</div>
-              <div className={`text-xl font-bold ${packagesEnabled ? 'text-emerald-700' : 'text-gray-500'}`}>
-                {packagesEnabled ? '✅ Active' : '⏸️ Paused'}
+            <div
+              className={`rounded-xl p-4 ${
+                packagesEnabled
+                  ? "bg-emerald-50 border-2 border-emerald-300"
+                  : "bg-gray-50 border-2 border-gray-200"
+              }`}
+            >
+              <div className="text-sm font-medium text-gray-600 mb-1">
+                Package Delivery
+              </div>
+              <div
+                className={`text-xl font-bold ${
+                  packagesEnabled ? "text-emerald-700" : "text-gray-500"
+                }`}
+              >
+                {packagesEnabled ? "✅ Active" : "⏸️ Paused"}
               </div>
             </div>
-            <div className={`rounded-xl p-4 ${foodEnabled ? 'bg-orange-50 border-2 border-orange-300' : 'bg-gray-50 border-2 border-gray-200'}`}>
-              <div className="text-sm font-medium text-gray-600 mb-1">Food Delivery</div>
-              <div className={`text-xl font-bold ${foodEnabled ? 'text-orange-700' : 'text-gray-500'}`}>
-                {foodEnabled ? '✅ Active' : '⏸️ Paused'}
+            <div
+              className={`rounded-xl p-4 ${
+                foodEnabled
+                  ? "bg-orange-50 border-2 border-orange-300"
+                  : "bg-gray-50 border-2 border-gray-200"
+              }`}
+            >
+              <div className="text-sm font-medium text-gray-600 mb-1">
+                Food Delivery
+              </div>
+              <div
+                className={`text-xl font-bold ${
+                  foodEnabled ? "text-orange-700" : "text-gray-500"
+                }`}
+              >
+                {foodEnabled ? "✅ Active" : "⏸️ Paused"}
               </div>
             </div>
           </div>
@@ -214,7 +241,9 @@ export default function RateCardsPage() {
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-3xl">📦</span>
-                  <h2 className="text-2xl font-bold text-gray-900">Package Delivery</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    Package Delivery
+                  </h2>
                 </div>
                 <p className="text-sm text-gray-600">
                   Set rates and manage package delivery jobs
@@ -225,46 +254,78 @@ export default function RateCardsPage() {
             {packageRateCard ? (
               <div className="space-y-4 mb-6">
                 <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
-                  <div className="text-sm text-gray-600 mb-3 font-medium">Current Rates & Limits</div>
+                  <div className="text-sm text-gray-600 mb-3 font-medium">
+                    Current Rates & Limits
+                  </div>
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="text-gray-700">Base Fare:</span>
-                      <span className="font-bold text-gray-900">${packageRateCard.baseFare.toFixed(2)}</span>
+                      <span className="font-bold text-gray-900">
+                        ${packageRateCard.baseFare.toFixed(2)}
+                      </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-gray-700">Per Mile:</span>
-                      <span className="font-bold text-gray-900">${packageRateCard.perMile.toFixed(2)}</span>
+                      <span className="font-bold text-gray-900">
+                        ${packageRateCard.perMile.toFixed(2)}
+                      </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-gray-700">Per Minute:</span>
-                      <span className="font-bold text-gray-900">${packageRateCard.perMinute.toFixed(2)}</span>
+                      <span className="font-bold text-gray-900">
+                        ${packageRateCard.perMinute.toFixed(2)}
+                      </span>
                     </div>
                     <div className="pt-2 border-t border-blue-300">
-                      <div className="text-xs text-gray-600 mb-2 font-medium">Distance Limits:</div>
+                      <div className="text-xs text-gray-600 mb-2 font-medium">
+                        Distance Limits:
+                      </div>
                       <div className="space-y-1">
                         <div className="flex justify-between text-sm">
-                          <span className="text-gray-700">Max Pickup Distance:</span>
-                          <span className="font-semibold">{packageRateCard.maxPickupDistanceMiles ? `${packageRateCard.maxPickupDistanceMiles} mi` : 'Unlimited'}</span>
+                          <span className="text-gray-700">
+                            Max Pickup Distance:
+                          </span>
+                          <span className="font-semibold">
+                            {packageRateCard.maxPickupDistanceMiles
+                              ? `${packageRateCard.maxPickupDistanceMiles} mi`
+                              : "Unlimited"}
+                          </span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span className="text-gray-700">Max Delivery Distance:</span>
-                          <span className="font-semibold">{packageRateCard.maxDeliveryDistanceMiles ? `${packageRateCard.maxDeliveryDistanceMiles} mi` : 'Unlimited'}</span>
+                          <span className="text-gray-700">
+                            Max Delivery Distance:
+                          </span>
+                          <span className="font-semibold">
+                            {packageRateCard.maxDeliveryDistanceMiles
+                              ? `${packageRateCard.maxDeliveryDistanceMiles} mi`
+                              : "Unlimited"}
+                          </span>
                         </div>
                       </div>
                     </div>
-                    {packageRateCard.optionalFees && packageRateCard.optionalFees.length > 0 && (
-                      <div className="pt-2 border-t border-blue-200">
-                        <div className="text-xs text-gray-600 mb-2">Optional Fees:</div>
-                        <div className="space-y-1">
-                          {packageRateCard.optionalFees.map((fee, idx) => (
-                            <div key={idx} className="flex justify-between text-sm">
-                              <span className="text-gray-700">{fee.name}:</span>
-                              <span className="font-semibold">${fee.amount.toFixed(2)}</span>
-                            </div>
-                          ))}
+                    {packageRateCard.optionalFees &&
+                      packageRateCard.optionalFees.length > 0 && (
+                        <div className="pt-2 border-t border-blue-200">
+                          <div className="text-xs text-gray-600 mb-2">
+                            Optional Fees:
+                          </div>
+                          <div className="space-y-1">
+                            {packageRateCard.optionalFees.map((fee, idx) => (
+                              <div
+                                key={idx}
+                                className="flex justify-between text-sm"
+                              >
+                                <span className="text-gray-700">
+                                  {fee.name}:
+                                </span>
+                                <span className="font-semibold">
+                                  ${fee.amount.toFixed(2)}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
                   </div>
                 </div>
 
@@ -273,11 +334,13 @@ export default function RateCardsPage() {
                     onClick={handleTogglePackages}
                     className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-colors ${
                       packagesEnabled
-                        ? 'bg-emerald-500 text-white hover:bg-emerald-600'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        ? "bg-emerald-500 text-white hover:bg-emerald-600"
+                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                     }`}
                   >
-                    {packagesEnabled ? '✅ Accept Packages' : '⏸️ Pause Packages'}
+                    {packagesEnabled
+                      ? "✅ Accept Packages"
+                      : "⏸️ Pause Packages"}
                   </button>
                   <button
                     onClick={() => setMode("edit-package")}
@@ -310,7 +373,9 @@ export default function RateCardsPage() {
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-3xl">🍔</span>
-                  <h2 className="text-2xl font-bold text-gray-900">Food Delivery</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    Food Delivery
+                  </h2>
                 </div>
                 <p className="text-sm text-gray-600">
                   Set rates for restaurant and food deliveries
@@ -321,58 +386,96 @@ export default function RateCardsPage() {
             {foodRateCard ? (
               <div className="space-y-4 mb-6">
                 <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-4 border border-amber-200">
-                  <div className="text-sm text-gray-600 mb-3 font-medium">Current Rates & Limits</div>
+                  <div className="text-sm text-gray-600 mb-3 font-medium">
+                    Current Rates & Limits
+                  </div>
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="text-gray-700">Base Fare:</span>
-                      <span className="font-bold text-gray-900">${foodRateCard.baseFare.toFixed(2)}</span>
+                      <span className="font-bold text-gray-900">
+                        ${foodRateCard.baseFare.toFixed(2)}
+                      </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-gray-700">Per Mile:</span>
-                      <span className="font-bold text-gray-900">${foodRateCard.perMile.toFixed(2)}</span>
+                      <span className="font-bold text-gray-900">
+                        ${foodRateCard.perMile.toFixed(2)}
+                      </span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-700">Restaurant Wait Pay:</span>
-                      <span className="font-bold text-gray-900">${foodRateCard.restaurantWaitPay.toFixed(2)}/min</span>
+                      <span className="text-gray-700">
+                        Restaurant Wait Pay:
+                      </span>
+                      <span className="font-bold text-gray-900">
+                        ${foodRateCard.restaurantWaitPay.toFixed(2)}/min
+                      </span>
                     </div>
                     <div className="pt-2 border-t border-amber-200">
-                      <div className="text-xs text-gray-600 mb-2 font-medium">Distance Limits:</div>
+                      <div className="text-xs text-gray-600 mb-2 font-medium">
+                        Distance Limits:
+                      </div>
                       <div className="space-y-1">
                         <div className="flex justify-between text-sm">
-                          <span className="text-gray-700">Max Pickup Distance:</span>
-                          <span className="font-semibold">{foodRateCard.maxPickupDistanceMiles ? `${foodRateCard.maxPickupDistanceMiles} mi` : 'Unlimited'}</span>
+                          <span className="text-gray-700">
+                            Max Pickup Distance:
+                          </span>
+                          <span className="font-semibold">
+                            {foodRateCard.maxPickupDistanceMiles
+                              ? `${foodRateCard.maxPickupDistanceMiles} mi`
+                              : "Unlimited"}
+                          </span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span className="text-gray-700">Max Delivery Distance:</span>
-                          <span className="font-semibold">{foodRateCard.maxDeliveryDistanceMiles ? `${foodRateCard.maxDeliveryDistanceMiles} mi` : 'Unlimited'}</span>
+                          <span className="text-gray-700">
+                            Max Delivery Distance:
+                          </span>
+                          <span className="font-semibold">
+                            {foodRateCard.maxDeliveryDistanceMiles
+                              ? `${foodRateCard.maxDeliveryDistanceMiles} mi`
+                              : "Unlimited"}
+                          </span>
                         </div>
                       </div>
                     </div>
-                    {foodRateCard.peakHours && foodRateCard.peakHours.length > 0 && (
-                      <div className="pt-2 border-t border-amber-200">
-                        <div className="text-xs text-gray-600 mb-2">Peak Hours:</div>
-                        <div className="space-y-1">
-                          {foodRateCard.peakHours.map((peak, idx) => (
-                            <div key={idx} className="text-sm text-gray-700">
-                              {peak.days.join(", ")} {peak.startTime}-{peak.endTime} ({peak.multiplier}x)
-                            </div>
-                          ))}
+                    {foodRateCard.peakHours &&
+                      foodRateCard.peakHours.length > 0 && (
+                        <div className="pt-2 border-t border-amber-200">
+                          <div className="text-xs text-gray-600 mb-2">
+                            Peak Hours:
+                          </div>
+                          <div className="space-y-1">
+                            {foodRateCard.peakHours.map((peak, idx) => (
+                              <div key={idx} className="text-sm text-gray-700">
+                                {peak.days.join(", ")} {peak.startTime}-
+                                {peak.endTime} ({peak.multiplier}x)
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    )}
-                    {foodRateCard.optionalFees && foodRateCard.optionalFees.length > 0 && (
-                      <div className="pt-2 border-t border-amber-200">
-                        <div className="text-xs text-gray-600 mb-2">Optional Fees:</div>
-                        <div className="space-y-1">
-                          {foodRateCard.optionalFees.map((fee, idx) => (
-                            <div key={idx} className="flex justify-between text-sm">
-                              <span className="text-gray-700">{fee.name}:</span>
-                              <span className="font-semibold">${fee.amount.toFixed(2)}</span>
-                            </div>
-                          ))}
+                      )}
+                    {foodRateCard.optionalFees &&
+                      foodRateCard.optionalFees.length > 0 && (
+                        <div className="pt-2 border-t border-amber-200">
+                          <div className="text-xs text-gray-600 mb-2">
+                            Optional Fees:
+                          </div>
+                          <div className="space-y-1">
+                            {foodRateCard.optionalFees.map((fee, idx) => (
+                              <div
+                                key={idx}
+                                className="flex justify-between text-sm"
+                              >
+                                <span className="text-gray-700">
+                                  {fee.name}:
+                                </span>
+                                <span className="font-semibold">
+                                  ${fee.amount.toFixed(2)}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
                   </div>
                 </div>
 
@@ -381,11 +484,13 @@ export default function RateCardsPage() {
                     onClick={handleToggleFood}
                     className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-colors ${
                       foodEnabled
-                        ? 'bg-orange-500 text-white hover:bg-orange-600'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        ? "bg-orange-500 text-white hover:bg-orange-600"
+                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                     }`}
                   >
-                    {foodEnabled ? '✅ Accept Food Orders' : '⏸️ Pause Food Orders'}
+                    {foodEnabled
+                      ? "✅ Accept Food Orders"
+                      : "⏸️ Pause Food Orders"}
                   </button>
                   <button
                     onClick={() => setMode("edit-food")}
@@ -419,7 +524,8 @@ export default function RateCardsPage() {
               <div>
                 <h3 className="font-bold text-amber-900 mb-1">Get Started</h3>
                 <p className="text-sm text-amber-800">
-                  Set up at least one rate card to start accepting deliveries. You can enable/disable delivery types anytime.
+                  Set up at least one rate card to start accepting deliveries.
+                  You can enable/disable delivery types anytime.
                 </p>
               </div>
             </div>

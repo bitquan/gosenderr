@@ -72,7 +72,6 @@ const scheduleRetry = (uid: string, attempts: number): void => {
       });
   } catch (err) {
     // don't let scheduling failures block
-    // eslint-disable-next-line no-console
     console.warn('[locationUploader] scheduleRetry failed', err);
   }
 };
@@ -83,10 +82,11 @@ const readQueue = async (): Promise<EnqueuedLocation[]> => {
   try {
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) return parsed as EnqueuedLocation[];
-  } catch (err) {
-    // ignore and return empty
+  } catch (err: unknown) {
+    // ignore and return empty — log safely
     // eslint-disable-next-line no-console
-    console.warn('[locationUploader] readQueue parse failed', err);
+    const msg = err instanceof Error ? err.message : String(err);
+    console.warn('[locationUploader] readQueue parse failed', msg);
   }
   return [];
 };
@@ -112,7 +112,7 @@ export const enqueueLocation = async (
     latitude: snapshot.latitude,
     longitude: snapshot.longitude,
     accuracy: snapshot.accuracy ?? null,
-    heading: (snapshot as any).heading ?? null,
+    heading: snapshot.heading ?? null,
     timestamp: new Date(snapshot.timestamp ?? Date.now()).toISOString(),
     attempts: 0,
     lastError: null,
@@ -136,7 +136,6 @@ export const enqueueLocation = async (
       });
   } catch (err) {
     // telemetry should never block functionality
-    // eslint-disable-next-line no-console
     console.warn('[locationUploader] telemetry enqueue failed', err);
   }
 };
