@@ -529,3 +529,20 @@ Append-only log used for session recovery.
 - Blockers: None
 - Next:
   - Start payments & recharging branch
+
+---
+
+## 2026-02-10 10:33 local (2026-02-10 15:33 UTC)
+
+- Status: `in_progress`
+- Summary: Fix onboarding payload typing for rate cards
+- Branch: `senderr-app/feature/onboarding-profile-1`
+- Commit: `0e53186`
+- Issue: `#286`
+- PR: `#286`
+- Files:
+  - `apps/senderr-app/src/pages/onboarding/page.tsx`
+  - `docs/dev/worktree-logs/senderr-live.md`
+- Blockers: None
+- Next:
+  - Rerun CI for PR #286
