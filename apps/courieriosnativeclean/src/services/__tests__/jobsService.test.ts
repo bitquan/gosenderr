@@ -53,9 +53,13 @@ const mockRunTransaction = jest.fn() as jest.MockedFunction<
   (
     db: unknown,
     updater: (tx: {
-      get: () => Promise<{exists: () => boolean; id: string; data: () => Record<string, unknown>}>
-      update: jest.Mock
-    }) => Promise<unknown>
+      get: () => Promise<{
+        exists: () => boolean;
+        id: string;
+        data: () => Record<string, unknown>;
+      }>;
+      update: jest.Mock;
+    }) => Promise<unknown>,
   ) => Promise<unknown>
 >;
 
@@ -66,6 +70,9 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
     setItem: mockSetItem,
     removeItem: mockRemoveItem,
   },
+  getItem: mockGetItem,
+  setItem: mockSetItem,
+  removeItem: mockRemoveItem,
 }));
 
 jest.mock('../firebase', () => ({

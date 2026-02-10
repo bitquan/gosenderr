@@ -1,6 +1,6 @@
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { storage } from '@/lib/firebase';
-import { serverTimestamp } from 'firebase/firestore';
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { storage } from "@/lib/firebase";
+import { serverTimestamp, type FieldValue } from "firebase/firestore";
 
 const getSecureRandomId = () => {
   const cryptoObj = globalThis.crypto;
@@ -8,12 +8,15 @@ const getSecureRandomId = () => {
     return cryptoObj.randomUUID();
   }
   if (!cryptoObj?.getRandomValues) {
-    throw new Error('Secure random generator unavailable');
+    throw new Error("Secure random generator unavailable");
   }
   const bytes = new Uint32Array(4);
   cryptoObj.getRandomValues(bytes);
-  return Array.from(bytes, (value) => value.toString(36)).join('');
+  return Array.from(bytes, (value) => value.toString(36)).join("");
 };
+
+const getErrorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : String(error);
 
 export interface UploadProgress {
   bytesTransferred: number;
@@ -24,7 +27,7 @@ export interface UploadProgress {
 export interface UploadResult {
   url: string;
   path: string;
-  uploadedAt: any; // serverTimestamp()
+  uploadedAt: FieldValue;
   uploadedBy: string;
 }
 
@@ -40,26 +43,28 @@ export async function uploadJobPhoto(
   file: File,
   jobId: string,
   userId: string,
-  onProgress?: (progress: UploadProgress) => void
+  onProgress?: (progress: UploadProgress) => void,
 ): Promise<UploadResult> {
   // Validate file type
-  const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+  const validTypes = ["image/jpeg", "image/png", "image/webp"];
   if (!validTypes.includes(file.type)) {
-    throw new Error('Invalid file type. Only JPG, PNG, and WEBP images are allowed.');
+    throw new Error(
+      "Invalid file type. Only JPG, PNG, and WEBP images are allowed.",
+    );
   }
 
   // Validate file size (10MB max)
   const maxSize = 10 * 1024 * 1024; // 10MB
   if (file.size > maxSize) {
-    throw new Error('File size exceeds 10MB limit.');
+    throw new Error("File size exceeds 10MB limit.");
   }
 
   // Generate unique filename
   const timestamp = Date.now();
   const random = getSecureRandomId();
-  const extension = file.name.split('.').pop() || 'jpg';
+  const extension = file.name.split(".").pop() || "jpg";
   const filename = `${timestamp}_${random}.${extension}`;
-  
+
   // Storage path
   const storagePath = `jobs/${jobId}/photos/${filename}`;
   const storageRef = ref(storage, storagePath);
@@ -71,11 +76,12 @@ export async function uploadJobPhoto(
 
   return new Promise((resolve, reject) => {
     uploadTask.on(
-      'state_changed',
+      "state_changed",
       (snapshot) => {
         // Progress callback
         if (onProgress) {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          const progress =
+            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
           onProgress({
             bytesTransferred: snapshot.bytesTransferred,
             totalBytes: snapshot.totalBytes,
@@ -85,8 +91,8 @@ export async function uploadJobPhoto(
       },
       (error) => {
         // Error callback
-        console.error('Upload error:', error);
-        reject(new Error(`Upload failed: ${error.message}`));
+        console.error("Upload error:", error);
+        reject(new Error(`Upload failed: ${getErrorMessage(error)}`));
       },
       async () => {
         // Success callback
@@ -98,10 +104,12 @@ export async function uploadJobPhoto(
             uploadedAt: serverTimestamp(),
             uploadedBy: userId,
           });
-        } catch (error: any) {
-          reject(new Error(`Failed to get download URL: ${error.message}`));
+        } catch (error) {
+          reject(
+            new Error(`Failed to get download URL: ${getErrorMessage(error)}`),
+          );
         }
-      }
+      },
     );
   });
 }
@@ -111,7 +119,7 @@ export async function uploadJobPhoto(
  * @param storagePath - The storage path of the photo to delete
  */
 export async function deleteJobPhoto(storagePath: string): Promise<void> {
-  const { deleteObject } = await import('firebase/storage');
+  const { deleteObject } = await import("firebase/storage");
   const storageRef = ref(storage, storagePath);
   await deleteObject(storageRef);
 }
