@@ -26,6 +26,15 @@ Last verified: 2026-02-09
 
 - Branch: senderr-app/feature/job-lifecycle-1
 - Issue/PR: #285
+- Scope: courier location typing fix for job detail
+- Files touched: apps/senderr-app/src/pages/jobs/[jobId]/page.tsx
+- Behavior change: fallback to legacy courier location or synthesize timestamp
+- Commands run: none
+- Test result: not run (implementation-first)
+- Follow-up: re-run CI checks after push
+
+- Branch: senderr-app/feature/job-lifecycle-1
+- Issue/PR: #285
 - Scope: job detail lifecycle flow
 - Files touched: job detail page, status timeline, legacy JobDetail redirect
 - Behavior change: job detail navigation uses courier location and legacy page redirects

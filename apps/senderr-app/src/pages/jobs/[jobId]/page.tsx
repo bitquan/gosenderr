@@ -26,7 +26,12 @@ export default function CourierJobDetail() {
   const { job: jobDoc, loading: jobLoading } = useJob(jobId);
   const { userDoc } = useUserDoc();
   const { startNavigation, isNavigating } = useNavigation();
-  const courierLocation = userDoc?.courierProfile?.currentLocation ?? null;
+  const profileLocation = userDoc?.courierProfile?.currentLocation;
+  const courierLocation = userDoc?.location
+    ? userDoc.location
+    : profileLocation && userDoc
+    ? { ...profileLocation, updatedAt: userDoc.updatedAt }
+    : null;
   const hasLocation = Boolean(courierLocation);
 
   if (jobLoading) {
