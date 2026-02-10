@@ -6,7 +6,7 @@ jest.mock('@react-native-async-storage/async-storage', () => {
   return {
     __esModule: true,
     default: {
-      getItem: jest.fn(async (k: string) => (store[k] ?? null)),
+      getItem: jest.fn(async (k: string) => store[k] ?? null),
       setItem: jest.fn(async (k: string, v: string) => {
         store[k] = v;
       }),
@@ -18,8 +18,15 @@ jest.mock('@react-native-async-storage/async-storage', () => {
 });
 
 import {initializeApp, deleteApp, type FirebaseApp} from 'firebase/app';
-import {connectFirestoreEmulator, getFirestore, type Firestore} from 'firebase/firestore';
-import {initializeApp as initializeAdminApp, getApps as getAdminApps} from 'firebase-admin/app';
+import {
+  connectFirestoreEmulator,
+  getFirestore,
+  type Firestore,
+} from 'firebase/firestore';
+import {
+  initializeApp as initializeAdminApp,
+  getApps as getAdminApps,
+} from 'firebase-admin/app';
 import {getFirestore as getAdminFirestore} from 'firebase-admin/firestore';
 
 import {configureRuntime} from '../../config/runtime';
@@ -75,33 +82,37 @@ describe('locationUploadService integration (Firestore emulator)', () => {
 
   const maybeIt = hasEmulator ? it : it.skip;
 
-  maybeIt('enqueue + flush updates user document and clears queue', async () => {
-    // Enqueue a location for the uid
-    await sut.enqueueLocation(uid, {
-      latitude: 37.42,
-      longitude: -122.08,
-      timestamp: Date.now(),
-      accuracy: 5,
-    } as any);
+  maybeIt(
+    'enqueue + flush updates user document and clears queue',
+    async () => {
+      // Enqueue a location for the uid
+      await sut.enqueueLocation(uid, {
+        latitude: 37.42,
+        longitude: -122.08,
+        timestamp: Date.now(),
+        accuracy: 5,
+      } as any);
 
-    // ensure flush performs an upload to Firestore
-    const res = await sut.flushQueuedLocationsForSession(uid);
-    expect(res.flushed).toBe(1);
+      // ensure flush performs an upload to Firestore
+      const res = await sut.flushQueuedLocationsForSession(uid);
+      expect(res.flushed).toBe(1);
 
-    // Verify via admin firestore that the user doc was updated
-    const adminDb = getAdminFirestore();
-    const docRef = adminDb.collection('users').doc(uid);
-    const snap = await docRef.get();
-    expect(snap.exists).toBe(true);
-    const data = snap.data();
-    expect(data).toBeTruthy();
-    expect(data!.location).toBeTruthy();
-    expect(typeof data!.location.lat).toBe('number');
-    expect(typeof data!.location.lng).toBe('number');
+      // Verify via admin firestore that the user doc was updated
+      const adminDb = getAdminFirestore();
+      const docRef = adminDb.collection('users').doc(uid);
+      const snap = await docRef.get();
+      expect(snap.exists).toBe(true);
+      const data = snap.data();
+      expect(data).toBeTruthy();
+      expect(data!.location).toBeTruthy();
+      expect(typeof data!.location.lat).toBe('number');
+      expect(typeof data!.location.lng).toBe('number');
 
-    // The queue should be cleared (getItem returns null after remove)
-    const storage = require('@react-native-async-storage/async-storage').default;
-    const raw = await storage.getItem('@senderr/location-upload-queue');
-    expect(raw).toBeNull();
-  });
+      // The queue should be cleared (getItem returns null after remove)
+      const storage =
+        require('@react-native-async-storage/async-storage').default;
+      const raw = await storage.getItem('@senderr/location-upload-queue');
+      expect(raw).toBeNull();
+    },
+  );
 });
