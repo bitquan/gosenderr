@@ -60,6 +60,15 @@ Last verified: 2026-02-09
 - Test result: not run (implementation-first)
 - Follow-up: open PR + verify CI
 
+- Branch: senderr-app/feature/onboarding-profile-1
+- Issue/PR: #286
+- Scope: merge base branch to resolve conflicts
+- Files touched: docs/dev/SESSION_STATE.md, docs/dev/WORKLOG.md, docs/dev/worktree-logs/senderr-live.md
+- Behavior change: none (merge sync)
+- Commands run: git merge origin/senderr_app
+- Test result: not run (merge sync only)
+- Follow-up: check CI status for PR #286
+
 - Branch: senderr-app/feature/job-lifecycle-1
 - Issue/PR: #285
 - Scope: courier location typing fix for job detail
