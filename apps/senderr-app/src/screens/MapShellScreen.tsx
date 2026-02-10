@@ -7,6 +7,7 @@ import type {
   JobsSyncState,
   LocationSnapshot,
   MapShellOverlayModel,
+  JobStatus,
 } from "@/lib/mapShell/overlayController";
 import ActiveJobOverlay from "@/components/mapShell/ActiveJobOverlay";
 import SettingsOverlay from "@/components/mapShell/SettingsOverlay";
@@ -14,8 +15,6 @@ import MapShellLayout from "@/components/mapShell/MapShellLayout";
 import { Slot } from "@/components/mapShell/slots";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { claimJob, updateJobStatus } from "@/lib/v2/jobs";
-
-import type { MapShellOverlayModel } from "@/lib/mapShell/overlayController";
 
 export type MapShellScreenProps = {
   className?: string;
@@ -82,7 +81,11 @@ export default function MapShellScreen({
       }
 
       if (action === "update_status" && nextStatus) {
-        await updateJobStatus(jobId, nextStatus as string, uid);
+        await updateJobStatus(
+          jobId,
+          nextStatus as unknown as import("@/lib/v2/types").JobStatus,
+          uid,
+        );
         alert("Job status updated (dev)");
         return;
       }

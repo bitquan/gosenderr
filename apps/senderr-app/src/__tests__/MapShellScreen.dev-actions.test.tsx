@@ -1,12 +1,7 @@
 /* @vitest-environment jsdom */
 import "@testing-library/jest-dom/vitest";
 import { describe, it, expect, vi } from "vitest";
-import {
-  render,
-  within,
-  fireEvent,
-  waitFor,
-} from "@testing-library/react";
+import { render, within, fireEvent, waitFor } from "@testing-library/react";
 
 // Mock MapboxMap to avoid DOM/mapbox dependency in unit tests
 vi.mock("@/components/v2/MapboxMap", () => ({
@@ -27,7 +22,9 @@ vi.mock("@/hooks/v2/useAuthUser", () => ({
 }));
 
 // Stub alert to avoid test dialog
-const alertSpy = vi.spyOn(globalThis as unknown as Window, "alert").mockImplementation(() => {});
+const alertSpy = vi
+  .spyOn(globalThis as unknown as Window, "alert")
+  .mockImplementation(() => {});
 
 import MapShellScreen from "@/screens/MapShellScreen";
 import { claimJob } from "@/lib/v2/jobs";

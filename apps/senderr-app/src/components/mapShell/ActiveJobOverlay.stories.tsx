@@ -1,6 +1,7 @@
 import React from "react";
 import ActiveJobOverlay from "./ActiveJobOverlay";
 import { buildMapShellOverlayModel } from "@/lib/mapShell/overlayController";
+import type { JobsSyncState, Job } from "@/lib/mapShell/overlayController";
 
 export default {
   title: "MapShell/ActiveJobOverlay",
@@ -9,9 +10,9 @@ export default {
 
 export const Offer = () => {
   const model = buildMapShellOverlayModel({
-    activeJob: { id: "1", status: "pending" } as unknown as { id: string; status: string },
+    activeJob: { id: "1", status: "pending" } as Job,
     latestJob: null,
-    jobsSyncState: { status: "ok" } as unknown as { status: string },
+    jobsSyncState: { status: "ok" } as JobsSyncState,
     courierLocation: null,
     tracking: false,
     hasPermission: false,
@@ -21,9 +22,9 @@ export const Offer = () => {
 
 export const Accepted_NoPermission = () => {
   const model = buildMapShellOverlayModel({
-    activeJob: { id: "1", status: "accepted" } as unknown as { id: string; status: string },
+    activeJob: { id: "1", status: "accepted" } as Job,
     latestJob: null,
-    jobsSyncState: { status: "ok" } as unknown as { status: string },
+    jobsSyncState: { status: "ok" } as JobsSyncState,
     courierLocation: null,
     tracking: false,
     hasPermission: false,
@@ -33,9 +34,9 @@ export const Accepted_NoPermission = () => {
 
 export const Accepted_WithPermission = () => {
   const model = buildMapShellOverlayModel({
-    activeJob: { id: "1", status: "accepted" } as unknown as { id: string; status: string },
+    activeJob: { id: "1", status: "accepted" } as Job,
     latestJob: null,
-    jobsSyncState: { status: "ok" } as unknown as { status: string },
+    jobsSyncState: { status: "ok" } as JobsSyncState,
     courierLocation: null,
     tracking: true,
     hasPermission: true,

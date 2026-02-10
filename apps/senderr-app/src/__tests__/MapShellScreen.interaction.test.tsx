@@ -22,7 +22,9 @@ vi.mock("@/hooks/v2/useAuthUser", () => ({
 }));
 
 // Stub alert to avoid test dialog
-const alertSpy = vi.spyOn(globalThis as unknown as Window, "alert").mockImplementation(() => {});
+const alertSpy = vi
+  .spyOn(globalThis as unknown as Window, "alert")
+  .mockImplementation(() => {});
 
 import type { MapShellOverlayModel } from "@/lib/mapShell/overlayController";
 import MapShellScreen from "@/screens/MapShellScreen";
@@ -67,7 +69,10 @@ describe("MapShellScreen interactions", () => {
     // Mock permission failure (typed)
     (navigator as unknown as { geolocation?: Geolocation }).geolocation = {
       getCurrentPosition: (_s: PositionCallback, err?: PositionErrorCallback) =>
-        err?.({ code: 1, message: "Permission denied" } as unknown as PositionError),
+        err?.({
+          code: 1,
+          message: "Permission denied",
+        } as unknown as GeolocationPositionError),
     } as Geolocation;
 
     fireEvent.click(accBtn);
@@ -95,7 +100,9 @@ describe("MapShellScreen interactions", () => {
 
     (navigator as unknown as { geolocation?: Geolocation }).geolocation = {
       getCurrentPosition: (s: PositionCallback) =>
-        s({ coords: { latitude: 1, longitude: 2 } } as unknown as GeolocationPosition),
+        s({
+          coords: { latitude: 1, longitude: 2 },
+        } as unknown as GeolocationPosition),
     } as Geolocation;
 
     fireEvent.click(accBtn2);

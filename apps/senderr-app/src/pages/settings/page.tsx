@@ -65,7 +65,34 @@ const STATE_OPTIONS = [
 export default function CourierSettingsPage() {
   const navigate = useNavigate();
   const { user, loading } = useAuthUser();
-  import type { CourierData } from "@/lib/v2/types";
+  // Local minimal types for settings page to avoid missing module issues during tsc checks
+  type DocItem = {
+    label: string;
+    url: string;
+    name: string;
+    contentType?: string;
+    uploadedAt?: Date;
+  };
+  type CourierProfile = {
+    isOnline?: boolean;
+    serviceRadius?: number;
+    taxState?: string;
+    notificationPrefs?: {
+      jobOffers?: boolean;
+      payoutUpdates?: boolean;
+      reminders?: boolean;
+    };
+    completedJobs?: number;
+    todayJobs?: number;
+    documents?: DocItem[];
+    status?: string;
+    rejectionReason?: string | null;
+  };
+  type CourierData = {
+    role?: string;
+    courierProfile?: CourierProfile;
+    taxState?: string;
+  };
   const [courierData, setCourierData] = useState<CourierData | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
   const [signingOut, setSigningOut] = useState(false);

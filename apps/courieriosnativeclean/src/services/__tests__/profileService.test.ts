@@ -18,7 +18,7 @@ const mockDoc = jest.fn() as jest.MockedFunction<
   (...args: unknown[]) => unknown
 >;
 const mockGetDoc = jest.fn() as jest.MockedFunction<
-  () => Promise<{data: () => Record<string, unknown>}>
+  (docRef?: unknown) => Promise<{data: () => Record<string, unknown>}>
 >;
 const mockSetDoc = jest.fn() as jest.MockedFunction<
   (...args: unknown[]) => Promise<void>
@@ -27,8 +27,8 @@ const mockSetDoc = jest.fn() as jest.MockedFunction<
 jest.mock('@react-native-async-storage/async-storage', () => ({
   __esModule: true,
   default: {
-    getItem: (...args: unknown[]) => mockGetItem(...args),
-    setItem: (...args: unknown[]) => mockSetItem(...args),
+    getItem: (key: string) => mockGetItem(key),
+    setItem: (key: string, value: string) => mockSetItem(key, value),
   },
 }));
 
@@ -38,9 +38,9 @@ jest.mock('../firebase', () => ({
 }));
 
 jest.mock('firebase/firestore', () => ({
-  doc: (...args: unknown[]) => mockDoc(...args),
-  getDoc: (...args: unknown[]) => mockGetDoc(...args),
-  setDoc: (...args: unknown[]) => mockSetDoc(...args),
+  doc: (db: unknown, path: string, id?: string) => mockDoc(db, path, id),
+  getDoc: (docRef: unknown) => mockGetDoc(docRef),
+  setDoc: (docRef: unknown, data: unknown) => mockSetDoc(docRef, data),
 }));
 
 import {

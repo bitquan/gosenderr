@@ -13,7 +13,9 @@ import type { RouteDoc } from "@gosenderr/shared";
 
 export default function CourierRoutesPage() {
   const navigate = useNavigate();
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  // Minimal user shape used on this page
+  type PageUser = { uid: string; displayName?: string };
+  const [currentUser, setCurrentUser] = useState<PageUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [selectedRoute, setSelectedRoute] = useState<RouteDoc | null>(null);
   const {
@@ -23,9 +25,9 @@ export default function CourierRoutesPage() {
   } = useRoutes({ status: "available" });
   const { flags, loading: flagsLoading } = useFeatureFlags();
   const { userDoc, loading: userLoading } = useUserDoc();
-  import type { CourierProfile } from "@/lib/v2/types";
+  // Use a minimal shape for courierProfile here to avoid importing shared types in-page
   const courierStatus =
-    (userDoc?.courierProfile as CourierProfile)?.status || "none";
+    (userDoc?.courierProfile as { status?: string })?.status || "none";
   const isApproved = courierStatus === "approved";
 
   useEffect(() => {
@@ -40,7 +42,11 @@ export default function CourierRoutesPage() {
         navigate("/login");
         return;
       }
-      setCurrentUser(user);
+      // Normalize firebase User shape to PageUser
+      setCurrentUser({
+        uid: user.uid,
+        displayName: user.displayName ?? undefined,
+      });
       setAuthLoading(false);
     });
 

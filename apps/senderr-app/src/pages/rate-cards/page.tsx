@@ -12,17 +12,21 @@ type Mode = "view" | "edit-package" | "edit-food";
 
 export default function RateCardsPage() {
   const navigate = useNavigate();
+
+  // Minimal local `User` type to avoid importing firebase types in this file
+  type FirebaseUser = { uid: string; email?: string | null };
+
   useSearchParams();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [mode, setMode] = useState<Mode>("view");
   const [packageRateCard, setPackageRateCard] =
     useState<PackageRateCard | null>(null);
   const [foodRateCard, setFoodRateCard] = useState<FoodRateCard | null>(null);
   const [packagesEnabled, setPackagesEnabled] = useState(false);
   const [foodEnabled, setFoodEnabled] = useState(false);
-  import type { User } from "firebase/auth";
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  // Using local Firebase user shape above (`FirebaseUser`) to avoid importing auth types inline
 
   useEffect(() => {
     const auth = getAuthSafe();

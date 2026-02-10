@@ -1,5 +1,4 @@
 import {afterAll, beforeAll, describe, expect, it, jest} from '@jest/globals';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Provide a simple in-memory AsyncStorage implementation for integration runs
 import AsyncStorage from '@react-native-async-storage/async-storage';

@@ -11,7 +11,8 @@ describe("DEFAULT_FEATURE_FLAGS", () => {
       ),
     ).toBe(true);
 
-    const mapShell = (DEFAULT_FEATURE_FLAGS.delivery as Record<string, unknown>)?.mapShell;
+    const mapShell = (DEFAULT_FEATURE_FLAGS.delivery as Record<string, unknown>)
+      ?.mapShell;
     expect(typeof mapShell).toBe("boolean");
     expect(mapShell).toBe(false);
   });

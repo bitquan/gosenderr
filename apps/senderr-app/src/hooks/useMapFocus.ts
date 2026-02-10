@@ -2,19 +2,24 @@
  * Hook for controlling Mapbox map camera/focus
  */
 
-import { useCallback } from 'react'
+import { useCallback } from "react";
 
 interface FitBoundsOptions {
-  padding?: number | { top: number; right: number; bottom: number; left: number }
-  maxZoom?: number
-  duration?: number
+  padding?:
+    | number
+    | { top: number; right: number; bottom: number; left: number };
+  maxZoom?: number;
+  duration?: number;
 }
 
 interface UseMapFocusResult {
-  flyToLocation: (location: [number, number], zoom?: number) => void
-  fitBounds: (coordinates: [number, number][], options?: FitBoundsOptions) => void
-  fitRoute: (routeCoordinates: [number, number][]) => void
-  recenterOnDriver: (location: [number, number]) => void
+  flyToLocation: (location: [number, number], zoom?: number) => void;
+  fitBounds: (
+    coordinates: [number, number][],
+    options?: FitBoundsOptions,
+  ) => void;
+  fitRoute: (routeCoordinates: [number, number][]) => void;
+  recenterOnDriver: (location: [number, number]) => void;
 }
 
 /**
@@ -26,44 +31,47 @@ export function useMapFocus(map: mapboxgl.Map | null): UseMapFocusResult {
    */
   const flyToLocation = useCallback(
     (location: [number, number], zoom: number = 14) => {
-      if (!map) return
+      if (!map) return;
 
       map.flyTo({
         center: location,
         zoom,
         duration: 1500,
         essential: true,
-      })
+      });
     },
-    [map]
-  )
+    [map],
+  );
 
   /**
    * Fit map bounds to show all coordinates
    */
   const fitBounds = useCallback(
     (coordinates: [number, number][], options: FitBoundsOptions = {}) => {
-      if (!map || coordinates.length === 0) return
+      if (!map || coordinates.length === 0) return;
 
       const defaultOptions = {
         padding: 80,
         maxZoom: 15,
         duration: 1000,
         ...options,
-      }
+      };
 
       // Create bounds from coordinates (ensure mapboxgl is available)
-      const mapboxglGlobal = (window as unknown as { mapboxgl?: typeof import('mapbox-gl') }).mapboxgl
-      if (!mapboxglGlobal) return
+      const mapboxglGlobal = (
+        window as unknown as { mapboxgl?: typeof import("mapbox-gl") }
+      ).mapboxgl;
+      if (!mapboxglGlobal) return;
       const bounds = coordinates.reduce(
-        (bounds: import('mapbox-gl').LngLatBounds, coord) => bounds.extend(coord),
-        new mapboxglGlobal.LngLatBounds(coordinates[0], coordinates[0])
-      )
+        (bounds: import("mapbox-gl").LngLatBounds, coord) =>
+          bounds.extend(coord),
+        new mapboxglGlobal.LngLatBounds(coordinates[0], coordinates[0]),
+      );
 
-      map.fitBounds(bounds, defaultOptions)
+      map.fitBounds(bounds, defaultOptions);
     },
-    [map]
-  )
+    [map],
+  );
 
   /**
    * Fit map to show entire route
@@ -73,25 +81,25 @@ export function useMapFocus(map: mapboxgl.Map | null): UseMapFocusResult {
       fitBounds(routeCoordinates, {
         padding: { top: 100, right: 60, bottom: 320, left: 60 }, // Extra bottom padding for job list
         maxZoom: 13, // Don't zoom in too close - was 14
-      })
+      });
     },
-    [fitBounds]
-  )
+    [fitBounds],
+  );
 
   /**
    * Recenter map on driver's current location
    */
   const recenterOnDriver = useCallback(
     (location: [number, number]) => {
-      flyToLocation(location, 13)
+      flyToLocation(location, 13);
     },
-    [flyToLocation]
-  )
+    [flyToLocation],
+  );
 
   return {
     flyToLocation,
     fitBounds,
     fitRoute,
     recenterOnDriver,
-  }
+  };
 }

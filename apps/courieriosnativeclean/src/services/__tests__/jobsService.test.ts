@@ -50,7 +50,13 @@ const mockOnSnapshot = jest.fn() as jest.MockedFunction<
   (...args: unknown[]) => () => void
 >;
 const mockRunTransaction = jest.fn() as jest.MockedFunction<
-  (...args: unknown[]) => Promise<unknown>
+  (
+    db: unknown,
+    updater: (tx: {
+      get: () => Promise<{exists: () => boolean; id: string; data: () => Record<string, unknown>}>
+      update: jest.Mock
+    }) => Promise<unknown>
+  ) => Promise<unknown>
 >;
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
@@ -120,7 +126,7 @@ describe('jobsService firebase/mock fallback', () => {
     runtimeConfig.envName = 'dev';
 
     mockIsFirebaseReady.mockReturnValue(true);
-    mockGetFirebaseServices.mockReturnValue({db: {}} as unknown);
+    mockGetFirebaseServices.mockReturnValue({db: {}});
 
     mockCollection.mockReturnValue('jobs_ref');
     mockWhere.mockReturnValue('where_clause');
@@ -138,7 +144,7 @@ describe('jobsService firebase/mock fallback', () => {
       return Promise.resolve(null);
     });
 
-    mockGetDoc.mockResolvedValue({exists: () => false});
+    mockGetDoc.mockResolvedValue({exists: () => false, data: () => ({})});
 
     mockRunTransaction.mockImplementation(
       async (

@@ -56,16 +56,16 @@ const JobsMapCardFallback = ({
 
 const loadJobsMapCard = (): React.ComponentType<JobsMapCardProps> => {
   try {
-      // Metro can serve stale module state after path/branch changes.
-      // Resolve lazily so dashboard stays alive with a clear fallback.
-      // Use dynamic import via require behind a lint exception (map module is optional at runtime)
-      // eslint-disable-next-line @typescript-eslint/no-require-imports,global-require
-      const mapModule = require('../components/JobsMapCard');
-      return mapModule?.JobsMapCard ?? JobsMapCardFallback;
-    } catch {
-      // Intentionally ignore errors and fall back
-      return JobsMapCardFallback;
-    }
+    // Metro can serve stale module state after path/branch changes.
+    // Resolve lazily so dashboard stays alive with a clear fallback.
+    // Use dynamic import via require behind a lint exception (map module is optional at runtime)
+    // eslint-disable-next-line @typescript-eslint/no-require-imports,global-require
+    const mapModule = require('../components/JobsMapCard');
+    return mapModule?.JobsMapCard ?? JobsMapCardFallback;
+  } catch {
+    // Intentionally ignore errors and fall back
+    return JobsMapCardFallback;
+  }
 };
 
 export const DashboardScreen = ({
@@ -115,7 +115,16 @@ export const DashboardScreen = ({
       };
     }
 
-    const locationAge = Date.now() - locationState.lastLocation.timestamp;
+    const lastTs = locationState.lastLocation.timestamp;
+    if (!lastTs) {
+      return {
+        label: 'Starting',
+        detail: 'Waiting for first location sample.',
+        tone: 'degraded',
+      };
+    }
+
+    const locationAge = Date.now() - lastTs;
     if (locationAge > LOCATION_STALE_THRESHOLD_MS) {
       return {
         label: 'Stale',

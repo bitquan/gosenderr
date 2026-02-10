@@ -115,7 +115,9 @@ describe('jobs critical flow (auth + firestore emulator)', () => {
     const ref = doc(db!, 'jobs', 'job_1');
     const before = await getDoc(ref);
     expect(before.exists()).toBe(true);
-    expect(before.data().status).toBe('accepted');
+    const beforeData = before.data();
+    expect(beforeData).toBeDefined();
+    expect(beforeData!.status).toBe('accepted');
 
     await updateDoc(ref, {
       status: 'picked_up',
@@ -124,6 +126,8 @@ describe('jobs critical flow (auth + firestore emulator)', () => {
 
     const after = await getDoc(ref);
     expect(after.exists()).toBe(true);
-    expect(after.data().status).toBe('picked_up');
+    const afterData = after.data();
+    expect(afterData).toBeDefined();
+    expect(afterData!.status).toBe('picked_up');
   });
 });

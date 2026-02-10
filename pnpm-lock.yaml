@@ -288,6 +288,9 @@ importers:
       '@react-native/typescript-config':
         specifier: 0.76.5
         version: 0.76.5
+      '@types/jest':
+        specifier: ^29.5.14
+        version: 29.5.14
       '@types/react':
         specifier: 18.3.1
         version: 18.3.1
@@ -4983,6 +4986,13 @@ packages:
     resolution: {integrity: sha512-pk2B1NWalF9toCRu6gjBzR69syFjP4Od8WRAX+0mmf9lAjCRicLOWc+ZrxZHx/0XRjotgkF9t6iaMJ+aXcOdZQ==}
     dependencies:
       '@types/istanbul-lib-report': 3.0.3
+
+  /@types/jest@29.5.14:
+    resolution: {integrity: sha512-ZN+4sdnLUbo8EVvVc2ao0GFW6oVrQRPn4K2lglySj7APvSrgzxHiNNK99us4WDMi57xxA2yggblIAMNhXOotLQ==}
+    dependencies:
+      expect: 29.7.0
+      pretty-format: 29.7.0
+    dev: true
 
   /@types/json-schema@7.0.15:
     resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
