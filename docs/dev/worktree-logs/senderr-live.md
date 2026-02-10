@@ -87,7 +87,7 @@ Last verified: 2026-02-09
 - Test result: not run (implementation-first)
 - Follow-up: verify CI + lint/type-check before merge
 
-- Branch: senderr-app/docs/mapshell-acceptance-1
+- Branch: senderr-app/docs-mapshell-acceptance-1
 - Issue/PR: #270
 - Scope: MapShell acceptance matrix + smoke checklist updates
 - Files touched: docs/senderr_app/MAP_SHELL_ACCEPTANCE_MATRIX.md, docs/senderr_app/SMOKE_CHECKLIST.md, .github/copilot/branches/senderr-app-docs-mapshell-acceptance-1.md

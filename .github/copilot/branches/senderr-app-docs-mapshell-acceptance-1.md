@@ -1,4 +1,4 @@
-# Branch Profile: `senderr-app/docs/mapshell-acceptance-1`
+# Branch Profile: `senderr-app/docs-mapshell-acceptance-1`
 
 ## Intent
 
