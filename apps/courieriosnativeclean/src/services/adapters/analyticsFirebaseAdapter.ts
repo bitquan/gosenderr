@@ -1,9 +1,15 @@
 import {runtimeConfig} from '../../config/runtime';
 import type {AuthSession} from '../../types/auth';
-import type {AnalyticsEventName, AnalyticsServicePort} from '../ports/analyticsPort';
+import type {
+  AnalyticsEventName,
+  AnalyticsServicePort,
+} from '../ports/analyticsPort';
 
 type AnalyticsInstance = {
-  logEvent: (name: string, params?: Record<string, string | number>) => Promise<void>;
+  logEvent: (
+    name: string,
+    params?: Record<string, string | number>,
+  ) => Promise<void>;
   setAnalyticsCollectionEnabled: (enabled: boolean) => Promise<void>;
   setUserId: (id: string | null) => Promise<void>;
   setUserProperties: (properties: Record<string, string>) => Promise<void>;
@@ -19,7 +25,9 @@ type CrashlyticsInstance = {
 
 type ErrorUtilsShape = {
   getGlobalHandler?: () => (error: Error, isFatal?: boolean) => void;
-  setGlobalHandler?: (handler: (error: Error, isFatal?: boolean) => void) => void;
+  setGlobalHandler?: (
+    handler: (error: Error, isFatal?: boolean) => void,
+  ) => void;
 };
 
 let initialized = false;
@@ -28,7 +36,8 @@ let missingDependencyWarningShown = false;
 const getAnalyticsInstance = (): AnalyticsInstance | null => {
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const analyticsFactory = require('@react-native-firebase/analytics').default as (() => AnalyticsInstance) | undefined;
+    const analyticsFactory = require('@react-native-firebase/analytics')
+      .default as (() => AnalyticsInstance) | undefined;
     return analyticsFactory ? analyticsFactory() : null;
   } catch {
     return null;
@@ -38,7 +47,8 @@ const getAnalyticsInstance = (): AnalyticsInstance | null => {
 const getCrashlyticsInstance = (): CrashlyticsInstance | null => {
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const crashlyticsFactory = require('@react-native-firebase/crashlytics').default as (() => CrashlyticsInstance) | undefined;
+    const crashlyticsFactory = require('@react-native-firebase/crashlytics')
+      .default as (() => CrashlyticsInstance) | undefined;
     return crashlyticsFactory ? crashlyticsFactory() : null;
   } catch {
     return null;
@@ -50,7 +60,9 @@ const normalizeParamKey = (key: string): string => {
   return sanitized.length > 0 ? sanitized : 'param';
 };
 
-const normalizeParamValue = (value: string | number | boolean | null): string | number | null => {
+const normalizeParamValue = (
+  value: string | number | boolean | null,
+): string | number | null => {
   if (typeof value === 'string') {
     return value.slice(0, 100);
   }
@@ -104,9 +116,15 @@ const warnMissingDeps = (): void => {
   );
 };
 
-const installGlobalErrorHandler = (crashlytics: CrashlyticsInstance | null): void => {
+const installGlobalErrorHandler = (
+  crashlytics: CrashlyticsInstance | null,
+): void => {
   const errorUtils = getErrorUtils();
-  if (!errorUtils?.setGlobalHandler || !errorUtils.getGlobalHandler || !crashlytics) {
+  if (
+    !errorUtils?.setGlobalHandler ||
+    !errorUtils.getGlobalHandler ||
+    !crashlytics
+  ) {
     return;
   }
 

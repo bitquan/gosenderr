@@ -2,6 +2,12 @@ import React from "react";
 import { MapboxMap } from "@/components/v2/MapboxMap";
 import { useMemo } from "react";
 import { buildMapShellOverlayModel } from "@/lib/mapShell/overlayController";
+import type {
+  Job,
+  JobsSyncState,
+  LocationSnapshot,
+  MapShellOverlayModel,
+} from "@/lib/mapShell/overlayController";
 import ActiveJobOverlay from "@/components/mapShell/ActiveJobOverlay";
 import SettingsOverlay from "@/components/mapShell/SettingsOverlay";
 import MapShellLayout from "@/components/mapShell/MapShellLayout";
@@ -9,11 +15,13 @@ import { Slot } from "@/components/mapShell/slots";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { claimJob, updateJobStatus } from "@/lib/v2/jobs";
 
+import type { MapShellOverlayModel } from "@/lib/mapShell/overlayController";
+
 export type MapShellScreenProps = {
   className?: string;
   children?: React.ReactNode;
   // Optional dev injection for overlay model so tests and previews can simulate states
-  devOverlayModel?: any;
+  devOverlayModel?: MapShellOverlayModel;
   // Whether this render is using the dev preview bypass (from ?dev_preview=1)
   devPreview?: boolean;
 };
@@ -28,18 +36,18 @@ export default function MapShellScreen({
   const overlayModel = useMemo(() => {
     if (devOverlayModel) return devOverlayModel;
 
-    const pendingJob = {
+    const pendingJob: Job = {
       id: "dev_job_1",
       status: "pending",
       pickupLocation: { latitude: 37.7901, longitude: -122.4002 },
       dropoffLocation: { latitude: 37.7911, longitude: -122.4012 },
-    } as any;
+    };
 
     return buildMapShellOverlayModel({
       activeJob: pendingJob,
       latestJob: null,
-      jobsSyncState: { status: "ok" } as any,
-      courierLocation: null,
+      jobsSyncState: { status: "ok" } as JobsSyncState,
+      courierLocation: null as LocationSnapshot,
       tracking: false,
       hasPermission: false,
     });
@@ -74,7 +82,7 @@ export default function MapShellScreen({
       }
 
       if (action === "update_status" && nextStatus) {
-        await updateJobStatus(jobId, nextStatus as any, uid);
+        await updateJobStatus(jobId, nextStatus as string, uid);
         alert("Job status updated (dev)");
         return;
       }

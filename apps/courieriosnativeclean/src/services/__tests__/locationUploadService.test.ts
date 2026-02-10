@@ -1,9 +1,15 @@
 import {beforeEach, describe, expect, it, jest} from '@jest/globals';
 import type {TelemetryHook, AnalyticsAdapter} from '../locationUploadService';
 
-const mockGetItem = jest.fn() as jest.MockedFunction<(key: string) => Promise<string | null>>;
-const mockSetItem = jest.fn() as jest.MockedFunction<(key: string, value: string) => Promise<void>>;
-const mockRemoveItem = jest.fn() as jest.MockedFunction<(key: string) => Promise<void>>;
+const mockGetItem = jest.fn() as jest.MockedFunction<
+  (key: string) => Promise<string | null>
+>;
+const mockSetItem = jest.fn() as jest.MockedFunction<
+  (key: string, value: string) => Promise<void>
+>;
+const mockRemoveItem = jest.fn() as jest.MockedFunction<
+  (key: string) => Promise<void>
+>;
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
   __esModule: true,

@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAuthSafe } from "@/lib/firebase";
@@ -24,7 +23,9 @@ export default function CourierRoutesPage() {
   } = useRoutes({ status: "available" });
   const { flags, loading: flagsLoading } = useFeatureFlags();
   const { userDoc, loading: userLoading } = useUserDoc();
-  const courierStatus = (userDoc?.courierProfile as any)?.status || "none";
+  import type { CourierProfile } from "@/lib/v2/types";
+  const courierStatus =
+    (userDoc?.courierProfile as CourierProfile)?.status || "none";
   const isApproved = courierStatus === "approved";
 
   useEffect(() => {
@@ -119,44 +120,46 @@ export default function CourierRoutesPage() {
   return (
     <div className="min-h-screen bg-[#F8F9FF]">
       <div className="max-w-4xl mx-auto p-4 sm:p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">Available Routes</h1>
-        <p className="text-gray-600 dark:text-gray-400">
-          Accept batched delivery routes for efficient earnings
-        </p>
-      </div>
-
-      {!isApproved && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 text-yellow-900 mb-6">
-          <p className="font-semibold">Approval required before accepting routes.</p>
-        </div>
-      )}
-
-      {routes.length === 0 ? (
-        <div className="text-center py-12 glass-card">
-          <p className="text-lg text-gray-600 dark:text-gray-400">
-            No available routes at the moment. Check back soon!
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold mb-2">Available Routes</h1>
+          <p className="text-gray-600 dark:text-gray-400">
+            Accept batched delivery routes for efficient earnings
           </p>
         </div>
-      ) : (
-        <div className="space-y-6">
-          {routes.map((route) => (
-            <RouteCard
-              key={route.routeId}
-              route={route}
-              onViewDetails={() => handleViewDetails(route)}
-              onAccept={() => handleAcceptRoute(route)}
-            />
-          ))}
-        </div>
-      )}
 
-      {selectedRoute && (
-        <RouteDetailsModal
-          route={selectedRoute}
-          onClose={() => setSelectedRoute(null)}
-        />
-      )}
+        {!isApproved && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 text-yellow-900 mb-6">
+            <p className="font-semibold">
+              Approval required before accepting routes.
+            </p>
+          </div>
+        )}
+
+        {routes.length === 0 ? (
+          <div className="text-center py-12 glass-card">
+            <p className="text-lg text-gray-600 dark:text-gray-400">
+              No available routes at the moment. Check back soon!
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {routes.map((route) => (
+              <RouteCard
+                key={route.routeId}
+                route={route}
+                onViewDetails={() => handleViewDetails(route)}
+                onAccept={() => handleAcceptRoute(route)}
+              />
+            ))}
+          </div>
+        )}
+
+        {selectedRoute && (
+          <RouteDetailsModal
+            route={selectedRoute}
+            onClose={() => setSelectedRoute(null)}
+          />
+        )}
       </div>
     </div>
   );

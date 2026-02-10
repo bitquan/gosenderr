@@ -2,15 +2,27 @@ import {beforeEach, describe, expect, it, jest} from '@jest/globals';
 
 import type {AuthSession} from '../../types/auth';
 
-const mockGetItem = jest.fn() as jest.MockedFunction<(key: string) => Promise<string | null>>;
-const mockSetItem = jest.fn() as jest.MockedFunction<(key: string, value: string) => Promise<void>>;
+const mockGetItem = jest.fn() as jest.MockedFunction<
+  (key: string) => Promise<string | null>
+>;
+const mockSetItem = jest.fn() as jest.MockedFunction<
+  (key: string, value: string) => Promise<void>
+>;
 
 const mockIsFirebaseReady = jest.fn() as jest.MockedFunction<() => boolean>;
-const mockGetFirebaseServices = jest.fn() as jest.MockedFunction<() => {db: unknown}>;
+const mockGetFirebaseServices = jest.fn() as jest.MockedFunction<
+  () => {db: unknown}
+>;
 
-const mockDoc = jest.fn() as jest.MockedFunction<(...args: unknown[]) => unknown>;
-const mockGetDoc = jest.fn() as jest.MockedFunction<() => Promise<{data: () => Record<string, unknown>}>>;
-const mockSetDoc = jest.fn() as jest.MockedFunction<(...args: unknown[]) => Promise<void>>;
+const mockDoc = jest.fn() as jest.MockedFunction<
+  (...args: unknown[]) => unknown
+>;
+const mockGetDoc = jest.fn() as jest.MockedFunction<
+  () => Promise<{data: () => Record<string, unknown>}>
+>;
+const mockSetDoc = jest.fn() as jest.MockedFunction<
+  (...args: unknown[]) => Promise<void>
+>;
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
   __esModule: true,
@@ -31,7 +43,11 @@ jest.mock('firebase/firestore', () => ({
   setDoc: (...args: unknown[]) => mockSetDoc(...args),
 }));
 
-import {loadCourierProfile, saveCourierProfile, validateCourierProfileDraft} from '../profileService';
+import {
+  loadCourierProfile,
+  saveCourierProfile,
+  validateCourierProfileDraft,
+} from '../profileService';
 
 const session: AuthSession = {
   uid: 'courier_123',
