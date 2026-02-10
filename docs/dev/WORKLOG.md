@@ -600,3 +600,21 @@ Append-only log used for session recovery.
 - Blockers: None
 - Next:
   - Check CI for PR #286
+
+---
+
+## 2026-02-10 10:57 local (2026-02-10 15:57 UTC)
+
+- Status: `in_progress`
+- Summary: Update MapShell acceptance matrix and smoke checklist metadata
+- Branch: `senderr-app/docs/mapshell-acceptance-1`
+- Commit: `9bd64f8`
+- Issue: `#270`
+- PR: `TBD`
+- Files:
+  - `docs/senderr_app/MAP_SHELL_ACCEPTANCE_MATRIX.md`
+  - `docs/senderr_app/SMOKE_CHECKLIST.md`
+  - `.github/copilot/branches/senderr-app-docs-mapshell-acceptance-1.md`
+- Blockers: None
+- Next:
+  - Continue #270 docs updates and open PR
