@@ -494,3 +494,21 @@ Append-only log used for session recovery.
 - Blockers: None
 - Next:
   - Rerun CI for PR #285
+
+---
+
+## 2026-02-10 10:26 local (2026-02-10 15:26 UTC)
+
+- Status: `in_progress`
+- Summary: Add earnings payout + recharge actions
+- Branch: `senderr-app/feature/payments-recharging-1`
+- Commit: `0554ddb`
+- Issue: `TBD`
+- PR: `TBD`
+- Files:
+  - `apps/senderr-app/src/pages/earnings/page.tsx`
+  - `docs/dev/worktree-logs/senderr-live.md`
+  - `.github/copilot/branches/senderr-app-feature-payments-recharging-1.md`
+- Blockers: None
+- Next:
+  - Open PR for payments/recharging work
