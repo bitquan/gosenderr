@@ -2,15 +2,15 @@ import {beforeEach, describe, expect, it, jest} from '@jest/globals';
 
 import type {AuthSession} from '../../types/auth';
 
-const mockGetItem: any = jest.fn();
-const mockSetItem: any = jest.fn();
+const mockGetItem = jest.fn() as jest.MockedFunction<(key: string) => Promise<string | null>>;
+const mockSetItem = jest.fn() as jest.MockedFunction<(key: string, value: string) => Promise<void>>;
 
-const mockIsFirebaseReady: any = jest.fn();
-const mockGetFirebaseServices: any = jest.fn();
+const mockIsFirebaseReady = jest.fn() as jest.MockedFunction<() => boolean>;
+const mockGetFirebaseServices = jest.fn() as jest.MockedFunction<() => {db: unknown}>;
 
-const mockDoc: any = jest.fn();
-const mockGetDoc: any = jest.fn();
-const mockSetDoc: any = jest.fn();
+const mockDoc = jest.fn() as jest.MockedFunction<(...args: unknown[]) => unknown>;
+const mockGetDoc = jest.fn() as jest.MockedFunction<() => Promise<{data: () => Record<string, unknown>}>>;
+const mockSetDoc = jest.fn() as jest.MockedFunction<(...args: unknown[]) => Promise<void>>;
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
   __esModule: true,
