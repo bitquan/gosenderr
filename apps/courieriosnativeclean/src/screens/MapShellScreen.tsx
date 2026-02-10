@@ -208,15 +208,15 @@ export const MapShellScreen = ({
     manual: 'Manual',
   };
 
-  useEffect(() => {
-    setCameraMode('fit_route');
-    setRouteState(null);
-  }, [activeJob?.id]);
-
   const routeLifecycleKey = useMemo(
     () => `${activeJob?.id ?? 'none'}:${activeJob?.status ?? 'none'}`,
     [activeJob?.id, activeJob?.status],
   );
+
+  useEffect(() => {
+    setCameraMode('fit_route');
+    setRouteState(null);
+  }, [routeLifecycleKey]);
 
   useEffect(() => {
     let cancelled = false;

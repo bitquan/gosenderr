@@ -226,7 +226,7 @@
     {
       "label": "Dev: iOS Open Xcode (live + issue)",
       "type": "shell",
-      "command": "/Users/papadev/dev/apps/Gosenderr_local/scripts/open-senderr-xcode.sh ${input:issueNumber}",
+      "command": "bash ${workspaceFolder}/scripts/open-senderr-xcode.sh ${input:issueNumber}",
       "problemMatcher": [],
       "presentation": {
         "reveal": "always",
@@ -250,7 +250,7 @@
     {
       "label": "Dev: iOS Bootstrap Issue (plist + pods)",
       "type": "shell",
-      "command": "/Users/papadev/dev/apps/Gosenderr_local/scripts/bootstrap-senderr-worktree.sh ${input:issueNumber} --with-pods",
+      "command": "bash ${workspaceFolder}/scripts/bootstrap-senderr-worktree.sh ${input:issueNumber} --with-pods",
       "problemMatcher": [],
       "presentation": {
         "reveal": "always",
@@ -262,7 +262,7 @@
     {
       "label": "Dev: iOS Metro (Issue, Reset Cache)",
       "type": "shell",
-      "command": "cd /Users/papadev/dev/apps/Gosenderr_local/worktrees/issue-${input:issueNumber}/apps/courieriosnativeclean && npx react-native start --reset-cache",
+      "command": "cd ${workspaceFolder}/apps/courieriosnativeclean && npx react-native start --reset-cache",
       "isBackground": true,
       "problemMatcher": {
         "pattern": {
