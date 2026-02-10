@@ -513,3 +513,19 @@ Append-only log used for session recovery.
 - Blockers: None
 - Next:
   - Open PR for onboarding/profile work
+
+---
+
+## 2026-02-10 10:19 local (2026-02-10 15:19 UTC)
+
+- Status: `in_progress`
+- Summary: Open PR #286 for onboarding/profile
+- Branch: `senderr-app/feature/onboarding-profile-1`
+- Commit: `b67f73c`
+- Issue: `#286`
+- PR: `#286`
+- Files:
+  - `docs/dev/worktree-logs/senderr-live.md`
+- Blockers: None
+- Next:
+  - Start payments & recharging branch
