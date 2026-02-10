@@ -532,6 +532,40 @@ Append-only log used for session recovery.
 
 ---
 
+## 2026-02-10 10:26 local (2026-02-10 15:26 UTC)
+
+- Status: `in_progress`
+- Summary: Add earnings payout + recharge actions
+- Branch: `senderr-app/feature/payments-recharging-1`
+- Commit: `0554ddb`
+- Issue: `TBD`
+- PR: `TBD`
+- Files:
+  - `apps/senderr-app/src/pages/earnings/page.tsx`
+  - `docs/dev/worktree-logs/senderr-live.md`
+  - `.github/copilot/branches/senderr-app-feature-payments-recharging-1.md`
+- Blockers: None
+- Next:
+  - Open PR for payments/recharging work
+
+---
+
+## 2026-02-10 10:27 local (2026-02-10 15:27 UTC)
+
+- Status: `in_progress`
+- Summary: Open PR #287 for payouts/recharge
+- Branch: `senderr-app/feature/payments-recharging-1`
+- Commit: `2afe490`
+- Issue: `#287`
+- PR: `#287`
+- Files:
+  - `docs/dev/worktree-logs/senderr-live.md`
+- Blockers: None
+- Next:
+  - Check CI for PRs #286/#287
+
+---
+
 ## 2026-02-10 10:33 local (2026-02-10 15:33 UTC)
 
 - Status: `in_progress`

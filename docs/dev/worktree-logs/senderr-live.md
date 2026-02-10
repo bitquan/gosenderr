@@ -51,6 +51,15 @@ Last verified: 2026-02-09
 - Test result: not run (CI fix)
 - Follow-up: rerun CI after push
 
+- Branch: senderr-app/feature/payments-recharging-1
+- Issue/PR: #287
+- Scope: payouts + recharge actions in earnings
+- Files touched: apps/senderr-app/src/pages/earnings/page.tsx, .github/copilot/branches/senderr-app-feature-payments-recharging-1.md
+- Behavior change: add payout/recharge requests and Stripe status panel
+- Commands run: none
+- Test result: not run (implementation-first)
+- Follow-up: open PR + verify CI
+
 - Branch: senderr-app/feature/job-lifecycle-1
 - Issue/PR: #285
 - Scope: courier location typing fix for job detail
