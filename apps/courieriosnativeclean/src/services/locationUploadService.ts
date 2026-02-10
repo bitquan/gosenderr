@@ -82,7 +82,7 @@ const readQueue = async (): Promise<EnqueuedLocation[]> => {
   try {
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) return parsed as EnqueuedLocation[];
-  } catch (err) {
+  } catch {
     // ignore and return empty
   }
   return [];

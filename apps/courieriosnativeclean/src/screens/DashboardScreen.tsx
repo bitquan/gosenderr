@@ -51,10 +51,10 @@ const loadJobsMapCard = (): React.ComponentType<JobsMapCardProps> => {
   try {
     // Metro can serve stale module state after path/branch changes.
     // Resolve lazily so dashboard stays alive with a clear fallback.
-    // eslint-disable-next-line @typescript-eslint/no-require-imports,global-require
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const mapModule = require('../components/JobsMapCard');
     return mapModule?.JobsMapCard ?? JobsMapCardFallback;
-  } catch (_error) {
+  } catch {
     return JobsMapCardFallback;
   }
 };

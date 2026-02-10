@@ -27,7 +27,7 @@ let missingDependencyWarningShown = false;
 
 const getAnalyticsInstance = (): AnalyticsInstance | null => {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports,global-require
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const analyticsFactory = require('@react-native-firebase/analytics').default as (() => AnalyticsInstance) | undefined;
     return analyticsFactory ? analyticsFactory() : null;
   } catch {
@@ -37,7 +37,7 @@ const getAnalyticsInstance = (): AnalyticsInstance | null => {
 
 const getCrashlyticsInstance = (): CrashlyticsInstance | null => {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports,global-require
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const crashlyticsFactory = require('@react-native-firebase/crashlytics').default as (() => CrashlyticsInstance) | undefined;
     return crashlyticsFactory ? crashlyticsFactory() : null;
   } catch {
