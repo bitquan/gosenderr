@@ -6,7 +6,7 @@ import type { Map as MapboxMapInstance, Marker as MapboxMarker } from "mapbox-gl
 
 declare global {
   interface Window {
-    mapboxgl?: any;
+    mapboxgl?: typeof import("mapbox-gl") | undefined;
   }
 }
 

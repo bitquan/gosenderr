@@ -21,7 +21,7 @@ interface PaymentFormProps {
 }
 
 function CheckoutForm({
-  jobId,
+  jobId: _jobId,
   courierRate,
   platformFee,
   onSuccess,
@@ -58,8 +58,9 @@ function CheckoutForm({
       } else {
         onSuccess();
       }
-    } catch (err: any) {
-      setErrorMessage(err.message || 'Payment failed. Please try again.');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      setErrorMessage(message || 'Payment failed. Please try again.');
       setIsProcessing(false);
     }
   };
@@ -111,8 +112,9 @@ export function PaymentForm({
           platformFee,
         });
         setClientSecret(data.clientSecret);
-      } catch (err: any) {
-        setError(err.message || 'Failed to initialize payment');
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        setError(message || 'Failed to initialize payment');
       } finally {
         setIsLoading(false);
       }

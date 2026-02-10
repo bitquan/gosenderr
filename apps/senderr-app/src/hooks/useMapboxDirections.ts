@@ -167,20 +167,31 @@ export function useMapboxDirections(
    * Segment 1: Current location to pickup (blue)
    * Segment 2: Pickup to dropoff (green)
    */
-  const routeSegments: RouteSegment[] = route
-    ? [
-        {
-          coordinates: (route.legs[0] as any)?.geometry?.coordinates || route.legs[0]?.steps.flatMap(s => s.geometry.coordinates) || [],
-          color: '#3b82f6', // blue-500
-          type: 'to-pickup' as const,
-        },
-        {
-          coordinates: (route.legs[1] as any)?.geometry?.coordinates || route.legs[1]?.steps.flatMap(s => s.geometry.coordinates) || [],
-          color: '#10b981', // green-500
-          type: 'pickup-to-dropoff' as const,
-        },
-      ].filter(segment => segment.coordinates.length > 0)
-    : []
+  const routeSegments: RouteSegment[] = route ? (() => {
+    const legToCoords = (legIndex: number): [number, number][] => {
+      const leg = route.legs[legIndex] as unknown as {
+        geometry?: { coordinates?: [number, number][] }
+        steps?: { geometry?: { coordinates?: [number, number][] } }[]
+      } | undefined
+
+      if (!leg) return []
+      if (leg.geometry && Array.isArray(leg.geometry.coordinates)) {
+        return leg.geometry.coordinates
+      }
+      if (Array.isArray(leg.steps)) {
+        return leg.steps.flatMap((s) => s.geometry?.coordinates ?? [])
+      }
+      return []
+    }
+
+    const coords0 = legToCoords(0)
+    const coords1 = legToCoords(1)
+
+    return [
+      { coordinates: coords0, color: '#3b82f6', type: 'to-pickup' as const },
+      { coordinates: coords1, color: '#10b981', type: 'pickup-to-dropoff' as const },
+    ].filter(segment => segment.coordinates.length > 0)
+  })() : []
 
   // Clear cache when component unmounts
   useEffect(() => {

@@ -52,10 +52,12 @@ export function useMapFocus(map: mapboxgl.Map | null): UseMapFocusResult {
         ...options,
       }
 
-      // Create bounds from coordinates
+      // Create bounds from coordinates (ensure mapboxgl is available)
+      const mapboxglGlobal = (window as unknown as { mapboxgl?: typeof import('mapbox-gl') }).mapboxgl
+      if (!mapboxglGlobal) return
       const bounds = coordinates.reduce(
-        (bounds, coord) => bounds.extend(coord as [number, number]),
-        new (window as any).mapboxgl.LngLatBounds(coordinates[0], coordinates[0])
+        (bounds: import('mapbox-gl').LngLatBounds, coord) => bounds.extend(coord),
+        new mapboxglGlobal.LngLatBounds(coordinates[0], coordinates[0])
       )
 
       map.fitBounds(bounds, defaultOptions)
