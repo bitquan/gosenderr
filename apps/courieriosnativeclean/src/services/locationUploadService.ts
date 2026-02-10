@@ -26,14 +26,18 @@ export type TelemetryHook = {
 let telemetry: TelemetryHook = {track: (_e: string) => {}};
 
 // Analytics adapter: follows AnalyticsServicePort.track signature (async)
-export type AnalyticsAdapter = {track: (event: string, props?: Record<string, unknown>) => Promise<void>};
+export type AnalyticsAdapter = {
+  track: (event: string, props?: Record<string, unknown>) => Promise<void>;
+};
 let analyticsAdapter: AnalyticsAdapter | null = null;
 
 export const setLocationUploadTelemetry = (t: TelemetryHook): void => {
   telemetry = t;
 };
 
-export const setLocationUploadAnalytics = (a: AnalyticsAdapter | null): void => {
+export const setLocationUploadAnalytics = (
+  a: AnalyticsAdapter | null,
+): void => {
   analyticsAdapter = a;
 };
 
@@ -61,7 +65,11 @@ const scheduleRetry = (uid: string, attempts: number): void => {
     }, delayMs);
 
     telemetry.track('location_upload_retry_scheduled', {uid, delayMs});
-    if (analyticsAdapter) void analyticsAdapter.track('location_upload_retry_scheduled', {uid, delayMs});
+    if (analyticsAdapter)
+      void analyticsAdapter.track('location_upload_retry_scheduled', {
+        uid,
+        delayMs,
+      });
   } catch (err) {
     // don't let scheduling failures block
     // eslint-disable-next-line no-console
@@ -119,7 +127,11 @@ export const enqueueLocation = async (
   // Telemetry for enqueue
   try {
     telemetry.track('location_enqueue', {uid, timestamp: item.timestamp});
-    if (analyticsAdapter) void analyticsAdapter.track('location_enqueue', {uid, timestamp: item.timestamp});
+    if (analyticsAdapter)
+      void analyticsAdapter.track('location_enqueue', {
+        uid,
+        timestamp: item.timestamp,
+      });
   } catch (err) {
     // telemetry should never block functionality
     // eslint-disable-next-line no-console
@@ -137,7 +149,11 @@ export const performLocationUpload = async (
     uid: entry.uid,
     attempts: entry.attempts,
   });
-  if (analyticsAdapter) void analyticsAdapter.track('location_upload_start', {uid: entry.uid, attempts: entry.attempts});
+  if (analyticsAdapter)
+    void analyticsAdapter.track('location_upload_start', {
+      uid: entry.uid,
+      attempts: entry.attempts,
+    });
 
   const ref = doc(services.db, 'users', entry.uid);
   await updateDoc(ref, {
@@ -150,7 +166,8 @@ export const performLocationUpload = async (
   });
 
   telemetry.track('location_upload_success', {uid: entry.uid});
-  if (analyticsAdapter) void analyticsAdapter.track('location_upload_success', {uid: entry.uid});
+  if (analyticsAdapter)
+    void analyticsAdapter.track('location_upload_success', {uid: entry.uid});
 };
 
 export const flushQueuedLocationsForSession = async (
@@ -171,7 +188,8 @@ export const flushQueuedLocationsForSession = async (
     await persistQueue(remaining);
 
     telemetry.track('location_upload_flushed', {uid});
-    if (analyticsAdapter) void analyticsAdapter.track('location_upload_flushed', {uid});
+    if (analyticsAdapter)
+      void analyticsAdapter.track('location_upload_flushed', {uid});
 
     return {flushed: 1, remaining: remaining.length};
   } catch (error) {
@@ -191,11 +209,12 @@ export const flushQueuedLocationsForSession = async (
             attempts: e.attempts,
             lastError: e.lastError,
           });
-          if (analyticsAdapter) void analyticsAdapter.track('location_upload_dropped', {
-            uid: e.uid,
-            attempts: e.attempts,
-            lastError: e.lastError,
-          });
+          if (analyticsAdapter)
+            void analyticsAdapter.track('location_upload_dropped', {
+              uid: e.uid,
+              attempts: e.attempts,
+              lastError: e.lastError,
+            });
           return null as unknown as EnqueuedLocation;
         }
         return e;

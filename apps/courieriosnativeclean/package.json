@@ -9,7 +9,7 @@
     "start": "react-native start",
     "test": "jest",
     "test:unit": "jest --config jest.config.js src/screens/__tests__",
-    "test:integration": "jest --config jest.integration.config.js src/services/__integration__/jobs.emulator.integration.test.ts"
+    "test:integration": "jest --config jest.integration.config.js"
   },
   "dependencies": {
     "@babel/runtime": "^7.25.0",
