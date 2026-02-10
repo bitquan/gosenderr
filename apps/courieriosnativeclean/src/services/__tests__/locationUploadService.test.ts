@@ -21,6 +21,13 @@ jest.mock('firebase/firestore', () => ({
   serverTimestamp: () => 'SERVER_TIMESTAMP',
 }));
 
+// Mock the local firebase wrapper so it doesn't import the ESM firebase libs
+// For tests we provide a minimal db object so performLocationUpload can proceed
+jest.mock('../firebase', () => ({
+  isFirebaseReady: () => true,
+  getFirebaseServices: () => ({db: {}}),
+}));
+
 import * as sut from '../locationUploadService';
 
 import type {EnqueuedLocation} from '../locationUploadService';
@@ -65,15 +72,11 @@ describe('locationUploadService queue', () => {
       ]),
     );
 
-    const spyPerform = jest
-      .spyOn(sut, 'performLocationUpload')
-      .mockResolvedValue(undefined);
+    const firestore = require('firebase/firestore');
+    jest.spyOn(firestore, 'updateDoc').mockResolvedValue(undefined);
 
     const result = await sut.flushQueuedLocationsForSession('user_42');
 
-    expect(spyPerform).toHaveBeenCalledWith(
-      expect.objectContaining({uid: 'user_42'}),
-    );
     expect(result.flushed).toBe(1);
     // persisted should have been called to clear the queue
     expect(mockRemoveItem).toHaveBeenCalledWith(
@@ -95,8 +98,14 @@ describe('locationUploadService queue', () => {
       ]),
     );
 
+    const mockTelemetry = {track: jest.fn()};
+    const mockAnalytics = {track: jest.fn()};
+    sut.setLocationUploadTelemetry(mockTelemetry as any);
+    sut.setLocationUploadAnalytics(mockAnalytics as any);
+
     const error = new Error('network');
-    jest.spyOn(sut, 'performLocationUpload').mockRejectedValue(error);
+    const firestore = require('firebase/firestore');
+    jest.spyOn(firestore, 'updateDoc').mockRejectedValue(error);
 
     await expect(sut.flushQueuedLocationsForSession('user_99')).rejects.toThrow(
       'network',
@@ -106,19 +115,35 @@ describe('locationUploadService queue', () => {
     const persisted = JSON.parse(mockSetItem.mock.calls[0][1]);
     expect(persisted[0].attempts).toBeGreaterThanOrEqual(1);
     expect(persisted[0].lastError).toContain('network');
+
+    // scheduleRetry should have emitted telemetry and analytics for retry
+    expect(mockTelemetry.track).toHaveBeenCalledWith(
+      'location_upload_retry_scheduled',
+      expect.objectContaining({uid: 'user_99'}),
+    );
+    expect(mockAnalytics.track).toHaveBeenCalledWith(
+      'location_upload_retry_scheduled',
+      expect.objectContaining({uid: 'user_99'}),
+    );
   });
 
   it('reports telemetry on enqueue and flush', async () => {
     const mockTelemetry = {track: jest.fn()};
+    const mockAnalytics = {track: jest.fn()};
     sut.setLocationUploadTelemetry(mockTelemetry as any);
+    sut.setLocationUploadAnalytics(mockAnalytics as any);
 
-    // enqueue should call telemetry
+    // enqueue should call telemetry and analytics
     await sut.enqueueLocation('tuser', {
       latitude: 1,
       longitude: 2,
       timestamp: Date.now(),
     });
     expect(mockTelemetry.track).toHaveBeenCalledWith(
+      'location_enqueue',
+      expect.objectContaining({uid: 'tuser'}),
+    );
+    expect(mockAnalytics.track).toHaveBeenCalledWith(
       'location_enqueue',
       expect.objectContaining({uid: 'tuser'}),
     );
@@ -130,11 +155,16 @@ describe('locationUploadService queue', () => {
         {uid: 'tuser', latitude: 1, longitude: 2, timestamp: now, attempts: 0},
       ]),
     );
-    jest.spyOn(sut, 'performLocationUpload').mockResolvedValue(undefined);
+    const firestore = require('firebase/firestore');
+    jest.spyOn(firestore, 'updateDoc').mockResolvedValue(undefined);
 
     const res = await sut.flushQueuedLocationsForSession('tuser');
     expect(res.flushed).toBe(1);
     expect(mockTelemetry.track).toHaveBeenCalledWith(
+      'location_upload_flushed',
+      expect.objectContaining({uid: 'tuser'}),
+    );
+    expect(mockAnalytics.track).toHaveBeenCalledWith(
       'location_upload_flushed',
       expect.objectContaining({uid: 'tuser'}),
     );
@@ -145,7 +175,9 @@ describe('locationUploadService queue', () => {
     sut.setLocationUploadMaxAttempts(1);
 
     const mockTelemetry = {track: jest.fn()};
+    const mockAnalytics = {track: jest.fn()};
     sut.setLocationUploadTelemetry(mockTelemetry as any);
+    sut.setLocationUploadAnalytics(mockAnalytics as any);
 
     const now = new Date().toISOString();
     // existing attempts already at 1 will cause drop when we catch another failure
@@ -160,9 +192,8 @@ describe('locationUploadService queue', () => {
         },
       ]),
     );
-    jest
-      .spyOn(sut, 'performLocationUpload')
-      .mockRejectedValue(new Error('network'));
+    const firestore = require('firebase/firestore');
+    jest.spyOn(firestore, 'updateDoc').mockRejectedValue(new Error('network'));
 
     await expect(sut.flushQueuedLocationsForSession('dropper')).rejects.toThrow(
       'network',
@@ -173,6 +204,11 @@ describe('locationUploadService queue', () => {
       '@senderr/location-upload-queue',
     );
     expect(mockTelemetry.track).toHaveBeenCalledWith(
+      'location_upload_dropped',
+      expect.objectContaining({uid: 'dropper'}),
+    );
+    // analytics adapter should also be invoked for dropped events
+    expect(mockAnalytics.track).toHaveBeenCalledWith(
       'location_upload_dropped',
       expect.objectContaining({uid: 'dropper'}),
     );

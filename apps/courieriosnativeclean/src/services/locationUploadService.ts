@@ -25,8 +25,16 @@ export type TelemetryHook = {
 };
 let telemetry: TelemetryHook = {track: (_e: string) => {}};
 
+// Analytics adapter: follows AnalyticsServicePort.track signature (async)
+export type AnalyticsAdapter = {track: (event: string, props?: Record<string, unknown>) => Promise<void>};
+let analyticsAdapter: AnalyticsAdapter | null = null;
+
 export const setLocationUploadTelemetry = (t: TelemetryHook): void => {
   telemetry = t;
+};
+
+export const setLocationUploadAnalytics = (a: AnalyticsAdapter | null): void => {
+  analyticsAdapter = a;
 };
 
 export const setLocationUploadMaxAttempts = (n: number): void => {
@@ -35,6 +43,30 @@ export const setLocationUploadMaxAttempts = (n: number): void => {
 
 export const setLocationUploadBackoffBase = (ms: number): void => {
   BACKOFF_BASE_MS = Math.max(100, Math.floor(ms));
+};
+
+const computeBackoffMs = (attempts: number): number => {
+  // exponential backoff with cap 60s
+  const ms = BACKOFF_BASE_MS * Math.pow(2, Math.max(0, attempts - 1));
+  return Math.min(ms, 60_000);
+};
+
+const scheduleRetry = (uid: string, attempts: number): void => {
+  const delayMs = computeBackoffMs(attempts);
+  try {
+    // schedule an async retry; fire-and-forget
+    setTimeout(() => {
+      // best-effort flush; ignore errors
+      void flushQueuedLocationsForSession(uid).catch(() => {});
+    }, delayMs);
+
+    telemetry.track('location_upload_retry_scheduled', {uid, delayMs});
+    if (analyticsAdapter) void analyticsAdapter.track('location_upload_retry_scheduled', {uid, delayMs});
+  } catch (err) {
+    // don't let scheduling failures block
+    // eslint-disable-next-line no-console
+    console.warn('[locationUploader] scheduleRetry failed', err);
+  }
 };
 
 const readQueue = async (): Promise<EnqueuedLocation[]> => {
@@ -87,6 +119,7 @@ export const enqueueLocation = async (
   // Telemetry for enqueue
   try {
     telemetry.track('location_enqueue', {uid, timestamp: item.timestamp});
+    if (analyticsAdapter) void analyticsAdapter.track('location_enqueue', {uid, timestamp: item.timestamp});
   } catch (err) {
     // telemetry should never block functionality
     // eslint-disable-next-line no-console
@@ -104,6 +137,7 @@ export const performLocationUpload = async (
     uid: entry.uid,
     attempts: entry.attempts,
   });
+  if (analyticsAdapter) void analyticsAdapter.track('location_upload_start', {uid: entry.uid, attempts: entry.attempts});
 
   const ref = doc(services.db, 'users', entry.uid);
   await updateDoc(ref, {
@@ -116,6 +150,7 @@ export const performLocationUpload = async (
   });
 
   telemetry.track('location_upload_success', {uid: entry.uid});
+  if (analyticsAdapter) void analyticsAdapter.track('location_upload_success', {uid: entry.uid});
 };
 
 export const flushQueuedLocationsForSession = async (
@@ -136,6 +171,7 @@ export const flushQueuedLocationsForSession = async (
     await persistQueue(remaining);
 
     telemetry.track('location_upload_flushed', {uid});
+    if (analyticsAdapter) void analyticsAdapter.track('location_upload_flushed', {uid});
 
     return {flushed: 1, remaining: remaining.length};
   } catch (error) {
@@ -155,6 +191,11 @@ export const flushQueuedLocationsForSession = async (
             attempts: e.attempts,
             lastError: e.lastError,
           });
+          if (analyticsAdapter) void analyticsAdapter.track('location_upload_dropped', {
+            uid: e.uid,
+            attempts: e.attempts,
+            lastError: e.lastError,
+          });
           return null as unknown as EnqueuedLocation;
         }
         return e;
@@ -162,6 +203,13 @@ export const flushQueuedLocationsForSession = async (
       .filter((x): x is EnqueuedLocation => x !== null);
 
     await persistQueue(updated);
+
+    // If we still have the entry, schedule a retry with exponential backoff
+    const updatedEntry = updated.find(e => e.uid === uid);
+    if (updatedEntry) {
+      scheduleRetry(uid, updatedEntry.attempts);
+    }
+
     throw error;
   }
 };
