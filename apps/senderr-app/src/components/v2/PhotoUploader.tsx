@@ -1,5 +1,5 @@
 
-import { useState, useRef, ChangeEvent, useEffect } from 'react';
+import { useRef, ChangeEvent, useEffect } from 'react';
 import { uploadJobPhoto, UploadProgress } from '@/lib/storage/uploadJobPhoto';
 
 const createPhotoId = () => {
@@ -155,14 +155,15 @@ export function PhotoUploader({
       console.log('Updated photo:', updatedPhotos.find(p => p.id === photo.id));
       photosRef.current = updatedPhotos;
       onPhotosChange(updatedPhotos);
-    } catch (error: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
       const errorPhotos = photosRef.current.map((p) =>
         p.id === photo.id
           ? {
               ...p,
               uploading: false,
               uploaded: false,
-              error: error.message,
+              error: message,
             }
           : p
       );
