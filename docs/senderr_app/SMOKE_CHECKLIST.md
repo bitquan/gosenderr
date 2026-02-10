@@ -1,5 +1,10 @@
 # Senderr iOS Smoke Checklist
 
+> Doc metadata
+> - Owner: `@bitquan`
+> - Last verified: `2026-02-10`
+> - Review cadence: `monthly`
+
 Use this checklist before merge for iOS-native related changes.
 
 ## 1) Fast smoke (required)
@@ -87,3 +92,10 @@ Location and settings checks:
 - In-shell location chip supports repeated `Enable location` -> `Start tracking` -> `Stop tracking`.
 - Settings/profile overlay can be opened from map shell and closed without leaving map context.
 - Profile save and feature flag debug behavior still work from overlay.
+
+## 7) Background tracking smoke (issue #279)
+
+- Start tracking from MapShell, then background the app for 2-5 minutes.
+- Return to the app and confirm tracking remains enabled and the last location timestamp updates.
+- Disable network, background the app, then re-enable network and return.
+- Verify queued updates flush in order and no duplicate points appear.
