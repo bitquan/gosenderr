@@ -13,17 +13,9 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 type VehicleType = "foot" | "bike" | "scooter" | "car" | "van" | "truck";
 type Step = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 type CourierProfileStatus = "pending" | "approved" | "rejected";
-      const courierProfile: CourierProfileSnapshot & {
-        isOnline: boolean;
-        documents: UploadedDocument[];
-        status: CourierProfileStatus;
-        appliedAt: ReturnType<typeof serverTimestamp>;
-        updatedAt: ReturnType<typeof serverTimestamp>;
-        rejectionReason: null;
-      } = {
+type CourierProfileSnapshot = {
   status?: CourierProfileStatus;
   rejectionReason?: string | null;
-        isOnline: false,
   vehicleType?: VehicleType;
   serviceRadius?: number;
   phone?: string;
@@ -45,14 +37,23 @@ type CourierProfileStatus = "pending" | "approved" | "rejected";
   workModes?: {
     packagesEnabled?: boolean;
     foodEnabled?: boolean;
-        status: "pending",
+  };
   packageRateCard?: PackageRateCard;
   foodRateCard?: FoodRateCard;
 };
-        packageRateCard: packageRateCard || undefined,
-        foodRateCard: foodRateCard || undefined,
+
 type UploadedDocument = {
+  label: string;
+  url: string;
+  name: string;
+  contentType: string;
+  uploadedAt: Date;
+};
+
+const OnboardingPage = () => {
   const navigate = useNavigate();
+  const { uid, authLoading } = useAuthUser();
+  const { userDoc, userLoading } = useUserDoc(uid);
   const [step, setStep] = useState<Step>(1);
   const [submitting, setSubmitting] = useState(false);
   const [statusLoading, setStatusLoading] = useState(true);
@@ -308,7 +309,14 @@ type UploadedDocument = {
 
       const uploadedDocs = await uploadDocuments();
 
-      const courierProfile = {
+      const courierProfile: CourierProfileSnapshot & {
+        isOnline: boolean;
+        documents: UploadedDocument[];
+        status: CourierProfileStatus;
+        appliedAt: ReturnType<typeof serverTimestamp>;
+        updatedAt: ReturnType<typeof serverTimestamp>;
+        rejectionReason: null;
+      } = {
         vehicleType,
         serviceRadius,
         isOnline: false,
@@ -337,15 +345,15 @@ type UploadedDocument = {
         appliedAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         rejectionReason: null,
+        packageRateCard: packageRateCard || undefined,
+        foodRateCard: foodRateCard || undefined,
       };
 
       if (packageRateCard) {
-        courierProfile.packageRateCard = packageRateCard;
         console.log("✅ Added package rate card to profile");
       }
 
       if (foodRateCard) {
-        courierProfile.foodRateCard = foodRateCard;
         console.log("✅ Added food rate card to profile");
       }
 
@@ -1389,4 +1397,6 @@ type UploadedDocument = {
       </div>
     </div>
   );
-}
+};
+
+export default OnboardingPage;
