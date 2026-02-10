@@ -126,14 +126,14 @@ export function CourierJobPreview({
             label="Pickup"
             location={job.pickup}
             canSeeExact={visibility.canSeeExactAddresses}
-            addressOverride={(job as any).pickupAddress || job.pickup?.label}
+            addressOverride={((job as unknown as { pickupAddress?: string }).pickupAddress) || job.pickup?.label}
           />
           <AddressBlock
             label="Dropoff"
             location={job.dropoff}
             canSeeExact={visibility.canSeeExactAddresses}
             icon="🎯"
-            addressOverride={(job as any).deliveryAddress || job.dropoff?.label}
+            addressOverride={((job as unknown as { deliveryAddress?: string }).deliveryAddress) || job.dropoff?.label}
           />
           {!visibility.canSeeExactAddresses && (
             <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5">

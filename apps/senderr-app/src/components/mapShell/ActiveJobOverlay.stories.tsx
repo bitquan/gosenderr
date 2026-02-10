@@ -9,36 +9,36 @@ export default {
 
 export const Offer = () => {
   const model = buildMapShellOverlayModel({
-    activeJob: { id: "1", status: "pending" } as any,
+    activeJob: { id: "1", status: "pending" } as unknown as { id: string; status: string },
     latestJob: null,
-    jobsSyncState: { status: "ok" } as any,
+    jobsSyncState: { status: "ok" } as unknown as { status: string },
     courierLocation: null,
     tracking: false,
     hasPermission: false,
-  } as any);
+  });
   return <ActiveJobOverlay model={model} onPrimaryAction={() => {}} />;
 };
 
 export const Accepted_NoPermission = () => {
   const model = buildMapShellOverlayModel({
-    activeJob: { id: "1", status: "accepted" } as any,
+    activeJob: { id: "1", status: "accepted" } as unknown as { id: string; status: string },
     latestJob: null,
-    jobsSyncState: { status: "ok" } as any,
+    jobsSyncState: { status: "ok" } as unknown as { status: string },
     courierLocation: null,
     tracking: false,
     hasPermission: false,
-  } as any);
+  });
   return <ActiveJobOverlay model={model} onPrimaryAction={() => {}} />;
 };
 
 export const Accepted_WithPermission = () => {
   const model = buildMapShellOverlayModel({
-    activeJob: { id: "1", status: "accepted" } as any,
+    activeJob: { id: "1", status: "accepted" } as unknown as { id: string; status: string },
     latestJob: null,
-    jobsSyncState: { status: "ok" } as any,
+    jobsSyncState: { status: "ok" } as unknown as { status: string },
     courierLocation: null,
     tracking: true,
     hasPermission: true,
-  } as any);
+  });
   return <ActiveJobOverlay model={model} onPrimaryAction={() => {}} />;
 };
