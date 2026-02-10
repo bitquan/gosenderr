@@ -33,14 +33,21 @@ export const SENDERRPLACE_AVAILABILITY_REASON_MESSAGES: Record<
   string
 > = {
   AVAILABLE: 'Courier availability confirmed.',
-  OUTSIDE_BOOKING_WINDOW: 'Delivery can only be booked within the supported scheduling window.',
+  OUTSIDE_BOOKING_WINDOW:
+    'Delivery can only be booked within the supported scheduling window.',
   NO_ONLINE_COURIER: 'No couriers are currently online for this request.',
-  COURIER_LOCATION_UNAVAILABLE: 'No online courier has an active location signal right now.',
-  OUT_OF_SERVICE_RADIUS: 'No online courier currently serves this pickup area.',
-  WORK_MODE_DISABLED: 'No online courier currently accepts this delivery type.',
-  REQUIRED_EQUIPMENT_UNAVAILABLE: 'No online courier has the required equipment for this delivery.',
-  VEHICLE_REQUIREMENT_UNAVAILABLE: 'No online courier matches the required vehicle type right now.',
-  COURIER_CAPACITY_REACHED: 'Couriers are currently at capacity. Please try again shortly.',
+  COURIER_LOCATION_UNAVAILABLE:
+    'No online courier has an active location signal right now.',
+  OUT_OF_SERVICE_RADIUS:
+    'No online courier currently serves this pickup area.',
+  WORK_MODE_DISABLED:
+    'No online courier currently accepts this delivery type.',
+  REQUIRED_EQUIPMENT_UNAVAILABLE:
+    'No online courier has the required equipment for this delivery.',
+  VEHICLE_REQUIREMENT_UNAVAILABLE:
+    'No online courier matches the required vehicle type right now.',
+  COURIER_CAPACITY_REACHED:
+    'Couriers are currently at capacity. Please try again shortly.',
   NO_ELIGIBLE_COURIER: 'No eligible courier is available right now.',
 };
 
