@@ -21,14 +21,22 @@ jest.mock('@react-native-async-storage/async-storage', () => {
 // We'll mock firebase/firestore updateDoc to simulate transient failure followed by success
 jest.mock('firebase/firestore', () => {
   let __calls = 0;
+  const updateDoc = jest.fn(() => {
+    __calls += 1;
+    if (__calls === 1) return Promise.reject(new Error('transient error'));
+    return Promise.resolve(undefined);
+  });
+
+  const __reset = () => {
+    __calls = 0;
+    updateDoc.mockClear();
+  };
+
   return {
     doc: jest.fn(),
-    updateDoc: jest.fn(() => {
-      __calls += 1;
-      if (__calls === 1) return Promise.reject(new Error('transient error'));
-      return Promise.resolve(undefined);
-    }),
+    updateDoc,
     serverTimestamp: () => 'SERVER_TIMESTAMP',
+    __reset,
   };
 });
 
@@ -45,7 +53,8 @@ describe('locationUploadService retry scheduling (service-level)', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    callCount = 0;
+    const fb = jest.requireMock('firebase/firestore') as {__reset?: () => void};
+    fb.__reset?.();
   });
 
   afterEach(() => {
