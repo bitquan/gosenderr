@@ -82,10 +82,11 @@ const readQueue = async (): Promise<EnqueuedLocation[]> => {
   try {
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) return parsed as EnqueuedLocation[];
-  } catch {
-    // ignore and return empty
+  } catch (err: unknown) {
+    // ignore and return empty — log safely
     // eslint-disable-next-line no-console
-    console.warn('[locationUploader] readQueue parse failed', err);
+    const msg = err instanceof Error ? err.message : String(err);
+    console.warn('[locationUploader] readQueue parse failed', msg);
   }
   return [];
 };
