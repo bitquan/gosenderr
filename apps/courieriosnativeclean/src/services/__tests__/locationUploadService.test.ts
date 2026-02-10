@@ -1,8 +1,9 @@
 import {beforeEach, describe, expect, it, jest} from '@jest/globals';
+import type {TelemetryHook, AnalyticsAdapter} from '../locationUploadService';
 
-const mockGetItem: any = jest.fn();
-const mockSetItem: any = jest.fn();
-const mockRemoveItem: any = jest.fn();
+const mockGetItem = jest.fn() as jest.MockedFunction<(key: string) => Promise<string | null>>;
+const mockSetItem = jest.fn() as jest.MockedFunction<(key: string, value: string) => Promise<void>>;
+const mockRemoveItem = jest.fn() as jest.MockedFunction<(key: string) => Promise<void>>;
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
   __esModule: true,
@@ -98,10 +99,10 @@ describe('locationUploadService queue', () => {
       ]),
     );
 
-    const mockTelemetry = {track: jest.fn()};
-    const mockAnalytics = {track: jest.fn()};
-    sut.setLocationUploadTelemetry(mockTelemetry as any);
-    sut.setLocationUploadAnalytics(mockAnalytics as any);
+    const mockTelemetry: TelemetryHook = {track: jest.fn()};
+    const mockAnalytics: AnalyticsAdapter = {track: jest.fn(async () => {})};
+    sut.setLocationUploadTelemetry(mockTelemetry);
+    sut.setLocationUploadAnalytics(mockAnalytics);
 
     const error = new Error('network');
     jest.spyOn(firestore, 'updateDoc').mockRejectedValue(error);
@@ -127,10 +128,10 @@ describe('locationUploadService queue', () => {
   });
 
   it('reports telemetry on enqueue and flush', async () => {
-    const mockTelemetry = {track: jest.fn()};
-    const mockAnalytics = {track: jest.fn()};
-    sut.setLocationUploadTelemetry(mockTelemetry as any);
-    sut.setLocationUploadAnalytics(mockAnalytics as any);
+    const mockTelemetry: TelemetryHook = {track: jest.fn()};
+    const mockAnalytics: AnalyticsAdapter = {track: jest.fn(async () => {})};
+    sut.setLocationUploadTelemetry(mockTelemetry);
+    sut.setLocationUploadAnalytics(mockAnalytics);
 
     // enqueue should call telemetry and analytics
     await sut.enqueueLocation('tuser', {
@@ -172,10 +173,10 @@ describe('locationUploadService queue', () => {
     // make max attempts low
     sut.setLocationUploadMaxAttempts(1);
 
-    const mockTelemetry = {track: jest.fn()};
-    const mockAnalytics = {track: jest.fn()};
-    sut.setLocationUploadTelemetry(mockTelemetry as any);
-    sut.setLocationUploadAnalytics(mockAnalytics as any);
+    const mockTelemetry: TelemetryHook = {track: jest.fn()};
+    const mockAnalytics: AnalyticsAdapter = {track: jest.fn(async () => {})};
+    sut.setLocationUploadTelemetry(mockTelemetry);
+    sut.setLocationUploadAnalytics(mockAnalytics);
 
     const now = new Date().toISOString();
     // existing attempts already at 1 will cause drop when we catch another failure

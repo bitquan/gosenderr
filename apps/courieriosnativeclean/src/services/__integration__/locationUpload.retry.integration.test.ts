@@ -57,17 +57,18 @@ describe('locationUploadService retry scheduling (service-level)', () => {
     // make backoff tiny so test runs fast
     sut.setLocationUploadBackoffBase(10);
 
-    const mockTelemetry = {track: jest.fn()};
-    const mockAnalytics = {track: jest.fn()};
-    sut.setLocationUploadTelemetry(mockTelemetry as any);
-    sut.setLocationUploadAnalytics(mockAnalytics as any);
+    const mockTelemetry: import('../locationUploadService').TelemetryHook = {track: jest.fn()};
+    const mockAnalytics: import('../locationUploadService').AnalyticsAdapter = {track: jest.fn(async () => {})};
+    sut.setLocationUploadTelemetry(mockTelemetry);
+    sut.setLocationUploadAnalytics(mockAnalytics);
 
     // enqueue a location
-    await sut.enqueueLocation(uid, {
+    const snapshot = {
       latitude: 10,
       longitude: 20,
       timestamp: Date.now(),
-    } as any);
+    };
+    await sut.enqueueLocation(uid, snapshot);
 
     // The first flush should fail (simulated by our mock) and schedule a retry
     await expect(sut.flushQueuedLocationsForSession(uid)).rejects.toThrow('transient');

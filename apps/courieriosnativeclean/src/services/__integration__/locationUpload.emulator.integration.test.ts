@@ -88,12 +88,13 @@ describe('locationUploadService integration (Firestore emulator)', () => {
     'enqueue + flush updates user document and clears queue',
     async () => {
       // Enqueue a location for the uid
-      await sut.enqueueLocation(uid, {
+      const snapshot = {
         latitude: 37.42,
         longitude: -122.08,
         timestamp: Date.now(),
         accuracy: 5,
-      } as any);
+      };
+      await sut.enqueueLocation(uid, snapshot);
 
       // ensure flush performs an upload to Firestore
       const res = await sut.flushQueuedLocationsForSession(uid);
