@@ -16,7 +16,10 @@ const steps: { status: JobStatus; label: string }[] = [
   { status: "completed", label: "Completed" },
 ];
 
-export function StatusTimeline({ currentStatus, isPaymentLocked }: StatusTimelineProps) {
+export function StatusTimeline({
+  currentStatus,
+  isPaymentLocked,
+}: StatusTimelineProps) {
   const currentIndex = steps.findIndex((s) => s.status === currentStatus);
 
   return (
@@ -34,7 +37,8 @@ export function StatusTimeline({ currentStatus, isPaymentLocked }: StatusTimelin
             fontWeight: 600,
           }}
         >
-          ⏳ Waiting for customer payment authorization before the trip can start.
+          ⏳ Waiting for customer payment authorization before the trip can
+          start.
         </div>
       )}
       <div style={{ position: "relative" }}>
@@ -120,8 +124,8 @@ export function StatusTimeline({ currentStatus, isPaymentLocked }: StatusTimelin
                     color: isCurrent
                       ? "#6E56CF"
                       : isCompleted
-                        ? "#333"
-                        : "#999",
+                      ? "#333"
+                      : "#999",
                     fontWeight: isCurrent ? "600" : "400",
                     maxWidth: "80px",
                     lineHeight: "1.3",

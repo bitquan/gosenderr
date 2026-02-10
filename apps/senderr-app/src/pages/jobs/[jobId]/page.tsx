@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { useJob } from "@/hooks/v2/useJob";
@@ -66,15 +65,17 @@ export default function CourierJobDetail() {
 
   const visibility = getJobVisibility(job, { uid, role: "courier" });
   const isPaymentLocked = job.paymentStatus !== "authorized";
-  const canNavigateToPickup = ["assigned", "enroute_pickup", "arrived_pickup"].includes(
-    job.status,
-  );
+  const canNavigateToPickup = [
+    "assigned",
+    "enroute_pickup",
+    "arrived_pickup",
+  ].includes(job.status);
   const canNavigateToDropoff = [
     "picked_up",
     "enroute_dropoff",
     "arrived_dropoff",
   ].includes(job.status);
-  
+
   const handleStartNavigation = async (destination: "pickup" | "dropoff") => {
     if (!courierLocation) {
       alert(
@@ -108,7 +109,10 @@ export default function CourierJobDetail() {
         {isPaymentLocked && (
           <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl p-4">
             <p className="font-semibold">Awaiting customer payment</p>
-            <p className="text-sm">You can view details, but trip actions are locked until payment is authorized.</p>
+            <p className="text-sm">
+              You can view details, but trip actions are locked until payment is
+              authorized.
+            </p>
           </div>
         )}
         {/* Next Action */}
@@ -130,7 +134,10 @@ export default function CourierJobDetail() {
         {/* Status Timeline */}
         <div className="bg-white rounded-2xl shadow-lg p-6">
           <h2 className="text-lg font-bold text-gray-900 mb-4">Progress</h2>
-          <StatusTimeline currentStatus={job.status} isPaymentLocked={isPaymentLocked} />
+          <StatusTimeline
+            currentStatus={job.status}
+            isPaymentLocked={isPaymentLocked}
+          />
         </div>
 
         {/* Live Map */}
@@ -148,7 +155,11 @@ export default function CourierJobDetail() {
 
         {/* Job Details Panel with Actions */}
         <div className="bg-white rounded-2xl shadow-lg p-6">
-          <JobDetailsPanel job={job} visibility={visibility} showStatus={true} />
+          <JobDetailsPanel
+            job={job}
+            visibility={visibility}
+            showStatus={true}
+          />
         </div>
 
         {/* Navigation Buttons */}
@@ -163,7 +174,7 @@ export default function CourierJobDetail() {
             }
             className={`py-4 px-4 rounded-xl font-semibold text-white shadow-lg transition-all ${
               isNavigating ||
-              !userDoc?.location ||
+              !hasLocation ||
               isPaymentLocked ||
               !canNavigateToPickup
                 ? "bg-gray-400 cursor-not-allowed"
@@ -187,7 +198,7 @@ export default function CourierJobDetail() {
             }
             className={`py-4 px-4 rounded-xl font-semibold text-white shadow-lg transition-all ${
               isNavigating ||
-              !userDoc?.location ||
+              !hasLocation ||
               isPaymentLocked ||
               !canNavigateToDropoff
                 ? "bg-gray-400 cursor-not-allowed"
