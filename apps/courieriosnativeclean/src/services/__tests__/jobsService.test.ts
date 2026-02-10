@@ -66,6 +66,9 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
     setItem: mockSetItem,
     removeItem: mockRemoveItem,
   },
+  getItem: mockGetItem,
+  setItem: mockSetItem,
+  removeItem: mockRemoveItem,
 }));
 
 jest.mock('../firebase', () => ({
