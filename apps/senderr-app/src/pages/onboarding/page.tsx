@@ -13,9 +13,17 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 type VehicleType = "foot" | "bike" | "scooter" | "car" | "van" | "truck";
 type Step = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 type CourierProfileStatus = "pending" | "approved" | "rejected";
-type CourierProfileSnapshot = {
+      const courierProfile: CourierProfileSnapshot & {
+        isOnline: boolean;
+        documents: UploadedDocument[];
+        status: CourierProfileStatus;
+        appliedAt: ReturnType<typeof serverTimestamp>;
+        updatedAt: ReturnType<typeof serverTimestamp>;
+        rejectionReason: null;
+      } = {
   status?: CourierProfileStatus;
   rejectionReason?: string | null;
+        isOnline: false,
   vehicleType?: VehicleType;
   serviceRadius?: number;
   phone?: string;
@@ -37,21 +45,13 @@ type CourierProfileSnapshot = {
   workModes?: {
     packagesEnabled?: boolean;
     foodEnabled?: boolean;
-  };
+        status: "pending",
   packageRateCard?: PackageRateCard;
   foodRateCard?: FoodRateCard;
 };
+        packageRateCard: packageRateCard || undefined,
+        foodRateCard: foodRateCard || undefined,
 type UploadedDocument = {
-  label: string;
-  url: string;
-  name: string;
-  contentType: string;
-  uploadedAt: Date;
-};
-
-export default function CourierOnboarding() {
-  const { uid, loading: authLoading } = useAuthUser();
-  const { userDoc, loading: userLoading } = useUserDoc();
   const navigate = useNavigate();
   const [step, setStep] = useState<Step>(1);
   const [submitting, setSubmitting] = useState(false);

@@ -41,6 +41,15 @@ Last verified: 2026-02-09
 - Test result: not run (implementation-first)
 - Follow-up: open PR + verify CI
 
+- Branch: senderr-app/feature/onboarding-profile-1
+- Issue/PR: #286
+- Scope: fix onboarding profile payload typing
+- Files touched: apps/senderr-app/src/pages/onboarding/page.tsx
+- Behavior change: include rate card fields in typed payload
+- Commands run: none
+- Test result: not run (CI fix)
+- Follow-up: rerun CI after push
+
 - Branch: senderr-app/feature/job-lifecycle-1
 - Issue/PR: #285
 - Scope: courier location typing fix for job detail
