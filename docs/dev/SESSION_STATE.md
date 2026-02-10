@@ -4,20 +4,20 @@ This file is the canonical handoff state when a chat/session is interrupted.
 
 ## Last Updated
 
-- Local: 2026-02-10 10:26
-- UTC: 2026-02-10 15:26
+- Local: 2026-02-10 10:27
+- UTC: 2026-02-10 15:27
 
 ## Current Focus
 
-- Active issue: TBD
-- Active PR: TBD
-- Objective: Add earnings payout + recharge actions
+- Active issue: #287
+- Active PR: #287
+- Objective: Open PR #287 for payouts/recharge
 
 ## Branch + Commit
 
 - Branch: `senderr-app/feature/payments-recharging-1`
-- Commit: `0554ddb`
-- Working tree: clean
+- Commit: `2afe490`
+- Working tree: dirty
 
 ## Blockers
 
@@ -25,7 +25,7 @@ This file is the canonical handoff state when a chat/session is interrupted.
 
 ## Next Actions
 
-1. Open PR for payments/recharging work
+1. Check CI for PRs #286/#287
 2. Re-open `docs/dev/WORKLOG.md` and append after each meaningful change.
 3. Keep this file current at task boundaries.
 

@@ -512,3 +512,19 @@ Append-only log used for session recovery.
 - Blockers: None
 - Next:
   - Open PR for payments/recharging work
+
+---
+
+## 2026-02-10 10:27 local (2026-02-10 15:27 UTC)
+
+- Status: `in_progress`
+- Summary: Open PR #287 for payouts/recharge
+- Branch: `senderr-app/feature/payments-recharging-1`
+- Commit: `2afe490`
+- Issue: `#287`
+- PR: `#287`
+- Files:
+  - `docs/dev/worktree-logs/senderr-live.md`
+- Blockers: None
+- Next:
+  - Check CI for PRs #286/#287

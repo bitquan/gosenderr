@@ -34,7 +34,7 @@ Last verified: 2026-02-09
 - Follow-up: verify CI + lint/type-check before merge
 
 - Branch: senderr-app/feature/payments-recharging-1
-- Issue/PR: TBD
+- Issue/PR: #287
 - Scope: payouts + recharge actions in earnings
 - Files touched: apps/senderr-app/src/pages/earnings/page.tsx, .github/copilot/branches/senderr-app-feature-payments-recharging-1.md
 - Behavior change: add payout/recharge requests and Stripe status panel
