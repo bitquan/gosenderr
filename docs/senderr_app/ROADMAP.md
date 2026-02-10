@@ -55,3 +55,17 @@ Update process:
 2. Remove any closed issue from active queue immediately.
 3. Recompute snapshot totals (total/closed/open/completion).
 4. Commit roadmap refresh in the same PR when issue state changes.
+
+## Lifecycle milestones
+
+This repository now uses **Lifecycle milestones (M1–M5)** to coordinate larger cross-cutting changes and milestone reviews. The milestones are:
+
+- **Lifecycle M1: Freeze Canonical Vocabulary** — Define and lock the canonical vocabulary and domain terms used across the system.
+- **Lifecycle M2: Enforce Transition Guards** — Implement and validate guards that ensure safe transitions between job states.
+- **Lifecycle M3: Server Lifecycle Commands** — Implement server-side lifecycle control commands and APIs.
+- **Lifecycle M4: Data Migration + Compatibility** — Perform necessary data migrations and compatibility adjustments for new lifecycle behavior.
+- **Lifecycle M5: Lifecycle Test Gate** — Establish test gates and verification steps required to consider lifecycle work complete.
+
+Guidance:
+- When filing issues or PRs that are intended for a specific lifecycle milestone, select the milestone on GitHub or include `Lifecycle: Mx` in the issue/PR body. A workflow will attempt to assign the milestone automatically based on the PR/issue body.
+- Maintainers will run milestone review sessions per the project plan and update milestone status in GitHub.

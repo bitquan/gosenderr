@@ -177,6 +177,10 @@ PR checklist policy (required):
   - `handoff: updated`
   - `handoff: not needed`
 
+Lifecycle milestone guidance:
+
+- When a PR or issue is intended to be part of a Lifecycle milestone (M1–M5), set the GitHub milestone accordingly or include `Lifecycle: Mx` in the PR/issue body. A lightweight workflow will try to assign the milestone automatically. During rollout the milestone is optional; maintainers may require it for milestone review PRs.
+
 CI scope policy (current):
 
 - `.github/workflows/senderr_app-ci.yml` now runs only for Senderr iOS-related path changes.

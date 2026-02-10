@@ -45,6 +45,20 @@ body:
       label: Summary
     validations:
       required: true
+  - type: dropdown
+    id: lifecycle
+    attributes:
+      label: Lifecycle milestone
+      description: Select the target lifecycle milestone for this issue (optional)
+      options:
+        - M1 - Freeze Canonical Vocabulary
+        - M2 - Enforce Transition Guards
+        - M3 - Server Lifecycle Commands
+        - M4 - Data Migration + Compatibility
+        - M5 - Lifecycle Test Gate
+        - Other
+    validations:
+      required: false
   - type: textarea
     id: impact
     attributes:

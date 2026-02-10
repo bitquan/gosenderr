@@ -1,0 +1,73 @@
+name: Lifecycle Milestone Sync
+
+on:
+  issues:
+    types: [opened, edited]
+  pull_request:
+    types: [opened, edited, synchronize]
+
+permissions:
+  issues: write
+
+jobs:
+  set-milestone:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for lifecycle marker and assign milestone
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const body = (context.payload.issue && context.payload.issue.body) || (context.payload.pull_request && context.payload.pull_request.body) || '';
+            if (!body) {
+              core.info('No body found to inspect for lifecycle marker');
+              return;
+            }
+
+            // Match patterns like "Lifecycle: M1" or standalone "M1"
+            const m = (body.match(/Lifecycle[:\s]*M([1-5])/i) || body.match(/\bM([1-5])\b/i));
+            if (!m) {
+              core.info('No lifecycle milestone detected in body');
+              return;
+            }
+            const idx = m[1];
+            const mapping = {
+              '1': 'Lifecycle M1: Freeze Canonical Vocabulary',
+              '2': 'Lifecycle M2: Enforce Transition Guards',
+              '3': 'Lifecycle M3: Server Lifecycle Commands',
+              '4': 'Lifecycle M4: Data Migration + Compatibility',
+              '5': 'Lifecycle M5: Lifecycle Test Gate'
+            };
+            const title = mapping[idx];
+
+            const { data: milestones } = await github.rest.issues.listMilestones({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'all'
+            });
+
+            const found = milestones.find(ms => ms.title === title);
+            if (!found) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: `Requested lifecycle milestone **${title}** was not found. Please create it or set the milestone manually.`
+              });
+              core.info(`Milestone ${title} not found`);
+              return;
+            }
+
+            // Set milestone on the issue (PRs are issues as well)
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              milestone: found.number
+            });
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `Assigned milestone **${title}** based on lifecycle marker detected in the body.`
+            });

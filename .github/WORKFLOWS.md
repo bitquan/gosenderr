@@ -110,6 +110,15 @@ This file is the canonical map of active workflows under `.github/workflows/`.
   - Key jobs:
     - `create-audit-issue`
 
+- `lifecycle-milestone-sync.yml` (`Lifecycle Milestone Sync`)
+  - Triggers:
+    - `issues` (`opened`, `edited`)
+    - `pull_request` (`opened`, `edited`, `synchronize`)
+  - Purpose:
+    - Parse `Lifecycle: Mx` or `Mx` from issue/PR body and set the matching GitHub milestone automatically when present.
+  - Key jobs:
+    - `set-milestone`
+
 - `docs-drift-audit.yml` (`Docs Drift Audit`)
   - Triggers:
     - weekly schedule
