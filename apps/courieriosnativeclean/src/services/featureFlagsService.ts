@@ -14,33 +14,55 @@ const FEATURE_FLAG_DEFINITIONS: readonly FeatureFlagDefinition[] = [
     key: 'trackingUpload',
     owner: 'senderr-ios',
     defaultValue: true,
-    removalCriteria: 'Remove after location upload has no incident for 2 releases.',
+    removalCriteria:
+      'Remove after location upload has no incident for 2 releases.',
   },
   {
     key: 'notifications',
     owner: 'senderr-ios',
     defaultValue: true,
-    removalCriteria: 'Remove after notification pipeline is stable in production.',
+    removalCriteria:
+      'Remove after notification pipeline is stable in production.',
   },
   {
     key: 'mapRouting',
     owner: 'dispatch-platform',
     defaultValue: true,
-    removalCriteria: 'Remove after map/routing stack is the only supported path.',
+    removalCriteria:
+      'Remove after map/routing stack is the only supported path.',
   },
   {
     key: 'jobStatusActions',
     owner: 'senderr-ios',
     defaultValue: true,
-    removalCriteria: 'Remove after status command flow has no rollout incidents.',
+    removalCriteria:
+      'Remove after status command flow has no rollout incidents.',
+  },
+  {
+    key: 'mapShell',
+    owner: 'senderr-ios',
+    defaultValue: true,
+    removalCriteria:
+      'Remove after map shell fully replaces tab shell in production.',
   },
 ];
 
 const defaultsFromDefinitions = (): Record<FeatureFlagKey, boolean> => ({
-  trackingUpload: FEATURE_FLAG_DEFINITIONS.find(d => d.key === 'trackingUpload')?.defaultValue ?? true,
-  notifications: FEATURE_FLAG_DEFINITIONS.find(d => d.key === 'notifications')?.defaultValue ?? true,
-  mapRouting: FEATURE_FLAG_DEFINITIONS.find(d => d.key === 'mapRouting')?.defaultValue ?? true,
-  jobStatusActions: FEATURE_FLAG_DEFINITIONS.find(d => d.key === 'jobStatusActions')?.defaultValue ?? true,
+  trackingUpload:
+    FEATURE_FLAG_DEFINITIONS.find(d => d.key === 'trackingUpload')
+      ?.defaultValue ?? true,
+  notifications:
+    FEATURE_FLAG_DEFINITIONS.find(d => d.key === 'notifications')
+      ?.defaultValue ?? true,
+  mapRouting:
+    FEATURE_FLAG_DEFINITIONS.find(d => d.key === 'mapRouting')?.defaultValue ??
+    true,
+  jobStatusActions:
+    FEATURE_FLAG_DEFINITIONS.find(d => d.key === 'jobStatusActions')
+      ?.defaultValue ?? true,
+  mapShell:
+    FEATURE_FLAG_DEFINITIONS.find(d => d.key === 'mapShell')?.defaultValue ??
+    true,
 });
 
 const defaultFlags = defaultsFromDefinitions();
@@ -58,7 +80,9 @@ type Listener = (next: FeatureFlagsSnapshot) => void;
 const listeners = new Set<Listener>();
 let unsubscribeRemote: (() => void) | null = null;
 
-const setSnapshot = (updater: (previous: FeatureFlagsSnapshot) => FeatureFlagsSnapshot): void => {
+const setSnapshot = (
+  updater: (previous: FeatureFlagsSnapshot) => FeatureFlagsSnapshot,
+): void => {
   snapshot = updater(snapshot);
   listeners.forEach(listener => listener(snapshot));
 };
@@ -69,17 +93,30 @@ const toBoolean = (value: unknown): boolean | null => {
   }
   if (typeof value === 'string') {
     const normalized = value.trim().toLowerCase();
-    if (normalized === 'true' || normalized === '1' || normalized === 'yes' || normalized === 'on') {
+    if (
+      normalized === 'true' ||
+      normalized === '1' ||
+      normalized === 'yes' ||
+      normalized === 'on'
+    ) {
       return true;
     }
-    if (normalized === 'false' || normalized === '0' || normalized === 'no' || normalized === 'off') {
+    if (
+      normalized === 'false' ||
+      normalized === '0' ||
+      normalized === 'no' ||
+      normalized === 'off'
+    ) {
       return false;
     }
   }
   return null;
 };
 
-const readPath = (data: Record<string, unknown>, path: readonly string[]): unknown => {
+const readPath = (
+  data: Record<string, unknown>,
+  path: readonly string[],
+): unknown => {
   let cursor: unknown = data;
   for (const segment of path) {
     if (!cursor || typeof cursor !== 'object') {
@@ -90,7 +127,9 @@ const readPath = (data: Record<string, unknown>, path: readonly string[]): unkno
   return cursor;
 };
 
-const parseRemoteFlags = (data: Record<string, unknown>): Record<FeatureFlagKey, boolean> => {
+const parseRemoteFlags = (
+  data: Record<string, unknown>,
+): Record<FeatureFlagKey, boolean> => {
   const next = {...defaultFlags};
 
   const trackingUpload =
@@ -114,9 +153,18 @@ const parseRemoteFlags = (data: Record<string, unknown>): Record<FeatureFlagKey,
     next.mapRouting = mapRouting;
   }
 
-  const jobStatusActions = toBoolean(readPath(data, ['senderrIos', 'jobStatusActions']));
+  const jobStatusActions = toBoolean(
+    readPath(data, ['senderrIos', 'jobStatusActions']),
+  );
   if (jobStatusActions !== null) {
     next.jobStatusActions = jobStatusActions;
+  }
+
+  const mapShell =
+    toBoolean(readPath(data, ['senderrIos', 'mapShell'])) ??
+    toBoolean(readPath(data, ['delivery', 'mapShell']));
+  if (mapShell !== null) {
+    next.mapShell = mapShell;
   }
 
   return next;
@@ -139,7 +187,8 @@ const applyRemoteError = (error: unknown): void => {
     ...previous,
     loading: false,
     source: previous.source,
-    error: error instanceof Error ? error.message : 'Failed to load feature flags.',
+    error:
+      error instanceof Error ? error.message : 'Failed to load feature flags.',
   }));
 };
 

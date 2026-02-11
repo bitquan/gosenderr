@@ -3,24 +3,65 @@ import {beforeEach, describe, expect, it, jest} from '@jest/globals';
 import type {AuthSession} from '../../types/auth';
 import type {Job} from '../../types/jobs';
 
-const mockGetItem: any = jest.fn();
-const mockSetItem: any = jest.fn();
-const mockRemoveItem: any = jest.fn();
+const mockGetItem = jest.fn() as jest.MockedFunction<
+  (key: string) => Promise<string | null>
+>;
+const mockSetItem = jest.fn() as jest.MockedFunction<
+  (key: string, value: string) => Promise<void>
+>;
+const mockRemoveItem = jest.fn() as jest.MockedFunction<
+  (key: string) => Promise<void>
+>;
 
-const mockIsFirebaseReady: any = jest.fn();
-const mockGetFirebaseServices: any = jest.fn();
+const mockIsFirebaseReady = jest.fn() as jest.MockedFunction<() => boolean>;
+const mockGetFirebaseServices = jest.fn() as jest.MockedFunction<
+  () => {db: unknown}
+>;
 
-const mockCollection: any = jest.fn();
-const mockWhere: any = jest.fn();
-const mockOrderBy: any = jest.fn();
-const mockQuery: any = jest.fn();
-const mockGetDocs: any = jest.fn();
-const mockDoc: any = jest.fn();
-const mockUpdateDoc: any = jest.fn();
-const mockGetDoc: any = jest.fn();
+const mockCollection = jest.fn() as jest.MockedFunction<
+  (db: unknown, path: string) => unknown
+>;
+const mockWhere = jest.fn() as jest.MockedFunction<
+  (...args: unknown[]) => unknown
+>;
+const mockOrderBy = jest.fn() as jest.MockedFunction<
+  (...args: unknown[]) => unknown
+>;
+const mockQuery = jest.fn() as jest.MockedFunction<
+  (...args: unknown[]) => unknown
+>;
+const mockGetDocs = jest.fn() as jest.MockedFunction<
+  () => Promise<{
+    empty: boolean;
+    docs: Array<{id: string; data: () => Record<string, unknown>}>;
+  }>
+>;
+const mockDoc = jest.fn() as jest.MockedFunction<
+  (...args: unknown[]) => unknown
+>;
+const mockUpdateDoc = jest.fn() as jest.MockedFunction<
+  (...args: unknown[]) => Promise<void>
+>;
+const mockGetDoc = jest.fn() as jest.MockedFunction<
+  () => Promise<{exists: () => boolean; data: () => Record<string, unknown>}>
+>;
 const mockServerTimestamp = jest.fn(() => 'SERVER_TIMESTAMP');
-const mockOnSnapshot: any = jest.fn();
-const mockRunTransaction: any = jest.fn();
+const mockOnSnapshot = jest.fn() as jest.MockedFunction<
+  (...args: unknown[]) => () => void
+>;
+const mockRunTransaction = jest.fn() as jest.MockedFunction<
+  (
+    db: unknown,
+    updater: (tx: {
+      get: () => Promise<{
+        exists: () => boolean;
+        id: string;
+        data: () => Record<string, unknown>;
+      }>;
+      update: jest.Mock;
+    }) => Promise<unknown>,
+  ) => Promise<unknown>
+>;
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
   __esModule: true,
@@ -29,6 +70,9 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
     setItem: mockSetItem,
     removeItem: mockRemoveItem,
   },
+  getItem: mockGetItem,
+  setItem: mockSetItem,
+  removeItem: mockRemoveItem,
 }));
 
 jest.mock('../firebase', () => ({
@@ -89,7 +133,7 @@ describe('jobsService firebase/mock fallback', () => {
     runtimeConfig.envName = 'dev';
 
     mockIsFirebaseReady.mockReturnValue(true);
-    mockGetFirebaseServices.mockReturnValue({db: {}} as unknown);
+    mockGetFirebaseServices.mockReturnValue({db: {}});
 
     mockCollection.mockReturnValue('jobs_ref');
     mockWhere.mockReturnValue('where_clause');
@@ -107,19 +151,31 @@ describe('jobsService firebase/mock fallback', () => {
       return Promise.resolve(null);
     });
 
-    mockGetDoc.mockResolvedValue({exists: () => false});
+    mockGetDoc.mockResolvedValue({exists: () => false, data: () => ({})});
 
-    mockRunTransaction.mockImplementation(async (_db: unknown, updater: (tx: any) => Promise<any>) => {
-      const tx = {
-        get: async () => ({
-          exists: () => true,
-          id: 'local_job_1',
-          data: () => makeRemoteJobData('pending'),
-        }),
-        update: jest.fn(),
-      };
-      return updater(tx);
-    });
+    mockRunTransaction.mockImplementation(
+      async (
+        _db: unknown,
+        updater: (tx: {
+          get: () => Promise<{
+            exists: () => boolean;
+            id: string;
+            data: () => Record<string, unknown>;
+          }>;
+          update: jest.Mock;
+        }) => Promise<unknown>,
+      ) => {
+        const tx = {
+          get: async () => ({
+            exists: () => true,
+            id: 'local_job_1',
+            data: () => makeRemoteJobData('pending'),
+          }),
+          update: jest.fn(),
+        };
+        return updater(tx);
+      },
+    );
   });
 
   it('falls back to local jobs when Firebase fetch fails', async () => {
@@ -143,7 +199,10 @@ describe('jobsService firebase/mock fallback', () => {
       throw new Error('Expected retryable_error');
     }
     expect(result.job.status).toBe('accepted');
-    expect(mockSetItem).toHaveBeenCalledWith('@senderr/jobs', expect.any(String));
+    expect(mockSetItem).toHaveBeenCalledWith(
+      '@senderr/jobs',
+      expect.any(String),
+    );
   });
 
   it('queues status updates in prod mode when connectivity drops', async () => {
@@ -153,7 +212,10 @@ describe('jobsService firebase/mock fallback', () => {
     const result = await updateJobStatus(session, 'local_job_1', 'accepted');
 
     expect(result.kind).toBe('retryable_error');
-    expect(mockSetItem).toHaveBeenCalledWith('@senderr/jobs/status-update-queue', expect.any(String));
+    expect(mockSetItem).toHaveBeenCalledWith(
+      '@senderr/jobs/status-update-queue',
+      expect.any(String),
+    );
   });
 
   it('clears queued status update after a successful Firebase write', async () => {
@@ -182,21 +244,35 @@ describe('jobsService firebase/mock fallback', () => {
     const result = await updateJobStatus(session, 'local_job_1', 'accepted');
 
     expect(result.kind).toBe('success');
-    expect(mockRemoveItem).toHaveBeenCalledWith('@senderr/jobs/status-update-queue');
+    expect(mockRemoveItem).toHaveBeenCalledWith(
+      '@senderr/jobs/status-update-queue',
+    );
   });
 
   it('returns conflict result when transition is invalid', async () => {
-    mockRunTransaction.mockImplementation(async (_db: unknown, updater: (tx: any) => Promise<any>) => {
-      const tx = {
-        get: async () => ({
-          exists: () => true,
-          id: 'local_job_1',
-          data: () => makeRemoteJobData('delivered'),
-        }),
-        update: jest.fn(),
-      };
-      return updater(tx);
-    });
+    mockRunTransaction.mockImplementation(
+      async (
+        _db: unknown,
+        updater: (tx: {
+          get: () => Promise<{
+            exists: () => boolean;
+            id: string;
+            data: () => Record<string, unknown>;
+          }>;
+          update: jest.Mock;
+        }) => Promise<unknown>,
+      ) => {
+        const tx = {
+          get: async () => ({
+            exists: () => true,
+            id: 'local_job_1',
+            data: () => makeRemoteJobData('delivered'),
+          }),
+          update: jest.fn(),
+        };
+        return updater(tx);
+      },
+    );
 
     const result = await updateJobStatus(session, 'local_job_1', 'accepted');
 
@@ -205,21 +281,35 @@ describe('jobsService firebase/mock fallback', () => {
       throw new Error('Expected conflict');
     }
     expect(result.job.status).toBe('delivered');
-    expect(result.message).toContain('Cannot change job from delivered to accepted');
+    expect(result.message).toContain(
+      'Cannot change job from delivered to accepted',
+    );
   });
 
   it('returns idempotent success when requested status matches current status', async () => {
-    mockRunTransaction.mockImplementation(async (_db: unknown, updater: (tx: any) => Promise<any>) => {
-      const tx = {
-        get: async () => ({
-          exists: () => true,
-          id: 'local_job_1',
-          data: () => makeRemoteJobData('accepted'),
-        }),
-        update: jest.fn(),
-      };
-      return updater(tx);
-    });
+    mockRunTransaction.mockImplementation(
+      async (
+        _db: unknown,
+        updater: (tx: {
+          get: () => Promise<{
+            exists: () => boolean;
+            id: string;
+            data: () => Record<string, unknown>;
+          }>;
+          update: jest.Mock;
+        }) => Promise<unknown>,
+      ) => {
+        const tx = {
+          get: async () => ({
+            exists: () => true,
+            id: 'local_job_1',
+            data: () => makeRemoteJobData('accepted'),
+          }),
+          update: jest.fn(),
+        };
+        return updater(tx);
+      },
+    );
 
     const result = await updateJobStatus(session, 'local_job_1', 'accepted');
 
@@ -257,10 +347,14 @@ describe('jobsService firebase/mock fallback', () => {
   });
 
   it('streams listener updates and reports live sync state', () => {
-    let onNext: ((snapshot: any) => void) | null = null;
+    type ListenerSnapshot = {
+      docs: Array<{id: string; data: () => Record<string, unknown>}>;
+      metadata: {fromCache: boolean};
+    };
+    let onNext: ((snapshot: ListenerSnapshot) => void) | null = null;
     const detach = jest.fn();
-    mockOnSnapshot.mockImplementation((...args: any[]) => {
-      onNext = args[2] as (snapshot: any) => void;
+    mockOnSnapshot.mockImplementation((...args: unknown[]) => {
+      onNext = args[2] as (snapshot: ListenerSnapshot) => void;
       return detach;
     });
 
@@ -269,7 +363,8 @@ describe('jobsService firebase/mock fallback', () => {
 
     const subscription = subscribeJobs(session, {
       onJobs: nextJobs => payloads.push(nextJobs),
-      onSyncState: state => states.push({status: state.status, stale: state.stale}),
+      onSyncState: state =>
+        states.push({status: state.status, stale: state.stale}),
     });
 
     expect(states[0]?.status).toBe('connecting');
@@ -277,7 +372,7 @@ describe('jobsService firebase/mock fallback', () => {
     if (!onNext) {
       throw new Error('Expected snapshot handler to be registered');
     }
-    const nextHandler = onNext as (snapshot: any) => void;
+    const nextHandler = onNext as (snapshot: ListenerSnapshot) => void;
 
     nextHandler({
       docs: [
@@ -307,7 +402,7 @@ describe('jobsService firebase/mock fallback', () => {
     jest.useFakeTimers();
 
     let onError: ((error: Error) => void) | null = null;
-    mockOnSnapshot.mockImplementation((...args: any[]) => {
+    mockOnSnapshot.mockImplementation((...args: unknown[]) => {
       onError = args[3] as (error: Error) => void;
       return jest.fn();
     });
@@ -315,7 +410,11 @@ describe('jobsService firebase/mock fallback', () => {
     const states: {status: string; reconnectAttempt: number}[] = [];
     const subscription = subscribeJobs(session, {
       onJobs: () => {},
-      onSyncState: state => states.push({status: state.status, reconnectAttempt: state.reconnectAttempt}),
+      onSyncState: state =>
+        states.push({
+          status: state.status,
+          reconnectAttempt: state.reconnectAttempt,
+        }),
     });
 
     if (!onError) {
@@ -338,7 +437,9 @@ describe('jobsService firebase/mock fallback', () => {
     runtimeConfig.envName = 'prod';
     mockGetDocs.mockRejectedValue(new Error('network unavailable'));
 
-    await expect(fetchJobs(session)).rejects.toThrow('fetchJobs failed in Firebase mode');
+    await expect(fetchJobs(session)).rejects.toThrow(
+      'fetchJobs failed in Firebase mode',
+    );
     expect(mockGetItem).not.toHaveBeenCalledWith('@senderr/jobs');
   });
 });

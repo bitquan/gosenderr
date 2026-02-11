@@ -103,6 +103,13 @@ async function initFeatureFlags() {
       checkout_v2: data?.senderrplace?.checkout_v2 ?? true,
       messaging_v1: data?.senderrplace?.messaging_v1 ?? true,
     },
+    senderrplaceV2: {
+      enabled: false,
+      ads: false,
+      badges: false,
+      bookingLinks: false,
+      adminControls: false,
+    },
   };
 
   await flagsRef.set(nextFlags, { merge: true });

@@ -89,6 +89,13 @@ const flags = {
     checkout_v2: true,
     messaging_v1: true,
   },
+  senderrplaceV2: {
+    enabled: false,
+    ads: false,
+    badges: false,
+    bookingLinks: false,
+    adminControls: false,
+  },
 };
 
 try {

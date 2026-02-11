@@ -2,21 +2,33 @@ import {beforeEach, describe, expect, it, jest} from '@jest/globals';
 
 import type {AuthSession} from '../../types/auth';
 
-const mockGetItem: any = jest.fn();
-const mockSetItem: any = jest.fn();
+const mockGetItem = jest.fn() as jest.MockedFunction<
+  (key: string) => Promise<string | null>
+>;
+const mockSetItem = jest.fn() as jest.MockedFunction<
+  (key: string, value: string) => Promise<void>
+>;
 
-const mockIsFirebaseReady: any = jest.fn();
-const mockGetFirebaseServices: any = jest.fn();
+const mockIsFirebaseReady = jest.fn() as jest.MockedFunction<() => boolean>;
+const mockGetFirebaseServices = jest.fn() as jest.MockedFunction<
+  () => {db: unknown}
+>;
 
-const mockDoc: any = jest.fn();
-const mockGetDoc: any = jest.fn();
-const mockSetDoc: any = jest.fn();
+const mockDoc = jest.fn() as jest.MockedFunction<
+  (...args: unknown[]) => unknown
+>;
+const mockGetDoc = jest.fn() as jest.MockedFunction<
+  (docRef?: unknown) => Promise<{data: () => Record<string, unknown>}>
+>;
+const mockSetDoc = jest.fn() as jest.MockedFunction<
+  (...args: unknown[]) => Promise<void>
+>;
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
   __esModule: true,
   default: {
-    getItem: (...args: unknown[]) => mockGetItem(...args),
-    setItem: (...args: unknown[]) => mockSetItem(...args),
+    getItem: (key: string) => mockGetItem(key),
+    setItem: (key: string, value: string) => mockSetItem(key, value),
   },
 }));
 
@@ -26,12 +38,16 @@ jest.mock('../firebase', () => ({
 }));
 
 jest.mock('firebase/firestore', () => ({
-  doc: (...args: unknown[]) => mockDoc(...args),
-  getDoc: (...args: unknown[]) => mockGetDoc(...args),
-  setDoc: (...args: unknown[]) => mockSetDoc(...args),
+  doc: (db: unknown, path: string, id?: string) => mockDoc(db, path, id),
+  getDoc: (docRef: unknown) => mockGetDoc(docRef),
+  setDoc: (docRef: unknown, data: unknown) => mockSetDoc(docRef, data),
 }));
 
-import {loadCourierProfile, saveCourierProfile, validateCourierProfileDraft} from '../profileService';
+import {
+  loadCourierProfile,
+  saveCourierProfile,
+  validateCourierProfileDraft,
+} from '../profileService';
 
 const session: AuthSession = {
   uid: 'courier_123',

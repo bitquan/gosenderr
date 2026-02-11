@@ -1,5 +1,11 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {ActivityIndicator, Pressable, StyleSheet, Text, View} from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import {doc, setDoc} from 'firebase/firestore';
 
 import {AuthProvider, useAuth} from './src/context/AuthContext';
@@ -7,14 +13,23 @@ import {DashboardScreen} from './src/screens/DashboardScreen';
 import {JobDetailScreen} from './src/screens/JobDetailScreen';
 import {JobsScreen} from './src/screens/JobsScreen';
 import {LoginScreen} from './src/screens/LoginScreen';
+import {MapShellScreen} from './src/screens/MapShellScreen';
 import {SettingsScreen} from './src/screens/SettingsScreen';
 import {configureRuntime, type NativeRuntimeConfig} from './src/config/runtime';
 import {getFirebaseServices, isFirebaseReady} from './src/services/firebase';
-import type {JobsSubscription, JobsSyncState} from './src/services/ports/jobsPort';
-import {ServiceRegistryProvider, useServiceRegistry} from './src/services/serviceRegistry';
+import type {
+  JobsSubscription,
+  JobsSyncState,
+} from './src/services/ports/jobsPort';
+import type {LocationSnapshot} from './src/services/ports/locationPort';
+import {
+  ServiceRegistryProvider,
+  useServiceRegistry,
+} from './src/services/serviceRegistry';
 import type {Job} from './src/types/jobs';
 
 type TabKey = 'dashboard' | 'jobs' | 'settings';
+type MapShellView = 'map' | 'settings';
 
 const DEFAULT_JOBS_SYNC_STATE: JobsSyncState = {
   status: 'idle',
@@ -27,8 +42,13 @@ const DEFAULT_JOBS_SYNC_STATE: JobsSyncState = {
 
 const AppShell = (): React.JSX.Element => {
   const {session, initializing} = useAuth();
-  const {jobs: jobsService, notifications: notificationsService, analytics, featureFlags} =
-    useServiceRegistry();
+  const {
+    jobs: jobsService,
+    notifications: notificationsService,
+    analytics,
+    featureFlags,
+    location: locationService,
+  } = useServiceRegistry();
   const featureFlagsState = featureFlags.useFeatureFlags();
   const jobsSubscriptionRef = useRef<JobsSubscription | null>(null);
   const notificationsSetupForUidRef = useRef<string | null>(null);
@@ -36,23 +56,29 @@ const AppShell = (): React.JSX.Element => {
   const lastSyncErrorRef = useRef<string | null>(null);
   const notificationsEnabled = featureFlagsState.state.flags.notifications;
   const [activeTab, setActiveTab] = useState<TabKey>('dashboard');
+  const [mapShellView, setMapShellView] = useState<MapShellView>('map');
   const [jobs, setJobs] = useState<Job[]>([]);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [jobsLoading, setJobsLoading] = useState(false);
   const [jobsError, setJobsError] = useState<string | null>(null);
-  const [jobsSyncState, setJobsSyncState] = useState<JobsSyncState>(DEFAULT_JOBS_SYNC_STATE);
+  const [jobsSyncState, setJobsSyncState] = useState<JobsSyncState>(
+    DEFAULT_JOBS_SYNC_STATE,
+  );
 
   useEffect(() => {
     if (!notificationsEnabled) {
       return;
     }
 
-    const unsubscribe = notificationsService.subscribeToForegroundMessages(payload => {
-      void analytics.track('notification_foreground_received', {
-        hasTitle: payload.title ? 'yes' : 'no',
-        hasData: payload.data && Object.keys(payload.data).length > 0 ? 'yes' : 'no',
-      });
-    });
+    const unsubscribe = notificationsService.subscribeToForegroundMessages(
+      payload => {
+        void analytics.track('notification_foreground_received', {
+          hasTitle: payload.title ? 'yes' : 'no',
+          hasData:
+            payload.data && Object.keys(payload.data).length > 0 ? 'yes' : 'no',
+        });
+      },
+    );
 
     return unsubscribe;
   }, [analytics, notificationsEnabled, notificationsService]);
@@ -113,6 +139,7 @@ const AppShell = (): React.JSX.Element => {
     if (!session) {
       setJobs([]);
       setSelectedJobId(null);
+      setMapShellView('map');
       setJobsLoading(false);
       setJobsError(null);
       setJobsSyncState(DEFAULT_JOBS_SYNC_STATE);
@@ -142,10 +169,16 @@ const AppShell = (): React.JSX.Element => {
           setJobsLoading(false);
           if (lastSyncErrorRef.current !== nextSyncState.message) {
             lastSyncErrorRef.current = nextSyncState.message;
-            void analytics.recordError(new Error(nextSyncState.message), 'jobs_sync_error');
+            void analytics.recordError(
+              new Error(nextSyncState.message),
+              'jobs_sync_error',
+            );
           }
         }
-        if (nextSyncState.status === 'live' || nextSyncState.status === 'stale') {
+        if (
+          nextSyncState.status === 'live' ||
+          nextSyncState.status === 'stale'
+        ) {
           setJobsLoading(false);
           lastSyncErrorRef.current = null;
         }
@@ -155,7 +188,9 @@ const AppShell = (): React.JSX.Element => {
     jobsSubscriptionRef.current = subscription;
 
     void subscription.refresh().catch(error => {
-      setJobsError(error instanceof Error ? error.message : 'Unable to load jobs.');
+      setJobsError(
+        error instanceof Error ? error.message : 'Unable to load jobs.',
+      );
       setJobsLoading(false);
       void analytics.recordError(error, 'jobs_initial_refresh_failed');
     });
@@ -218,6 +253,45 @@ const AppShell = (): React.JSX.Element => {
     };
   }, [notificationsEnabled, notificationsService, session]);
 
+  // Location uploader: enqueue location snapshots and attempt to flush them to the server.
+  // Uses dynamic import to keep startup small and allow the module to be easily mocked in tests.
+  useEffect(() => {
+    if (!session) return undefined;
+
+    const locationController = locationService.useLocationTracking();
+
+    // On any new lastLocation, enqueue and attempt an immediate flush
+    if (locationController.state.lastLocation) {
+      void import('./src/services/locationUploadService').then(async mod => {
+        try {
+          await mod.enqueueLocation(
+            session.uid,
+            locationController.state
+              .lastLocation as unknown as LocationSnapshot,
+          );
+          await mod.flushQueuedLocationsForSession(session.uid);
+        } catch (err) {
+          console.warn('[locationUploader] initial flush failed:', err);
+        }
+      });
+    }
+
+    // Periodic flush (every 30s) while the session is active
+    const interval = setInterval(() => {
+      void import('./src/services/locationUploadService').then(mod => {
+        void mod
+          .flushQueuedLocationsForSession(session.uid)
+          .catch(err =>
+            console.warn('[locationUploader] periodic flush failed', err),
+          );
+      });
+    }, 30_000);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [session?.uid, locationService]);
+
   const refreshJobs = useCallback(async (): Promise<Job[]> => {
     if (!session) {
       return [];
@@ -232,7 +306,8 @@ const AppShell = (): React.JSX.Element => {
       setJobs(nextJobs);
       return nextJobs;
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unable to refresh jobs.';
+      const message =
+        error instanceof Error ? error.message : 'Unable to refresh jobs.';
       setJobsError(message);
       void analytics.recordError(error, 'jobs_manual_refresh_failed');
       throw error;
@@ -242,12 +317,20 @@ const AppShell = (): React.JSX.Element => {
   }, [analytics, jobsService, session]);
 
   const selectedJob = useMemo(
-    () => (selectedJobId ? jobs.find(job => job.id === selectedJobId) ?? null : null),
+    () =>
+      selectedJobId ? jobs.find(job => job.id === selectedJobId) ?? null : null,
     [jobs, selectedJobId],
   );
-  const activeJobs = useMemo(() => jobs.filter(job => job.status !== 'delivered' && job.status !== 'cancelled'), [jobs]);
+  const activeJobs = useMemo(
+    () =>
+      jobs.filter(
+        job => job.status !== 'delivered' && job.status !== 'cancelled',
+      ),
+    [jobs],
+  );
   const activeJobsCount = activeJobs.length;
   const activeJob = activeJobs[0] ?? null;
+  const mapShellEnabled = featureFlagsState.state.flags.mapShell;
 
   if (initializing) {
     return (
@@ -268,9 +351,52 @@ const AppShell = (): React.JSX.Element => {
         job={selectedJob}
         onBack={() => setSelectedJobId(null)}
         onJobUpdated={updatedJob => {
-          setJobs(prev => prev.map(job => (job.id === updatedJob.id ? updatedJob : job)));
+          setJobs(prev =>
+            prev.map(job => (job.id === updatedJob.id ? updatedJob : job)),
+          );
           setSelectedJobId(updatedJob.id);
         }}
+      />
+    );
+  }
+
+  if (mapShellEnabled) {
+    if (mapShellView === 'settings') {
+      return (
+        <View style={styles.mapShellSettingsRoot}>
+          <View style={styles.mapShellSettingsHeader}>
+            <Pressable
+              onPress={() => setMapShellView('map')}
+              style={styles.mapShellSettingsBackButton}>
+              <Text style={styles.mapShellSettingsBackLabel}>Back to Map</Text>
+            </Pressable>
+          </View>
+          <SettingsScreen />
+        </View>
+      );
+    }
+
+    return (
+      <MapShellScreen
+        jobs={jobs}
+        loadingJobs={jobsLoading}
+        jobsError={jobsError}
+        jobsSyncState={jobsSyncState}
+        activeJob={activeJob}
+        onRefreshJobs={refreshJobs}
+        onOpenJobDetail={setSelectedJobId}
+        onJobUpdated={updatedJob => {
+          setJobs(prev => {
+            const index = prev.findIndex(job => job.id === updatedJob.id);
+            if (index === -1) {
+              return [updatedJob, ...prev];
+            }
+            const next = [...prev];
+            next[index] = updatedJob;
+            return next;
+          });
+        }}
+        onOpenSettings={() => setMapShellView('settings')}
       />
     );
   }
@@ -310,9 +436,21 @@ const AppShell = (): React.JSX.Element => {
       </View>
 
       <View style={styles.tabBar}>
-        <TabButton active={activeTab === 'dashboard'} label="Dashboard" onPress={() => setActiveTab('dashboard')} />
-        <TabButton active={activeTab === 'jobs'} label="Jobs" onPress={() => setActiveTab('jobs')} />
-        <TabButton active={activeTab === 'settings'} label="Settings" onPress={() => setActiveTab('settings')} />
+        <TabButton
+          active={activeTab === 'dashboard'}
+          label="Dashboard"
+          onPress={() => setActiveTab('dashboard')}
+        />
+        <TabButton
+          active={activeTab === 'jobs'}
+          label="Jobs"
+          onPress={() => setActiveTab('jobs')}
+        />
+        <TabButton
+          active={activeTab === 'settings'}
+          label="Settings"
+          onPress={() => setActiveTab('settings')}
+        />
       </View>
     </View>
   );
@@ -328,8 +466,12 @@ const TabButton = ({
   onPress: () => void;
 }): React.JSX.Element => {
   return (
-    <Pressable onPress={onPress} style={[styles.tabButton, active ? styles.tabButtonActive : null]}>
-      <Text style={[styles.tabLabel, active ? styles.tabLabelActive : null]}>{label}</Text>
+    <Pressable
+      onPress={onPress}
+      style={[styles.tabButton, active ? styles.tabButtonActive : null]}>
+      <Text style={[styles.tabLabel, active ? styles.tabLabelActive : null]}>
+        {label}
+      </Text>
     </Pressable>
   );
 };
@@ -369,6 +511,29 @@ const styles = StyleSheet.create({
     color: '#4b5563',
     fontSize: 15,
     fontWeight: '600',
+  },
+  mapShellSettingsRoot: {
+    flex: 1,
+    backgroundColor: '#f8fafc',
+  },
+  mapShellSettingsHeader: {
+    paddingTop: 56,
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+    backgroundColor: '#0f172a',
+  },
+  mapShellSettingsBackButton: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#93c5fd',
+  },
+  mapShellSettingsBackLabel: {
+    color: '#dbeafe',
+    fontSize: 13,
+    fontWeight: '700',
   },
   tabBar: {
     borderTopWidth: 1,

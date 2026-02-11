@@ -28,8 +28,71 @@ jobs:
               );
             }
 
+  changes:
+    name: Change Detection
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      run_checks: ${{ steps.filter.outputs.run_checks }}
+      run_typecheck: ${{ steps.filter.outputs.run_typecheck }}
+      run_build: ${{ steps.filter.outputs.run_build }}
+      run_admin_tests: ${{ steps.filter.outputs.run_admin_tests }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect changed areas
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            run_checks:
+              - '.github/workflows/ci.yml'
+              - 'docs/**'
+              - 'scripts/verify-docs.sh'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - 'turbo.json'
+              - 'packages/**'
+              - 'apps/admin-app/**'
+              - 'apps/admin-desktop/**'
+              - 'apps/marketplace-app/**'
+              - 'firebase/**'
+            run_typecheck:
+              - '.github/workflows/ci.yml'
+              - 'packages/ui/**'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - 'turbo.json'
+            run_build:
+              - '.github/workflows/ci.yml'
+              - 'apps/admin-app/**'
+              - 'apps/admin-desktop/**'
+              - 'apps/marketplace-app/**'
+              - 'packages/**'
+              - 'firebase/**'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - 'turbo.json'
+            run_admin_tests:
+              - '.github/workflows/ci.yml'
+              - 'apps/admin-app/**'
+              - 'packages/**'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - 'turbo.json'
+
   checks:
     name: Lint + Docs
+    needs: [changes]
+    if: github.event_name != 'pull_request' || needs.changes.outputs.run_checks == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -131,6 +194,8 @@ jobs:
 
   typecheck:
     name: Type Check
+    needs: [changes]
+    if: github.event_name != 'pull_request' || needs.changes.outputs.run_typecheck == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -173,6 +238,8 @@ jobs:
 
   build:
     name: Build
+    needs: [changes]
+    if: github.event_name != 'pull_request' || needs.changes.outputs.run_build == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -220,6 +287,8 @@ jobs:
 
   tests:
     name: Unit Tests
+    needs: [changes]
+    if: github.event_name != 'pull_request' || needs.changes.outputs.run_admin_tests == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read

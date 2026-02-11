@@ -1,7 +1,17 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { collection, onSnapshot, query, where } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDoc,
+  increment,
+  onSnapshot,
+  query,
+  serverTimestamp,
+  updateDoc,
+  where,
+} from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { UserDoc, FoodTemperature } from "@gosenderr/shared";
@@ -23,6 +33,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Avatar } from "@/components/ui/Avatar";
 import { FloatingButton } from "@/components/ui/FloatingButton";
 import { NotFoundPage } from "@/components/ui/NotFoundPage";
+import {
+  extractPostalCodeFromAddress,
+  getPickupDisplayAddress,
+} from "@/lib/pickupPrivacy";
 
 interface DropoffAddress {
   address: string;
@@ -34,9 +48,13 @@ interface DropoffAddress {
 type DeliveryItem = Omit<MarketplaceItem, "pickupLocation"> & {
   pickupLocation: {
     address: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
     lat: number;
     lng: number;
   };
+  sellerSharesExactPickup: boolean;
   isFoodItem: boolean;
   foodDetails?: {
     temperature: FoodTemperature;
@@ -54,6 +72,8 @@ export default function RequestDeliveryPage() {
 
   const [item, setItem] = useState<DeliveryItem | null>(null);
   const [itemId, setItemId] = useState<string | null>(null);
+  const [bookingLinkId, setBookingLinkId] = useState<string | null>(null);
+  const [bookingLinkResolved, setBookingLinkResolved] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dropoffAddress, setDropoffAddress] = useState<DropoffAddress | null>(
@@ -72,8 +92,55 @@ export default function RequestDeliveryPage() {
   // Step 1: Load item from URL params (optional)
   useEffect(() => {
     const id = searchParams?.get("itemId");
+    const bookingId = searchParams?.get("bookingLink");
     setItemId(id);
+    setBookingLinkId(bookingId);
+    setBookingLinkResolved(false);
   }, [searchParams]);
+
+  // Resolve and validate seller-generated booking links.
+  useEffect(() => {
+    if (!bookingLinkId || bookingLinkResolved) return;
+
+    async function resolveBookingLink() {
+      try {
+        const linkRef = doc(db, "sellerBookingLinks", bookingLinkId);
+        const linkSnap = await getDoc(linkRef);
+
+        if (!linkSnap.exists()) {
+          setError("This booking link is invalid.");
+          setLoading(false);
+          return;
+        }
+
+        const linkData = linkSnap.data() as any;
+        if (linkData.isActive === false) {
+          setError("This booking link is no longer active.");
+          setLoading(false);
+          return;
+        }
+
+        if (typeof linkData.itemId === "string") {
+          if (!itemId || itemId !== linkData.itemId) {
+            setItemId(linkData.itemId);
+          }
+        }
+
+        await updateDoc(linkRef, {
+          openCount: increment(1),
+          lastOpenedAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+        setBookingLinkResolved(true);
+      } catch (err) {
+        console.error("Error resolving booking link:", err);
+        setError("Failed to open booking link.");
+        setLoading(false);
+      }
+    }
+
+    resolveBookingLink();
+  }, [bookingLinkId, bookingLinkResolved, itemId]);
 
   useEffect(() => {
     if (!itemId) return;
@@ -99,13 +166,32 @@ export default function RequestDeliveryPage() {
           return;
         }
 
+        let sellerSharesExactPickup = false;
+        try {
+          const sellerSnap = await getDoc(doc(db, "users", fetchedItem.sellerId));
+          if (sellerSnap.exists()) {
+            const sellerData = sellerSnap.data() as any;
+            sellerSharesExactPickup =
+              sellerData?.sellerProfile?.shareExactPickupLocation === true ||
+              sellerData?.sellerProfile?.localSellingConfig?.shareExactPickupLocation === true;
+          }
+        } catch (sellerError) {
+          console.error("Failed to load seller pickup privacy settings:", sellerError);
+        }
+
         const itemWithId: DeliveryItem = {
           ...fetchedItem,
           pickupLocation: {
             address: pickupLocation?.address || "Pickup location",
+            city: pickupLocation?.city || "",
+            state: pickupLocation?.state || "",
+            postalCode:
+              pickupLocation?.postalCode ||
+              extractPostalCodeFromAddress(pickupLocation?.address || ""),
             lat,
             lng,
           },
+          sellerSharesExactPickup,
           isFoodItem: (fetchedItem as any).category === "food",
         };
 
@@ -277,7 +363,6 @@ export default function RequestDeliveryPage() {
     const params = new URLSearchParams({
       itemId,
       courierId: selectedCourier.id,
-      pickupAddress: item.pickupLocation.address,
       dropoffAddress: dropoffAddress.address,
       dropoffLat: dropoffAddress.lat.toString(),
       dropoffLng: dropoffAddress.lng.toString(),
@@ -307,6 +392,17 @@ export default function RequestDeliveryPage() {
         (itemId ? `&itemId=${itemId}` : ""),
     );
     return null;
+  }
+
+  if (!itemId && bookingLinkId && loading) {
+    return (
+      <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center">
+        <div className="animate-pulse">
+          <div className="w-16 h-16 bg-purple-200 rounded-full mx-auto mb-4"></div>
+          <div className="h-4 bg-purple-200 rounded w-32 mx-auto"></div>
+        </div>
+      </div>
+    );
   }
 
   if (!itemId) {
@@ -406,6 +502,11 @@ export default function RequestDeliveryPage() {
     );
   }
 
+  const pickupDisplayAddress = getPickupDisplayAddress(
+    item.pickupLocation,
+    item.sellerSharesExactPickup,
+  );
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95 pb-24">
       {/* Header */}
@@ -430,9 +531,7 @@ export default function RequestDeliveryPage() {
             </div>
             <div className="bg-white/15 rounded-2xl p-4">
               <p className="text-xs text-purple-100">Pickup</p>
-              <p className="text-sm font-semibold">
-                {item.pickupLocation.address}
-              </p>
+              <p className="text-sm font-semibold">{pickupDisplayAddress}</p>
             </div>
           </div>
         </div>
@@ -483,7 +582,7 @@ export default function RequestDeliveryPage() {
                 </p>
                 <p className="text-sm text-gray-600">
                   <span className="font-semibold">Pickup:</span>{" "}
-                  {item.pickupLocation.address}
+                  {pickupDisplayAddress}
                 </p>
                 {item.isFoodItem && item.foodDetails && (
                   <div className="mt-3">

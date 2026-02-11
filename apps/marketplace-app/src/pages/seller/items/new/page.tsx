@@ -9,6 +9,53 @@ import { Card, CardContent } from "@/components/ui/Card";
 import { AddressAutocomplete } from "@/components/v2/AddressAutocomplete";
 import { doc, getDoc, GeoPoint } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
+import { parseUsAddressComponents } from "@/lib/pickupPrivacy";
+
+type PickupLocationState = {
+  address: string;
+  city: string;
+  state: string;
+  postalCode?: string;
+  lat: number;
+  lng: number;
+};
+
+const toPickupLocationState = (value: any): PickupLocationState | null => {
+  if (!value) return null;
+  const location = value.location || value;
+  const lat = location?.latitude ?? location?.lat;
+  const lng = location?.longitude ?? location?.lng;
+  if (typeof lat !== "number" || typeof lng !== "number") return null;
+
+  return {
+    address: value.address || "",
+    city: value.city || "",
+    state: value.state || "",
+    postalCode: value.postalCode || "",
+    lat,
+    lng,
+  };
+};
+
+const getSellerDefaultPickupLocation = (userData: any): PickupLocationState | null => {
+  const defaultPickup = toPickupLocationState(userData?.sellerProfile?.defaultPickupLocation);
+  if (defaultPickup) return defaultPickup;
+
+  const localConfig = userData?.sellerProfile?.localSellingConfig;
+  const localConfigPickup = toPickupLocationState(localConfig?.pickupLocation);
+  if (localConfigPickup) return localConfigPickup;
+
+  const localConfigWithLocation = toPickupLocationState({
+    address: localConfig?.address || "",
+    city: localConfig?.city || "",
+    state: localConfig?.state || "",
+    postalCode: localConfig?.postalCode || "",
+    location: localConfig?.location,
+  });
+  if (localConfigWithLocation) return localConfigWithLocation;
+
+  return null;
+};
 
 export default function NewSellerItem() {
   const navigate = useNavigate();
@@ -16,13 +63,7 @@ export default function NewSellerItem() {
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
-  const [pickupLocation, setPickupLocation] = useState<{
-    address: string;
-    city: string;
-    state: string;
-    lat: number;
-    lng: number;
-  } | null>(null);
+  const [pickupLocation, setPickupLocation] = useState<PickupLocationState | null>(null);
   const [sellerStatus, setSellerStatus] = useState<"none" | "pending" | "approved" | "rejected">("none");
   const [sellerRejectionReason, setSellerRejectionReason] = useState<string | null>(null);
   const [sellerStatusLoading, setSellerStatusLoading] = useState(true);
@@ -73,14 +114,16 @@ export default function NewSellerItem() {
   ];
 
   const parseAddressParts = (address: string) => {
-    const parts = address.split(",").map((part) => part.trim());
-    const [street, city, stateZip] = parts;
-    const stateZipParts = (stateZip || "").split(" ").filter(Boolean);
-    const state = stateZipParts[0] || "";
+    const parts = address
+      .split(",")
+      .map((part) => part.trim())
+      .filter(Boolean);
+    const parsed = parseUsAddressComponents(address);
     return {
-      street: street || address,
-      city: city || "",
-      state,
+      street: parts[0] || address,
+      city: parsed.city,
+      state: parsed.state,
+      postalCode: parsed.zipCode,
     };
   };
 
@@ -115,6 +158,10 @@ export default function NewSellerItem() {
       try {
         const userSnap = await getDoc(doc(db, "users", uid));
         const userData = userSnap.data();
+        const defaultPickupLocation = getSellerDefaultPickupLocation(userData);
+        if (defaultPickupLocation) {
+          setPickupLocation((current) => current ?? defaultPickupLocation);
+        }
         const roles = Array.isArray(userData?.roles) ? userData.roles : [];
         const hasSellerRole = userData?.role === "seller" || roles.includes("seller");
 
@@ -198,6 +245,7 @@ export default function NewSellerItem() {
               address: pickupLocation.address,
               city: pickupLocation.city,
               state: pickupLocation.state,
+              postalCode: pickupLocation.postalCode || "",
               location: new GeoPoint(pickupLocation.lat, pickupLocation.lng),
             }
           : undefined,
@@ -500,6 +548,7 @@ export default function NewSellerItem() {
                       address: result.address,
                       city: parsed.city,
                       state: parsed.state,
+                      postalCode: parsed.postalCode,
                       lat: result.lat,
                       lng: result.lng,
                     });

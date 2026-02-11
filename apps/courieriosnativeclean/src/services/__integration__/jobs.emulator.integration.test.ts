@@ -1,11 +1,17 @@
-import {afterAll, beforeAll, beforeEach, describe, expect, it} from '@jest/globals';
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from '@jest/globals';
 import {deleteApp, initializeApp, type FirebaseApp} from 'firebase/app';
 import {
   connectFirestoreEmulator,
   doc,
   getDoc,
   getFirestore,
-  setDoc,
   updateDoc,
   type Firestore,
 } from 'firebase/firestore';
@@ -16,14 +22,20 @@ import {
   signInWithEmailAndPassword,
   type Auth,
 } from 'firebase/auth';
-import {initializeApp as initializeAdminApp, getApps as getAdminApps} from 'firebase-admin/app';
+import {
+  initializeApp as initializeAdminApp,
+  getApps as getAdminApps,
+} from 'firebase-admin/app';
 import {getFirestore as getAdminFirestore} from 'firebase-admin/firestore';
 
 const FIRESTORE_HOST = process.env.FIRESTORE_EMULATOR_HOST ?? '';
 const AUTH_HOST = process.env.FIREBASE_AUTH_EMULATOR_HOST ?? '';
 const [firestoreHost, firestorePortText] = FIRESTORE_HOST.split(':');
 const firestorePort = Number(firestorePortText);
-const hasEmulator = Boolean(firestoreHost) && Number.isFinite(firestorePort) && Boolean(AUTH_HOST);
+const hasEmulator =
+  Boolean(firestoreHost) &&
+  Number.isFinite(firestorePort) &&
+  Boolean(AUTH_HOST);
 
 describe('jobs critical flow (auth + firestore emulator)', () => {
   let app: FirebaseApp | null = null;
@@ -68,19 +80,22 @@ describe('jobs critical flow (auth + firestore emulator)', () => {
     }
 
     const adminDb = getAdminFirestore();
-    await adminDb.collection('jobs').doc('job_1').set({
-      customerName: 'Integration Customer',
-      createdByUid: uid,
-      courierUid: uid,
-      courierId: uid,
-      status: 'accepted',
-      pickupAddress: '1 First St',
-      dropoffAddress: '2 Second St',
-      pickup: {label: '1 First St', latitude: 37.1, longitude: -122.1},
-      dropoff: {label: '2 Second St', latitude: 37.2, longitude: -122.2},
-      etaMinutes: 12,
-      updatedAt: new Date(),
-    });
+    await adminDb
+      .collection('jobs')
+      .doc('job_1')
+      .set({
+        customerName: 'Integration Customer',
+        createdByUid: uid,
+        courierUid: uid,
+        courierId: uid,
+        status: 'accepted',
+        pickupAddress: '1 First St',
+        dropoffAddress: '2 Second St',
+        pickup: {label: '1 First St', latitude: 37.1, longitude: -122.1},
+        dropoff: {label: '2 Second St', latitude: 37.2, longitude: -122.2},
+        etaMinutes: 12,
+        updatedAt: new Date(),
+      });
   });
 
   afterAll(async () => {
@@ -100,7 +115,9 @@ describe('jobs critical flow (auth + firestore emulator)', () => {
     const ref = doc(db!, 'jobs', 'job_1');
     const before = await getDoc(ref);
     expect(before.exists()).toBe(true);
-    expect(before.data().status).toBe('accepted');
+    const beforeData = before.data();
+    expect(beforeData).toBeDefined();
+    expect(beforeData!.status).toBe('accepted');
 
     await updateDoc(ref, {
       status: 'picked_up',
@@ -109,6 +126,8 @@ describe('jobs critical flow (auth + firestore emulator)', () => {
 
     const after = await getDoc(ref);
     expect(after.exists()).toBe(true);
-    expect(after.data().status).toBe('picked_up');
+    const afterData = after.data();
+    expect(afterData).toBeDefined();
+    expect(afterData!.status).toBe('picked_up');
   });
 });
