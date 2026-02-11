@@ -89,15 +89,6 @@ service cloud.firestore {
       allow read, create, update: if isAdmin();
       
       allow delete: if false;
-
-      // Seller onboarding analytics events (non-blocking client telemetry)
-      match /onboardingEvents/{eventId} {
-        allow read: if isSelf(uid) || isAdmin();
-        allow create: if isSelf(uid)
-          && request.resource.data.flow is string
-          && request.resource.data.eventName is string;
-        allow update, delete: if false;
-      }
     }
 
     // ========== ADMIN PROFILES ==========
@@ -635,57 +626,6 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
-    // ========== SENDERRPLACE ADS ==========
-    match /senderrplaceAds/{adId} {
-      // Ads governance is admin-only for now.
-      allow read, create, update, delete: if isAdmin();
-    }
-
-    // ========== SENDERRPLACE SELLER BADGES ==========
-    match /senderrplaceSellerBadges/{sellerId} {
-      // Badge override management is admin-only for now.
-      allow read, create, update, delete: if isAdmin();
-    }
-
-    // ========== FOOD PICKUP RESTAURANTS ==========
-    match /foodPickupRestaurants/{restaurantId} {
-      function isOwnerCourier() {
-        return signedIn() && resource.data.get('courierId', null) == request.auth.uid;
-      }
-
-      function canReadRestaurant() {
-        return isAdmin()
-          || isOwnerCourier()
-          || resource.data.get('isPublic', false) == true;
-      }
-
-      function validRestaurantCreate() {
-        return signedIn()
-          && request.resource.data.get('courierId', null) == request.auth.uid
-          && request.resource.data.get('restaurantName', null) is string
-          && request.resource.data.get('location', null) is map
-          && request.resource.data.location.get('address', null) is string
-          && request.resource.data.location.get('lat', null) is number
-          && request.resource.data.location.get('lng', null) is number
-          && request.resource.data.get('cuisineTags', []) is list;
-      }
-
-      function usageUpdateOnly() {
-        return signedIn()
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-            'lastUsedByUid',
-            'lastUsedAt',
-            'updatedAt'
-          ])
-          && request.resource.data.lastUsedByUid == request.auth.uid;
-      }
-
-      allow read: if canReadRestaurant();
-      allow create: if validRestaurantCreate();
-      allow update: if isAdmin() || isOwnerCourier() || usageUpdateOnly();
-      allow delete: if isAdmin() || isOwnerCourier();
-    }
-
     // ========== EQUIPMENT SUBMISSIONS ==========
     match /equipmentSubmissions/{submissionId} {
       // Couriers can read their own submissions
@@ -721,50 +661,6 @@ service cloud.firestore {
     match /platformSettings/{settingId} {
       // Only admins can read and write platform settings
       allow read, write: if isAdmin();
-    }
-
-    // ========== SAVED ADDRESSES ==========
-    match /savedAddresses/{addressId} {
-      // Users can manage their own saved addresses
-      allow read: if signedIn() && resource.data.userId == request.auth.uid;
-      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if signedIn() && resource.data.userId == request.auth.uid;
-
-      // Admins can read all saved addresses for support/debug workflows
-      allow read: if isAdmin();
-    }
-
-    // ========== SELLER BOOKING LINKS ==========
-    // Legacy name used by seller dashboard UI
-    match /sellerBookingLinks/{linkId} {
-      allow read: if signedIn() && (
-        resource.data.sellerId == request.auth.uid || isAdmin()
-      );
-
-      allow create: if signedIn()
-        && request.resource.data.sellerId == request.auth.uid
-        && request.resource.data.itemId is string
-        && request.resource.data.url is string;
-
-      allow update, delete: if signedIn() && (
-        resource.data.sellerId == request.auth.uid || isAdmin()
-      );
-    }
-
-    // Canonical Senderrplace collection name used by backend contracts
-    match /senderrplaceBookingLinks/{linkId} {
-      allow read: if signedIn() && (
-        resource.data.sellerId == request.auth.uid || isAdmin()
-      );
-
-      allow create: if signedIn()
-        && request.resource.data.sellerId == request.auth.uid
-        && request.resource.data.itemId is string
-        && request.resource.data.url is string;
-
-      allow update, delete: if signedIn() && (
-        resource.data.sellerId == request.auth.uid || isAdmin()
-      );
     }
 
     // ========== MARKETPLACE ITEMS ==========

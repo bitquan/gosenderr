@@ -5,6 +5,7 @@ import {
   getDoc,
   getDocs,
   onSnapshot,
+  orderBy,
   query,
   runTransaction,
   serverTimestamp,
@@ -274,23 +275,20 @@ const isLikelyConnectivityError = (error: unknown): boolean => {
           .trim()
       : '';
 
+  const messageMatches =
+    message.includes('offline') ||
+    message.includes('network') ||
+    message.includes('connection') ||
+    message.includes('timed out') ||
+    message.includes('unavailable');
+
   const codeMatches =
     code.includes('unavailable') ||
     code.includes('network-request-failed') ||
     code.includes('deadline-exceeded') ||
     code.includes('resource-exhausted');
 
-  // Keep message checks strict to avoid queuing validation errors like
-  // "pickup location unavailable" as if they were network failures.
-  const messageMatches =
-    message.includes('client is offline') ||
-    message.includes('network request failed') ||
-    message.includes('failed to get document because the client is offline') ||
-    message.includes('timed out') ||
-    message.includes('connection reset') ||
-    message.includes('connection failed');
-
-  return codeMatches || messageMatches;
+  return messageMatches || codeMatches;
 };
 
 const logFirebaseFallback = (operation: string, error: unknown): void => {
@@ -302,16 +300,12 @@ const shouldUseLocalFallback = (): boolean => runtimeConfig.envName !== 'prod';
 
 const buildQueryForSession = (db: Firestore, session: AuthSession) => {
   const jobsRef = collection(db, 'jobs');
-  return query(jobsRef, where('courierUid', '==', session.uid));
+  return query(
+    jobsRef,
+    where('courierUid', '==', session.uid),
+    orderBy('updatedAt', 'desc'),
+  );
 };
-
-const parseUpdatedAtMs = (value: string): number => {
-  const parsed = Date.parse(value);
-  return Number.isFinite(parsed) ? parsed : 0;
-};
-
-const sortJobsByNewest = (jobs: Job[]): Job[] =>
-  [...jobs].sort((left, right) => parseUpdatedAtMs(right.updatedAt) - parseUpdatedAtMs(left.updatedAt));
 
 const buildFirebaseError = (operation: string, error: unknown): Error => {
   const message = error instanceof Error ? error.message : String(error);
@@ -352,23 +346,12 @@ const flushQueuedStatusUpdates = async (session: AuthSession, db: Firestore): Pr
       queueByKey.delete(key);
       flushed += 1;
     } catch (error) {
-      const lastError = error instanceof Error ? error.message : String(error);
-      const retryable = isLikelyConnectivityError(error);
-
-      if (retryable) {
-        queueByKey.set(key, {
-          ...latest,
-          attempts: latest.attempts + 1,
-          lastError,
-        });
-        break;
-      }
-
-      // Drop non-network failures (permission/conflict/validation) so sync status can recover.
-      console.warn(
-        `[jobsService] dropping queued status update for ${latest.jobId} after non-retryable error: ${lastError}`,
-      );
-      queueByKey.delete(key);
+      queueByKey.set(key, {
+        ...latest,
+        attempts: latest.attempts + 1,
+        lastError: error instanceof Error ? error.message : String(error),
+      });
+      break;
     }
   }
 
@@ -407,9 +390,7 @@ export const fetchJobs = async (session: AuthSession): Promise<Job[]> => {
 
   try {
     const snap = await getDocs(buildQueryForSession(services.db, session));
-    const jobs = sortJobsByNewest(
-      snap.docs.map(d => mapFirestoreJob(d.id, d.data() as Record<string, unknown>)),
-    );
+    const jobs = snap.docs.map(d => mapFirestoreJob(d.id, d.data() as Record<string, unknown>));
     await persistJobs(jobs);
     return jobs;
   } catch (error) {
@@ -787,9 +768,7 @@ export const subscribeJobs = (session: AuthSession, handlers: JobsSubscriptionHa
         buildQueryForSession(services.db, session),
         {includeMetadataChanges: true},
         snapshot => {
-          const jobs = sortJobsByNewest(
-            snapshot.docs.map(d => mapFirestoreJob(d.id, d.data() as Record<string, unknown>)),
-          );
+          const jobs = snapshot.docs.map(d => mapFirestoreJob(d.id, d.data() as Record<string, unknown>));
           const fromCache = snapshot.metadata.fromCache;
 
           if (!fromCache) {

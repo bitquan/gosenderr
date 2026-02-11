@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createStripeConnectLink } from "@/lib/cloudFunctions";
@@ -46,10 +47,9 @@ export default function CourierStripeOnboardingPage() {
           const userData = userDoc.data();
           setCourierProfile(userData.courierProfile || {});
         }
-      } catch (err: unknown) {
+      } catch (err: any) {
         console.error("Failed to load courier profile:", err);
-        const message = err instanceof Error ? err.message : String(err);
-        setError(message || "Failed to load profile.");
+        setError("Failed to load profile.");
       } finally {
         setLoading(false);
       }
@@ -85,10 +85,9 @@ export default function CourierStripeOnboardingPage() {
       }
 
       window.location.href = data.url;
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error("Stripe connect error:", err);
-      const message = err instanceof Error ? err.message : String(err);
-      setError(message || "Stripe onboarding failed");
+      setError(err.message || "Stripe onboarding failed");
     } finally {
       setConnecting(false);
     }
@@ -151,14 +150,11 @@ export default function CourierStripeOnboardingPage() {
                       : "⚠️ Stripe account connected, but onboarding is incomplete."}
                   </div>
                   <div className="text-xs text-green-700">
-                    Charges: {chargesEnabled ? "Enabled" : "Disabled"} •
-                    Payouts: {payoutsEnabled ? "Enabled" : "Disabled"}
+                    Charges: {chargesEnabled ? "Enabled" : "Disabled"} • Payouts: {payoutsEnabled ? "Enabled" : "Disabled"}
                   </div>
-                  {(requirementsDue.length > 0 ||
-                    requirementsPastDue.length > 0) && (
+                  {(requirementsDue.length > 0 || requirementsPastDue.length > 0) && (
                     <div className="text-xs text-green-700">
-                      Requirements due: {requirementsDue.length} • Past due:{" "}
-                      {requirementsPastDue.length}
+                      Requirements due: {requirementsDue.length} • Past due: {requirementsPastDue.length}
                     </div>
                   )}
                 </div>
@@ -183,8 +179,8 @@ export default function CourierStripeOnboardingPage() {
                   {connecting
                     ? "Connecting..."
                     : hasStripeAccount
-                    ? "Update Stripe Account"
-                    : "Connect with Stripe"}
+                      ? "Update Stripe Account"
+                      : "Connect with Stripe"}
                 </button>
 
                 {!hasStripeAccount && (

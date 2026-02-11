@@ -1,9 +1,8 @@
 export type LocationSnapshot = {
   latitude: number;
   longitude: number;
-  accuracy?: number;
-  heading?: number;
-  timestamp?: number;
+  accuracy: number;
+  timestamp: number;
 };
 
 export type LocationTrackingState = {

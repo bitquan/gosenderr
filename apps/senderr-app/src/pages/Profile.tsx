@@ -1,169 +1,157 @@
-import { useEffect, useState } from "react";
-import {
-  collection,
-  doc,
-  getDocs,
-  query,
-  serverTimestamp,
-  updateDoc,
-  where,
-} from "firebase/firestore";
-import { updateProfile } from "firebase/auth";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
-import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/Card";
-import { useAuthUser } from "@/hooks/v2/useAuthUser";
-import { useUserDoc } from "@/hooks/v2/useUserDoc";
-import { db, getAuthSafe, storage } from "@/lib/firebase";
-import { formatCurrency } from "@/lib/utils";
+import { useEffect, useState } from 'react'
+import { doc, onSnapshot, updateDoc, collection, query, where, getDocs, serverTimestamp } from 'firebase/firestore'
+import { db, auth, storage } from '../lib/firebase'
+import { updateProfile } from 'firebase/auth'
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { useAuth } from '../hooks/useAuth'
+import { useAdmin } from '../hooks/useAdmin'
+import { Card, CardHeader, CardTitle, CardContent } from '../components/Card'
+import { formatCurrency } from '../lib/utils'
 
-type VehicleType =
-  | "foot"
-  | "bike"
-  | "scooter"
-  | "motorcycle"
-  | "car"
-  | "van"
-  | "truck";
-
-type CourierProfileSnapshot = {
-  isOnline?: boolean;
-  vehicleType?: VehicleType | string;
-  status?: string;
-};
+interface CourierProfile {
+  online: boolean
+  vehicleType: string
+  currentLocation?: {
+    lat: number
+    lng: number
+  }
+}
 
 export default function CourierProfilePage() {
-  const navigate = useNavigate();
-  const { user, loading: authLoading, uid } = useAuthUser();
-  const { userDoc, loading: userLoading } = useUserDoc();
-  const courierProfile =
-    (userDoc?.courierProfile as CourierProfileSnapshot | undefined) ?? null;
-  const isAdmin = userDoc?.role === "admin";
-  const isCourier =
-    !isAdmin && (userDoc?.role === "courier" || Boolean(courierProfile));
-  const [vehicleType, setVehicleType] = useState<VehicleType>("car");
-  const [saving, setSaving] = useState(false);
-  const [earnings, setEarnings] = useState({
-    total: 0,
-    completed: 0,
-    thisMonth: 0,
-  });
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const { user } = useAuth()
+  const { isAdmin } = useAdmin()
+  const [profile, setProfile] = useState<CourierProfile | null>(null)
+  const [vehicleType, setVehicleType] = useState<string>('car')
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [earnings, setEarnings] = useState({ total: 0, completed: 0, thisMonth: 0 })
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const [photoFile, setPhotoFile] = useState<File | null>(null)
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
 
   useEffect(() => {
-    if (!courierProfile?.vehicleType) return;
-    setVehicleType(courierProfile.vehicleType as VehicleType);
-  }, [courierProfile?.vehicleType]);
+    if (!user) return
+
+    // Load courier profile
+    const unsubscribe = onSnapshot(
+      doc(db, 'users', user.uid),
+      (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.data()
+          const courierProfile = data.courierProfile as CourierProfile || { online: false, vehicleType: 'car' }
+          setProfile(courierProfile)
+          setVehicleType(courierProfile.vehicleType || 'car')
+        }
+        setLoading(false)
+      },
+      (error) => {
+        console.error('Error loading profile:', error)
+        setLoading(false)
+      }
+    )
+
+    return () => unsubscribe()
+  }, [user])
 
   useEffect(() => {
-    if (!uid) return;
+    if (!user) return
 
     // Load earnings stats
     const loadEarnings = async () => {
       try {
         const q = query(
-          collection(db, "jobs"),
-          where("courierUid", "==", uid),
-          where("status", "==", "completed"),
-        );
-
-        const snapshot = await getDocs(q);
-        const jobs = snapshot.docs.map((docSnapshot) => docSnapshot.data());
-
-        const total = jobs.reduce((sum, job) => sum + (job.agreedFee || 0), 0);
-        const completed = jobs.length;
+          collection(db, 'jobs'),
+          where('courierUid', '==', user.uid),
+          where('status', '==', 'completed')
+        )
+        
+        const snapshot = await getDocs(q)
+        const jobs = snapshot.docs.map(doc => doc.data())
+        
+        const total = jobs.reduce((sum, job) => sum + (job.agreedFee || 0), 0)
+        const completed = jobs.length
 
         // This month earnings
-        const now = new Date();
-        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const now = new Date()
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
         const thisMonth = jobs
-          .filter((job) => {
-            const completedAt = job.completedAt?.toDate?.();
-            return completedAt && completedAt >= monthStart;
+          .filter(job => {
+            const completedAt = job.completedAt?.toDate?.()
+            return completedAt && completedAt >= monthStart
           })
-          .reduce((sum, job) => sum + (job.agreedFee || 0), 0);
+          .reduce((sum, job) => sum + (job.agreedFee || 0), 0)
 
-        setEarnings({ total, completed, thisMonth });
+        setEarnings({ total, completed, thisMonth })
       } catch (error) {
-        console.error("Error loading earnings:", error);
+        console.error('Error loading earnings:', error)
       }
-    };
+    }
 
-    loadEarnings();
-  }, [uid]);
+    loadEarnings()
+  }, [user])
 
   const handleSaveProfile = async () => {
-    if (!uid || !courierProfile) return;
+    if (!user || !profile) return
 
-    setSaving(true);
+    setSaving(true)
     try {
-      await updateDoc(doc(db, "users", uid), {
-        "courierProfile.vehicleType": vehicleType,
-        "courierProfile.updatedAt": serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
-      alert("Profile updated successfully!");
+      await updateDoc(doc(db, 'users', user.uid), {
+        'courierProfile.vehicleType': vehicleType
+      })
+      alert('Profile updated successfully!')
     } catch (error) {
-      console.error("Error updating profile:", error);
-      alert("Failed to update profile. Please try again.");
+      console.error('Error updating profile:', error)
+      alert('Failed to update profile. Please try again.')
     } finally {
-      setSaving(false);
+      setSaving(false)
     }
-  };
+  }
 
   const handlePhotoSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    setPhotoFile(file);
-    setPhotoPreview(URL.createObjectURL(file));
-  };
+    const file = event.target.files?.[0]
+    if (!file) return
+    setPhotoFile(file)
+    setPhotoPreview(URL.createObjectURL(file))
+  }
 
   const handleUploadPhoto = async () => {
-    if (!user || !photoFile) return;
+    if (!user || !photoFile) return
 
-    setUploadingPhoto(true);
+    setUploadingPhoto(true)
     try {
-      const fileName = `profilePhotos/${user.uid}/${Date.now()}_${
-        photoFile.name
-      }`;
-      const storageRef = ref(storage, fileName);
-      await uploadBytes(storageRef, photoFile);
-      const url = await getDownloadURL(storageRef);
+      const fileName = `profilePhotos/${user.uid}/${Date.now()}_${photoFile.name}`
+      const storageRef = ref(storage, fileName)
+      await uploadBytes(storageRef, photoFile)
+      const url = await getDownloadURL(storageRef)
 
-      await updateProfile(user, { photoURL: url });
-      await updateDoc(doc(db, "users", user.uid), {
+      await updateProfile(user, { photoURL: url })
+      await updateDoc(doc(db, 'users', user.uid), {
         profilePhotoUrl: url,
         updatedAt: serverTimestamp(),
-      });
+      })
 
-      setPhotoFile(null);
-      setPhotoPreview(null);
+      setPhotoFile(null)
+      setPhotoPreview(null)
     } catch (error) {
-      console.error("Error uploading profile photo:", error);
-      alert("Failed to upload photo. Please try again.");
+      console.error('Error uploading profile photo:', error)
+      alert('Failed to upload photo. Please try again.')
     } finally {
-      setUploadingPhoto(false);
+      setUploadingPhoto(false)
     }
-  };
+  }
 
   const handleSignOut = async () => {
-    if (!window.confirm("Sign out of your account?")) return;
-
+    if (!window.confirm('Sign out of your account?')) return
+    
     try {
-      const auth = getAuthSafe();
-      if (auth) {
-        await auth.signOut();
-        navigate("/login");
-      }
+      await auth.signOut()
     } catch (error) {
-      console.error("Error signing out:", error);
-      alert("Failed to sign out. Please try again.");
+      console.error('Error signing out:', error)
+      alert('Failed to sign out. Please try again.')
     }
-  };
+  }
 
-  if (authLoading || userLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center">
         <div className="animate-pulse">
@@ -171,40 +159,16 @@ export default function CourierProfilePage() {
           <div className="h-4 bg-purple-200 rounded w-32 mx-auto"></div>
         </div>
       </div>
-    );
+    )
   }
-
-  if (!user) {
-    navigate("/login");
-    return null;
-  }
-
-  const accountStatus = courierProfile?.status || "active";
-  const statusBadge = (() => {
-    const normalized = accountStatus.toLowerCase();
-    if (normalized.includes("reject")) {
-      return "bg-red-100 text-red-700";
-    }
-    if (normalized.includes("pending")) {
-      return "bg-yellow-100 text-yellow-700";
-    }
-    if (normalized.includes("suspend") || normalized.includes("ban")) {
-      return "bg-gray-200 text-gray-700";
-    }
-    return "bg-green-100 text-green-700";
-  })();
 
   return (
     <div className="min-h-screen bg-[#F8F9FF]">
       {/* Header */}
       <div className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] rounded-b-[32px] p-6 text-white shadow-lg">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold mb-2">
-            {isAdmin ? "🔧 Admin Profile" : "Profile"}
-          </h1>
-          <p className="text-purple-100">
-            Manage your {isAdmin ? "admin" : "courier"} account
-          </p>
+          <h1 className="text-3xl font-bold mb-2">{isAdmin ? '🔧 Admin Profile' : 'Profile'}</h1>
+          <p className="text-purple-100">Manage your {isAdmin ? 'admin' : 'courier'} account</p>
         </div>
       </div>
 
@@ -217,21 +181,17 @@ export default function CourierProfilePage() {
               <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] flex items-center justify-center text-3xl text-white shadow-lg overflow-hidden">
                 {photoPreview || user?.photoURL ? (
                   <img
-                    src={photoPreview || user?.photoURL || ""}
+                    src={photoPreview || user?.photoURL || ''}
                     alt="Profile"
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <span>{isAdmin ? "🔧" : "👤"}</span>
+                  <span>{isAdmin ? '🔧' : '👤'}</span>
                 )}
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-900">
-                  {user?.email}
-                </h2>
-                <p className="text-sm text-gray-500">
-                  {isAdmin ? "Admin Account" : "Courier Account"}
-                </p>
+                <h2 className="text-xl font-bold text-gray-900">{user?.email}</h2>
+                <p className="text-sm text-gray-500">{isAdmin ? 'Admin Account' : 'Courier Account'}</p>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <label className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50 cursor-pointer">
                     <input
@@ -248,7 +208,7 @@ export default function CourierProfilePage() {
                     disabled={!photoFile || uploadingPhoto}
                     className="rounded-lg bg-purple-600 px-3 py-1 text-xs font-semibold text-white hover:bg-purple-700 disabled:opacity-50"
                   >
-                    {uploadingPhoto ? "Uploading..." : "Upload"}
+                    {uploadingPhoto ? 'Uploading...' : 'Upload'}
                   </button>
                 </div>
               </div>
@@ -257,7 +217,7 @@ export default function CourierProfilePage() {
         </Card>
 
         {/* Earnings Card - Only for couriers */}
-        {isCourier && (
+        {!isAdmin && (
           <Card variant="elevated" className="animate-slide-up">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -284,18 +244,15 @@ export default function CourierProfilePage() {
                   <p className="text-xl sm:text-2xl font-bold text-purple-600">
                     {earnings.completed}
                   </p>
-                </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </CardContent>
+        </Card>
         )}
 
         {/* Vehicle Settings Card - Only for couriers */}
-        {isCourier && (
-          <Card
-            variant="elevated"
-            className="animate-slide-up animation-delay-100"
-          >
+        {!isAdmin && (
+          <Card variant="elevated" className="animate-slide-up animation-delay-100">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <span>🚗</span>
@@ -304,24 +261,17 @@ export default function CourierProfilePage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <label
-                  htmlFor="vehicleType"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
+                <label htmlFor="vehicleType" className="block text-sm font-medium text-gray-700 mb-2">
                   Vehicle Type
                 </label>
                 <select
                   id="vehicleType"
                   value={vehicleType}
-                  onChange={(e) =>
-                    setVehicleType(e.target.value as VehicleType)
-                  }
+                  onChange={(e) => setVehicleType(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all"
                 >
-                  <option value="foot">🚶 Walking</option>
                   <option value="bike">🚲 Bike</option>
                   <option value="scooter">🛵 Scooter</option>
-                  <option value="motorcycle">🏍️ Motorcycle</option>
                   <option value="car">🚗 Car</option>
                   <option value="van">🚐 Van</option>
                   <option value="truck">🚚 Truck</option>
@@ -330,24 +280,21 @@ export default function CourierProfilePage() {
 
               <button
                 onClick={handleSaveProfile}
-                disabled={saving || vehicleType === courierProfile?.vehicleType}
+                disabled={saving || vehicleType === profile?.vehicleType}
                 className={`w-full py-3 rounded-xl font-semibold transition-all ${
-                  saving || vehicleType === courierProfile?.vehicleType
-                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    : "bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] text-white hover:shadow-xl hover:scale-105"
-                }`}
-              >
-                {saving ? "Saving..." : "Save Changes"}
-              </button>
-            </CardContent>
-          </Card>
+                  saving || vehicleType === profile?.vehicleType
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] text-white hover:shadow-xl hover:scale-105'
+              }`}
+            >
+              {saving ? 'Saving...' : 'Save Changes'}
+            </button>
+          </CardContent>
+        </Card>
         )}
 
         {/* Status Card */}
-        <Card
-          variant="elevated"
-          className="animate-slide-up animation-delay-200"
-        >
+        <Card variant="elevated" className="animate-slide-up animation-delay-200">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <span>📊</span>
@@ -357,54 +304,40 @@ export default function CourierProfilePage() {
           <CardContent>
             <div className="space-y-3">
               <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                <span className="text-sm font-medium text-gray-700">
-                  Account Status
-                </span>
-                <span
-                  className={`px-3 py-1 rounded-full text-sm font-semibold ${statusBadge}`}
-                >
-                  {accountStatus}
+                <span className="text-sm font-medium text-gray-700">Account Status</span>
+                <span className="px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm font-semibold">
+                  Active
                 </span>
               </div>
-
+              
               <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                <span className="text-sm font-medium text-gray-700">
-                  Account Type
-                </span>
-                <span
-                  className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                    isAdmin
-                      ? "bg-red-100 text-red-700"
-                      : "bg-purple-100 text-purple-700"
-                  }`}
-                >
-                  {isAdmin ? "Admin" : "Courier"}
+                <span className="text-sm font-medium text-gray-700">Account Type</span>
+                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                  isAdmin
+                    ? 'bg-red-100 text-red-700' 
+                    : 'bg-purple-100 text-purple-700'
+                }`}>
+                  {isAdmin ? 'Admin' : 'Courier'}
                 </span>
               </div>
 
-              {isCourier && (
+              {!isAdmin && (
                 <>
                   <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                    <span className="text-sm font-medium text-gray-700">
-                      Online Status
-                    </span>
-                    <span
-                      className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                        courierProfile?.isOnline
-                          ? "bg-green-100 text-green-700"
-                          : "bg-gray-200 text-gray-700"
-                      }`}
-                    >
-                      {courierProfile?.isOnline ? "Online" : "Offline"}
+                    <span className="text-sm font-medium text-gray-700">Online Status</span>
+                    <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                      profile?.online 
+                        ? 'bg-green-100 text-green-700' 
+                        : 'bg-gray-200 text-gray-700'
+                    }`}>
+                      {profile?.online ? 'Online' : 'Offline'}
                     </span>
                   </div>
 
                   <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                    <span className="text-sm font-medium text-gray-700">
-                      Current Vehicle
-                    </span>
+                    <span className="text-sm font-medium text-gray-700">Current Vehicle</span>
                     <span className="text-sm font-semibold text-gray-900 capitalize">
-                      {courierProfile?.vehicleType || "Not Set"}
+                      {profile?.vehicleType || 'Not Set'}
                     </span>
                   </div>
                 </>
@@ -414,10 +347,7 @@ export default function CourierProfilePage() {
         </Card>
 
         {/* Actions Card */}
-        <Card
-          variant="elevated"
-          className="animate-slide-up animation-delay-300"
-        >
+        <Card variant="elevated" className="animate-slide-up animation-delay-300">
           <CardContent className="p-6 space-y-3">
             <button
               onClick={handleSignOut}
@@ -429,5 +359,5 @@ export default function CourierProfilePage() {
         </Card>
       </div>
     </div>
-  );
+  )
 }

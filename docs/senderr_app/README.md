@@ -4,7 +4,7 @@ This is the source-of-truth guide for the native Senderr courier app at `apps/co
 
 > Doc metadata
 > - Owner: `@bitquan`
-> - Last verified: `2026-02-09`
+> - Last verified: `2026-02-08`
 > - Review cadence: `weekly`
 
 ## Canonical iOS targets
@@ -46,9 +46,7 @@ For physical devices, point Metro host to your machine IP in `AppDelegate.swift`
 
 ## Current courier shell
 - Auth: login/logout via Firebase where configured; local mock fallback for offline dev.
-- Navigation: map-shell-first UX with overlay cards for job states, routing context, camera controls, and quick location actions.
-- Settings/profile/location controls: opened as in-shell overlay (no map context loss).
-- Fallback navigation: legacy tab shell (`Dashboard`, `Jobs`, `Settings`) only when `featureFlags.senderrIos.mapShell=false`.
+- Navigation: dashboard / jobs / settings tabs + job detail route.
 - Jobs: app-level real-time sync with Firestore listener, reconnect backoff, stale-data indicator, optimistic status updates, and offline status-update queue flush on reconnect.
 - Jobs fallback: AsyncStorage mock fallback is allowed only outside production mode.
 - Location: permission request and tracking hook with latest coordinate snapshot.
@@ -139,7 +137,6 @@ Rules:
 - Profile schema migration: `docs/senderr_app/PROFILE_SCHEMA_MIGRATION.md`
 - Offline active job sync: `docs/senderr_app/OFFLINE_MODE.md`
 - Feature flags lifecycle and rollout controls: `docs/senderr_app/FEATURE_FLAGS.md`
-- Map-shell acceptance matrix + rollout gates: `docs/senderr_app/MAP_SHELL_ACCEPTANCE_MATRIX.md`
 
 ## Test Lanes
 

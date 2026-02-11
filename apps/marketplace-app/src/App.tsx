@@ -69,8 +69,7 @@ function App() {
   const { flags, loading: flagsLoading } = useFeatureFlags()
   const baseMarketplaceEnabled = flags?.marketplace?.enabled ?? true
   const senderrplaceEnabled = flags?.senderrplace?.marketplace_v2 ?? true
-  // V2 flag should be enough to enable Senderrplace even when legacy marketplace is off.
-  const marketplaceEnabled = senderrplaceEnabled || baseMarketplaceEnabled
+  const marketplaceEnabled = baseMarketplaceEnabled && senderrplaceEnabled
   const messagingEnabled = marketplaceEnabled && ((flags as any)?.marketplace?.messaging ?? true)
   const ratingsEnabled = marketplaceEnabled && ((flags as any)?.marketplace?.ratings ?? true)
 

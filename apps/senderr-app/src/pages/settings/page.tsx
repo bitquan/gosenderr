@@ -1,3 +1,4 @@
+
 import { LoadingState } from "@gosenderr/ui";
 import { useNavigate } from "react-router-dom";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
@@ -65,40 +66,12 @@ const STATE_OPTIONS = [
 export default function CourierSettingsPage() {
   const navigate = useNavigate();
   const { user, loading } = useAuthUser();
-  // Local minimal types for settings page to avoid missing module issues during tsc checks
-  type DocItem = {
-    label: string;
-    url: string;
-    name: string;
-    contentType?: string;
-    uploadedAt?: Date;
-  };
-  type CourierProfile = {
-    isOnline?: boolean;
-    serviceRadius?: number;
-    taxState?: string;
-    notificationPrefs?: {
-      jobOffers?: boolean;
-      payoutUpdates?: boolean;
-      reminders?: boolean;
-    };
-    completedJobs?: number;
-    todayJobs?: number;
-    documents?: DocItem[];
-    status?: string;
-    rejectionReason?: string | null;
-  };
-  type CourierData = {
-    role?: string;
-    courierProfile?: CourierProfile;
-    taxState?: string;
-  };
-  const [courierData, setCourierData] = useState<CourierData | null>(null);
+  const [courierData, setCourierData] = useState<any>(null);
   const [dataLoading, setDataLoading] = useState(true);
   const [signingOut, setSigningOut] = useState(false);
   const [availability, setAvailability] = useState(false);
   const [serviceRadius, setServiceRadius] = useState(10);
-  const [taxState, setTaxState] = useState("");
+  const [taxState, setTaxState] = useState('');
   const [notificationPrefs, setNotificationPrefs] = useState({
     jobOffers: true,
     payoutUpdates: true,
@@ -120,14 +93,14 @@ export default function CourierSettingsPage() {
     if (user) {
       const loadCourierData = async () => {
         try {
-          const userDoc = await getDoc(doc(db, "users", user.uid));
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
           if (userDoc.exists()) {
             setCourierData(userDoc.data());
             const profile = userDoc.data().courierProfile;
             if (profile) {
               setAvailability(Boolean(profile.isOnline));
               setServiceRadius(Number(profile.serviceRadius || 10));
-              setTaxState(profile.taxState || userDoc.data().taxState || "");
+              setTaxState(profile.taxState || userDoc.data().taxState || '');
               setNotificationPrefs({
                 jobOffers: profile.notificationPrefs?.jobOffers ?? true,
                 payoutUpdates: profile.notificationPrefs?.payoutUpdates ?? true,
@@ -165,11 +138,11 @@ export default function CourierSettingsPage() {
 
     setSavingPreferences(true);
     try {
-      await updateDoc(doc(db, "users", user.uid), {
-        "courierProfile.isOnline": availability,
-        "courierProfile.serviceRadius": serviceRadius,
-        "courierProfile.taxState": taxState,
-        "courierProfile.notificationPrefs": notificationPrefs,
+      await updateDoc(doc(db, 'users', user.uid), {
+        'courierProfile.isOnline': availability,
+        'courierProfile.serviceRadius': serviceRadius,
+        'courierProfile.taxState': taxState,
+        'courierProfile.notificationPrefs': notificationPrefs,
         updatedAt: serverTimestamp(),
       });
     } catch (error) {
@@ -186,10 +159,7 @@ export default function CourierSettingsPage() {
       { label: "Government ID", file: documents.governmentId },
       { label: "Vehicle Registration", file: documents.vehicleRegistration },
       { label: "Insurance", file: documents.insurance },
-    ].filter((item) => Boolean(item.file)) as Array<{
-      label: string;
-      file: File;
-    }>;
+    ].filter((item) => Boolean(item.file)) as Array<{ label: string; file: File }>;
 
     if (files.length === 0) {
       alert("Select at least one document to upload.");
@@ -198,19 +168,18 @@ export default function CourierSettingsPage() {
 
     setUploadingDocs(true);
     try {
-      type DocItem = {
+      const uploads: Array<{
         label: string;
         url: string;
         name: string;
-        contentType?: string;
-        uploadedAt?: Date;
-      };
-      const uploads: DocItem[] = [];
+        contentType: string;
+        uploadedAt: any;
+      }> = [];
 
       for (const item of files) {
         const storageRef = ref(
           storage,
-          `courierDocuments/${user.uid}/${Date.now()}_${item.file.name}`,
+          `courierDocuments/${user.uid}/${Date.now()}_${item.file.name}`
         );
         await uploadBytes(storageRef, item.file);
         const url = await getDownloadURL(storageRef);
@@ -228,8 +197,7 @@ export default function CourierSettingsPage() {
         : [];
 
       const currentStatus = courierData?.courierProfile?.status;
-      const shouldResetStatus =
-        currentStatus === "rejected" || currentStatus === "pending";
+      const shouldResetStatus = currentStatus === "rejected" || currentStatus === "pending";
 
       await updateDoc(doc(db, "users", user.uid), {
         "courierProfile.documents": [...existingDocs, ...uploads],
@@ -243,7 +211,7 @@ export default function CourierSettingsPage() {
         updatedAt: serverTimestamp(),
       });
 
-      setCourierData((prev: CourierData | null) => ({
+      setCourierData((prev: any) => ({
         ...prev,
         courierProfile: {
           ...prev?.courierProfile,
@@ -254,11 +222,7 @@ export default function CourierSettingsPage() {
         },
       }));
 
-      setDocuments({
-        governmentId: null,
-        vehicleRegistration: null,
-        insurance: null,
-      });
+      setDocuments({ governmentId: null, vehicleRegistration: null, insurance: null });
       alert("Documents uploaded successfully.");
     } catch (error) {
       console.error("Error uploading documents:", error);
@@ -308,48 +272,34 @@ export default function CourierSettingsPage() {
               </Link>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-gray-50 rounded-xl p-4">
-                  <p className="text-xs text-gray-600 font-medium mb-1">
-                    Email
-                  </p>
+                  <p className="text-xs text-gray-600 font-medium mb-1">Email</p>
                   <p className="text-lg font-semibold text-gray-900 break-all">
-                    {user.email || "N/A"}
+                    {user.email || 'N/A'}
                   </p>
                 </div>
                 <div className="bg-gray-50 rounded-xl p-4">
-                  <p className="text-xs text-gray-600 font-medium mb-1">
-                    Account Type
-                  </p>
+                  <p className="text-xs text-gray-600 font-medium mb-1">Account Type</p>
                   <p className="text-lg font-semibold text-gray-900">
-                    {courierData?.role === "courier"
-                      ? "📦 Courier"
-                      : "⚙️ Admin"}
+                    {courierData?.role === 'courier' ? '📦 Courier' : '⚙️ Admin'}
                   </p>
                 </div>
               </div>
               {courierData?.courierProfile && (
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
-                    <p className="text-xs text-blue-600 font-medium mb-1">
-                      Status
-                    </p>
+                    <p className="text-xs text-blue-600 font-medium mb-1">Status</p>
                     <p className="text-lg font-bold text-blue-900">
-                      {courierData.courierProfile.isOnline
-                        ? "🟢 Online"
-                        : "⚪ Offline"}
+                      {courierData.courierProfile.isOnline ? '🟢 Online' : '⚪ Offline'}
                     </p>
                   </div>
                   <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-200">
-                    <p className="text-xs text-emerald-600 font-medium mb-1">
-                      Completed Deliveries
-                    </p>
+                    <p className="text-xs text-emerald-600 font-medium mb-1">Completed Deliveries</p>
                     <p className="text-lg font-bold text-emerald-900">
                       {courierData.courierProfile.completedJobs || 0}
                     </p>
                   </div>
                   <div className="bg-purple-50 rounded-xl p-4 border border-purple-200">
-                    <p className="text-xs text-purple-600 font-medium mb-1">
-                      Today's Deliveries
-                    </p>
+                    <p className="text-xs text-purple-600 font-medium mb-1">Today's Deliveries</p>
                     <p className="text-lg font-bold text-purple-900">
                       {courierData.courierProfile.todayJobs || 0}
                     </p>
@@ -369,9 +319,7 @@ export default function CourierSettingsPage() {
             <div className="space-y-5 mb-6">
               <div className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3">
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">
-                    Availability
-                  </p>
+                  <p className="text-sm font-semibold text-gray-900">Availability</p>
                   <p className="text-xs text-gray-500">
                     Toggle whether you are accepting new deliveries.
                   </p>
@@ -394,9 +342,7 @@ export default function CourierSettingsPage() {
               <div className="rounded-xl border border-gray-200 px-4 py-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-semibold text-gray-900">
-                      Service radius
-                    </p>
+                    <p className="text-sm font-semibold text-gray-900">Service radius</p>
                     <p className="text-xs text-gray-500">
                       How far you are willing to drive for pickups.
                     </p>
@@ -411,9 +357,7 @@ export default function CourierSettingsPage() {
                   max={50}
                   step={1}
                   value={serviceRadius}
-                  onChange={(event) =>
-                    setServiceRadius(Number(event.target.value))
-                  }
+                  onChange={(event) => setServiceRadius(Number(event.target.value))}
                   className="mt-3 w-full"
                 />
                 <div className="mt-2 flex justify-between text-xs text-gray-400">
@@ -439,14 +383,10 @@ export default function CourierSettingsPage() {
                   <span className="text-2xl">💰</span>
                   <div className="text-left">
                     <p className="font-bold">Rate Cards & Pricing</p>
-                    <p className="text-xs text-gray-600">
-                      Set your delivery rates
-                    </p>
+                    <p className="text-xs text-gray-600">Set your delivery rates</p>
                   </div>
                 </div>
-                <span className="text-2xl group-hover:translate-x-1 transition-transform">
-                  →
-                </span>
+                <span className="text-2xl group-hover:translate-x-1 transition-transform">→</span>
               </Link>
 
               <Link
@@ -457,14 +397,10 @@ export default function CourierSettingsPage() {
                   <span className="text-2xl">🎒</span>
                   <div className="text-left">
                     <p className="font-bold">Equipment & Vehicle</p>
-                    <p className="text-xs text-gray-600">
-                      Manage your delivery equipment
-                    </p>
+                    <p className="text-xs text-gray-600">Manage your delivery equipment</p>
                   </div>
                 </div>
-                <span className="text-2xl group-hover:translate-x-1 transition-transform">
-                  →
-                </span>
+                <span className="text-2xl group-hover:translate-x-1 transition-transform">→</span>
               </Link>
             </div>
           </div>
@@ -478,9 +414,7 @@ export default function CourierSettingsPage() {
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="bg-gray-50 rounded-xl p-4">
-                <p className="text-xs text-gray-600 font-medium mb-1">
-                  Tax State
-                </p>
+                <p className="text-xs text-gray-600 font-medium mb-1">Tax State</p>
                 <select
                   value={taxState}
                   onChange={(e) => setTaxState(e.target.value)}
@@ -498,9 +432,7 @@ export default function CourierSettingsPage() {
                 </p>
               </div>
               <div className="bg-gray-50 rounded-xl p-4">
-                <p className="text-xs text-gray-600 font-medium mb-1">
-                  Payouts
-                </p>
+                <p className="text-xs text-gray-600 font-medium mb-1">Payouts</p>
                 <Link
                   to="/earnings"
                   className="inline-flex items-center gap-2 mt-1 text-sm font-semibold text-indigo-600"
@@ -524,12 +456,8 @@ export default function CourierSettingsPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3">
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">
-                    Job Offers
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Get notified when new jobs are available.
-                  </p>
+                  <p className="text-sm font-semibold text-gray-900">Job Offers</p>
+                  <p className="text-xs text-gray-500">Get notified when new jobs are available.</p>
                 </div>
                 <button
                   onClick={() =>
@@ -550,12 +478,8 @@ export default function CourierSettingsPage() {
 
               <div className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3">
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">
-                    Payout Updates
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Get notified about payout status.
-                  </p>
+                  <p className="text-sm font-semibold text-gray-900">Payout Updates</p>
+                  <p className="text-xs text-gray-500">Get notified about payout status.</p>
                 </div>
                 <button
                   onClick={() =>
@@ -576,12 +500,8 @@ export default function CourierSettingsPage() {
 
               <div className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3">
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">
-                    Reminders
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Get reminders for documents and tasks.
-                  </p>
+                  <p className="text-sm font-semibold text-gray-900">Reminders</p>
+                  <p className="text-xs text-gray-500">Get reminders for documents and tasks.</p>
                 </div>
                 <button
                   onClick={() =>
@@ -610,37 +530,29 @@ export default function CourierSettingsPage() {
               🧾 Verification Documents
             </h2>
             <p className="text-sm text-gray-600 mb-6">
-              Upload updated documents if your details have changed or if your
-              application was rejected.
+              Upload updated documents if your details have changed or if your application was rejected.
             </p>
 
             {Array.isArray(courierData?.courierProfile?.documents) &&
               courierData.courierProfile.documents.length > 0 && (
                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6">
-                  <p className="text-xs text-gray-500 mb-2">
-                    Current Documents
-                  </p>
+                  <p className="text-xs text-gray-500 mb-2">Current Documents</p>
                   <div className="space-y-2">
-                    {courierData.courierProfile.documents.map(
-                      (docItem: DocItem) => (
-                        <div
-                          key={docItem.url}
-                          className="flex items-center justify-between text-sm"
+                    {courierData.courierProfile.documents.map((docItem: any) => (
+                      <div key={docItem.url} className="flex items-center justify-between text-sm">
+                        <span className="text-gray-700">
+                          {docItem.label}: {docItem.name}
+                        </span>
+                        <a
+                          href={docItem.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-indigo-600 hover:underline"
                         >
-                          <span className="text-gray-700">
-                            {docItem.label}: {docItem.name}
-                          </span>
-                          <a
-                            href={docItem.url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-indigo-600 hover:underline"
-                          >
-                            View
-                          </a>
-                        </div>
-                      ),
-                    )}
+                          View
+                        </a>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
@@ -742,14 +654,10 @@ export default function CourierSettingsPage() {
                   <span className="text-2xl">💵</span>
                   <div className="text-left">
                     <p className="font-bold">Earnings & Payouts</p>
-                    <p className="text-xs text-gray-600">
-                      View your earnings history
-                    </p>
+                    <p className="text-xs text-gray-600">View your earnings history</p>
                   </div>
                 </div>
-                <span className="text-2xl group-hover:translate-x-1 transition-transform">
-                  →
-                </span>
+                <span className="text-2xl group-hover:translate-x-1 transition-transform">→</span>
               </Link>
 
               <Link
@@ -760,14 +668,10 @@ export default function CourierSettingsPage() {
                   <span className="text-2xl">🏦</span>
                   <div className="text-left">
                     <p className="font-bold">Stripe Connect Setup</p>
-                    <p className="text-xs text-gray-600">
-                      Connect your bank account
-                    </p>
+                    <p className="text-xs text-gray-600">Connect your bank account</p>
                   </div>
                 </div>
-                <span className="text-2xl group-hover:translate-x-1 transition-transform">
-                  →
-                </span>
+                <span className="text-2xl group-hover:translate-x-1 transition-transform">→</span>
               </Link>
             </div>
           </div>
@@ -787,14 +691,10 @@ export default function CourierSettingsPage() {
                 <span className="text-2xl">💬</span>
                 <div className="text-left">
                   <p className="font-bold">Contact Support</p>
-                  <p className="text-xs text-gray-600">
-                    Get help with your account
-                  </p>
+                  <p className="text-xs text-gray-600">Get help with your account</p>
                 </div>
               </div>
-              <span className="text-2xl group-hover:translate-x-1 transition-transform">
-                →
-              </span>
+              <span className="text-2xl group-hover:translate-x-1 transition-transform">→</span>
             </Link>
           </div>
         </div>
@@ -811,7 +711,7 @@ export default function CourierSettingsPage() {
               className="w-full flex items-center justify-center gap-3 rounded-xl bg-red-500 text-white px-6 py-4 font-bold text-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg hover:shadow-xl"
             >
               <span className="text-2xl">🚪</span>
-              <span>{signingOut ? "Signing out..." : "Sign Out"}</span>
+              <span>{signingOut ? 'Signing out...' : 'Sign Out'}</span>
             </button>
             <p className="text-xs text-gray-500 mt-3 text-center">
               You'll be logged out and returned to the login screen

@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   addDoc,
   collection,
@@ -25,16 +24,6 @@ interface PayoutRecord {
   date: any;
   jobId?: string;
   stripePayoutId?: string;
-}
-
-interface CourierStripeProfile {
-  stripeConnectAccountId?: string;
-  stripeChargesEnabled?: boolean;
-  stripePayoutsEnabled?: boolean;
-  stripeRequirementsDue?: string[];
-  stripeRequirementsPastDue?: string[];
-  stripeAccountStatus?: string;
-  taxState?: string;
 }
 
 const DEFAULT_FALLBACK_RATE = 0.05;
@@ -149,11 +138,8 @@ const STATE_OPTIONS = [
 ];
 
 export default function EarningsPage() {
-  const navigate = useNavigate();
   const { uid } = useAuthUser();
   const { userDoc } = useUserDoc();
-  const courierProfile =
-    (userDoc?.courierProfile as CourierStripeProfile | undefined) ?? null;
   const [loading, setLoading] = useState(true);
   const [payouts, setPayouts] = useState<PayoutRecord[]>([]);
   const [completedJobs, setCompletedJobs] = useState<any[]>([]);
@@ -174,15 +160,7 @@ export default function EarningsPage() {
   const [uploadingReceipt, setUploadingReceipt] = useState(false);
   const [receipts, setReceipts] = useState<any[]>([]);
   const [selectedState, setSelectedState] = useState<string>("");
-  const [stateTaxRates, setStateTaxRates] = useState<Record<string, number>>(
-    {},
-  );
-  const [payoutAmount, setPayoutAmount] = useState("");
-  const [rechargeAmount, setRechargeAmount] = useState("");
-  const [requestingPayout, setRequestingPayout] = useState(false);
-  const [requestingRecharge, setRequestingRecharge] = useState(false);
-  const [requestError, setRequestError] = useState<string | null>(null);
-  const [requestSuccess, setRequestSuccess] = useState<string | null>(null);
+  const [stateTaxRates, setStateTaxRates] = useState<Record<string, number>>({});
 
   useEffect(() => {
     if (!uid) return;
@@ -191,12 +169,14 @@ export default function EarningsPage() {
 
   useEffect(() => {
     if (!uid) return;
-    const userRoot = userDoc as { taxState?: string } | null;
-    const taxState = courierProfile?.taxState || userRoot?.taxState || "";
+    const taxState =
+      (userDoc as any)?.courierProfile?.taxState ||
+      (userDoc as any)?.taxState ||
+      "";
     if (!selectedState && taxState) {
       setSelectedState(taxState);
     }
-  }, [uid, userDoc, selectedState, courierProfile?.taxState]);
+  }, [uid, userDoc, selectedState]);
 
   const loadEarnings = () => {
     if (!uid) return;
@@ -235,12 +215,7 @@ export default function EarningsPage() {
       }, 0);
       const completedCount = completed.length;
       const avgPerJob = completedCount > 0 ? totalEarnings / completedCount : 0;
-      return {
-        totalEarnings,
-        completedCount,
-        avgPerJob,
-        completedJobs: completed,
-      };
+      return { totalEarnings, completedCount, avgPerJob, completedJobs: completed };
     };
 
     const updateState = (merged: any[]) => {
@@ -394,23 +369,10 @@ export default function EarningsPage() {
     return taxable * stateRate;
   }, [stateRate, taxYearTotal, receiptsTotal]);
 
-  const availableBalance = useMemo(() => {
-    return Math.max(0, stats.totalEarnings - stats.pendingPayout);
-  }, [stats.totalEarnings, stats.pendingPayout]);
-
-  const hasStripeAccount = Boolean(courierProfile?.stripeConnectAccountId);
-  const payoutsEnabled = Boolean(courierProfile?.stripePayoutsEnabled);
-  const chargesEnabled = Boolean(courierProfile?.stripeChargesEnabled);
-  const stripeRequirementsDue = courierProfile?.stripeRequirementsDue || [];
-  const stripeRequirementsPastDue =
-    courierProfile?.stripeRequirementsPastDue || [];
-
   const downloadCsv = (filename: string, rows: string[][]) => {
-    const csvContent = rows
-      .map((row) =>
-        row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","),
-      )
-      .join("\n");
+    const csvContent = rows.map((row) => row.map((cell) =>
+      `"${String(cell).replace(/"/g, '""')}"`
+    ).join(",")).join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -466,9 +428,7 @@ export default function EarningsPage() {
       const parsedAmount = Number(receiptAmount || 0);
       const expenseDate = receiptDate ? new Date(receiptDate) : new Date();
       const year = expenseDate.getFullYear();
-      const storagePath = `courier-expenses/${uid}/${year}/${Date.now()}_${
-        receiptFile.name
-      }`;
+      const storagePath = `courier-expenses/${uid}/${year}/${Date.now()}_${receiptFile.name}`;
       const storageRef = ref(storage, storagePath);
       await uploadBytes(storageRef, receiptFile);
       const receiptUrl = await getDownloadURL(storageRef);
@@ -509,101 +469,6 @@ export default function EarningsPage() {
       });
     } catch (error) {
       console.error("Failed to save tax state:", error);
-    }
-  };
-
-  const parseAmount = (value: string) => {
-    const amount = Number(value);
-    return Number.isFinite(amount) && amount > 0 ? amount : null;
-  };
-
-  const handleConnectStripe = () => {
-    navigate("/onboarding/stripe");
-  };
-
-  const handleRequestPayout = async () => {
-    if (!uid || requestingPayout) return;
-    const amount = parseAmount(payoutAmount);
-    setRequestError(null);
-    setRequestSuccess(null);
-
-    if (!amount) {
-      setRequestError("Enter a valid payout amount.");
-      return;
-    }
-    if (amount > availableBalance) {
-      setRequestError("Amount exceeds available balance.");
-      return;
-    }
-    if (!hasStripeAccount) {
-      setRequestError("Connect Stripe to request payouts.");
-      return;
-    }
-    if (!payoutsEnabled) {
-      setRequestError("Stripe payouts are not enabled yet.");
-      return;
-    }
-
-    setRequestingPayout(true);
-    try {
-      await addDoc(collection(db, "payoutRequests"), {
-        courierUid: uid,
-        amount,
-        requestType: "payout",
-        payoutMethod: "standard",
-        status: "pending",
-        balanceSnapshot: stats.totalEarnings,
-        pendingSnapshot: stats.pendingPayout,
-        requestedAt: serverTimestamp(),
-      });
-      setPayoutAmount("");
-      setRequestSuccess("Payout request submitted.");
-    } catch (error) {
-      console.error("Failed to request payout:", error);
-      setRequestError("Failed to submit payout request.");
-    } finally {
-      setRequestingPayout(false);
-    }
-  };
-
-  const handleRequestRecharge = async () => {
-    if (!uid || requestingRecharge) return;
-    const amount = parseAmount(rechargeAmount);
-    setRequestError(null);
-    setRequestSuccess(null);
-
-    if (!amount) {
-      setRequestError("Enter a valid recharge amount.");
-      return;
-    }
-    if (!hasStripeAccount) {
-      setRequestError("Connect Stripe to request recharges.");
-      return;
-    }
-    if (!chargesEnabled) {
-      setRequestError("Stripe charges are not enabled yet.");
-      return;
-    }
-
-    setRequestingRecharge(true);
-    try {
-      await addDoc(collection(db, "payoutRequests"), {
-        courierUid: uid,
-        amount,
-        requestType: "recharge",
-        payoutMethod: "instant",
-        status: "pending",
-        balanceSnapshot: stats.totalEarnings,
-        pendingSnapshot: stats.pendingPayout,
-        requestedAt: serverTimestamp(),
-      });
-      setRechargeAmount("");
-      setRequestSuccess("Recharge request submitted.");
-    } catch (error) {
-      console.error("Failed to request recharge:", error);
-      setRequestError("Failed to submit recharge request.");
-    } finally {
-      setRequestingRecharge(false);
     }
   };
 
@@ -650,117 +515,6 @@ export default function EarningsPage() {
           />
         </div>
 
-        {/* Payouts & Recharging */}
-        <Card variant="elevated" className="mb-8">
-          <CardHeader>
-            <CardTitle>💳 Payouts & Recharging</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-sm font-semibold text-gray-900">
-                      Stripe Connect
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      Required for payouts and instant recharges.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleConnectStripe}
-                    className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-700"
-                  >
-                    {hasStripeAccount ? "Manage Stripe" : "Connect Stripe"}
-                  </button>
-                </div>
-                <div className="mt-3 text-xs text-gray-600">
-                  <span className="mr-3">
-                    Charges: {chargesEnabled ? "Enabled" : "Pending"}
-                  </span>
-                  <span className="mr-3">
-                    Payouts: {payoutsEnabled ? "Enabled" : "Pending"}
-                  </span>
-                  <span>
-                    Requirements due: {stripeRequirementsDue.length} • Past due: {stripeRequirementsPastDue.length}
-                  </span>
-                </div>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="rounded-xl border border-gray-200 p-4">
-                  <p className="text-sm font-semibold text-gray-900 mb-2">
-                    Standard Payout
-                  </p>
-                  <p className="text-xs text-gray-500 mb-3">
-                    Transfer your available balance to Stripe payouts.
-                  </p>
-                  <p className="text-xs text-gray-600 mb-2">
-                    Available: ${availableBalance.toFixed(2)}
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      min="0"
-                      value={payoutAmount}
-                      onChange={(e) => setPayoutAmount(e.target.value)}
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
-                      placeholder="Amount"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleRequestPayout}
-                      disabled={requestingPayout}
-                      className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"
-                    >
-                      {requestingPayout ? "Submitting..." : "Request"}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="rounded-xl border border-gray-200 p-4">
-                  <p className="text-sm font-semibold text-gray-900 mb-2">
-                    Instant Recharge
-                  </p>
-                  <p className="text-xs text-gray-500 mb-3">
-                    Request an instant payout advance (fees may apply).
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      min="0"
-                      value={rechargeAmount}
-                      onChange={(e) => setRechargeAmount(e.target.value)}
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
-                      placeholder="Amount"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleRequestRecharge}
-                      disabled={requestingRecharge}
-                      className="rounded-lg bg-purple-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"
-                    >
-                      {requestingRecharge ? "Submitting..." : "Recharge"}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {requestError && (
-                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
-                  {requestError}
-                </div>
-              )}
-              {requestSuccess && (
-                <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-700">
-                  {requestSuccess}
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Payout History */}
         <Card variant="elevated">
           <CardHeader>
@@ -771,7 +525,9 @@ export default function EarningsPage() {
               <div className="text-center py-8 text-gray-500">
                 <p className="text-4xl mb-3">💸</p>
                 <p>No payouts yet</p>
-                <p className="text-sm mt-2">Complete jobs to start earning!</p>
+                <p className="text-sm mt-2">
+                  Complete jobs to start earning!
+                </p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -794,8 +550,8 @@ export default function EarningsPage() {
                           payout.status === "paid"
                             ? "bg-emerald-100 text-emerald-700"
                             : payout.status === "pending"
-                            ? "bg-yellow-100 text-yellow-700"
-                            : "bg-gray-100 text-gray-700"
+                              ? "bg-yellow-100 text-yellow-700"
+                              : "bg-gray-100 text-gray-700"
                         }`}
                       >
                         {payout.status}
@@ -815,9 +571,7 @@ export default function EarningsPage() {
           </CardHeader>
           <CardContent>
             <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
-              <label className="text-sm font-medium text-gray-700">
-                Tax Year
-              </label>
+              <label className="text-sm font-medium text-gray-700">Tax Year</label>
               <select
                 value={taxYear}
                 onChange={(e) => setTaxYear(Number(e.target.value))}
@@ -847,16 +601,13 @@ export default function EarningsPage() {
                   ))}
                 </select>
                 <p className="text-[11px] text-gray-400 mt-2">
-                  Top marginal rates. Override in Firestore at
-                  platformSettings/stateTaxRates.
+                  Top marginal rates. Override in Firestore at platformSettings/stateTaxRates.
                 </p>
               </div>
               <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl">
                 <p className="text-xs text-gray-500">Estimated State Tax</p>
                 <p className="text-2xl font-bold text-amber-600">
-                  {estimatedStateTax == null
-                    ? "—"
-                    : `$${estimatedStateTax.toFixed(2)}`}
+                  {estimatedStateTax == null ? "—" : `$${estimatedStateTax.toFixed(2)}`}
                 </p>
                 <p className="text-[11px] text-gray-400">
                   {stateRate == null
@@ -867,8 +618,7 @@ export default function EarningsPage() {
               <div className="p-4 bg-gray-50 border border-gray-100 rounded-xl">
                 <p className="text-xs text-gray-500">Disclaimer</p>
                 <p className="text-xs text-gray-500 mt-2">
-                  Estimates are not tax advice. Always consult a tax
-                  professional.
+                  Estimates are not tax advice. Always consult a tax professional.
                 </p>
               </div>
             </div>
@@ -879,18 +629,14 @@ export default function EarningsPage() {
                 <p className="text-2xl font-bold text-emerald-600">
                   ${taxYearTotal.toFixed(2)}
                 </p>
-                <p className="text-xs text-gray-400">
-                  {taxYearJobs.length} jobs
-                </p>
+                <p className="text-xs text-gray-400">{taxYearJobs.length} jobs</p>
               </div>
               <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl">
                 <p className="text-xs text-gray-500">Expenses</p>
                 <p className="text-2xl font-bold text-blue-600">
                   ${receiptsTotal.toFixed(2)}
                 </p>
-                <p className="text-xs text-gray-400">
-                  {receipts.length} receipts
-                </p>
+                <p className="text-xs text-gray-400">{receipts.length} receipts</p>
               </div>
               <div className="p-4 bg-purple-50 border border-purple-100 rounded-xl">
                 <p className="text-xs text-gray-500">Net (est.)</p>
@@ -960,9 +706,7 @@ export default function EarningsPage() {
                   <input
                     type="file"
                     accept="image/*,application/pdf"
-                    onChange={(e) =>
-                      setReceiptFile(e.target.files?.[0] || null)
-                    }
+                    onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
                     className="w-full text-sm"
                   />
                 </div>
@@ -989,13 +733,9 @@ export default function EarningsPage() {
             </div>
 
             <div className="mt-6">
-              <h3 className="text-sm font-semibold text-gray-900 mb-3">
-                Receipts
-              </h3>
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">Receipts</h3>
               {receipts.length === 0 ? (
-                <div className="text-sm text-gray-500">
-                  No receipts uploaded yet.
-                </div>
+                <div className="text-sm text-gray-500">No receipts uploaded yet.</div>
               ) : (
                 <div className="space-y-3">
                   {receipts.map((item) => (
@@ -1005,8 +745,7 @@ export default function EarningsPage() {
                     >
                       <div>
                         <p className="text-sm font-medium text-gray-900">
-                          {item.category || "Expense"} • $
-                          {Number(item.amount || 0).toFixed(2)}
+                          {item.category || "Expense"} • ${Number(item.amount || 0).toFixed(2)}
                         </p>
                         <p className="text-xs text-gray-500">
                           {item.date?.toDate?.()?.toLocaleDateString() || "—"}
@@ -1032,8 +771,8 @@ export default function EarningsPage() {
         {/* Info Box */}
         <div className="mt-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
           <p className="text-sm text-emerald-800">
-            <strong>💡 Tip:</strong> Payouts are processed weekly via Stripe
-            Connect. Make sure your account is set up in Settings.
+            <strong>💡 Tip:</strong> Payouts are processed weekly via Stripe Connect.
+            Make sure your account is set up in Settings.
           </p>
         </div>
       </div>

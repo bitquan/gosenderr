@@ -14,8 +14,8 @@ const CORE_NAV: Array<NavItem & { description?: string }> = [
 ]
 
 const DELIVERY_NAV: Array<NavItem & { description?: string }> = [
-  { label: 'Send Packages', href: '/jobs', icon: '📦', description: 'Create a package send' },
-  { label: 'Pickup Food', href: '/food-pickups', icon: '🍱', description: 'Browse food pickup spots' },
+  { label: 'Package Delivery', href: '/jobs', icon: '📦', description: 'Schedule a send' },
+  { label: 'Pickup Food', href: '/request-delivery', icon: '🍱', description: 'Request a pickup' },
   { label: 'Ship', href: '/ship', icon: '🚚', description: 'Custom courier jobs' },
 ]
 

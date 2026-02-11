@@ -3,10 +3,11 @@ import {
   collection,
   doc,
   getDoc,
+  onSnapshot,
+  orderBy,
   query,
   serverTimestamp,
   updateDoc,
-  getDocs,
   where,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -50,46 +51,49 @@ export async function updateFoodPickupRestaurant(
   await updateDoc(restaurantRef, payload);
 }
 
-export async function listFoodPickupRestaurantsByCourier(
+export function subscribeFoodPickupRestaurantsByCourier(
   courierId: string,
-): Promise<FoodPickupRestaurantDoc[]> {
+  callback: (restaurants: FoodPickupRestaurantDoc[]) => void,
+) {
   const restaurantsRef = collection(db, RESTAURANTS_COLLECTION);
-  const q = query(restaurantsRef, where("courierId", "==", courierId));
-  const snapshot = await getDocs(q);
-  return snapshot.docs
-    .map((docSnap) => {
-      const data = docSnap.data() as Omit<FoodPickupRestaurantDoc, "id">;
-      return {
-        id: docSnap.id,
-        ...data,
-      };
-    })
-    .sort((a, b) => {
-      const aTime = a.updatedAt?.toMillis?.() ?? 0;
-      const bTime = b.updatedAt?.toMillis?.() ?? 0;
-      return bTime - aTime;
-    });
+  const q = query(
+    restaurantsRef,
+    where("courierId", "==", courierId),
+    orderBy("updatedAt", "desc"),
+  );
+  return onSnapshot(q, (snapshot) => {
+    callback(
+      snapshot.docs.map((docSnap) => {
+        const data = docSnap.data() as Omit<FoodPickupRestaurantDoc, "id">;
+        return {
+          id: docSnap.id,
+          ...data,
+        };
+      }),
+    );
+  });
 }
 
-export async function listPublicFoodPickupRestaurants(): Promise<
-  FoodPickupRestaurantDoc[]
-> {
+export function subscribePublicFoodPickupRestaurants(
+  callback: (restaurants: FoodPickupRestaurantDoc[]) => void,
+) {
   const restaurantsRef = collection(db, RESTAURANTS_COLLECTION);
-  const q = query(restaurantsRef, where("isPublic", "==", true));
-  const snapshot = await getDocs(q);
-  return snapshot.docs
-    .map((docSnap) => {
-      const data = docSnap.data() as Omit<FoodPickupRestaurantDoc, "id">;
-      return {
-        id: docSnap.id,
-        ...data,
-      };
-    })
-    .sort((a, b) => {
-      const aTime = a.updatedAt?.toMillis?.() ?? 0;
-      const bTime = b.updatedAt?.toMillis?.() ?? 0;
-      return bTime - aTime;
-    });
+  const q = query(
+    restaurantsRef,
+    where("isPublic", "==", true),
+    orderBy("updatedAt", "desc"),
+  );
+  return onSnapshot(q, (snapshot) => {
+    callback(
+      snapshot.docs.map((docSnap) => {
+        const data = docSnap.data() as Omit<FoodPickupRestaurantDoc, "id">;
+        return {
+          id: docSnap.id,
+          ...data,
+        };
+      }),
+    );
+  });
 }
 
 export async function getFoodPickupRestaurantById(

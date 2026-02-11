@@ -3,17 +3,6 @@ name: Senderr App CI
 on:
   pull_request:
     branches: [senderr_app]
-    paths:
-      - "apps/courieriosnativeclean/**"
-      - "packages/**"
-      - "firebase/**"
-      - "docs/senderr_app/**"
-      - "scripts/ios-*.sh"
-      - "package.json"
-      - "pnpm-lock.yaml"
-      - "pnpm-workspace.yaml"
-      - "turbo.json"
-      - ".github/workflows/senderr_app-ci.yml"
 
 jobs:
   checks:

@@ -8,7 +8,6 @@ export type AnalyticsEventName =
   | 'notification_foreground_received'
   | 'notifications_permission_checked'
   | 'notifications_token_registered'
-  | 'map_shell_state_transition'
   | 'tracking_started'
   | 'tracking_stopped'
   | 'tracking_error';

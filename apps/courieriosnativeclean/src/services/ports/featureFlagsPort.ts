@@ -2,8 +2,7 @@ export type FeatureFlagKey =
   | 'trackingUpload'
   | 'notifications'
   | 'mapRouting'
-  | 'jobStatusActions'
-  | 'mapShell';
+  | 'jobStatusActions';
 
 export type FeatureFlagDefinition = {
   key: FeatureFlagKey;

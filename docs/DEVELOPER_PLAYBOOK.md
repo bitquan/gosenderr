@@ -6,16 +6,15 @@ If you follow this file exactly, you avoid the common setup and branch mistakes.
 
 > Doc metadata
 > - Owner: `@bitquan`
-> - Last verified: `2026-02-09`
+> - Last verified: `2026-02-07`
 > - Review cadence: `monthly`
-> - Status: `up to date`
 
 ## 1) Canonical repo + apps
 
 - Repo root:
   - `<repo-root>` (run `git rev-parse --show-toplevel`)
 - Active apps:
-  - `apps/marketplace-app` (Senderrplace)
+  - `apps/marketplace-app`
   - `apps/senderr-app` (Senderr web)
   - `apps/courieriosnativeclean` (Senderr iOS native)
   - `apps/admin-app`
@@ -31,9 +30,6 @@ Do not do active work from archived paths.
 Run from repo root:
 
 ```bash
-cp .env.example .env.local
-cp apps/marketplace-app/.env.example apps/marketplace-app/.env.local
-cp apps/landing/.env.example apps/landing/.env.local
 pnpm install --frozen-lockfile
 ```
 
@@ -45,75 +41,34 @@ pnpm run ios:senderr
 
 This runs install checks and iOS setup.
 
-## 3) Branch + worktree workflow (required)
+## 3) Branch workflow (required)
 
 Current app stream base branch:
 
 - `senderr_app`
 
-Default flow (recommended):
+Start any new work:
 
 ```bash
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 cd "$REPO_ROOT"
 git checkout senderr_app
 git pull --ff-only origin senderr_app
-bash scripts/create-worktree.sh \
-  codex/issue-<issue-number>-<short-slug> \
-  "$HOME/dev/apps/Gosenderr_local/worktrees/issue-<issue-number>" \
-  <template-key>
-cd "$HOME/dev/apps/Gosenderr_local/worktrees/issue-<issue-number>"
-```
-
-`<template-key>` must be one of:
-
-- `senderr_ios_native`
-- `senderr_web`
-- `senderrplace`
-- `admin_app`
-- `admin_desktop`
-- `landing`
-- `backend`
-
-Branch naming policy:
-
-- `codex/issue-<issue-number>-<short-slug>` for issue work
-- `codex/chore-<short-slug>` for non-issue maintenance
-
-Examples:
-
-- `codex/issue-235-senderrplace-v2-domain-contract`
-- `codex/chore-ci-path-scoping`
-
-For direct branch setup (no new worktree):
-
-```bash
-git checkout senderr_app
-git pull --ff-only origin senderr_app
-git checkout -b codex/issue-<issue-number>-<short-slug>
+git checkout -b senderr-app/<type>/<short-task-name>
 bash scripts/setup-branch-copilot.sh
 ```
 
+Recommended branch names (match `docs/senderr_app/BRANCHING.md`):
 
-## 3b) Copilot implementation model (required)
+- `senderr-app/feature/<short-task-name>` for features
+- `senderr-app/fix/<short-task-name>` for fixes
+- `senderr-app/upgrade/<short-task-name>` for upgrades
+- `senderr-app/docs` for docs-only changes
 
-Use this split so execution stays consistent:
+Examples:
 
-- You + chat agent: issue planning, acceptance criteria, PR/merge coordination.
-- VS Code Copilot agent: code changes, tests, local fixes inside the chosen worktree.
-
-Workflow:
-
-1. Select the stable worktree by domain (Senderr: `senderr-shell` / `senderr-settings` / `senderr-ops`; Senderrplace/Admin equivalents).
-2. Run sync first:
-   - `bash scripts/worktree-sync.sh`
-3. Run implementation in that worktree only.
-4. Write a short change log line in:
-   - `docs/dev/worktree-logs/<worktree>.md`
-5. Use `senderr-live` only for latest merged baseline testing.
-6. Only stack unmerged branches on `senderr-live` when explicitly needed for cross-feature QA, then unstack after validation.
-
-This is the default model for all apps in this monorepo.
+- `senderr-app/feature/auth-flow`
+- `senderr-app/fix/firebase-startup`
 
 ## 4) Day-to-day git commands
 
@@ -123,13 +78,6 @@ Use branch helper commands from repo root:
 bash scripts/git-branch-assist.sh status
 bash scripts/git-branch-assist.sh sync
 bash scripts/git-branch-assist.sh save "type(scope): short message"
-```
-
-Always sync before coding:
-
-```bash
-git fetch origin --prune
-git rebase origin/senderr_app
 ```
 
 ## 5) Run each app
@@ -192,23 +140,6 @@ Open PR to:
 
 - `senderr_app` for current Senderr stream work
 
-PR checklist policy (required):
-
-- select exactly one in PR body:
-  - `handoff: updated`
-  - `handoff: not needed`
-
-CI scope policy (current):
-
-- `.github/workflows/senderr_app-ci.yml` now runs only for Senderr iOS-related path changes.
-- `.github/workflows/ci.yml` uses change detection and skips heavy jobs when unrelated paths were changed.
-- If a job is skipped because the path scope did not match, that is expected behavior.
-
-Issue execution policy:
-
-- work in batches of `3-5` issues.
-- still keep `one issue = one branch/worktree = one PR`.
-
 ## 8) Common failures and exact fixes
 
 `ERR_PNPM_NO_PKG_MANIFEST`:
@@ -242,13 +173,6 @@ pnpm run ios:clean:install
 - Fix:
   - Start Metro from `apps/courieriosnativeclean`
   - Use Mac LAN IP for Metro host on device
-
-`Build input file cannot be found ... GoogleService-Info.plist`:
-
-- The iOS Firebase plist is missing in that worktree path.
-- Fix:
-  - Add `GoogleService-Info.plist` to `apps/courieriosnativeclean/ios/Senderrappios/`.
-  - Confirm plist bundle id matches iOS target bundle id.
 
 ## 9) Source of truth docs
 
@@ -292,21 +216,3 @@ PR handoff policy:
   - Docs-only and metadata-only PRs may skip log updates only if there is no behavior/process/setup impact, and must set PR template checkbox `handoff: not needed`.
 - Enforcement:
   - CI validates that exactly one handoff checkbox is selected in every PR.
-
-## 11) Branch cleanup
-
-Dry-run cleanup:
-
-```bash
-bash scripts/cleanup-branches.sh
-```
-
-Apply cleanup:
-
-```bash
-bash scripts/cleanup-branches.sh apply
-```
-
-Note:
-
-- A branch cannot be deleted while attached to an active worktree.

@@ -1,10 +1,6 @@
 import { Link } from 'react-router-dom'
 import type { MarketplaceItem } from '../../types/marketplace'
-import { DeliveryOption } from '../../types/marketplace'
 import { SellerBadgeList } from './SellerBadge'
-import { getPickupDisplayAddress } from '@/lib/pickupPrivacy'
-import { FLOOR_RATE_CARD } from '@/lib/v2/floorRateCard'
-import { calcFee, calcMiles } from '@/lib/v2/pricing'
 
 interface ItemCardProps {
   item: MarketplaceItem
@@ -13,26 +9,13 @@ interface ItemCardProps {
     average: number
     count: number
   }
-  showExactPickupLocation?: boolean
-  customerAddressSet?: boolean
-  customerLocation?: {
-    lat: number
-    lng: number
-  } | null
 }
 
 /**
  * ItemCard - Display a marketplace item in card format
  * Phase 2: Shows seller info (unified user model)
  */
-export function ItemCard({
-  item,
-  sellerBadges = [],
-  sellerRating,
-  showExactPickupLocation = false,
-  customerAddressSet = false,
-  customerLocation = null,
-}: ItemCardProps) {
+export function ItemCard({ item, sellerBadges = [], sellerRating }: ItemCardProps) {
   const normalizeUrl = (url?: string) => {
     if (!url) return ''
     if (typeof window !== 'undefined' && window.location.protocol === 'https:' && url.startsWith('http://')) {
@@ -43,25 +26,6 @@ export function ItemCard({
 
   const primaryImage = normalizeUrl(item.photos?.[0]) || '/placeholder-item.png'
   const isOutOfStock = item.quantity === 0
-  const supportsCourier = item.deliveryOptions?.includes(DeliveryOption.COURIER)
-
-  const pickupLocation = item.pickupLocation
-  const pickupDisplayAddress = pickupLocation
-    ? getPickupDisplayAddress(pickupLocation, showExactPickupLocation)
-    : null
-
-  const pickupLat = (pickupLocation?.location as any)?.latitude ?? (pickupLocation?.location as any)?.lat
-  const pickupLng = (pickupLocation?.location as any)?.longitude ?? (pickupLocation?.location as any)?.lng
-  const hasPickupCoords = Number.isFinite(pickupLat) && Number.isFinite(pickupLng)
-
-  let senderrEstimate: number | null = null
-  if (supportsCourier && customerLocation && hasPickupCoords) {
-    const jobMiles = calcMiles(
-      { lat: Number(pickupLat), lng: Number(pickupLng) },
-      { lat: customerLocation.lat, lng: customerLocation.lng },
-    )
-    senderrEstimate = calcFee(FLOOR_RATE_CARD, jobMiles, 0, 'car')
-  }
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -130,22 +94,6 @@ export function ItemCard({
 
         {/* Category */}
         <p className="text-sm text-white/70 mb-3 capitalize">{item.category}</p>
-
-        {pickupDisplayAddress && (
-          <p className="text-xs text-gray-500 mb-2 line-clamp-1">
-            📍 {pickupDisplayAddress}
-          </p>
-        )}
-
-        {supportsCourier && (
-          <p className="text-xs mb-3 text-purple-700">
-            {customerAddressSet
-              ? senderrEstimate !== null
-                ? `🚚 Senderr est. ${formatPrice(senderrEstimate)}`
-                : '🚚 Senderr available at checkout'
-              : '🚚 Set your address to see Senderr rates'}
-          </p>
-        )}
 
         {/* Price and quantity */}
         <div className="flex items-center justify-between mb-3">

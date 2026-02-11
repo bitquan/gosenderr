@@ -73,7 +73,6 @@ echo ""
 echo "👤 Demo Users:"
 echo "   customer@example.com / DemoPass123!"
 echo "   seller@example.com / DemoPass123!"
-echo "   admin@example.com / DemoPass123!"
 echo ""
 
 # Wait for emulator process

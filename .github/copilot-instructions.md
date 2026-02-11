@@ -71,24 +71,6 @@ PR target for this stream:
 
 Use squash merges to keep history compact.
 
-
-## Copilot Execution Split (VS Code + Chat)
-
-Default operating model:
-
-- Chat agent (this thread): planning, issue breakdown, PR strategy, reviews, merge flow.
-- VS Code Copilot agent: implementation, tests, and local iteration in the selected worktree.
-
-Execution rules:
-
-1. Pick the correct stable worktree domain first (`senderr-shell`, `senderr-settings`, `senderr-ops`, etc.).
-2. Sync before coding: `bash scripts/worktree-sync.sh`.
-3. For latest merged feature testing, always use `senderr-live`.
-4. If testing multiple unmerged branches together, stack them temporarily on `senderr-live` and record exactly which branches were stacked.
-5. After each push, append a short entry to `docs/dev/worktree-logs/<worktree>.md`.
-
-Do not implement in random folders or stale issue worktrees when a stable domain worktree exists.
-
 ## Developer Command Baseline
 
 From repo root:

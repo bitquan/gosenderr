@@ -1,14 +1,17 @@
-import { useState, useEffect } from "react";
-import { loadStripe } from "@stripe/stripe-js";
-import { createPaymentIntent } from "@/lib/cloudFunctions";
+
+import { useState, useEffect } from 'react';
+import { loadStripe } from '@stripe/stripe-js';
+import { createPaymentIntent } from '@/lib/cloudFunctions';
 import {
   Elements,
   PaymentElement,
   useStripe,
   useElements,
-} from "@stripe/react-stripe-js";
+} from '@stripe/react-stripe-js';
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY!);
+const stripePromise = loadStripe(
+  import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY!
+);
 
 interface PaymentFormProps {
   jobId: string;
@@ -18,7 +21,7 @@ interface PaymentFormProps {
 }
 
 function CheckoutForm({
-  jobId: _jobId,
+  jobId,
   courierRate,
   platformFee,
   onSuccess,
@@ -46,18 +49,17 @@ function CheckoutForm({
         confirmParams: {
           return_url: `${window.location.origin}/customer/payment/success`,
         },
-        redirect: "if_required",
+        redirect: 'if_required',
       });
 
       if (error) {
-        setErrorMessage(error.message || "An unexpected error occurred.");
+        setErrorMessage(error.message || 'An unexpected error occurred.');
         setIsProcessing(false);
       } else {
         onSuccess();
       }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      setErrorMessage(message || "Payment failed. Please try again.");
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Payment failed. Please try again.');
       setIsProcessing(false);
     }
   };
@@ -80,7 +82,7 @@ function CheckoutForm({
         disabled={!stripe || isProcessing}
         className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
       >
-        {isProcessing ? "Processing..." : `Pay $${totalAmount.toFixed(2)}`}
+        {isProcessing ? 'Processing...' : `Pay $${totalAmount.toFixed(2)}`}
       </button>
 
       <p className="text-sm text-gray-600 text-center">
@@ -109,9 +111,8 @@ export function PaymentForm({
           platformFee,
         });
         setClientSecret(data.clientSecret);
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : String(err);
-        setError(message || "Failed to initialize payment");
+      } catch (err: any) {
+        setError(err.message || 'Failed to initialize payment');
       } finally {
         setIsLoading(false);
       }
@@ -144,9 +145,9 @@ export function PaymentForm({
   const options = {
     clientSecret,
     appearance: {
-      theme: "stripe" as const,
+      theme: 'stripe' as const,
       variables: {
-        colorPrimary: "#2563eb",
+        colorPrimary: '#2563eb',
       },
     },
   };
