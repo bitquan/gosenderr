@@ -211,8 +211,9 @@ Run this command:
 PR handoff policy:
 
 - Mandatory:
-  - Any PR with behavior, setup, config, CI, workflow, or process changes must use `scripts/dev-handoff.sh` and set PR template checkbox `handoff: updated`.
+  - Any PR with behavior, setup, config, CI, workflow, or process changes must use `scripts/dev-handoff.sh` and set `Session handoff` in the PR form to **handoff: updated**.
 - Optional:
-  - Docs-only and metadata-only PRs may skip log updates only if there is no behavior/process/setup impact, and must set PR template checkbox `handoff: not needed`.
+  - Docs-only and metadata-only PRs may skip log updates only if there is no behavior/process/setup impact, and must set `Session handoff` in the PR form to **handoff: not needed**.
+- UI: Use the **Session handoff** PR form (top-right of the PR creation flow) to select exactly one option when opening a PR. The form is required and prevents CI failures at creation time.
 - Enforcement:
-  - CI validates that exactly one handoff checkbox is selected in every PR.
+  - CI validates that exactly one handoff option is selected; if the selection is missing or invalid, CI will post an actionable comment explaining how to fix the PR description.
