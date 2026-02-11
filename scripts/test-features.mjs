@@ -2,7 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, doc, getDoc, getDocs } from 'firebase/firestore';
 
 const app = initializeApp({
-  apiKey: "AIzaSyBvZ8ExF8tYc8gDWaB8Yn5rL2zQ0xKZ5nE",
+  apiKey: "YOUR_FIREBASE_API_KEY_PLACEHOLDER",
   projectId: "gosenderr-6773f"
 });
 const db = getFirestore(app);

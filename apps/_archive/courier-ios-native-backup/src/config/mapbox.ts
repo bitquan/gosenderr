@@ -1,4 +1,4 @@
 export const mapboxConfig = {
-  accessToken:
-    'pk.eyJ1IjoiZ29zZW5kZXJyIiwiYSI6ImNtZjFlc2pkMTJheHIya29ub251YjZjMzQifQ.Oav2gJB_Z1sSPjOzjTPCzA',
+  // Removed hardcoded token from archive. Load at runtime from environment.
+  accessToken: process.env.MAPBOX_ACCESS_TOKEN || '',
 };

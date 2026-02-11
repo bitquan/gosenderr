@@ -16,7 +16,7 @@ import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 
 // Firebase config
 const firebaseConfig = {
-  apiKey: "AIzaSyBvZ8ExF8tYc8gDWaB8Yn5rL2zQ0xKZ5nE",
+  apiKey: "YOUR_FIREBASE_API_KEY_PLACEHOLDER",
   authDomain: "gosenderr-6773f.firebaseapp.com",
   projectId: "gosenderr-6773f",
   storageBucket: "gosenderr-6773f.appspot.com",
