@@ -23,6 +23,8 @@ export function useFeatureFlags() {
               itemListings: true,
               combinedPayments: true,
               courierOffers: false,
+              messaging: true,
+              ratings: true,
             },
             delivery: {
               onDemand: true,
