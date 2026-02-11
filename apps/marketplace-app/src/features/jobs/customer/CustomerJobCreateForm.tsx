@@ -12,6 +12,7 @@ import { calcMiles, calcFee } from "@/lib/v2/pricing";
 import { FLOOR_RATE_CARD } from "@/lib/v2/floorRateCard";
 import { GeoPoint, PackageSize, PackageFlags } from "@/lib/v2/types";
 import { usePlatformSettings } from "@/hooks/usePlatformSettings";
+import { markFoodPickupRestaurantUsed } from "@/lib/foodPickup";
 
 const createTempJobId = () => {
   const cryptoObj = globalThis.crypto;
@@ -32,6 +33,7 @@ interface CustomerJobCreateFormProps {
   initialPickup?: GeoPoint | null;
   initialPickupLabel?: string;
   initialRestaurantName?: string;
+  initialRestaurantId?: string;
 }
 
 export function CustomerJobCreateForm({
@@ -39,6 +41,7 @@ export function CustomerJobCreateForm({
   initialPickup = null,
   initialPickupLabel = "",
   initialRestaurantName = "",
+  initialRestaurantId = "",
 }: CustomerJobCreateFormProps) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -57,6 +60,7 @@ export function CustomerJobCreateForm({
   const [restaurantContext, setRestaurantContext] = useState(
     initialRestaurantName,
   );
+  const [restaurantId, setRestaurantId] = useState(initialRestaurantId);
   const [showPickupPicker, setShowPickupPicker] = useState(!initialPickup);
 
   // Generate a stable temporary job ID for this session
@@ -140,6 +144,8 @@ export function CustomerJobCreateForm({
       const jobId = await createJob(uid, {
         pickup,
         dropoff,
+        foodPickupRestaurantId: restaurantId || null,
+        foodPickupRestaurantName: restaurantContext || null,
         package: {
           size: packageSize,
           flags: packageFlags,
@@ -166,6 +172,12 @@ export function CustomerJobCreateForm({
         paymentStatus: "pending",
       });
 
+      if (restaurantId) {
+        markFoodPickupRestaurantUsed(restaurantId, uid).catch((usageError) => {
+          console.warn("Unable to record food pickup restaurant usage:", usageError);
+        });
+      }
+
       navigate(`/jobs/${jobId}`);
     } catch (error) {
       console.error("Failed to create job:", error);
@@ -175,18 +187,18 @@ export function CustomerJobCreateForm({
   };
 
   return (
-    <div style={{ maxWidth: "600px", margin: "0 auto" }}>
+    <div style={{ width: "100%", maxWidth: "640px", margin: "0 auto", boxSizing: "border-box" }}>
       <div style={{ marginBottom: "24px" }}>
         <h1
           style={{ fontSize: "28px", fontWeight: "700", marginBottom: "8px" }}
         >
           Create New Delivery
         </h1>
-        <p style={{ fontSize: "14px", color: "#666" }}>
+        <p style={{ fontSize: "14px", color: "#cbd5e1" }}>
           Fill in the details to request a courier
         </p>
         {restaurantContext && (
-          <p style={{ fontSize: "13px", color: "#52525b" }}>
+          <p style={{ fontSize: "13px", color: "#d8b4fe" }}>
             Ordering for pickup at <strong>{restaurantContext}</strong>
           </p>
         )}
@@ -195,10 +207,13 @@ export function CustomerJobCreateForm({
       <form
         onSubmit={handleSubmit}
         style={{
-          background: "white",
+          width: "100%",
+          boxSizing: "border-box",
+          background: "linear-gradient(160deg, rgba(55, 24, 115, 0.88), rgba(37, 16, 90, 0.92))",
           padding: "24px",
-          borderRadius: "8px",
-          border: "1px solid #ddd",
+          borderRadius: "16px",
+          border: "1px solid rgba(196, 181, 253, 0.4)",
+          color: "#f8fafc",
         }}
       >
       {!pickup || showPickupPicker ? (
@@ -214,6 +229,7 @@ export function CustomerJobCreateForm({
               });
               setPickupLabel(result.address);
               setRestaurantContext("");
+              setRestaurantId("");
               setShowPickupPicker(false);
             }}
             value={pickupLabel}
@@ -226,18 +242,18 @@ export function CustomerJobCreateForm({
             borderRadius: "16px",
             border: "1px solid #d1d5db",
             padding: "16px",
-            background: "#f8fafc",
+            background: "rgba(30, 41, 59, 0.6)",
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between" }}>
             <div>
-              <p style={{ fontSize: "12px", letterSpacing: "0.2em", textTransform: "uppercase", color: "#6b7280" }}>
+              <p style={{ fontSize: "12px", letterSpacing: "0.2em", textTransform: "uppercase", color: "#cbd5e1" }}>
                 Pickup location
               </p>
               <p style={{ fontSize: "18px", fontWeight: 600, margin: "4px 0" }}>
                 {restaurantContext || pickupLabel || "Selected restaurant"}
               </p>
-              <p style={{ fontSize: "14px", color: "#374151" }}>
+              <p style={{ fontSize: "14px", color: "#e2e8f0" }}>
                 {pickupLabel}
               </p>
             </div>
@@ -248,6 +264,7 @@ export function CustomerJobCreateForm({
                 setPickup(null);
                 setPickupLabel("");
                 setRestaurantContext("");
+                setRestaurantId("");
               }}
               style={{
                 color: "#7c3aed",
@@ -315,8 +332,8 @@ export function CustomerJobCreateForm({
           <div
             style={{
               padding: "16px",
-              background: "#f0fdf4",
-              border: "1px solid #86efac",
+              background: "rgba(16, 185, 129, 0.16)",
+              border: "1px solid rgba(52, 211, 153, 0.5)",
               borderRadius: "8px",
               marginBottom: "24px",
             }}
@@ -331,14 +348,14 @@ export function CustomerJobCreateForm({
             </div>
             {estimateSource === "floor" && (
               <div
-                style={{ fontSize: "12px", color: "#666", marginTop: "4px" }}
+                style={{ fontSize: "12px", color: "#cbd5e1", marginTop: "4px" }}
               >
                 Based on floor rate (no couriers nearby)
               </div>
             )}
             {estimateSource === "couriers" && (
               <div
-                style={{ fontSize: "12px", color: "#666", marginTop: "4px" }}
+                style={{ fontSize: "12px", color: "#cbd5e1", marginTop: "4px" }}
               >
                 {eligibleCouriers.length} eligible courier(s) nearby
               </div>

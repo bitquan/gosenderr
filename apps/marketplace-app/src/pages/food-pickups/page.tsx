@@ -37,6 +37,7 @@ export default function FoodPickupsPage() {
           lng: restaurant.location.lng,
           label: restaurant.location.address,
         },
+        initialRestaurantId: restaurant.id,
         initialPickupLabel: restaurant.location.address,
         initialRestaurantName: restaurant.restaurantName,
       },

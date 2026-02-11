@@ -5,7 +5,7 @@ import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { useUserDoc } from "@/hooks/v2/useUserDoc";
 import {
   createFoodPickupRestaurant,
-  subscribeFoodPickupRestaurantsByCourier,
+  listFoodPickupRestaurantsByCourier,
   updateFoodPickupRestaurant,
 } from "@/lib/foodPickup/restaurants";
 import { uploadRestaurantPhoto } from "@/lib/storage/uploadRestaurantPhoto";
@@ -21,7 +21,9 @@ export default function RestaurantsPage() {
   const { user, loading: authLoading } = useAuthUser();
   const { userDoc } = useUserDoc();
   const courierId = user?.uid ?? null;
-  const isCourier = userDoc?.role === "courier";
+  const isCourier =
+    userDoc?.role === "courier" ||
+    !!userDoc?.courierProfile;
   const courierName = useMemo(
     () => userDoc?.displayName || user?.displayName || user?.email || "Courier",
     [userDoc, user],
@@ -43,15 +45,33 @@ export default function RestaurantsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!courierId) return;
-    const unsubscribe = subscribeFoodPickupRestaurantsByCourier(
-      courierId,
-      (docs) => {
+    if (!courierId) {
+      setLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    const loadRestaurants = async () => {
+      try {
+        const docs = await listFoodPickupRestaurantsByCourier(courierId);
+        if (cancelled) return;
         setRestaurants(docs);
-        setLoading(false);
-      },
-    );
-    return () => unsubscribe();
+      } catch (error) {
+        if (cancelled) return;
+        console.error("Failed to load restaurants:", error);
+        setStatusMessage("Could not load saved restaurants right now.");
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void loadRestaurants();
+
+    return () => {
+      cancelled = true;
+    };
   }, [courierId]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -109,6 +129,8 @@ export default function RestaurantsPage() {
       setStatusMessage(
         editingId ? "Restaurant updated!" : "Restaurant saved to Senderrplace.",
       );
+      const refreshed = await listFoodPickupRestaurantsByCourier(courierId);
+      setRestaurants(refreshed);
       resetForm();
     } catch (error) {
       console.error("Restaurant save failed:", error);
