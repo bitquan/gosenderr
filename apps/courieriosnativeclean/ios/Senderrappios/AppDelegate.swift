@@ -68,7 +68,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     if provider.jsLocation == nil || provider.jsLocation?.isEmpty == true || provider.jsLocation == "localhost" ||
       provider.jsLocation == "127.0.0.1"
     {
-      provider.jsLocation = ProcessInfo.processInfo.environment["METRO_HOST"] ?? "192.168.0.76"
+      if let metroHost = ProcessInfo.processInfo.environment["METRO_HOST"], !metroHost.isEmpty {
+        provider.jsLocation = metroHost
+      }
     }
     return provider.jsBundleURL(forBundleRoot: "index")
 #else

@@ -1,4 +1,6 @@
-import React, {createContext, useContext, useEffect, useMemo, useRef, useState} from 'react';
+import React, {createContext, useContext, useEffect, useMemo, useRef, useState, useCallback} from 'react';
+
+  // NOTE: Wrap handlers in useCallback so they are stable for consumers.
 
 import {useServiceRegistry} from '../services/serviceRegistry';
 import type {AuthSession} from '../types/auth';
@@ -70,7 +72,7 @@ export const AuthProvider = ({children}: {children: React.ReactNode}): React.JSX
     }
   }, [analytics, session]);
 
-  const signInWithEmail = async (email: string, password: string): Promise<void> => {
+  const signInWithEmail = useCallback(async (email: string, password: string): Promise<void> => {
     setSigningIn(true);
     try {
       const nextSession = await auth.signIn(email, password);
@@ -81,9 +83,9 @@ export const AuthProvider = ({children}: {children: React.ReactNode}): React.JSX
     } finally {
       setSigningIn(false);
     }
-  };
+  }, [auth, analytics]);
 
-  const signOutUser = async (): Promise<void> => {
+  const signOutUser = useCallback(async (): Promise<void> => {
     try {
       await auth.signOut();
       setSession(null);
@@ -91,7 +93,7 @@ export const AuthProvider = ({children}: {children: React.ReactNode}): React.JSX
       void analytics.recordError(error, 'auth_sign_out_failed');
       throw error;
     }
-  };
+  }, [auth, analytics]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
@@ -101,7 +103,7 @@ export const AuthProvider = ({children}: {children: React.ReactNode}): React.JSX
       signInWithEmail,
       signOutUser,
     }),
-    [session, initializing, signingIn],
+    [session, initializing, signingIn, signInWithEmail, signOutUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

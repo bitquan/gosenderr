@@ -1,8 +1,10 @@
 export const firebaseConfig = {
-  apiKey: 'AIzaSyAqfUspCXI4-IESvMHeu-7CV-BWjpWLSZ8',
-  authDomain: 'gosenderr-6773f.firebaseapp.com',
-  projectId: 'gosenderr-6773f',
-  storageBucket: 'gosenderr-6773f.firebasestorage.app',
-  messagingSenderId: '92006199493',
-  appId: '1:92006199493:web:6342270d7a40a312aa00ac',
+  // Removed sensitive values from archive. Replace these with environment
+  // variables or a secrets manager when restoring for local development.
+  apiKey: 'YOUR_FIREBASE_API_KEY',
+  authDomain: 'YOUR_FIREBASE_AUTH_DOMAIN',
+  projectId: 'YOUR_FIREBASE_PROJECT_ID',
+  storageBucket: 'YOUR_FIREBASE_STORAGE_BUCKET',
+  messagingSenderId: 'YOUR_FIREBASE_MESSAGING_SENDER_ID',
+  appId: 'YOUR_FIREBASE_APP_ID',
 };
