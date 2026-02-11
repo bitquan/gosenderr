@@ -1,6 +1,5 @@
 import { collection, doc, setDoc, getDoc, Timestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { DEFAULT_FEATURE_FLAGS } from '@gosenderr/shared';
 
 // Individual feature flag documents (for admin-desktop)
 const FEATURE_FLAGS = [
@@ -112,11 +111,60 @@ const STATE_TAX_RATES: Record<string, number> = {
 
 // Nested config (for courier/customer apps compatibility)
 export const FEATURE_FLAGS_CONFIG = {
-  ...DEFAULT_FEATURE_FLAGS,
-  admin: {
-    ...DEFAULT_FEATURE_FLAGS.admin,
-    webPortalEnabled: false,
+  marketplace: {
+    enabled: true,
+    itemListings: true,
+    combinedPayments: true,
+    courierOffers: false
   },
+  delivery: {
+    onDemand: true,
+    routes: true,
+    longRoutes: true,
+    longHaul: true
+  },
+  courier: {
+    rateCards: true,
+    equipmentBadges: true,
+    workModes: true
+  },
+  seller: {
+    stripeConnect: true,
+    multiplePhotos: true,
+    foodListings: true
+  },
+  customer: {
+    liveTracking: true,
+    proofPhotos: true,
+    routeDelivery: true,
+    packageShipping: true
+  },
+  packageRunner: {
+    enabled: true,
+    hubNetwork: true,
+    packageTracking: true
+  },
+  admin: {
+    courierApproval: true,
+    equipmentReview: true,
+    disputeManagement: true,
+    analytics: true,
+    featureFlagsControl: true,
+    webPortalEnabled: false,
+    systemLogs: false,
+    firebaseExplorer: false
+  },
+  advanced: {
+    pushNotifications: false,
+    ratingEnforcement: true,
+    autoCancel: true,
+    refunds: true
+  },
+  ui: {
+    modernStyling: true,
+    darkMode: false,
+    animations: true
+  }
 };
 
 const slugify = (value: string) =>
