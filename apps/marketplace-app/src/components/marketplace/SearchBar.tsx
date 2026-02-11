@@ -40,7 +40,7 @@ export function SearchBar({ onSearch, placeholder = 'Search items...', initialVa
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={placeholder}
-          className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+          className="block w-full pl-10 pr-3 py-3 border border-white/40 rounded-2xl leading-5 bg-white/10 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent backdrop-blur"
         />
         {query && (
           <button

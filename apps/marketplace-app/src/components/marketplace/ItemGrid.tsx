@@ -16,14 +16,17 @@ export function ItemGrid({ items, loading, sellerBadgesMap = {}, sellerRatingsMa
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div
+            key={i}
+            className="rounded-2xl bg-gradient-to-br from-slate-900 via-purple-950 to-purple-900 text-white shadow-2xl overflow-hidden animate-pulse"
+          >
             {/* Image skeleton */}
-            <div className="aspect-square bg-gray-200 animate-pulse" />
+            <div className="aspect-square bg-gradient-to-b from-purple-900 to-slate-900" />
             {/* Content skeleton */}
             <div className="p-4 space-y-3">
-              <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4" />
-              <div className="h-3 bg-gray-200 rounded animate-pulse w-1/2" />
-              <div className="h-6 bg-gray-200 rounded animate-pulse w-1/3" />
+              <div className="h-4 bg-white/20 rounded animate-pulse w-3/4" />
+              <div className="h-3 bg-white/15 rounded animate-pulse w-1/2" />
+              <div className="h-6 bg-white/15 rounded animate-pulse w-1/3" />
             </div>
           </div>
         ))}
@@ -54,4 +57,3 @@ export function ItemGrid({ items, loading, sellerBadgesMap = {}, sellerRatingsMa
     </div>
   )
 }
-

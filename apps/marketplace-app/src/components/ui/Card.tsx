@@ -17,12 +17,14 @@ export function Card({
   className,
   ...props
 }: CardProps) {
-  const baseStyles = "bg-white rounded-[20px] transition-all duration-300";
+  const baseStyles =
+    "rounded-[20px] border border-white/20 bg-black/10 backdrop-blur-lg transition-all duration-300 text-slate-100 shadow-[0_25px_75px_rgba(10,8,38,0.45)]";
 
   const variantStyles = {
-    default: "shadow-[0_4px_20px_rgba(107,78,255,0.08)]",
+    default:
+      "bg-gradient-to-br from-blue-900/80 via-purple-900/80 to-indigo-950/80 border-white/30 text-white shadow-[0_35px_90px_rgba(10,8,38,0.5)]",
     elevated:
-      "shadow-[0_8px_32px_rgba(107,78,255,0.12)] border border-purple-50",
+      "bg-gradient-to-br from-violet-200/80 via-fuchsia-200/65 to-blue-200/70 text-slate-900 border-violet-200/80 shadow-[0_30px_70px_rgba(37,25,84,0.22)] hover:border-violet-300",
     gradient:
       "bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] text-white shadow-[0_8px_32px_rgba(107,78,255,0.2)]",
   };
@@ -83,7 +85,7 @@ export function CardTitle({
 }: HTMLAttributes<HTMLHeadingElement>) {
   return (
     <h3
-      className={cn("text-lg font-semibold text-gray-900", className)}
+      className={cn("text-lg font-semibold text-current", className)}
       {...props}
     >
       {children}
@@ -97,7 +99,7 @@ export function CardDescription({
   ...props
 }: HTMLAttributes<HTMLParagraphElement>) {
   return (
-    <p className={cn("text-sm text-gray-500 mt-1", className)} {...props}>
+    <p className={cn("mt-1 text-sm opacity-80", className)} {...props}>
       {children}
     </p>
   );
@@ -122,7 +124,7 @@ export function CardFooter({
 }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn("mt-4 pt-4 border-t border-gray-100", className)}
+      className={cn("mt-4 border-t border-current/20 pt-4", className)}
       {...props}
     >
       {children}

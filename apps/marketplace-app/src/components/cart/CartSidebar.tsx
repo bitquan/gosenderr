@@ -51,14 +51,14 @@ export function CartSidebar() {
                 Your cart is empty
               </h3>
               <p className="text-gray-600 mb-6">
-                Add items from the marketplace to get started
+                Add items from Senderrplace to get started
               </p>
               <Link
                 to="/marketplace"
                 onClick={closeCart}
                 className="inline-block px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all"
               >
-                Browse Marketplace
+                Browse Senderrplace
               </Link>
             </div>
           ) : (

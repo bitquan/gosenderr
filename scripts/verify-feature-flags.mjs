@@ -41,6 +41,9 @@ async function verifyFeatureFlags() {
           enabled: true,
           itemListings: true,
           combinedPayments: true,
+          courierOffers: false,
+          messaging: true,
+          ratings: true,
         },
         delivery: {
           onDemand: true,
@@ -75,6 +78,9 @@ async function verifyFeatureFlags() {
           disputeManagement: false,
           analytics: false,
           featureFlagsControl: true,
+          webPortalEnabled: true,
+          systemLogs: false,
+          firebaseExplorer: false,
         },
         advanced: {
           pushNotifications: false,
@@ -87,12 +93,12 @@ async function verifyFeatureFlags() {
           darkMode: false,
           animations: true,
         },
-        senderrplaceV2: {
-          enabled: false,
-          ads: false,
-          badges: false,
-          bookingLinks: false,
-          adminControls: false,
+        senderrplace: {
+          marketplace_v2: true,
+          seller_portal_v2: true,
+          listing_create_v1: true,
+          checkout_v2: true,
+          messaging_v1: true,
         },
       };
 

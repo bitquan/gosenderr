@@ -9,16 +9,18 @@ async function initializeFeatureFlags() {
 
     const flags = {
       marketplace: {
-        enabled: true,
+        enabled: true, // Already in production
         itemListings: true,
         combinedPayments: true,
         courierOffers: false,
+        messaging: true,
+        ratings: true,
       },
       delivery: {
-        onDemand: true,
-        routes: false,
-        longRoutes: false,
-        longHaul: false,
+        onDemand: true, // Already in production
+        routes: false, // NEW: Enable when ready to test local route batching
+        longRoutes: false, // NEW: Regional routes
+        longHaul: false, // NEW: Interstate logistics
       },
       courier: {
         rateCards: true,
@@ -26,18 +28,18 @@ async function initializeFeatureFlags() {
         workModes: true,
       },
       seller: {
-        stripeConnect: true,
+        stripeConnect: true, // Already in production
         multiplePhotos: true,
         foodListings: true,
       },
       customer: {
-        liveTracking: true,
+        liveTracking: true, // Already in production
         proofPhotos: true,
-        routeDelivery: false,
-        packageShipping: false,
+        routeDelivery: false, // NEW: Customer can opt for route delivery discount
+        packageShipping: false, // NEW: Package shipping feature
       },
       packageRunner: {
-        enabled: false,
+        enabled: false, // NEW: Enable to allow package runner onboarding
         hubNetwork: false,
         packageTracking: false,
       },
@@ -47,7 +49,7 @@ async function initializeFeatureFlags() {
         disputeManagement: true,
         analytics: true,
         featureFlagsControl: true,
-        webPortalEnabled: false,
+        webPortalEnabled: true,
         systemLogs: false,
         firebaseExplorer: false,
       },
@@ -62,12 +64,12 @@ async function initializeFeatureFlags() {
         darkMode: true,
         animations: true,
       },
-      senderrplaceV2: {
-        enabled: false,
-        ads: false,
-        badges: false,
-        bookingLinks: false,
-        adminControls: false,
+      senderrplace: {
+        marketplace_v2: true,
+        seller_portal_v2: true,
+        listing_create_v1: true,
+        checkout_v2: true,
+        messaging_v1: true,
       },
       updatedAt: new Date().toISOString(),
     };

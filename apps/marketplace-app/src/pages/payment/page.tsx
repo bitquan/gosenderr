@@ -152,7 +152,7 @@ export default function PaymentPage() {
 
       await addDoc(collection(db, "marketplaceOrders"), {
         itemId: orderDetails.itemId,
-        itemTitle: orderDetails.itemTitle || "Marketplace Item",
+        itemTitle: orderDetails.itemTitle || "Senderrplace Item",
         sellerId: null,
         buyerId: user.uid,
         dropoffAddress: {
@@ -191,7 +191,7 @@ export default function PaymentPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center px-6">
+      <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95 flex items-center justify-center px-6">
         <Card variant="elevated" className="max-w-md w-full">
           <CardContent>
             <div className="text-center py-6">
@@ -216,7 +216,7 @@ export default function PaymentPage() {
 
   if (error && !orderDetails) {
     return (
-      <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center px-6">
+      <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95 flex items-center justify-center px-6">
         <Card variant="elevated" className="max-w-md w-full">
           <CardContent>
             <div className="text-center py-6">
@@ -226,7 +226,7 @@ export default function PaymentPage() {
                 onClick={() => navigate("/marketplace")}
                 className="bg-purple-600 text-white py-2 px-4 rounded-xl hover:bg-purple-700 transition"
               >
-                Back to Marketplace
+                Back to Senderrplace
               </button>
             </div>
           </CardContent>
@@ -237,7 +237,7 @@ export default function PaymentPage() {
 
   if (!orderDetails) {
     return (
-      <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95 flex items-center justify-center">
         <div className="animate-pulse">
           <div className="w-16 h-16 bg-purple-200 rounded-full mx-auto mb-4"></div>
           <div className="h-4 bg-purple-200 rounded w-32 mx-auto"></div>
@@ -249,7 +249,7 @@ export default function PaymentPage() {
   const totalAmount = orderDetails.courierRate + orderDetails.platformFee;
 
   return (
-    <div className="min-h-screen bg-[#F8F9FF] pb-24">
+    <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95 pb-24">
       <div className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] rounded-b-[32px] p-6 text-white shadow-lg">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between mb-6">

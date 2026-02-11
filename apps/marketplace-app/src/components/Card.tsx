@@ -16,11 +16,12 @@ export function Card({
   className,
   ...props
 }: CardProps) {
-  const baseStyles = 'bg-white rounded-lg transition-all duration-300'
+  const baseStyles =
+    'rounded-lg border border-violet-200/70 bg-gradient-to-br from-violet-200/80 via-fuchsia-200/65 to-blue-200/70 text-slate-900 transition-all duration-300'
 
   const variantStyles = {
-    default: 'shadow',
-    elevated: 'shadow-lg border border-gray-100',
+    default: 'shadow-lg shadow-violet-950/10',
+    elevated: 'shadow-xl shadow-violet-950/15',
     gradient: 'bg-gradient-to-br from-primary-600 to-primary-700 text-white shadow-lg',
   }
 
@@ -80,7 +81,7 @@ export function CardTitle({
 }: HTMLAttributes<HTMLHeadingElement>) {
   return (
     <h3
-      className={cn('text-lg font-semibold text-gray-900', className)}
+      className={cn('text-lg font-semibold text-current', className)}
       {...props}
     >
       {children}
@@ -94,7 +95,7 @@ export function CardContent({
   ...props
 }: HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn('text-gray-700', className)} {...props}>
+    <div className={cn('text-current', className)} {...props}>
       {children}
     </div>
   )

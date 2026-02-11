@@ -417,7 +417,7 @@ export default function SellerApplicationPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F9FF] py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95 py-8 px-4">
       <div className="max-w-2xl mx-auto">
         <button
           onClick={() => navigate(-1)}

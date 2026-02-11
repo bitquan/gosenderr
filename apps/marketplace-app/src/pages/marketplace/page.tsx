@@ -145,14 +145,15 @@ export default function MarketplacePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F9FF] pb-24">
+    <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95 pb-24">
       <div className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] rounded-b-[32px] p-6 text-white shadow-lg">
         <div className="max-w-5xl mx-auto">
-          <h1 className="text-2xl font-bold">Marketplace</h1>
-          <p className="text-purple-100 text-sm">Browse items and request delivery</p>
+          <h1 className="text-2xl font-bold">Senderrplace</h1>
+          <p className="text-purple-100 text-sm">
+            Browse curated Senderrplace finds and schedule same-day delivery with GoSenderr couriers.
+          </p>
         </div>
       </div>
-
       <div className="max-w-5xl mx-auto px-6 -mt-8">
         <Card variant="elevated" className="mb-6">
           <CardContent className="space-y-4">
@@ -189,7 +190,7 @@ export default function MarketplacePage() {
         {loading ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {Array.from({ length: 8 }).map((_, index) => (
-              <div key={index} className="h-48 bg-white rounded-xl animate-pulse" />
+              <div key={index} className="h-48 rounded-xl border border-violet-200/80 bg-gradient-to-br from-violet-200/80 via-fuchsia-200/65 to-blue-200/70 animate-pulse" />
             ))}
           </div>
         ) : error ? (

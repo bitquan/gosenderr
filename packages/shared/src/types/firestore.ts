@@ -486,6 +486,14 @@ export interface DisputeDoc {
 
 // ==================== FEATURE FLAGS ====================
 
+export interface SenderrplaceFeatureFlags {
+  marketplace_v2: boolean;
+  seller_portal_v2: boolean;
+  listing_create_v1: boolean;
+  checkout_v2: boolean;
+  messaging_v1: boolean;
+}
+
 export interface FeatureFlags {
   marketplace: {
     enabled: boolean;
@@ -499,7 +507,6 @@ export interface FeatureFlags {
     routes: boolean;
     longRoutes: boolean;
     longHaul: boolean;
-    mapShell: boolean;
   };
 
   courier: {
@@ -551,130 +558,7 @@ export interface FeatureFlags {
     animations: boolean;
   };
 
-  senderrplaceV2: {
-    enabled: boolean;
-    ads: boolean;
-    badges: boolean;
-    bookingLinks: boolean;
-    adminControls: boolean;
-  };
-}
-
-export const DEFAULT_FEATURE_FLAGS: FeatureFlags = {
-  marketplace: {
-    enabled: true,
-    itemListings: true,
-    combinedPayments: true,
-    courierOffers: false,
-  },
-  delivery: {
-    onDemand: true,
-    routes: true,
-    longRoutes: false,
-    longHaul: false,
-    mapShell: false,
-  },
-  courier: {
-    rateCards: true,
-    equipmentBadges: true,
-    workModes: true,
-  },
-  seller: {
-    stripeConnect: true,
-    multiplePhotos: true,
-    foodListings: true,
-  },
-  customer: {
-    liveTracking: true,
-    proofPhotos: true,
-    routeDelivery: false,
-    packageShipping: true,
-  },
-  packageRunner: {
-    enabled: true,
-    hubNetwork: true,
-    packageTracking: true,
-  },
-  admin: {
-    courierApproval: true,
-    equipmentReview: true,
-    disputeManagement: true,
-    analytics: true,
-    featureFlagsControl: true,
-    webPortalEnabled: false,
-    systemLogs: false,
-    firebaseExplorer: false,
-  },
-  advanced: {
-    pushNotifications: true,
-    ratingEnforcement: true,
-    autoCancel: true,
-    refunds: true,
-  },
-  ui: {
-    modernStyling: true,
-    darkMode: true,
-    animations: true,
-  },
-  senderrplaceV2: {
-    enabled: false,
-    ads: false,
-    badges: false,
-    bookingLinks: false,
-    adminControls: false,
-  },
-};
-
-export type SenderrplaceAdStatus =
-  | "draft"
-  | "pending_review"
-  | "approved"
-  | "active"
-  | "paused"
-  | "rejected"
-  | "ended";
-export type SenderrplaceAdPlacement =
-  | "top_feed"
-  | "category_spotlight"
-  | "search_boost";
-
-export interface SenderrplaceAdDoc {
-  sellerId: string;
-  itemId: string;
-  placement: SenderrplaceAdPlacement;
-  status: SenderrplaceAdStatus;
-  disclosureLabel: string; // Ex: "Sponsored"
-  budgetCents: number;
-  dailyCapCents: number;
-  currency: "USD";
-  startAt: Timestamp;
-  endAt: Timestamp;
-  impressions: number;
-  clicks: number;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-  reviewedBy?: string;
-  reviewedAt?: Timestamp;
-  rejectReason?: string;
-}
-
-export type SenderrplaceBadgeVisibility = "public" | "private" | "admin_only";
-
-export interface SenderrplaceBadgeRecord {
-  key: string;
-  label: string;
-  source: "system" | "admin";
-  visibility: SenderrplaceBadgeVisibility;
-  awardedAt: Timestamp;
-  expiresAt?: Timestamp;
-  note?: string;
-}
-
-export interface SenderrplaceSellerBadgesDoc {
-  sellerId: string;
-  badges: SenderrplaceBadgeRecord[];
-  updatedAt: Timestamp;
-  updatedBy?: string;
+  senderrplace?: SenderrplaceFeatureFlags;
 }
 
 // ==================== ROUTES (LOCAL BATCHED DELIVERIES) ====================

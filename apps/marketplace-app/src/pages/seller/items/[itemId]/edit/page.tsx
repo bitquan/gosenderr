@@ -313,7 +313,7 @@ export default function EditSellerItem() {
   if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div></div>;
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95 pb-24">
       <div className="bg-gradient-to-br from-blue-600 to-purple-600 text-white p-6">
         <div className="max-w-3xl mx-auto">
           <button onClick={() => navigate('/seller/dashboard')} className="flex items-center gap-2 text-white/90 hover:text-white mb-4">← Back</button>
@@ -332,7 +332,7 @@ export default function EditSellerItem() {
                   {images.map((src, idx) => (
                     <div key={idx} className="relative">
                       <img src={src} alt={`img-${idx}`} className="w-full h-20 object-cover rounded-lg" />
-                      <button type="button" onClick={() => handleRemoveImage(idx)} className="absolute top-1 right-1 bg-white rounded-full p-1 text-sm">✕</button>
+                      <button type="button" onClick={() => handleRemoveImage(idx)} className="absolute top-1 right-1 rounded-full border border-violet-200/80 bg-gradient-to-br from-violet-200/90 via-fuchsia-200/75 to-blue-200/80 p-1 text-sm">✕</button>
                     </div>
                   ))}
                 </div>

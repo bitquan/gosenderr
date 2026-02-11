@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { doc, onSnapshot } from 'firebase/firestore'
+import React, { createContext, useContext, useEffect, useMemo, useState, ReactNode } from 'react'
+import { doc, getDoc } from 'firebase/firestore'
 import { useAuth } from './useAuth'
 import { db } from '../lib/firebase/client'
 
@@ -17,11 +17,9 @@ export interface UseRoleReturn {
   isAdmin: boolean
 }
 
-/**
- * Hook to access the current user's role(s) from Firestore
- * Supports multi-role users with a primary role
- */
-export function useRole(): UseRoleReturn {
+const RoleContext = createContext<UseRoleReturn | undefined>(undefined)
+
+function useRoleSubscription(): UseRoleReturn {
   const { user, loading: authLoading } = useAuth()
   const [role, setRole] = useState<UserRole | null>(null)
   const [primaryRole, setPrimaryRole] = useState<UserRole | null>(null)
@@ -39,12 +37,15 @@ export function useRole(): UseRoleReturn {
       return
     }
 
-    // Listen to user document for role changes
-    const unsubscribe = onSnapshot(
-      doc(db, 'users', user.uid),
-      (doc) => {
-        if (doc.exists()) {
-          const data = doc.data()
+    let cancelled = false
+
+    const loadRole = async () => {
+      try {
+        const snapshot = await getDoc(doc(db, 'users', user.uid))
+        if (cancelled) return
+
+        if (snapshot.exists()) {
+          const data = snapshot.data()
           const userRole = data.role || data.primaryRole || null
           const userPrimaryRole = data.primaryRole || data.role || null
           const userRoles = data.roles || (userRole ? [userRole] : [])
@@ -63,18 +64,24 @@ export function useRole(): UseRoleReturn {
           setPrimaryRole('customer')
           setRoles(['customer'])
         }
-        setLoading(false)
-      },
-      (error) => {
+      } catch (error) {
+        if (cancelled) return
         console.error('Error fetching user role:', error)
         setRole(null)
         setPrimaryRole(null)
         setRoles([])
-        setLoading(false)
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
       }
-    )
+    }
 
-    return () => unsubscribe()
+    void loadRole()
+
+    return () => {
+      cancelled = true
+    }
   }, [user, authLoading])
 
   const hasRole = (checkRole: UserRole): boolean => {
@@ -90,6 +97,19 @@ export function useRole(): UseRoleReturn {
     isCustomer: hasRole('customer') || hasRole('buyer'),
     isSeller: hasRole('seller'),
     isCourier: hasRole('courier'),
-    isAdmin: hasRole('admin')
+    isAdmin: hasRole('admin'),
   }
+}
+
+export function RoleProvider({ children }: { children: ReactNode }) {
+  const value = useRoleSubscription()
+  return React.createElement(RoleContext.Provider, { value }, children)
+}
+
+export function useRole(): UseRoleReturn {
+  const context = useContext(RoleContext)
+  if (context) {
+    return context
+  }
+  return useRoleSubscription()
 }

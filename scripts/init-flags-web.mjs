@@ -30,6 +30,9 @@ const flags = {
     enabled: true,
     itemListings: true,
     combinedPayments: true,
+    courierOffers: false,
+    messaging: true,
+    ratings: true,
   },
   delivery: {
     onDemand: true,
@@ -55,8 +58,36 @@ const flags = {
   },
   packageRunner: {
     enabled: false,
-    onboarding: false,
-    routeAcceptance: false,
+    hubNetwork: false,
+    packageTracking: false,
+  },
+  admin: {
+    courierApproval: true,
+    equipmentReview: true,
+    disputeManagement: true,
+    analytics: true,
+    featureFlagsControl: true,
+    webPortalEnabled: true,
+    systemLogs: false,
+    firebaseExplorer: false,
+  },
+  advanced: {
+    pushNotifications: true,
+    ratingEnforcement: true,
+    autoCancel: true,
+    refunds: true,
+  },
+  ui: {
+    modernStyling: true,
+    darkMode: true,
+    animations: true,
+  },
+  senderrplace: {
+    marketplace_v2: true,
+    seller_portal_v2: true,
+    listing_create_v1: true,
+    checkout_v2: true,
+    messaging_v1: true,
   },
   senderrplaceV2: {
     enabled: false,
