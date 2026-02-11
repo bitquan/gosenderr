@@ -1,7 +1,7 @@
 import { initializeTestEnvironment, assertSucceeds } from '@firebase/rules-unit-testing';
 import fs from 'fs';
 
-const PROJECT_ID = process.env.GCLOUD_PROJECT || 'gosenderr-testing';
+const PROJECT_ID = 'gosenderr-testing';
 
 async function run() {
   const rules = fs.readFileSync(`${process.cwd()}/storage.rules`, 'utf8');
