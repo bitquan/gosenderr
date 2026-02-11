@@ -31,6 +31,7 @@ export function useFeatureFlags() {
               routes: true,
               longRoutes: false,
               longHaul: false,
+              mapShell: false,
             },
             courier: {
               rateCards: true,
