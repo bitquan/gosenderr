@@ -7,7 +7,7 @@ import { getFirestore, doc, setDoc } from "firebase/firestore";
 const firebaseConfig = {
   apiKey:
     process.env.NEXT_PUBLIC_FIREBASE_API_KEY ||
-    "AIzaSyCNj3HH0FqjgTVj7ysxINB6ZEtL3g6NvKo",
+    "YOUR_FIREBASE_API_KEY_PLACEHOLDER",
   authDomain:
     process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ||
     "gosenderr-6773f.firebaseapp.com",

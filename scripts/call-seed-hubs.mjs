@@ -3,7 +3,7 @@ import { initializeApp } from "firebase/app";
 import { getFunctions, httpsCallable } from "firebase/functions";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCNj3HH0FqjgTVj7ysxINB6ZEtL3g6NvKo",
+  apiKey: "YOUR_FIREBASE_API_KEY_PLACEHOLDER",
   authDomain: "gosenderr-6773f.firebaseapp.com",
   projectId: "gosenderr-6773f",
   storageBucket: "gosenderr-6773f.appspot.com",
