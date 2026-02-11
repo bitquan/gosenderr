@@ -1,4 +1,5 @@
 import {
+  addDoc,
   collection,
   doc,
   getDocs,
@@ -7,7 +8,7 @@ import {
   updateDoc,
   where,
 } from 'firebase/firestore'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { db } from '@/lib/firebase/client'
 import { FoodPickupRestaurantDoc } from '@gosenderr/shared'
 
@@ -16,48 +17,39 @@ export function useFoodPickupRestaurants() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
 
-  useEffect(() => {
-    let cancelled = false
+  const refresh = useCallback(async () => {
+    try {
+      setLoading(true)
+      const restaurantsRef = collection(db, 'foodPickupRestaurants')
+      const q = query(restaurantsRef, where('isPublic', '==', true))
+      const snapshot = await getDocs(q)
 
-    const loadRestaurants = async () => {
-      try {
-        const restaurantsRef = collection(db, 'foodPickupRestaurants')
-        const q = query(restaurantsRef, where('isPublic', '==', true))
-        const snapshot = await getDocs(q)
-        if (cancelled) return
+      const docs: FoodPickupRestaurantDoc[] = snapshot.docs
+        .map((docSnap) => ({
+          id: docSnap.id,
+          ...(docSnap.data() as Omit<FoodPickupRestaurantDoc, 'id'>),
+        }))
+        .sort((a, b) => {
+          const aTime = a.updatedAt?.toMillis?.() ?? 0
+          const bTime = b.updatedAt?.toMillis?.() ?? 0
+          return bTime - aTime
+        })
 
-        const docs: FoodPickupRestaurantDoc[] = snapshot.docs
-          .map((docSnap) => ({
-            id: docSnap.id,
-            ...(docSnap.data() as Omit<FoodPickupRestaurantDoc, 'id'>),
-          }))
-          .sort((a, b) => {
-            const aTime = a.updatedAt?.toMillis?.() ?? 0
-            const bTime = b.updatedAt?.toMillis?.() ?? 0
-            return bTime - aTime
-          })
-
-        setRestaurants(docs)
-        setError(null)
-      } catch (err) {
-        if (cancelled) return
-        console.error('Failed to load food pickup restaurants:', err)
-        setError(err as Error)
-      } finally {
-        if (!cancelled) {
-          setLoading(false)
-        }
-      }
-    }
-
-    void loadRestaurants()
-
-    return () => {
-      cancelled = true
+      setRestaurants(docs)
+      setError(null)
+    } catch (err) {
+      console.error('Failed to load food pickup restaurants:', err)
+      setError(err as Error)
+    } finally {
+      setLoading(false)
     }
   }, [])
 
-  return { restaurants, loading, error }
+  useEffect(() => {
+    void refresh()
+  }, [refresh])
+
+  return { restaurants, loading, error, refresh }
 }
 
 export async function markFoodPickupRestaurantUsed(
@@ -68,6 +60,46 @@ export async function markFoodPickupRestaurantUsed(
   await updateDoc(restaurantRef, {
     lastUsedByUid: userId,
     lastUsedAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  })
+}
+
+interface CustomerRestaurantInput {
+  restaurantName: string
+  address: string
+  lat: number
+  lng: number
+  cuisineTags?: string[]
+  notes?: string
+  pickupHours?: string
+  photoUrl?: string
+}
+
+export async function createFoodPickupRestaurantFromMarketplace(
+  userId: string,
+  contributorName: string,
+  input: CustomerRestaurantInput,
+) {
+  const restaurantsRef = collection(db, 'foodPickupRestaurants')
+  const cleanTags = (input.cuisineTags || [])
+    .map((tag) => tag.trim().toLowerCase())
+    .filter(Boolean)
+
+  await addDoc(restaurantsRef, {
+    courierId: userId,
+    courierName: contributorName,
+    restaurantName: input.restaurantName.trim(),
+    location: {
+      address: input.address.trim(),
+      lat: input.lat,
+      lng: input.lng,
+    },
+    cuisineTags: cleanTags,
+    notes: input.notes?.trim() || '',
+    pickupHours: input.pickupHours?.trim() || '',
+    photoUrl: input.photoUrl?.trim() || '',
+    isPublic: true,
+    createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   })
 }
