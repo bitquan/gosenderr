@@ -41,7 +41,7 @@ export default function MapShellScreen({
 }: MapShellScreenProps) {
   const navigate = useNavigate();
   const { uid } = useAuthUser();
-  const { jobs, syncState } = useOpenJobs();
+  const { jobs, syncState } = useOpenJobs() as any;
   const { userDoc } = useUserDoc();
   const { isTracking, permissionDenied } = useCourierLocationWriter();
 
