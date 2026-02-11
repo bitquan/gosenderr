@@ -14,6 +14,8 @@ import { GeoPoint, PackageSize, PackageFlags } from "@/lib/v2/types";
 import { usePlatformSettings } from "@/hooks/usePlatformSettings";
 import { createFoodPickupRestaurantFromMarketplace, markFoodPickupRestaurantUsed } from "@/lib/foodPickup";
 
+type DeliveryIntent = "package" | "food";
+
 const createTempJobId = () => {
   const cryptoObj = globalThis.crypto;
   if (cryptoObj?.randomUUID) {
@@ -31,6 +33,7 @@ const createTempJobId = () => {
 interface CustomerJobCreateFormProps {
   uid: string;
   contributorName?: string;
+  initialDeliveryIntent?: DeliveryIntent;
   initialPickup?: GeoPoint | null;
   initialPickupLabel?: string;
   initialRestaurantName?: string;
@@ -40,6 +43,7 @@ interface CustomerJobCreateFormProps {
 export function CustomerJobCreateForm({
   uid,
   contributorName = "Customer",
+  initialDeliveryIntent,
   initialPickup = null,
   initialPickupLabel = "",
   initialRestaurantName = "",
@@ -64,6 +68,9 @@ export function CustomerJobCreateForm({
   );
   const [restaurantId, setRestaurantId] = useState(initialRestaurantId);
   const [showPickupPicker, setShowPickupPicker] = useState(!initialPickup);
+  const [deliveryIntent, setDeliveryIntent] = useState<DeliveryIntent | null>(
+    initialDeliveryIntent || (initialRestaurantId ? "food" : null),
+  );
   const [showQuickRestaurantForm, setShowQuickRestaurantForm] = useState(false);
   const [quickRestaurantName, setQuickRestaurantName] = useState("");
   const [quickRestaurantAddress, setQuickRestaurantAddress] = useState("");
@@ -131,7 +138,10 @@ export function CustomerJobCreateForm({
     truck: "🚚",
   };
 
-  const canSubmit = pickup && dropoff && packageSize !== null && !loading;
+  const effectivePackageSize: PackageSize | null =
+    deliveryIntent === "food" ? packageSize || "medium" : packageSize;
+  const canSubmit =
+    !!deliveryIntent && !!pickup && !!dropoff && effectivePackageSize !== null && !loading;
   const canSaveQuickRestaurant =
     !!quickRestaurantName.trim() &&
     !!quickRestaurantAddress.trim() &&
@@ -211,10 +221,11 @@ export function CustomerJobCreateForm({
       const jobId = await createJob(uid, {
         pickup,
         dropoff,
-        foodPickupRestaurantId: restaurantId || null,
-        foodPickupRestaurantName: restaurantContext || null,
+        isFoodItem: deliveryIntent === "food",
+        foodPickupRestaurantId: deliveryIntent === "food" ? restaurantId || null : null,
+        foodPickupRestaurantName: deliveryIntent === "food" ? restaurantContext || null : null,
         package: {
-          size: packageSize,
+          size: effectivePackageSize!,
           flags: packageFlags,
           ...(packageNotes && { notes: packageNotes }),
         },
@@ -239,7 +250,7 @@ export function CustomerJobCreateForm({
         paymentStatus: "pending",
       });
 
-      if (restaurantId) {
+      if (deliveryIntent === "food" && restaurantId) {
         markFoodPickupRestaurantUsed(restaurantId, uid).catch((usageError) => {
           console.warn("Unable to record food pickup restaurant usage:", usageError);
         });
@@ -253,17 +264,101 @@ export function CustomerJobCreateForm({
     }
   };
 
+  const headingLabel =
+    deliveryIntent === "food"
+      ? "Create Food Pickup Delivery"
+      : deliveryIntent === "package"
+        ? "Create Package Delivery"
+        : "Create New Delivery";
+
+  if (!deliveryIntent) {
+    return (
+      <div style={{ width: "100%", maxWidth: "640px", margin: "0 auto", boxSizing: "border-box" }}>
+        <div
+          style={{
+            width: "100%",
+            boxSizing: "border-box",
+            background: "linear-gradient(160deg, rgba(55, 24, 115, 0.88), rgba(37, 16, 90, 0.92))",
+            padding: "24px",
+            borderRadius: "16px",
+            border: "1px solid rgba(196, 181, 253, 0.4)",
+            color: "#f8fafc",
+          }}
+        >
+          <h1 style={{ fontSize: "28px", fontWeight: "700", marginBottom: "8px" }}>
+            What are you sending?
+          </h1>
+          <p style={{ fontSize: "14px", color: "#cbd5e1", marginBottom: "18px" }}>
+            Pick one to open the right form.
+          </p>
+          <div style={{ display: "grid", gap: "12px" }}>
+            <button
+              type="button"
+              onClick={() => setDeliveryIntent("package")}
+              style={{
+                width: "100%",
+                padding: "14px",
+                border: "1px solid rgba(196, 181, 253, 0.45)",
+                borderRadius: "12px",
+                background: "rgba(30, 41, 59, 0.6)",
+                color: "#fff",
+                fontSize: "15px",
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              📦 Send Packages
+            </button>
+            <button
+              type="button"
+              onClick={() => setDeliveryIntent("food")}
+              style={{
+                width: "100%",
+                padding: "14px",
+                border: "1px solid rgba(196, 181, 253, 0.45)",
+                borderRadius: "12px",
+                background: "rgba(30, 41, 59, 0.6)",
+                color: "#fff",
+                fontSize: "15px",
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              🍱 Food Pickup
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ width: "100%", maxWidth: "640px", margin: "0 auto", boxSizing: "border-box" }}>
       <div style={{ marginBottom: "24px" }}>
         <h1
           style={{ fontSize: "28px", fontWeight: "700", marginBottom: "8px" }}
         >
-          Create New Delivery
+          {headingLabel}
         </h1>
         <p style={{ fontSize: "14px", color: "#cbd5e1" }}>
           Fill in the details to request a courier
         </p>
+        <button
+          type="button"
+          onClick={() => setDeliveryIntent(null)}
+          style={{
+            marginTop: "6px",
+            border: "none",
+            background: "transparent",
+            color: "#c4b5fd",
+            fontSize: "12px",
+            fontWeight: 700,
+            cursor: "pointer",
+            padding: 0,
+          }}
+        >
+          Change delivery type
+        </button>
         {restaurantContext && (
           <p style={{ fontSize: "13px", color: "#d8b4fe" }}>
             Ordering for pickup at <strong>{restaurantContext}</strong>
@@ -300,6 +395,7 @@ export function CustomerJobCreateForm({
               setShowPickupPicker(false);
             }}
             value={pickupLabel}
+            theme="dark"
           />
           <div style={{ marginTop: "8px" }}>
             <button
@@ -368,6 +464,7 @@ export function CustomerJobCreateForm({
                 }}
                 value={quickRestaurantAddress}
                 required
+                theme="dark"
               />
               <div style={{ marginBottom: "10px" }}>
                 <label style={{ display: "block", marginBottom: "6px", fontSize: "13px" }}>
@@ -506,41 +603,48 @@ export function CustomerJobCreateForm({
                 label: result.address,
               });
             }}
+            theme="dark"
           />
         </div>
 
-        {/* Package Details Form */}
-        <div style={{ marginBottom: "24px" }}>
-          <PackageDetailsForm
-            size={packageSize}
-            flags={packageFlags}
-            notes={packageNotes}
-            onSizeChange={setPackageSize}
-            onFlagsChange={setPackageFlags}
-            onNotesChange={setPackageNotes}
-          />
-        </div>
+        {deliveryIntent === "package" && (
+          <>
+            {/* Package Details Form */}
+            <div style={{ marginBottom: "24px" }}>
+              <PackageDetailsForm
+                size={packageSize}
+                flags={packageFlags}
+                notes={packageNotes}
+                onSizeChange={setPackageSize}
+                onFlagsChange={setPackageFlags}
+                onNotesChange={setPackageNotes}
+                theme="dark"
+              />
+            </div>
 
-        {/* Photo Upload */}
-        <div style={{ marginBottom: "24px" }}>
-          <label
-            style={{
-              display: "block",
-              marginBottom: "8px",
-              fontWeight: "600",
-              fontSize: "14px",
-            }}
-          >
-            Package Photos (Optional)
-          </label>
-          <PhotoUploader
-            jobId={tempJobId}
-            userId={uid}
-            photos={photos}
-            onPhotosChange={setPhotos}
-            maxPhotos={5}
-          />
-        </div>
+            {/* Photo Upload */}
+            <div style={{ marginBottom: "24px" }}>
+              <label
+                style={{
+                  display: "block",
+                  marginBottom: "8px",
+                  fontWeight: "600",
+                  fontSize: "14px",
+                }}
+              >
+                Package Photos (Optional)
+              </label>
+              <PhotoUploader
+                jobId={tempJobId}
+                userId={uid}
+                photos={photos}
+                onPhotosChange={setPhotos}
+                maxPhotos={5}
+                theme="dark"
+              />
+            </div>
+          </>
+        )}
 
         {/* Estimate Section */}
         {pickup && dropoff && (
@@ -610,8 +714,8 @@ export function CustomerJobCreateForm({
                             : "1px solid #d1fae5",
                         background:
                           selectedCourierId === courier.uid
-                            ? "#ecfdf5"
-                            : "white",
+                            ? "rgba(16, 185, 129, 0.2)"
+                            : "rgba(30, 41, 59, 0.7)",
                         animation: "courier-pop 0.35s ease",
                         animationDelay: `${index * 40}ms`,
                         cursor: "pointer",
@@ -634,7 +738,7 @@ export function CustomerJobCreateForm({
                             <div style={{ fontSize: "13px", fontWeight: 600 }}>
                               {courier.name}
                             </div>
-                            <div style={{ fontSize: "11px", color: "#6b7280" }}>
+                            <div style={{ fontSize: "11px", color: "#cbd5e1" }}>
                               {courier.pickupMiles.toFixed(1)} mi to pickup
                             </div>
                           </div>
