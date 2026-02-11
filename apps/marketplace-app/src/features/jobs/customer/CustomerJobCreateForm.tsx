@@ -12,7 +12,7 @@ import { calcMiles, calcFee } from "@/lib/v2/pricing";
 import { FLOOR_RATE_CARD } from "@/lib/v2/floorRateCard";
 import { GeoPoint, PackageSize, PackageFlags } from "@/lib/v2/types";
 import { usePlatformSettings } from "@/hooks/usePlatformSettings";
-import { markFoodPickupRestaurantUsed } from "@/lib/foodPickup";
+import { createFoodPickupRestaurantFromMarketplace, markFoodPickupRestaurantUsed } from "@/lib/foodPickup";
 
 const createTempJobId = () => {
   const cryptoObj = globalThis.crypto;
@@ -30,6 +30,7 @@ const createTempJobId = () => {
 
 interface CustomerJobCreateFormProps {
   uid: string;
+  contributorName?: string;
   initialPickup?: GeoPoint | null;
   initialPickupLabel?: string;
   initialRestaurantName?: string;
@@ -38,6 +39,7 @@ interface CustomerJobCreateFormProps {
 
 export function CustomerJobCreateForm({
   uid,
+  contributorName = "Customer",
   initialPickup = null,
   initialPickupLabel = "",
   initialRestaurantName = "",
@@ -62,6 +64,16 @@ export function CustomerJobCreateForm({
   );
   const [restaurantId, setRestaurantId] = useState(initialRestaurantId);
   const [showPickupPicker, setShowPickupPicker] = useState(!initialPickup);
+  const [showQuickRestaurantForm, setShowQuickRestaurantForm] = useState(false);
+  const [quickRestaurantName, setQuickRestaurantName] = useState("");
+  const [quickRestaurantAddress, setQuickRestaurantAddress] = useState("");
+  const [quickRestaurantLat, setQuickRestaurantLat] = useState<number | null>(null);
+  const [quickRestaurantLng, setQuickRestaurantLng] = useState<number | null>(null);
+  const [quickRestaurantTags, setQuickRestaurantTags] = useState("");
+  const [quickRestaurantHours, setQuickRestaurantHours] = useState("");
+  const [quickRestaurantNotes, setQuickRestaurantNotes] = useState("");
+  const [quickRestaurantSaving, setQuickRestaurantSaving] = useState(false);
+  const [quickRestaurantMessage, setQuickRestaurantMessage] = useState("");
 
   // Generate a stable temporary job ID for this session
   const [tempJobId] = useState(createTempJobId);
@@ -120,6 +132,61 @@ export function CustomerJobCreateForm({
   };
 
   const canSubmit = pickup && dropoff && packageSize !== null && !loading;
+  const canSaveQuickRestaurant =
+    !!quickRestaurantName.trim() &&
+    !!quickRestaurantAddress.trim() &&
+    quickRestaurantLat !== null &&
+    quickRestaurantLng !== null &&
+    !quickRestaurantSaving;
+
+  const handleQuickRestaurantSave = async () => {
+    if (!canSaveQuickRestaurant) return;
+
+    setQuickRestaurantSaving(true);
+    setQuickRestaurantMessage("");
+    try {
+      const newRestaurantId = await createFoodPickupRestaurantFromMarketplace(
+        uid,
+        contributorName,
+        {
+          restaurantName: quickRestaurantName,
+          address: quickRestaurantAddress,
+          lat: quickRestaurantLat!,
+          lng: quickRestaurantLng!,
+          cuisineTags: quickRestaurantTags
+            .split(",")
+            .map((tag) => tag.trim())
+            .filter(Boolean),
+          pickupHours: quickRestaurantHours,
+          notes: quickRestaurantNotes,
+        },
+      );
+
+      setPickup({
+        lat: quickRestaurantLat!,
+        lng: quickRestaurantLng!,
+        label: quickRestaurantAddress,
+      });
+      setPickupLabel(quickRestaurantAddress);
+      setRestaurantContext(quickRestaurantName.trim());
+      setRestaurantId(newRestaurantId);
+      setShowPickupPicker(false);
+      setShowQuickRestaurantForm(false);
+      setQuickRestaurantName("");
+      setQuickRestaurantAddress("");
+      setQuickRestaurantLat(null);
+      setQuickRestaurantLng(null);
+      setQuickRestaurantTags("");
+      setQuickRestaurantHours("");
+      setQuickRestaurantNotes("");
+      setQuickRestaurantMessage("Restaurant added and selected for this order.");
+    } catch (error) {
+      console.error("Failed to quick-add restaurant:", error);
+      setQuickRestaurantMessage("Could not add restaurant right now.");
+    } finally {
+      setQuickRestaurantSaving(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -234,6 +301,154 @@ export function CustomerJobCreateForm({
             }}
             value={pickupLabel}
           />
+          <div style={{ marginTop: "8px" }}>
+            <button
+              type="button"
+              onClick={() => setShowQuickRestaurantForm((current) => !current)}
+              style={{
+                border: "none",
+                background: "transparent",
+                color: "#c4b5fd",
+                fontWeight: 600,
+                fontSize: "13px",
+                cursor: "pointer",
+                padding: 0,
+              }}
+            >
+              {showQuickRestaurantForm
+                ? "Close quick add"
+                : "Can't find the restaurant? Add it now"}
+            </button>
+            {quickRestaurantMessage && (
+              <div style={{ marginTop: "6px", fontSize: "12px", color: "#cbd5e1" }}>
+                {quickRestaurantMessage}
+              </div>
+            )}
+          </div>
+          {showQuickRestaurantForm && (
+            <div
+              style={{
+                marginTop: "12px",
+                border: "1px solid rgba(196, 181, 253, 0.45)",
+                borderRadius: "12px",
+                background: "rgba(30, 41, 59, 0.5)",
+                padding: "14px",
+              }}
+            >
+              <div style={{ fontSize: "13px", fontWeight: 700, marginBottom: "10px", color: "#e9d5ff" }}>
+                Quick add restaurant
+              </div>
+              <div style={{ marginBottom: "10px" }}>
+                <label style={{ display: "block", marginBottom: "6px", fontSize: "13px" }}>
+                  Restaurant name *
+                </label>
+                <input
+                  type="text"
+                  value={quickRestaurantName}
+                  onChange={(event) => setQuickRestaurantName(event.target.value)}
+                  placeholder="Example: Northside Deli"
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    borderRadius: "8px",
+                    border: "1px solid rgba(196, 181, 253, 0.5)",
+                    background: "rgba(15, 23, 42, 0.5)",
+                    color: "#fff",
+                    fontSize: "14px",
+                  }}
+                />
+              </div>
+              <AddressAutocomplete
+                label="Restaurant pickup address"
+                placeholder="Enter restaurant address"
+                onSelect={(result) => {
+                  setQuickRestaurantAddress(result.address);
+                  setQuickRestaurantLat(result.lat);
+                  setQuickRestaurantLng(result.lng);
+                }}
+                value={quickRestaurantAddress}
+                required
+              />
+              <div style={{ marginBottom: "10px" }}>
+                <label style={{ display: "block", marginBottom: "6px", fontSize: "13px" }}>
+                  Tags (optional)
+                </label>
+                <input
+                  type="text"
+                  value={quickRestaurantTags}
+                  onChange={(event) => setQuickRestaurantTags(event.target.value)}
+                  placeholder="burgers, vegan, halal"
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    borderRadius: "8px",
+                    border: "1px solid rgba(196, 181, 253, 0.5)",
+                    background: "rgba(15, 23, 42, 0.5)",
+                    color: "#fff",
+                    fontSize: "14px",
+                  }}
+                />
+              </div>
+              <div style={{ marginBottom: "10px" }}>
+                <label style={{ display: "block", marginBottom: "6px", fontSize: "13px" }}>
+                  Pickup hours (optional)
+                </label>
+                <input
+                  type="text"
+                  value={quickRestaurantHours}
+                  onChange={(event) => setQuickRestaurantHours(event.target.value)}
+                  placeholder="Mon-Fri 11am-9pm"
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    borderRadius: "8px",
+                    border: "1px solid rgba(196, 181, 253, 0.5)",
+                    background: "rgba(15, 23, 42, 0.5)",
+                    color: "#fff",
+                    fontSize: "14px",
+                  }}
+                />
+              </div>
+              <div style={{ marginBottom: "12px" }}>
+                <label style={{ display: "block", marginBottom: "6px", fontSize: "13px" }}>
+                  Notes (optional)
+                </label>
+                <textarea
+                  rows={2}
+                  value={quickRestaurantNotes}
+                  onChange={(event) => setQuickRestaurantNotes(event.target.value)}
+                  placeholder="Pickup counter details"
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    borderRadius: "8px",
+                    border: "1px solid rgba(196, 181, 253, 0.5)",
+                    background: "rgba(15, 23, 42, 0.5)",
+                    color: "#fff",
+                    fontSize: "14px",
+                    resize: "vertical",
+                  }}
+                />
+              </div>
+              <button
+                type="button"
+                onClick={handleQuickRestaurantSave}
+                disabled={!canSaveQuickRestaurant}
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  border: "none",
+                  borderRadius: "8px",
+                  background: canSaveQuickRestaurant ? "#22c55e" : "#64748b",
+                  color: "#fff",
+                  fontWeight: 700,
+                  cursor: canSaveQuickRestaurant ? "pointer" : "not-allowed",
+                }}
+              >
+                {quickRestaurantSaving ? "Adding restaurant..." : "Add and use this restaurant"}
+              </button>
+            </div>
+          )}
         </div>
       ) : (
         <div

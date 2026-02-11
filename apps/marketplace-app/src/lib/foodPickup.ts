@@ -85,7 +85,7 @@ export async function createFoodPickupRestaurantFromMarketplace(
     .map((tag) => tag.trim().toLowerCase())
     .filter(Boolean)
 
-  await addDoc(restaurantsRef, {
+  const docRef = await addDoc(restaurantsRef, {
     courierId: userId,
     courierName: contributorName,
     restaurantName: input.restaurantName.trim(),
@@ -102,4 +102,6 @@ export async function createFoodPickupRestaurantFromMarketplace(
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   })
+
+  return docRef.id
 }

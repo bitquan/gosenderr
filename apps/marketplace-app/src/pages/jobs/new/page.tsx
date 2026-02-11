@@ -15,7 +15,7 @@ interface NewJobLocationState {
 }
 
 export default function NewJob() {
-  const { uid } = useAuthUser();
+  const { uid, user } = useAuthUser();
   const location = useLocation();
   const state = (location.state || {}) as NewJobLocationState;
 
@@ -26,6 +26,7 @@ export default function NewJob() {
   return (
     <CustomerJobCreateForm
       uid={uid}
+      contributorName={user?.displayName || user?.email || "Customer"}
       initialPickup={state.initialPickup ?? null}
       initialPickupLabel={state.initialPickupLabel ?? ''}
       initialRestaurantName={state.initialRestaurantName ?? ''}

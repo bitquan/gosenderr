@@ -9,7 +9,7 @@ import { SenderrplaceShell } from '../components/layout/SenderrplaceShell'
 export default function CustomerLayout() {
   const location = useLocation()
   const navigate = useNavigate()
-  const { uid } = useAuthUser()
+  const { uid, user } = useAuthUser()
   const { jobs, loading: jobsLoading } = useCustomerJobs(uid || null)
   const [showSendModal, setShowSendModal] = useState(false)
   const isSendActive = location.pathname.startsWith('/jobs/new') || location.pathname.startsWith('/request-delivery')
@@ -89,7 +89,7 @@ export default function CustomerLayout() {
           </button>
         </div>
         <div className="px-4 pb-4">
-          {uid ? <CustomerJobCreateForm uid={uid} /> : null}
+          {uid ? <CustomerJobCreateForm uid={uid} contributorName={user?.displayName || user?.email || "Customer"} /> : null}
         </div>
       </Overlay>
     </SenderrplaceShell>
