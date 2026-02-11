@@ -1,10 +1,6 @@
 import { Link } from 'react-router-dom'
 import type { MarketplaceItem } from '../../types/marketplace'
-import { DeliveryOption } from '../../types/marketplace'
 import { SellerBadgeList } from './SellerBadge'
-import { getPickupDisplayAddress } from '@/lib/pickupPrivacy'
-import { FLOOR_RATE_CARD } from '@/lib/v2/floorRateCard'
-import { calcFee, calcMiles } from '@/lib/v2/pricing'
 
 interface ItemCardProps {
   item: MarketplaceItem
@@ -13,26 +9,13 @@ interface ItemCardProps {
     average: number
     count: number
   }
-  showExactPickupLocation?: boolean
-  customerAddressSet?: boolean
-  customerLocation?: {
-    lat: number
-    lng: number
-  } | null
 }
 
 /**
  * ItemCard - Display a marketplace item in card format
  * Phase 2: Shows seller info (unified user model)
  */
-export function ItemCard({
-  item,
-  sellerBadges = [],
-  sellerRating,
-  showExactPickupLocation = false,
-  customerAddressSet = false,
-  customerLocation = null,
-}: ItemCardProps) {
+export function ItemCard({ item, sellerBadges = [], sellerRating }: ItemCardProps) {
   const normalizeUrl = (url?: string) => {
     if (!url) return ''
     if (typeof window !== 'undefined' && window.location.protocol === 'https:' && url.startsWith('http://')) {
@@ -43,25 +26,6 @@ export function ItemCard({
 
   const primaryImage = normalizeUrl(item.photos?.[0]) || '/placeholder-item.png'
   const isOutOfStock = item.quantity === 0
-  const supportsCourier = item.deliveryOptions?.includes(DeliveryOption.COURIER)
-
-  const pickupLocation = item.pickupLocation
-  const pickupDisplayAddress = pickupLocation
-    ? getPickupDisplayAddress(pickupLocation, showExactPickupLocation)
-    : null
-
-  const pickupLat = (pickupLocation?.location as any)?.latitude ?? (pickupLocation?.location as any)?.lat
-  const pickupLng = (pickupLocation?.location as any)?.longitude ?? (pickupLocation?.location as any)?.lng
-  const hasPickupCoords = Number.isFinite(pickupLat) && Number.isFinite(pickupLng)
-
-  let senderrEstimate: number | null = null
-  if (supportsCourier && customerLocation && hasPickupCoords) {
-    const jobMiles = calcMiles(
-      { lat: Number(pickupLat), lng: Number(pickupLng) },
-      { lat: customerLocation.lat, lng: customerLocation.lng },
-    )
-    senderrEstimate = calcFee(FLOOR_RATE_CARD, jobMiles, 0, 'car')
-  }
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -94,10 +58,10 @@ export function ItemCard({
   return (
     <Link
       to={`/marketplace/${item.id}`}
-      className="group block bg-gradient-to-br from-slate-900 via-purple-950 to-purple-900 text-white rounded-2xl shadow-2xl hover:shadow-2xl transition-shadow overflow-hidden border border-white/10"
+      className="group block bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden"
     >
       {/* Image */}
-      <div className="relative aspect-square overflow-hidden bg-gradient-to-b from-purple-900 via-purple-800 to-slate-900">
+      <div className="relative aspect-square overflow-hidden bg-gray-100">
         <img
           src={primaryImage}
           alt={item.title}
@@ -122,43 +86,27 @@ export function ItemCard({
       </div>
 
       {/* Content */}
-      <div className="p-4 space-y-3">
+      <div className="p-4">
         {/* Title */}
-        <h3 className="font-semibold text-white line-clamp-2 group-hover:text-blue-200 transition-colors mb-2">
+        <h3 className="font-semibold text-gray-900 line-clamp-2 group-hover:text-blue-600 transition-colors mb-2">
           {item.title}
         </h3>
 
         {/* Category */}
-        <p className="text-sm text-white/70 mb-3 capitalize">{item.category}</p>
-
-        {pickupDisplayAddress && (
-          <p className="text-xs text-gray-500 mb-2 line-clamp-1">
-            📍 {pickupDisplayAddress}
-          </p>
-        )}
-
-        {supportsCourier && (
-          <p className="text-xs mb-3 text-purple-700">
-            {customerAddressSet
-              ? senderrEstimate !== null
-                ? `🚚 Senderr est. ${formatPrice(senderrEstimate)}`
-                : '🚚 Senderr available at checkout'
-              : '🚚 Set your address to see Senderr rates'}
-          </p>
-        )}
+        <p className="text-sm text-gray-500 mb-3 capitalize">{item.category}</p>
 
         {/* Price and quantity */}
         <div className="flex items-center justify-between mb-3">
-          <div className="text-2xl font-bold text-white">
+          <div className="text-2xl font-bold text-gray-900">
             {formatPrice(item.price)}
           </div>
-          <div className="text-xs text-white/60">
+          <div className="text-xs text-gray-500">
             {item.quantity} available
           </div>
         </div>
 
         {/* Seller info */}
-        <div className="pt-3 border-t border-white/10">
+        <div className="pt-3 border-t border-gray-100">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               {item.sellerPhotoURL ? (
@@ -172,18 +120,18 @@ export function ItemCard({
                   {item.sellerName?.charAt(0).toUpperCase() || 'S'}
                 </div>
               )}
-                  <span className="text-sm text-white/80">{item.sellerName || 'Seller'}</span>
-                </div>
-            <div className="text-xs text-white/70">
-                  {sellerRating && sellerRating.count > 0 ? (
-                    <span>⭐ {sellerRating.average.toFixed(1)} ({sellerRating.count})</span>
-                  ) : (
-                    <span>New</span>
-                  )}
-                </div>
-              </div>
-              {sellerBadges.length > 0 && (
-                <div className="mt-2 space-y-1">
+              <span className="text-sm text-gray-600">{item.sellerName || 'Seller'}</span>
+            </div>
+            <div className="text-xs text-gray-500">
+              {sellerRating && sellerRating.count > 0 ? (
+                <span>⭐ {sellerRating.average.toFixed(1)} ({sellerRating.count})</span>
+              ) : (
+                <span>New</span>
+              )}
+            </div>
+          </div>
+          {sellerBadges.length > 0 && (
+            <div className="mt-2">
               <SellerBadgeList badges={sellerBadges as any} size="sm" showLabel={false} maxDisplay={3} />
             </div>
           )}

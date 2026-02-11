@@ -17,7 +17,6 @@ export default function SellerSettingsPage() {
     instantPayoutEnabled: false,
     returnsAccepted: false,
     returnWindowDays: 7 as 7 | 14 | 30,
-    shareExactPickupLocation: false,
     shippingGuarantee: undefined as '24h' | '48h' | '3-5days' | undefined
   })
   const [badges, setBadges] = useState<BadgeType[]>([])
@@ -65,9 +64,6 @@ export default function SellerSettingsPage() {
             instantPayoutEnabled: sellerProfile.instantPayoutEnabled || false,
             returnsAccepted: sellerProfile.returnsAccepted || false,
             returnWindowDays: sellerProfile.returnWindowDays || 7,
-            shareExactPickupLocation:
-              sellerProfile.shareExactPickupLocation === true ||
-              sellerProfile?.localSellingConfig?.shareExactPickupLocation === true,
             shippingGuarantee: sellerProfile.shippingGuarantee
           })
           setBadges(sellerProfile.badges || [])
@@ -108,8 +104,6 @@ export default function SellerSettingsPage() {
         'sellerProfile.instantPayoutEnabled': settings.instantPayoutEnabled,
         'sellerProfile.returnsAccepted': settings.returnsAccepted,
         'sellerProfile.returnWindowDays': settings.returnWindowDays,
-        'sellerProfile.shareExactPickupLocation': settings.shareExactPickupLocation,
-        'sellerProfile.localSellingConfig.shareExactPickupLocation': settings.shareExactPickupLocation,
         'sellerProfile.shippingGuarantee': settings.shippingGuarantee || null,
         'sellerProfile.badges': earnedBadges // Save the calculated badges array
       })
@@ -126,7 +120,7 @@ export default function SellerSettingsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-gray-600">Loading settings...</p>
@@ -136,7 +130,7 @@ export default function SellerSettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95 py-8">
+    <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
@@ -196,44 +190,8 @@ export default function SellerSettingsPage() {
 
         {/* Settings Cards */}
         <div className="space-y-6">
-          {/* Pickup Privacy */}
-          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">📍 Pickup Address Privacy</h3>
-                <p className="text-sm text-gray-600 mb-3">
-                  Control how much of your pickup location customers can see before booking.
-                </p>
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm text-gray-700">
-                  {settings.shareExactPickupLocation ? (
-                    <p>
-                      Customers can see your full pickup address on listing delivery flows.
-                    </p>
-                  ) : (
-                    <p>
-                      Customers only see approximate location (city + ZIP). Your exact address stays private.
-                    </p>
-                  )}
-                </div>
-              </div>
-              <div className="ml-4">
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={settings.shareExactPickupLocation}
-                    onChange={(e) =>
-                      setSettings({ ...settings, shareExactPickupLocation: e.target.checked })
-                    }
-                    className="sr-only peer"
-                  />
-                  <div className="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-purple-600"></div>
-                </label>
-              </div>
-            </div>
-          </div>
-
           {/* Buyer Protection */}
-          <div className="bg-gradient-to-br from-violet-200/80 via-fuchsia-200/65 to-blue-200/70 border border-violet-200/80 rounded-xl shadow-sm p-6 border border-gray-200">
+          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
             <div className="flex items-start justify-between mb-4">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
@@ -271,7 +229,7 @@ export default function SellerSettingsPage() {
           </div>
 
           {/* Instant Payout */}
-          <div className="bg-gradient-to-br from-violet-200/80 via-fuchsia-200/65 to-blue-200/70 border border-violet-200/80 rounded-xl shadow-sm p-6 border border-gray-200">
+          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
             <div className="flex items-start justify-between mb-4">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
@@ -313,7 +271,7 @@ export default function SellerSettingsPage() {
           </div>
 
           {/* Returns */}
-          <div className="bg-gradient-to-br from-violet-200/80 via-fuchsia-200/65 to-blue-200/70 border border-violet-200/80 rounded-xl shadow-sm p-6 border border-gray-200">
+          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
             <div className="flex items-start justify-between mb-4">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
@@ -354,7 +312,7 @@ export default function SellerSettingsPage() {
           </div>
 
           {/* Shipping Guarantee */}
-          <div className="bg-gradient-to-br from-violet-200/80 via-fuchsia-200/65 to-blue-200/70 border border-violet-200/80 rounded-xl shadow-sm p-6 border border-gray-200">
+          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
             <div className="mb-4">
               <div className="flex items-center gap-2 mb-2">
                 <h3 className="text-lg font-semibold text-gray-900">📦 Shipping Guarantee</h3>

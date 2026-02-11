@@ -28,7 +28,6 @@ interface PhotoUploaderProps {
   maxPhotos?: number;
   onPhotosChange: (photos: PhotoFile[]) => void;
   photos: PhotoFile[];
-  theme?: "light" | "dark";
 }
 
 export function PhotoUploader({
@@ -37,9 +36,7 @@ export function PhotoUploader({
   maxPhotos = 5,
   onPhotosChange,
   photos,
-  theme = "light",
 }: PhotoUploaderProps) {
-  const isDark = theme === "dark";
   const fileInputRef = useRef<HTMLInputElement>(null);
   const photosRef = useRef<PhotoFile[]>(photos);
 
@@ -205,7 +202,7 @@ export function PhotoUploader({
                 borderRadius: '8px',
                 overflow: 'hidden',
                 border: '1px solid #ddd',
-                background: isDark ? 'rgba(30, 41, 59, 0.8)' : '#f5f5f5',
+                background: '#f5f5f5',
               }}
             >
               <img
@@ -285,21 +282,21 @@ export function PhotoUploader({
             style={{
               padding: '12px 20px',
               background: '#f5f5f5',
-              border: isDark ? '2px dashed rgba(196, 181, 253, 0.55)' : '2px dashed #ddd',
+              border: '2px dashed #ddd',
               borderRadius: '8px',
               cursor: 'pointer',
               fontSize: '14px',
-              color: isDark ? '#e2e8f0' : '#666',
+              color: '#666',
               width: '100%',
               transition: 'all 0.2s',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = isDark ? 'rgba(71, 85, 105, 0.45)' : '#f0f0f0';
+              e.currentTarget.style.background = '#f0f0f0';
               e.currentTarget.style.borderColor = '#6E56CF';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = isDark ? 'rgba(30, 41, 59, 0.55)' : '#f5f5f5';
-              e.currentTarget.style.borderColor = isDark ? 'rgba(196, 181, 253, 0.55)' : '#ddd';
+              e.currentTarget.style.background = '#f5f5f5';
+              e.currentTarget.style.borderColor = '#ddd';
             }}
           >
             📷 Add Photos ({photos.length}/{maxPhotos})

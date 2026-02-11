@@ -96,7 +96,7 @@ export default function CustomerJobDetail() {
         </div>
 
         {/* Title Card */}
-        <div className="bg-gradient-to-br from-violet-200/80 via-fuchsia-200/65 to-blue-200/70 border border-violet-200/80 rounded-2xl shadow-lg p-6 mb-6 border border-purple-100">
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 border border-purple-100">
           <div className="flex items-start justify-between flex-wrap gap-4">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">Send Details</h1>
@@ -111,12 +111,12 @@ export default function CustomerJobDetail() {
         </div>
 
         {/* Status Timeline */}
-        <div className="bg-gradient-to-br from-violet-200/80 via-fuchsia-200/65 to-blue-200/70 border border-violet-200/80 rounded-2xl shadow-lg p-6 mb-6 border border-purple-100">
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 border border-purple-100">
           <StatusTimeline currentStatus={job.status} />
         </div>
 
         {/* Live Map */}
-        <div className="bg-gradient-to-br from-violet-200/80 via-fuchsia-200/65 to-blue-200/70 border border-violet-200/80 rounded-2xl shadow-lg overflow-hidden mb-6 border border-purple-100">
+        <div className="bg-white rounded-2xl shadow-lg overflow-hidden mb-6 border border-purple-100">
           <div className="p-6 border-b border-gray-100">
             <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
               <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -146,7 +146,7 @@ export default function CustomerJobDetail() {
         </div>
 
         {/* Job Details & Actions */}
-        <div className="bg-gradient-to-br from-violet-200/80 via-fuchsia-200/65 to-blue-200/70 border border-violet-200/80 rounded-2xl shadow-lg p-6 mb-6 border border-purple-100">
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 border border-purple-100">
           <JobDetailsPanel job={job} visibility={visibility} showStatus={true}>
             <CustomerJobActions
               job={job}
@@ -157,7 +157,7 @@ export default function CustomerJobDetail() {
         </div>
 
         {(job.pickupProof || job.dropoffProof) && (
-          <div className="bg-gradient-to-br from-violet-200/80 via-fuchsia-200/65 to-blue-200/70 border border-violet-200/80 rounded-2xl shadow-lg p-6 mb-6 border border-purple-100">
+          <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 border border-purple-100">
             <h3 className="text-lg font-bold text-gray-900 mb-4">Proof Photos</h3>
             <div className="grid gap-4 md:grid-cols-2">
               {job.pickupProof && (
@@ -201,7 +201,7 @@ export default function CustomerJobDetail() {
         )}
 
         {job.pricing && job.paymentStatus !== "authorized" && (
-          <div className="bg-gradient-to-br from-violet-200/80 via-fuchsia-200/65 to-blue-200/70 border border-violet-200/80 rounded-2xl shadow-lg p-6 mb-6 border border-purple-100">
+          <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 border border-purple-100">
             <h3 className="text-lg font-bold text-gray-900 mb-4">Checkout</h3>
             <PaymentForm
               jobId={job.id}

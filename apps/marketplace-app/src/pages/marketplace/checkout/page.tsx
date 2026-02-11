@@ -75,7 +75,7 @@ export default function MarketplaceCheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95 py-8">
+    <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Progress indicator */}
         <div className="mb-8">
@@ -103,7 +103,7 @@ export default function MarketplaceCheckoutPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main content */}
           <div className="lg:col-span-2">
-            <div className="bg-gradient-to-br from-violet-200/80 via-fuchsia-200/65 to-blue-200/70 border border-violet-200/80 rounded-lg shadow-sm p-6">
+            <div className="bg-white rounded-lg shadow-sm p-6">
               {step === 'shipping' ? (
                 <>
                   <h2 className="text-2xl font-bold mb-6">Shipping Information</h2>
@@ -268,7 +268,7 @@ export default function MarketplaceCheckoutPage() {
 
           {/* Order summary sidebar */}
           <div className="lg:col-span-1">
-            <div className="bg-gradient-to-br from-violet-200/80 via-fuchsia-200/65 to-blue-200/70 border border-violet-200/80 rounded-lg shadow-sm p-6 sticky top-4">
+            <div className="bg-white rounded-lg shadow-sm p-6 sticky top-4">
               <h3 className="text-lg font-bold mb-4">Order Summary</h3>
               
               <div className="space-y-4 mb-6">

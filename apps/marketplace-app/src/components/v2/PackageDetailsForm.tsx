@@ -8,7 +8,6 @@ interface PackageDetailsFormProps {
   onSizeChange: (size: PackageSize) => void;
   onFlagsChange: (flags: PackageFlags) => void;
   onNotesChange: (notes: string) => void;
-  theme?: "light" | "dark";
 }
 
 const PACKAGE_SIZE_OPTIONS: { value: PackageSize; label: string; description: string }[] = [
@@ -25,9 +24,7 @@ export function PackageDetailsForm({
   onSizeChange,
   onFlagsChange,
   onNotesChange,
-  theme = "light",
 }: PackageDetailsFormProps) {
-  const isDark = theme === "dark";
   
   const handleFlagToggle = (flag: keyof PackageFlags) => {
     onFlagsChange({
@@ -37,15 +34,7 @@ export function PackageDetailsForm({
   };
 
   return (
-    <div
-      style={{
-        padding: "20px",
-        background: isDark ? "rgba(15, 23, 42, 0.55)" : "white",
-        borderRadius: "12px",
-        border: isDark ? "1px solid rgba(196, 181, 253, 0.45)" : "1px solid #ddd",
-        color: isDark ? "#f8fafc" : "#111827",
-      }}
-    >
+    <div style={{ padding: '20px', background: 'white', borderRadius: '8px', border: '1px solid #ddd' }}>
       <h3 style={{ marginTop: 0, marginBottom: '20px' }}>Package Details</h3>
 
       {/* Package Size */}
@@ -61,22 +50,10 @@ export function PackageDetailsForm({
                 display: 'flex',
                 alignItems: 'center',
                 padding: '12px',
-                border: `2px solid ${
-                  size === option.value
-                    ? "#6E56CF"
-                    : isDark
-                      ? "rgba(196, 181, 253, 0.4)"
-                      : "#ddd"
-                }`,
+                border: `2px solid ${size === option.value ? '#6E56CF' : '#ddd'}`,
                 borderRadius: '6px',
                 cursor: 'pointer',
-                background: size === option.value
-                  ? isDark
-                    ? "rgba(109, 40, 217, 0.35)"
-                    : "#f0f0ff"
-                  : isDark
-                    ? "rgba(30, 41, 59, 0.65)"
-                    : "white",
+                background: size === option.value ? '#f0f0ff' : 'white',
                 transition: 'all 0.2s',
               }}
             >
@@ -90,7 +67,7 @@ export function PackageDetailsForm({
               />
               <div>
                 <div style={{ fontWeight: '600', marginBottom: '2px' }}>{option.label}</div>
-                <div style={{ fontSize: '12px', color: isDark ? '#cbd5e1' : '#666' }}>{option.description}</div>
+                <div style={{ fontSize: '12px', color: '#666' }}>{option.description}</div>
               </div>
             </label>
           ))}
@@ -112,7 +89,7 @@ export function PackageDetailsForm({
             />
             <span>🚐 Needs SUV/Van</span>
             {flags.needsSuvVan && (
-              <span style={{ marginLeft: '8px', fontSize: '11px', color: isDark ? '#fde68a' : '#856404', background: isDark ? 'rgba(120, 53, 15, 0.45)' : '#fef9e7', padding: '2px 6px', borderRadius: '4px' }}>
+              <span style={{ marginLeft: '8px', fontSize: '11px', color: '#856404', background: '#fef9e7', padding: '2px 6px', borderRadius: '4px' }}>
                 May affect price
               </span>
             )}
@@ -137,7 +114,7 @@ export function PackageDetailsForm({
             />
             <span>💪 Heavy (2-person lift required)</span>
             {flags.heavyTwoPerson && (
-              <span style={{ marginLeft: '8px', fontSize: '11px', color: isDark ? '#fde68a' : '#856404', background: isDark ? 'rgba(120, 53, 15, 0.45)' : '#fef9e7', padding: '2px 6px', borderRadius: '4px' }}>
+              <span style={{ marginLeft: '8px', fontSize: '11px', color: '#856404', background: '#fef9e7', padding: '2px 6px', borderRadius: '4px' }}>
                 May affect price
               </span>
             )}
@@ -179,16 +156,14 @@ export function PackageDetailsForm({
           style={{
             width: '100%',
             padding: '10px',
-            border: isDark ? '1px solid rgba(196, 181, 253, 0.45)' : '1px solid #ddd',
-            background: isDark ? 'rgba(15, 23, 42, 0.55)' : '#fff',
-            color: isDark ? '#f8fafc' : '#111827',
+            border: '1px solid #ddd',
             borderRadius: '6px',
             fontSize: '14px',
             fontFamily: 'inherit',
             resize: 'vertical',
           }}
         />
-        <div style={{ fontSize: '12px', color: isDark ? '#cbd5e1' : '#666', marginTop: '4px', textAlign: 'right' }}>
+        <div style={{ fontSize: '12px', color: '#666', marginTop: '4px', textAlign: 'right' }}>
           {notes.length}/300 characters
         </div>
       </div>

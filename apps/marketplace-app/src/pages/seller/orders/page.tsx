@@ -143,14 +143,14 @@ export default function SellerOrders() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95 py-8">
+    <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
@@ -230,7 +230,7 @@ export default function SellerOrders() {
 
         {/* Orders List */}
         {finalOrders.length === 0 ? (
-          <div className="bg-gradient-to-br from-violet-200/80 via-fuchsia-200/65 to-blue-200/70 border border-violet-200/80 rounded-lg shadow p-12 text-center">
+          <div className="bg-white rounded-lg shadow p-12 text-center">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <span className="text-3xl">📦</span>
             </div>
@@ -252,7 +252,7 @@ export default function SellerOrders() {
               );
 
               return (
-                <div key={order.id} className="bg-gradient-to-br from-violet-200/80 via-fuchsia-200/65 to-blue-200/70 border border-violet-200/80 rounded-lg shadow p-6">
+                <div key={order.id} className="bg-white rounded-lg shadow p-6">
                   <div className="flex justify-between items-start mb-4">
                     <div>
                       <div className="flex items-center space-x-3">

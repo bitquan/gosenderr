@@ -81,7 +81,7 @@ export default function NotificationPreferencesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95 flex items-center justify-center">
+      <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center">
         <div className="animate-pulse text-gray-500">
           Loading preferences...
         </div>
@@ -90,7 +90,7 @@ export default function NotificationPreferencesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95 px-6 py-10">
+    <div className="min-h-screen bg-[#F8F9FF] px-6 py-10">
       <div className="max-w-3xl mx-auto space-y-6">
         <Card variant="elevated">
           <CardHeader>

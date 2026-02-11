@@ -87,7 +87,7 @@ export default function MyListingsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-gray-600">Loading your listings...</p>
@@ -97,7 +97,7 @@ export default function MyListingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95 py-8">
+    <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
@@ -124,7 +124,7 @@ export default function MyListingsPage() {
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-gradient-to-br from-violet-200/80 via-fuchsia-200/65 to-blue-200/70 border border-violet-200/80 rounded-xl shadow-sm p-6 border border-gray-200">
+            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600 font-medium">Total Listings</p>
@@ -136,7 +136,7 @@ export default function MyListingsPage() {
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-violet-200/80 via-fuchsia-200/65 to-blue-200/70 border border-violet-200/80 rounded-xl shadow-sm p-6 border border-gray-200">
+            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600 font-medium">Total Views</p>
@@ -148,7 +148,7 @@ export default function MyListingsPage() {
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-violet-200/80 via-fuchsia-200/65 to-blue-200/70 border border-violet-200/80 rounded-xl shadow-sm p-6 border border-gray-200">
+            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600 font-medium">Items Sold</p>
@@ -164,7 +164,7 @@ export default function MyListingsPage() {
 
         {/* Listings Grid */}
         {listings.length === 0 ? (
-          <div className="bg-gradient-to-br from-violet-200/80 via-fuchsia-200/65 to-blue-200/70 border border-violet-200/80 rounded-xl shadow-sm p-12 text-center border border-gray-200">
+          <div className="bg-white rounded-xl shadow-sm p-12 text-center border border-gray-200">
             <div className="text-6xl mb-4">🛍️</div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">No listings yet</h3>
             <p className="text-gray-600 mb-6">Start selling by creating your first listing!</p>
@@ -178,7 +178,7 @@ export default function MyListingsPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {listings.map((item) => (
-              <div key={item.id} className="bg-gradient-to-br from-violet-200/80 via-fuchsia-200/65 to-blue-200/70 border border-violet-200/80 rounded-xl shadow-sm overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow">
+              <div key={item.id} className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow">
                 {/* Image */}
                 <div 
                   className="relative h-48 bg-gray-200 cursor-pointer"

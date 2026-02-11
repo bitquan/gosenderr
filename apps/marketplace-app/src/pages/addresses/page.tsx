@@ -17,33 +17,14 @@ import {
 import { db } from "@/lib/firebase/firestore";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { AddressAutocomplete } from "@/components/v2/AddressAutocomplete";
-import { parseUsAddressComponents } from "@/lib/pickupPrivacy";
 
 interface SavedAddress {
   id: string;
-  name?: string;
-  label?: string;
+  name: string;
   address: string;
-  city?: string;
-  state?: string;
-  zipCode?: string;
-  postalCode?: string;
   lat: number;
   lng: number;
   isDefault: boolean;
-}
-
-interface ParsedAddress {
-  city: string;
-  state: string;
-  zipCode: string;
-}
-
-interface AddressSelection extends ParsedAddress {
-  address: string;
-  lat: number;
-  lng: number;
 }
 
 export default function SavedAddressesPage() {
@@ -53,16 +34,7 @@ export default function SavedAddressesPage() {
   const [loadingAddresses, setLoadingAddresses] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [newAddressName, setNewAddressName] = useState("");
-  const [selectedAddress, setSelectedAddress] = useState<AddressSelection | null>(null);
-
-  const parseAddressParts = (address: string): ParsedAddress => {
-    const parsed = parseUsAddressComponents(address);
-    return {
-      city: parsed.city,
-      state: parsed.state,
-      zipCode: parsed.zipCode,
-    };
-  };
+  const [newAddressLocation, setNewAddressLocation] = useState("");
 
   useEffect(() => {
     if (!user) return;
@@ -76,7 +48,7 @@ export default function SavedAddressesPage() {
         const snapshot = await getDocs(q);
         const addressData = snapshot.docs.map((doc) => ({
           id: doc.id,
-          ...(doc.data() as Omit<SavedAddress, "id">),
+          ...doc.data(),
         })) as SavedAddress[];
         setAddresses(addressData);
       } catch (error) {
@@ -91,7 +63,7 @@ export default function SavedAddressesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95 flex items-center justify-center">
+      <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center">
         <div className="animate-pulse text-gray-500">Loading...</div>
       </div>
     );
@@ -105,42 +77,24 @@ export default function SavedAddressesPage() {
   const handleAddAddress = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!newAddressName.trim()) {
-      alert("Please add an address name");
-      return;
-    }
-    if (!selectedAddress) {
-      alert("Please select an address from autocomplete");
+    if (!newAddressName.trim() || !newAddressLocation.trim()) {
+      alert("Please fill in all fields");
       return;
     }
 
     try {
-      const payload = {
+      await addDoc(collection(db, "savedAddresses"), {
         userId: user.uid,
         name: newAddressName.trim(),
-        label: newAddressName.trim(),
-        address: selectedAddress.address,
-        city: selectedAddress.city,
-        state: selectedAddress.state,
-        zipCode: selectedAddress.zipCode,
-        postalCode: selectedAddress.zipCode,
-        lat: selectedAddress.lat,
-        lng: selectedAddress.lng,
+        address: newAddressLocation.trim(),
+        lat: 0, // TODO: Integrate with Google Places API
+        lng: 0,
         isDefault: addresses.length === 0,
         createdAt: serverTimestamp(),
-      };
-
-      const createdDoc = await addDoc(collection(db, "savedAddresses"), {
-        ...payload,
       });
 
-      setAddresses((current) => [
-        ...current.map((addr) => ({ ...addr, isDefault: payload.isDefault ? false : addr.isDefault })),
-        { id: createdDoc.id, ...payload },
-      ]);
-      setIsAdding(false);
-      setNewAddressName("");
-      setSelectedAddress(null);
+      // Refresh addresses
+      window.location.reload();
     } catch (error) {
       console.error("Error adding address:", error);
       alert("Failed to add address. Please try again.");
@@ -162,12 +116,8 @@ export default function SavedAddressesPage() {
       await updateDoc(doc(db, "savedAddresses", addressId), {
         isDefault: true,
       });
-      setAddresses((current) =>
-        current.map((addr) => ({
-          ...addr,
-          isDefault: addr.id === addressId,
-        })),
-      );
+
+      window.location.reload();
     } catch (error) {
       console.error("Error setting default:", error);
       alert("Failed to set default address.");
@@ -179,7 +129,7 @@ export default function SavedAddressesPage() {
 
     try {
       await deleteDoc(doc(db, "savedAddresses", addressId));
-      setAddresses((current) => current.filter((addr) => addr.id !== addressId));
+      window.location.reload();
     } catch (error) {
       console.error("Error deleting address:", error);
       alert("Failed to delete address.");
@@ -187,7 +137,7 @@ export default function SavedAddressesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95 px-6 py-10">
+    <div className="min-h-screen bg-[#F8F9FF] px-6 py-10">
       <div className="max-w-3xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -239,29 +189,17 @@ export default function SavedAddressesPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Address <span className="text-red-500">*</span>
                   </label>
-                  <AddressAutocomplete
-                    label="Address"
-                    placeholder="Search address..."
-                    onSelect={(result) => {
-                      const parsed = parseAddressParts(result.address);
-                      setSelectedAddress({
-                        address: result.address,
-                        city: parsed.city,
-                        state: parsed.state,
-                        zipCode: parsed.zipCode,
-                        lat: result.lat,
-                        lng: result.lng,
-                      });
-                    }}
+                  <input
+                    type="text"
+                    value={newAddressLocation}
+                    onChange={(e) => setNewAddressLocation(e.target.value)}
+                    placeholder="123 Main St, City, State ZIP"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     required
                   />
-                  {selectedAddress && (
-                    <p className="text-xs text-gray-600 mt-2">
-                      {selectedAddress.city}
-                      {selectedAddress.state ? `, ${selectedAddress.state}` : ""}
-                      {selectedAddress.zipCode ? ` ${selectedAddress.zipCode}` : ""}
-                    </p>
-                  )}
+                  <p className="text-xs text-gray-500 mt-1">
+                    TODO: Integrate with Google Places autocomplete
+                  </p>
                 </div>
 
                 <div className="flex gap-3">
@@ -276,7 +214,7 @@ export default function SavedAddressesPage() {
                     onClick={() => {
                       setIsAdding(false);
                       setNewAddressName("");
-                      setSelectedAddress(null);
+                      setNewAddressLocation("");
                     }}
                     className="px-4 py-2 border border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50"
                   >
@@ -329,17 +267,6 @@ export default function SavedAddressesPage() {
                         )}
                       </div>
                       <p className="text-sm text-gray-600">{addr.address}</p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {addr.city || parseAddressParts(addr.address).city}
-                        {(addr.state || parseAddressParts(addr.address).state)
-                          ? `, ${addr.state || parseAddressParts(addr.address).state}`
-                          : ""}
-                        {(addr.zipCode ||
-                          addr.postalCode ||
-                          parseAddressParts(addr.address).zipCode)
-                          ? ` ${addr.zipCode || addr.postalCode || parseAddressParts(addr.address).zipCode}`
-                          : ""}
-                      </p>
                     </div>
 
                     <div className="flex gap-2">

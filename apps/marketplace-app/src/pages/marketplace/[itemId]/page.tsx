@@ -8,7 +8,7 @@ import { useAuth } from '../../../contexts/AuthContext'
 import { db } from '../../../lib/firebase/client'
 
 /**
- * ItemDetailPage - Detailed view of a Senderrplace item (Phase 2)
+ * ItemDetailPage - Detailed view of a marketplace item (Phase 2)
  * Shows seller profile (unified user model)
  */
 export default function ItemDetailPage() {
@@ -139,7 +139,7 @@ export default function ItemDetailPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">Item not found</h2>
         <Link to="/marketplace" className="text-blue-600 hover:text-blue-700">
-          Back to Senderrplace
+          Back to marketplace
         </Link>
       </div>
     )
@@ -153,7 +153,7 @@ export default function ItemDetailPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Breadcrumb */}
       <nav className="flex items-center space-x-2 text-sm text-gray-600 mb-6">
-        <Link to="/marketplace" className="hover:text-blue-600">Senderrplace</Link>
+        <Link to="/marketplace" className="hover:text-blue-600">Marketplace</Link>
         <span>/</span>
         <span className="text-gray-900 capitalize">{item.category}</span>
         <span>/</span>
