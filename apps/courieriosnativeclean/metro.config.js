@@ -1,3 +1,6 @@
+/* eslint-env node */
+/* eslint-disable @typescript-eslint/no-require-imports */
+/* global module, require, __dirname */
 const {getDefaultConfig, mergeConfig} = require('@react-native/metro-config');
 const path = require('path');
 
@@ -7,6 +10,16 @@ const path = require('path');
  *
  * @type {import('metro-config').MetroConfig}
  */
+const extraNodeModules = {
+  react: path.resolve(__dirname, '../..', 'node_modules', 'react'),
+  'react-native': path.resolve(
+    __dirname,
+    '../..',
+    'node_modules',
+    'react-native',
+  ),
+};
+
 const config = {
   watchFolders: [path.resolve(__dirname, '../..', 'node_modules')],
   resolver: {
@@ -14,6 +27,7 @@ const config = {
       path.resolve(__dirname, 'node_modules'),
       path.resolve(__dirname, '../..', 'node_modules'),
     ],
+    extraNodeModules,
   },
 };
 

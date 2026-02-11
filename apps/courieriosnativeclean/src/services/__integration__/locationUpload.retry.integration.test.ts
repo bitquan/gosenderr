@@ -1,0 +1,118 @@
+import {afterEach, beforeEach, describe, expect, it, jest} from '@jest/globals';
+
+jest.useRealTimers();
+
+jest.mock('@react-native-async-storage/async-storage', () => {
+  const store: Record<string, string> = {};
+  return {
+    __esModule: true,
+    default: {
+      getItem: jest.fn(async (k: string) => store[k] ?? null),
+      setItem: jest.fn(async (k: string, v: string) => {
+        store[k] = v;
+      }),
+      removeItem: jest.fn(async (k: string) => {
+        delete store[k];
+      }),
+    },
+  };
+});
+
+// We'll mock firebase/firestore updateDoc to simulate transient failure followed by success
+jest.mock('firebase/firestore', () => {
+  let __calls = 0;
+  const updateDoc = jest.fn(() => {
+    __calls += 1;
+    if (__calls === 1) return Promise.reject(new Error('transient error'));
+    return Promise.resolve(undefined);
+  });
+
+  const __reset = () => {
+    __calls = 0;
+    updateDoc.mockClear();
+  };
+
+  return {
+    doc: jest.fn(),
+    updateDoc,
+    serverTimestamp: () => 'SERVER_TIMESTAMP',
+    __reset,
+  };
+});
+
+// Ensure the firebase wrapper reports readiness so performLocationUpload proceeds
+jest.mock('../firebase', () => ({
+  isFirebaseReady: () => true,
+  getFirebaseServices: () => ({db: {}}),
+}));
+
+import * as sut from '../locationUploadService';
+
+describe('locationUploadService retry scheduling (service-level)', () => {
+  const uid = `retry-int-${Date.now()}`;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    const fb = jest.requireMock('firebase/firestore') as {__reset?: () => void};
+    fb.__reset?.();
+  });
+
+  afterEach(() => {
+    // return timers to real mode in case a test switched them
+    jest.useRealTimers();
+  });
+
+  it('schedules a retry on transient failure and succeeds on retry', async () => {
+    // make backoff tiny so test runs fast
+    sut.setLocationUploadBackoffBase(10);
+
+    const mockTelemetry: import('../locationUploadService').TelemetryHook = {
+      track: jest.fn(),
+    };
+    const mockAnalytics: import('../locationUploadService').AnalyticsAdapter = {
+      track: jest.fn(async () => {}),
+    };
+    sut.setLocationUploadTelemetry(mockTelemetry);
+    sut.setLocationUploadAnalytics(mockAnalytics);
+
+    // enqueue a location
+    const snapshot = {
+      latitude: 10,
+      longitude: 20,
+      timestamp: Date.now(),
+    };
+    await sut.enqueueLocation(uid, snapshot);
+
+    // The first flush should fail (simulated by our mock) and schedule a retry
+    await expect(sut.flushQueuedLocationsForSession(uid)).rejects.toThrow(
+      'transient',
+    );
+
+    expect(mockTelemetry.track).toHaveBeenCalledWith(
+      'location_upload_retry_scheduled',
+      expect.objectContaining({uid}),
+    );
+    expect(mockAnalytics.track).toHaveBeenCalledWith(
+      'location_upload_retry_scheduled',
+      expect.objectContaining({uid}),
+    );
+
+    // Simulate the scheduled retry by invoking flush again (service-level retry test)
+    await expect(sut.flushQueuedLocationsForSession(uid)).resolves.toEqual(
+      expect.objectContaining({flushed: 1}),
+    );
+
+    // Check that the queue is cleared
+    const remaining = await sut.readQueuedLocations();
+    expect(remaining.find(r => r.uid === uid)).toBeUndefined();
+
+    expect(mockTelemetry.track).toHaveBeenCalledWith(
+      'location_upload_success',
+      expect.objectContaining({uid}),
+    );
+    expect(mockAnalytics.track).toHaveBeenCalledWith(
+      'location_upload_success',
+      expect.objectContaining({uid}),
+    );
+  }, 15000);
+});
