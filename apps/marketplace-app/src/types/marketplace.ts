@@ -122,7 +122,6 @@ export interface MarketplaceItem {
     address: string;
     city: string;
     state: string;
-    postalCode?: string;
     location: GeoPoint;
   };
   
@@ -447,7 +446,6 @@ export interface CreateListingInput {
     address: string;
     city: string;
     state: string;
-    postalCode?: string;
     location: GeoPoint;
   };
 }
@@ -465,7 +463,6 @@ export interface UpdateListingInput {
     address: string;
     city: string;
     state: string;
-    postalCode?: string;
     location: GeoPoint;
   };
 }
