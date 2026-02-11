@@ -1,0 +1,9 @@
+{
+  "name": "senderr-navigation-worktree",
+  "private": true,
+  "scripts": {
+    "start:web": "cd /Users/papadev/dev/apps/Gosenderr_local/worktrees/senderrplace-local && pnpm --filter @gosenderr/senderr-app dev",
+    "start:metro": "cd /Users/papadev/dev/apps/Gosenderr_local/worktrees/senderrplace-local/apps/courieriosnativeclean && npx react-native start --reset-cache",
+    "ios": "cd /Users/papadev/dev/apps/Gosenderr_local/worktrees/senderrplace-local && pnpm --filter courieriosnativeclean ios"
+  }
+}

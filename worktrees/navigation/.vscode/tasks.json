@@ -1,0 +1,26 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "📱 Start Senderr Web (navigation)",
+      "type": "shell",
+      "command": "pnpm run start:web",
+      "isBackground": true,
+      "presentation": { "reveal": "always", "panel": "dedicated", "focus": false }
+    },
+    {
+      "label": "📱 Metro (navigation)",
+      "type": "shell",
+      "command": "pnpm run start:metro",
+      "isBackground": true,
+      "problemMatcher": { "pattern": { "regexp": "^.*$" }, "background": { "activeOnStart": true, "beginsPattern": ".*Welcome to Metro.*", "endsPattern": ".*waiting on.*" } },
+      "presentation": { "reveal": "always", "panel": "dedicated", "focus": false }
+    },
+    {
+      "label": "📱 Run Senderr iOS (navigation)",
+      "type": "shell",
+      "command": "pnpm run ios",
+      "presentation": { "reveal": "always", "panel": "dedicated", "focus": true }
+    }
+  ]
+}
