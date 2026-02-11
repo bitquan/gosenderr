@@ -194,9 +194,11 @@ Open PR to:
 
 PR checklist policy (required):
 
-- select exactly one in PR body:
-  - `handoff: updated`
-  - `handoff: not needed`
+- select exactly one in PR body (or use the **Session handoff** PR form at PR creation):
+  - `handoff: updated` (for behavior/process/setup/CI/workflow changes)
+  - `handoff: not needed` (for docs-only or metadata-only PRs with no behavior/process impact)
+
+- UI: Use the **Session handoff** PR form (top-right of the PR creation flow) to pick exactly one option when creating a PR. The form enforces a required selection so CI validation will not fail at PR creation time. If the selection is missing or invalid, CI will post an actionable comment explaining how to fix the PR description.
 
 CI scope policy (current):
 
