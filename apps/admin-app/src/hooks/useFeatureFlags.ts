@@ -2,11 +2,7 @@
 import { useState, useEffect } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
-import {
-  DEFAULT_FEATURE_FLAGS,
-  normalizeFeatureFlags,
-  type FeatureFlags,
-} from "@gosenderr/shared";
+import { DEFAULT_FEATURE_FLAGS, type FeatureFlags } from "@gosenderr/shared";
 
 export function useFeatureFlags() {
   const [flags, setFlags] = useState<FeatureFlags | null>(null);
@@ -22,7 +18,7 @@ export function useFeatureFlags() {
         if (cancelled) return;
 
         if (snapshot.exists()) {
-          setFlags(normalizeFeatureFlags(snapshot.data()));
+          setFlags(snapshot.data() as FeatureFlags);
         } else {
           setFlags(DEFAULT_FEATURE_FLAGS);
         }
