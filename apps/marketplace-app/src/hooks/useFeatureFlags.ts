@@ -2,8 +2,8 @@
 import { useState, useEffect } from "react";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
-import { DEFAULT_FEATURE_FLAGS } from "@gosenderr/shared";
 import type { FeatureFlags } from "@gosenderr/shared";
+import { DEFAULT_FEATURE_FLAGS, normalizeFeatureFlags } from "@gosenderr/shared";
 
 export function useFeatureFlags() {
   const [flags, setFlags] = useState<FeatureFlags | null>(null);
@@ -15,10 +15,10 @@ export function useFeatureFlags() {
       doc(db, "featureFlags", "config"),
       (snapshot) => {
         if (snapshot.exists()) {
-          setFlags(snapshot.data() as FeatureFlags);
+          setFlags(normalizeFeatureFlags(snapshot.data()));
         } else {
-          // Return default flags if document doesn't exist.
-          setFlags(DEFAULT_FEATURE_FLAGS);
+          // Return default flags if document doesn't exist
+          setFlags(DEFAULT_FEATURE_FLAGS as FeatureFlags);
         }
         setLoading(false);
       },
