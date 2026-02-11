@@ -32,6 +32,8 @@ Select exactly one:
 - [ ] Docs updated if behavior changed (`docs/*` or README)
 - [ ] If the change affects developer setup or onboarding, update `docs/dev/MINIMAL-SETUP.md` and relevant `apps/*/copilot-instructions.md`
 - [ ] For workspace-sized changes, confirm `pnpm -w turbo run type-check` and `pnpm -w turbo run lint` pass locally
+- [ ] Feature worktree created (if applicable): run `scripts/create-feature-worktree.sh <slug>` and ensure `docs/*/<slug>-worktree-plan.md` exists
+- [ ] Branch name follows worktree convention (e.g., `senderr-app/feature/<slug>`) when a worktree is used
 - [ ] At least one reviewer assigned
 
 ## How to test
