@@ -77,12 +77,12 @@ export default function CustomerLayout() {
         isOpen={showSendModal}
         onClose={() => setShowSendModal(false)}
         variant="sheet"
-        panelClassName="shadow-2xl"
+        panelClassName="shadow-2xl bg-gradient-to-b from-blue-950 via-purple-900 to-purple-950 border border-white/15"
       >
-        <div className="flex justify-end px-3 pt-3">
+        <div className="flex justify-end px-3 pt-3 pb-1">
           <button
             onClick={() => setShowSendModal(false)}
-            className="w-10 h-10 rounded-full bg-gray-100/95 text-gray-700"
+            className="w-10 h-10 rounded-full bg-white/20 text-white border border-white/30"
             aria-label="Close"
           >
             ✕

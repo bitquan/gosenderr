@@ -26,6 +26,8 @@ interface CreateJobPayload {
   dropoff: GeoPoint;
   package: PackageInfo;
   photos: JobPhoto[];
+  foodPickupRestaurantId?: string | null;
+  foodPickupRestaurantName?: string | null;
   preferredCourierUid?: string | null;
   offerCourierUid?: string | null;
   offerQueue?: string[];
@@ -50,6 +52,8 @@ export async function createJob(
     status: "open" as JobStatus,
     pickup: payload.pickup,
     dropoff: payload.dropoff,
+    foodPickupRestaurantId: payload.foodPickupRestaurantId ?? null,
+    foodPickupRestaurantName: payload.foodPickupRestaurantName ?? null,
     package: payload.package,
     photos: payload.photos,
     preferredCourierUid: payload.preferredCourierUid ?? null,
