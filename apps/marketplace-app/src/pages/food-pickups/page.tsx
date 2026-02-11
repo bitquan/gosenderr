@@ -46,6 +46,7 @@ export default function FoodPickupsPage() {
   const handleSelect = (restaurant: FoodPickupRestaurantDoc) => {
     navigate('/jobs/new', {
       state: {
+        initialDeliveryIntent: 'food',
         initialPickup: {
           lat: restaurant.location.lat,
           lng: restaurant.location.lng,
