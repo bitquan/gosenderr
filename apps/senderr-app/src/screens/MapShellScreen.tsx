@@ -62,14 +62,14 @@ export default function MapShellScreen({
     if (!uid) return null;
     return (
       jobs.find(
-        (job) => job.courierUid === uid && !isTerminalStatus(job.status),
+        (job: Job) => job.courierUid === uid && !isTerminalStatus(job.status),
       ) ?? null
     );
   }, [jobs, uid]);
 
   const latestJob = useMemo(() => {
     if (activeJob) return null;
-    return jobs.find((job) => job.status === "open") ?? null;
+    return jobs.find((job: Job) => job.status === "open") ?? null;
   }, [activeJob, jobs]);
 
   const mapToOverlayJob = (job: Job | null): MapShellJob | null => {
@@ -163,7 +163,7 @@ export default function MapShellScreen({
 
       const actionJob = devPreview
         ? ({ id: "dev_job_1" } as Job)
-        : activeJob ?? latestJob;
+        : (activeJob ?? latestJob);
 
       if (!actionJob) {
         alert("No active job available for this action");
