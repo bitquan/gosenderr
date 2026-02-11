@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
+import { DEFAULT_FEATURE_FLAGS } from "@gosenderr/shared";
 import type { FeatureFlags } from "@gosenderr/shared";
 
 export function useFeatureFlags() {
@@ -17,63 +18,7 @@ export function useFeatureFlags() {
           setFlags(snapshot.data() as FeatureFlags);
         } else {
           // Return default flags if document doesn't exist
-          setFlags({
-            marketplace: {
-              enabled: true,
-              itemListings: true,
-              combinedPayments: true,
-              courierOffers: false,
-            },
-            delivery: {
-              onDemand: true,
-              routes: true,
-              longRoutes: false,
-              longHaul: false,
-              mapShell: false,
-            },
-            courier: {
-              rateCards: true,
-              equipmentBadges: true,
-              workModes: true,
-            },
-            seller: {
-              stripeConnect: true,
-              multiplePhotos: true,
-              foodListings: true,
-            },
-            customer: {
-              liveTracking: true,
-              proofPhotos: true,
-              routeDelivery: false,
-              packageShipping: true,
-            },
-            packageRunner: {
-              enabled: true,
-              hubNetwork: true,
-              packageTracking: true,
-            },
-            admin: {
-              courierApproval: true,
-              equipmentReview: true,
-              disputeManagement: true,
-              analytics: true,
-              featureFlagsControl: true,
-              webPortalEnabled: false,
-              systemLogs: false,
-              firebaseExplorer: false,
-            },
-            advanced: {
-              pushNotifications: true,
-              ratingEnforcement: true,
-              autoCancel: true,
-              refunds: true,
-            },
-            ui: {
-              modernStyling: true,
-              darkMode: true,
-              animations: true,
-            },
-          });
+          setFlags(DEFAULT_FEATURE_FLAGS);
         }
         setLoading(false);
       },
