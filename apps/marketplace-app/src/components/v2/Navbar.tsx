@@ -71,7 +71,7 @@ export function Navbar({ children }: NavbarProps) {
               flexShrink: 0,
             }}
           >
-            Senderrplace
+            GoSenderr
           </Link>
 
           {/* Role Badge */}
@@ -160,7 +160,7 @@ export function Navbar({ children }: NavbarProps) {
                 whiteSpace: "nowrap",
               }}
             >
-              Senderrplace
+              Marketplace
             </Link>
 
             {user && role === "seller" && (

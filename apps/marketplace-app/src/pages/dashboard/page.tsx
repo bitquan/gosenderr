@@ -25,7 +25,6 @@ import { DonutChart } from "@/components/charts/DonutChart";
 import { Skeleton } from "@/components/ui/Skeleton";
 import type { User } from "firebase/auth";
 import type { QuerySnapshot, DocumentData } from "firebase/firestore";
-import { parseUsAddressComponents } from "@/lib/pickupPrivacy";
 
 export default function CustomerDashboardNew() {
   const navigate = useNavigate();
@@ -37,17 +36,8 @@ export default function CustomerDashboardNew() {
   const [loading, setLoading] = useState(true);
   const [activities, setActivities] = useState<any[]>([]);
   const [savedAddresses, setSavedAddresses] = useState<
-    Array<{ id: string; label: string; address: string; city: string; state: string; zipCode: string }>
+    Array<{ id: string; label: string; address: string }>
   >([]);
-
-  const parseAddressParts = (address: string) => {
-    const parsed = parseUsAddressComponents(address);
-    return {
-      city: parsed.city,
-      state: parsed.state,
-      zipCode: parsed.zipCode,
-    };
-  };
 
   const spendingData = useMemo(() => {
     const deliverySpend = jobs.reduce(
@@ -110,23 +100,11 @@ export default function CustomerDashboardNew() {
       );
       const addressSnapshot = await getDocs(addressesQuery);
       const addressData = addressSnapshot.docs.map((docSnap) => {
-        const data = docSnap.data() as {
-          label?: string;
-          name?: string;
-          address?: string;
-          city?: string;
-          state?: string;
-          zipCode?: string;
-          postalCode?: string;
-        };
-        const parsed = parseAddressParts(data.address || "");
+        const data = docSnap.data() as { label?: string; address?: string };
         return {
           id: docSnap.id,
-          label: data.label || data.name || "",
+          label: data.label || "",
           address: data.address || "",
-          city: data.city || parsed.city,
-          state: data.state || parsed.state,
-          zipCode: data.zipCode || data.postalCode || parsed.zipCode,
         };
       });
       setSavedAddresses(addressData);
@@ -209,30 +187,14 @@ export default function CustomerDashboardNew() {
     if (!label) return;
     const address = prompt("Full address");
     if (!address) return;
-    const parsed = parseAddressParts(address);
 
     const docRef = await addDoc(collection(db, "savedAddresses"), {
       userId: currentUser.uid,
       label,
-      name: label,
       address,
-      city: parsed.city,
-      state: parsed.state,
-      zipCode: parsed.zipCode,
-      postalCode: parsed.zipCode,
       createdAt: serverTimestamp(),
     });
-    setSavedAddresses((prev) => [
-      ...prev,
-      {
-        id: docRef.id,
-        label,
-        address,
-        city: parsed.city,
-        state: parsed.state,
-        zipCode: parsed.zipCode,
-      },
-    ]);
+    setSavedAddresses((prev) => [...prev, { id: docRef.id, label, address }]);
   };
 
   const handleRemoveAddress = async (addressId: string) => {
@@ -276,7 +238,7 @@ export default function CustomerDashboardNew() {
       allActivities.push({
         id: order.id,
         type: "order",
-        title: order.itemTitle || "Senderrplace Order",
+        title: order.itemTitle || "Marketplace Order",
         description: order.status || order.currentStatus || "pending",
         status: order.status || order.currentStatus,
         timestamp: order.updatedAt || order.createdAt,
@@ -319,7 +281,7 @@ export default function CustomerDashboardNew() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-transparent px-6 py-10">
+      <div className="min-h-screen bg-[#F8F9FF] px-6 py-10">
         <div className="max-w-6xl mx-auto space-y-6">
           <Skeleton className="h-24 w-full" variant="purple" />
           <div className="grid grid-cols-2 gap-4">
@@ -335,7 +297,7 @@ export default function CustomerDashboardNew() {
   const stats = getStats();
 
   return (
-    <div className="min-h-screen bg-transparent pb-24">
+    <div className="min-h-screen bg-[#F8F9FF] pb-24">
       {/* Header Section */}
       <div className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] rounded-b-[32px] p-6 text-white shadow-lg">
         <div className="max-w-6xl mx-auto">
@@ -371,7 +333,7 @@ export default function CustomerDashboardNew() {
             </div>
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4">
               <p className="text-3xl font-bold">{stats.totalOrders}</p>
-            <p className="text-sm text-purple-100">Senderrplace Orders</p>
+              <p className="text-sm text-purple-100">Marketplace Orders</p>
             </div>
           </div>
         </div>
@@ -400,7 +362,7 @@ export default function CustomerDashboardNew() {
             variant="warning"
           />
           <StatCard
-            title="Senderrplace Orders"
+            title="Marketplace Orders"
             value={stats.totalOrders}
             icon="🛒"
             variant="purple"
@@ -442,11 +404,6 @@ export default function CustomerDashboardNew() {
                     <div>
                       <p className="font-medium text-gray-900">{addr.label}</p>
                       <p className="text-sm text-gray-500">{addr.address}</p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        {addr.city}
-                        {addr.state ? `, ${addr.state}` : ""}
-                        {addr.zipCode ? ` ${addr.zipCode}` : ""}
-                      </p>
                     </div>
                     <button
                       onClick={() => handleRemoveAddress(addr.id)}

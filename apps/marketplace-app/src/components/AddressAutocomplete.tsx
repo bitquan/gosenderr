@@ -7,7 +7,6 @@ interface AddressAutocompleteProps {
   onSelect: (result: { address: string; lat: number; lng: number }) => void;
   required?: boolean;
   value?: string;
-  theme?: "light" | "dark";
 }
 
 export function AddressAutocomplete({
@@ -16,7 +15,6 @@ export function AddressAutocomplete({
   onSelect,
   required = false,
   value = "",
-  theme = "light",
 }: AddressAutocompleteProps) {
   const [query, setQuery] = useState(value);
   const [suggestions, setSuggestions] = useState<GeocodedAddress[]>([]);
@@ -91,29 +89,9 @@ export function AddressAutocomplete({
     }
   };
 
-  const isDark = theme === "dark";
-  const labelClassName = isDark
-    ? "block mb-1.5 text-sm font-medium text-purple-100"
-    : "block mb-1.5 text-sm font-medium text-gray-700";
-  const inputClassName = isDark
-    ? "w-full px-3 py-2 border border-white/30 rounded-lg text-sm outline-none transition-colors bg-white/10 text-white placeholder:text-white/60 focus:border-purple-300 focus:ring-2 focus:ring-purple-300/20"
-    : "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none transition-colors focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20";
-  const suggestionsClassName = isDark
-    ? "absolute top-full left-0 right-0 mt-1 bg-slate-900 border border-white/20 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto"
-    : "absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto";
-  const emptyClassName = isDark
-    ? "absolute top-full left-0 right-0 mt-1 bg-slate-900 border border-white/20 rounded-lg shadow-lg p-4 text-sm text-white/70"
-    : "absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg p-4 text-sm text-gray-500";
-  const optionClassName = isDark
-    ? "w-full px-4 py-2.5 text-left text-sm hover:bg-white/10 transition-colors first:rounded-t-lg last:rounded-b-lg border-b last:border-b-0 border-white/10"
-    : "w-full px-4 py-2.5 text-left text-sm hover:bg-gray-50 transition-colors first:rounded-t-lg last:rounded-b-lg border-b last:border-b-0 border-gray-100";
-  const optionTextClassName = isDark
-    ? "font-medium text-white"
-    : "font-medium text-gray-900";
-
   return (
     <div ref={wrapperRef} className="relative mb-4">
-      <label className={labelClassName}>
+      <label className="block mb-1.5 text-sm font-medium text-gray-700">
         {label}
         {required && <span className="text-red-600"> *</span>}
       </label>
@@ -124,7 +102,7 @@ export function AddressAutocomplete({
         onChange={(e) => handleInputChange(e.target.value)}
         placeholder={placeholder}
         required={required}
-        className={inputClassName}
+        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none transition-colors focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20"
         onFocus={() => {
           if (suggestions.length > 0) {
             setShowSuggestions(true);
@@ -139,15 +117,15 @@ export function AddressAutocomplete({
       )}
 
       {showSuggestions && suggestions.length > 0 && (
-        <div className={suggestionsClassName}>
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
           {suggestions.map((suggestion, index) => (
             <button
               key={index}
               type="button"
               onClick={() => handleSelect(suggestion)}
-              className={optionClassName}
+              className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-50 transition-colors first:rounded-t-lg last:rounded-b-lg border-b last:border-b-0 border-gray-100"
             >
-              <div className={optionTextClassName}>
+              <div className="font-medium text-gray-900">
                 {suggestion.place_name}
               </div>
             </button>
@@ -156,7 +134,7 @@ export function AddressAutocomplete({
       )}
 
       {showSuggestions && suggestions.length === 0 && query.length >= 3 && !loading && (
-        <div className={emptyClassName}>
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg p-4 text-sm text-gray-500">
           No addresses found
         </div>
       )}

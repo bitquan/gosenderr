@@ -136,15 +136,15 @@ export default function MarketplaceHome() {
   }
 
   return (
-    <div className="min-h-screen bg-transparent text-white">
+    <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-blue-700 via-blue-600 to-purple-600 text-white rounded-b-3xl shadow-2xl border-b border-white/20">
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            Senderrplace
+            GoSenderr Marketplace
           </h1>
-          <p className="text-xl text-blue-100/90 mb-8">
-            Buy and sell curated goods while Senderr couriers handle pickup and delivery
+          <p className="text-xl text-blue-100 mb-8">
+            Buy and sell anything, delivered by trusted couriers
           </p>
           
           {/* Search Bar */}
@@ -177,7 +177,7 @@ export default function MarketplaceHome() {
           <div className="lg:hidden">
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="w-full px-4 py-2 bg-slate-900/70 border border-white/20 rounded-lg flex items-center justify-center space-x-2 text-white hover:bg-slate-900/90 transition-colors"
+              className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg flex items-center justify-center space-x-2 hover:bg-gray-50 transition-colors"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
@@ -194,7 +194,7 @@ export default function MarketplaceHome() {
             {showFilters && (
               <div className="fixed inset-0 bg-black bg-opacity-50 z-50" onClick={() => setShowFilters(false)}>
                 <div
-                  className="absolute right-0 top-0 bottom-0 w-80 bg-gradient-to-b from-slate-900 via-purple-950 to-purple-900 shadow-xl overflow-y-auto"
+                  className="absolute right-0 top-0 bottom-0 w-80 bg-white shadow-xl overflow-y-auto"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="p-4">
@@ -212,10 +212,10 @@ export default function MarketplaceHome() {
           {/* Items Grid */}
           <div className="flex-1">
             <div className="mb-6">
-              <h2 className="text-2xl font-bold text-white">
+              <h2 className="text-2xl font-bold text-gray-900">
                 {selectedCategory || 'All Items'}
               </h2>
-              <p className="text-white/70 mt-1">
+              <p className="text-gray-600 mt-1">
                 {loading ? 'Loading...' : `${items.length} items found`}
               </p>
             </div>

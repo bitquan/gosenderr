@@ -7,8 +7,6 @@ interface AddressAutocompleteProps {
   placeholder?: string;
   onSelect: (result: { address: string; lat: number; lng: number }) => void;
   required?: boolean;
-  value?: string;
-  theme?: "light" | "dark";
 }
 
 export function AddressAutocomplete({
@@ -16,8 +14,6 @@ export function AddressAutocomplete({
   placeholder = "Enter address...",
   onSelect,
   required = false,
-  value = "",
-  theme = "light",
 }: AddressAutocompleteProps) {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<GeocodedAddress[]>([]);
@@ -86,14 +82,6 @@ export function AddressAutocomplete({
     }
   };
 
-  // Sync controlled value
-  useEffect(() => {
-    setQuery(value);
-    setSelectedAddress(value);
-  }, [value]);
-
-  const isDark = theme === "dark";
-
   return (
     <div
       ref={wrapperRef}
@@ -105,7 +93,6 @@ export function AddressAutocomplete({
           marginBottom: "6px",
           fontSize: "14px",
           fontWeight: "500",
-          color: isDark ? "#e2e8f0" : "#111827",
         }}
       >
         {label}
@@ -122,9 +109,7 @@ export function AddressAutocomplete({
           width: "100%",
           padding: "10px 12px",
           borderRadius: "6px",
-          border: isDark ? "1px solid rgba(196, 181, 253, 0.5)" : "1px solid #d1d5db",
-          background: isDark ? "rgba(15, 23, 42, 0.55)" : "#ffffff",
-          color: isDark ? "#f8fafc" : "#111827",
+          border: "1px solid #d1d5db",
           fontSize: "14px",
           outline: "none",
           transition: "border-color 0.2s",
@@ -158,8 +143,8 @@ export function AddressAutocomplete({
             left: 0,
             right: 0,
             marginTop: "4px",
-            backgroundColor: isDark ? "rgba(15, 23, 42, 0.98)" : "white",
-            border: isDark ? "1px solid rgba(196, 181, 253, 0.35)" : "1px solid #d1d5db",
+            backgroundColor: "white",
+            border: "1px solid #d1d5db",
             borderRadius: "6px",
             boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
             maxHeight: "300px",
@@ -175,30 +160,22 @@ export function AddressAutocomplete({
                 padding: "12px",
                 cursor: "pointer",
                 borderBottom:
-                  index < suggestions.length - 1
-                    ? isDark
-                      ? "1px solid rgba(148, 163, 184, 0.25)"
-                      : "1px solid #f3f4f6"
-                    : "none",
+                  index < suggestions.length - 1 ? "1px solid #f3f4f6" : "none",
                 fontSize: "14px",
-                color: isDark ? "#f8fafc" : "#111827",
+                color: "#111827",
                 transition: "background-color 0.15s",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = isDark
-                  ? "rgba(148, 163, 184, 0.15)"
-                  : "#f9fafb";
+                e.currentTarget.style.backgroundColor = "#f9fafb";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = isDark
-                  ? "rgba(15, 23, 42, 0.98)"
-                  : "white";
+                e.currentTarget.style.backgroundColor = "white";
               }}
             >
               <div style={{ fontWeight: "500", marginBottom: "2px" }}>
                 {suggestion.address.split(",")[0]}
               </div>
-              <div style={{ fontSize: "12px", color: isDark ? "#cbd5e1" : "#6b7280" }}>
+              <div style={{ fontSize: "12px", color: "#6b7280" }}>
                 {suggestion.address}
               </div>
             </div>

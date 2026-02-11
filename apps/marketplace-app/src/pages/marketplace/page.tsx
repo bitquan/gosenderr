@@ -5,9 +5,6 @@ import { ItemCategory } from "@/types/marketplace";
 import type { MarketplaceItem } from "@/types/marketplace";
 import { ItemCard } from "@/components/marketplace/ItemCard";
 import { Card, CardContent } from "@/components/ui/Card";
-import { useAuthUser } from "@/hooks/v2/useAuthUser";
-import { collection, getDocs, query, where } from "firebase/firestore";
-import { db } from "@/lib/firebase/client";
 
 const CATEGORIES: Array<{ value: ItemCategory | "all"; label: string }> = [
   { value: "all", label: "All Items" },
@@ -22,15 +19,12 @@ const CATEGORIES: Array<{ value: ItemCategory | "all"; label: string }> = [
 ];
 
 export default function MarketplacePage() {
-  const { uid } = useAuthUser();
   const [searchParams, setSearchParams] = useSearchParams();
   const [items, setItems] = useState<MarketplaceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<ItemCategory | "all">("all");
-  const [customerAddressSet, setCustomerAddressSet] = useState(false);
-  const [customerLocation, setCustomerLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   useEffect(() => {
     const initialCategory = searchParams.get("category") as ItemCategory | null;
@@ -71,57 +65,6 @@ export default function MarketplacePage() {
     };
   }, [selectedCategory]);
 
-  useEffect(() => {
-    let active = true;
-
-    const loadCustomerAddress = async () => {
-      if (!uid) {
-        setCustomerAddressSet(false);
-        setCustomerLocation(null);
-        return;
-      }
-
-      try {
-        const savedAddressesQuery = query(
-          collection(db, "savedAddresses"),
-          where("userId", "==", uid),
-        );
-        const snapshot = await getDocs(savedAddressesQuery);
-        const docs = snapshot.docs.map((docSnap) => ({
-          id: docSnap.id,
-          ...(docSnap.data() as {
-            isDefault?: boolean;
-            lat?: number;
-            lng?: number;
-          }),
-        }));
-
-        const defaultAddress = docs.find((addr) => addr.isDefault) || docs[0];
-        const hasCoordinates =
-          typeof defaultAddress?.lat === "number" &&
-          typeof defaultAddress?.lng === "number";
-
-        if (!active) return;
-        setCustomerAddressSet(Boolean(defaultAddress));
-        setCustomerLocation(
-          hasCoordinates
-            ? { lat: defaultAddress.lat as number, lng: defaultAddress.lng as number }
-            : null,
-        );
-      } catch (loadError) {
-        console.error("Failed to load saved addresses for marketplace:", loadError);
-        if (!active) return;
-        setCustomerAddressSet(false);
-        setCustomerLocation(null);
-      }
-    };
-
-    loadCustomerAddress();
-    return () => {
-      active = false;
-    };
-  }, [uid]);
-
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
       const matchesCategory =
@@ -145,15 +88,14 @@ export default function MarketplacePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95 pb-24">
+    <div className="min-h-screen bg-[#F8F9FF] pb-24">
       <div className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] rounded-b-[32px] p-6 text-white shadow-lg">
         <div className="max-w-5xl mx-auto">
-          <h1 className="text-2xl font-bold">Senderrplace</h1>
-          <p className="text-purple-100 text-sm">
-            Browse curated Senderrplace finds and schedule same-day delivery with GoSenderr couriers.
-          </p>
+          <h1 className="text-2xl font-bold">Marketplace</h1>
+          <p className="text-purple-100 text-sm">Browse items and request delivery</p>
         </div>
       </div>
+
       <div className="max-w-5xl mx-auto px-6 -mt-8">
         <Card variant="elevated" className="mb-6">
           <CardContent className="space-y-4">
@@ -190,7 +132,7 @@ export default function MarketplacePage() {
         {loading ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {Array.from({ length: 8 }).map((_, index) => (
-              <div key={index} className="h-48 rounded-xl border border-violet-200/80 bg-gradient-to-br from-violet-200/80 via-fuchsia-200/65 to-blue-200/70 animate-pulse" />
+              <div key={index} className="h-48 bg-white rounded-xl animate-pulse" />
             ))}
           </div>
         ) : error ? (
@@ -214,12 +156,7 @@ export default function MarketplacePage() {
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {filteredItems.map((item) => (
-              <ItemCard
-                key={item.id}
-                item={item}
-                customerAddressSet={customerAddressSet}
-                customerLocation={customerLocation}
-              />
+              <ItemCard key={item.id} item={item} />
             ))}
           </div>
         )}
