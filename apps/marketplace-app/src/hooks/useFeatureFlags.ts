@@ -2,71 +2,11 @@
 import { useState, useEffect } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
-import type { FeatureFlags } from "@gosenderr/shared";
-
-const DEFAULT_FLAGS: FeatureFlags = {
-  marketplace: {
-    enabled: true,
-    itemListings: true,
-    combinedPayments: true,
-    courierOffers: false,
-  },
-  delivery: {
-    onDemand: true,
-    routes: true,
-    longRoutes: false,
-    longHaul: false,
-  },
-  courier: {
-    rateCards: true,
-    equipmentBadges: true,
-    workModes: true,
-  },
-  seller: {
-    stripeConnect: true,
-    multiplePhotos: true,
-    foodListings: true,
-  },
-  customer: {
-    liveTracking: true,
-    proofPhotos: true,
-    routeDelivery: false,
-    packageShipping: true,
-  },
-  packageRunner: {
-    enabled: true,
-    hubNetwork: true,
-    packageTracking: true,
-  },
-  admin: {
-    courierApproval: true,
-    equipmentReview: true,
-    disputeManagement: true,
-    analytics: true,
-    featureFlagsControl: true,
-    webPortalEnabled: true,
-    systemLogs: false,
-    firebaseExplorer: false,
-  },
-  advanced: {
-    pushNotifications: true,
-    ratingEnforcement: true,
-    autoCancel: true,
-    refunds: true,
-  },
-  ui: {
-    modernStyling: true,
-    darkMode: true,
-    animations: true,
-  },
-  senderrplace: {
-    marketplace_v2: true,
-    seller_portal_v2: true,
-    listing_create_v1: true,
-    checkout_v2: true,
-    messaging_v1: true,
-  },
-};
+import {
+  DEFAULT_FEATURE_FLAGS,
+  normalizeFeatureFlags,
+  type FeatureFlags,
+} from "@gosenderr/shared";
 
 export function useFeatureFlags() {
   const [flags, setFlags] = useState<FeatureFlags | null>(null);
@@ -82,9 +22,9 @@ export function useFeatureFlags() {
         if (cancelled) return;
 
         if (snapshot.exists()) {
-          setFlags({ ...DEFAULT_FLAGS, ...(snapshot.data() as FeatureFlags) });
+          setFlags(normalizeFeatureFlags(snapshot.data()));
         } else {
-          setFlags(DEFAULT_FLAGS);
+          setFlags(DEFAULT_FEATURE_FLAGS);
         }
         setError(null);
       } catch (err) {
@@ -92,7 +32,7 @@ export function useFeatureFlags() {
         const firestoreCode = (err as { code?: string } | null)?.code;
         if (firestoreCode === "permission-denied") {
           // Keep customer app functional when feature flag reads are restricted.
-          setFlags(DEFAULT_FLAGS);
+          setFlags(DEFAULT_FEATURE_FLAGS);
           setError(null);
         } else {
           console.error("Error loading feature flags:", err);

@@ -27,10 +27,13 @@ export default function FeatureFlagsPage() {
   const loadFlags = async () => {
     try {
       const snapshot = await getDocs(collection(db, 'featureFlags'))
-      const flagsData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      } as FeatureFlag))
+      const flagsData = snapshot.docs
+        .filter(doc => doc.id !== 'config')
+        .map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        } as FeatureFlag))
+        .filter(flag => flag.name && flag.category)
       
       // Sort by category then name
       flagsData.sort((a, b) => {

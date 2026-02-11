@@ -500,6 +500,8 @@ export interface FeatureFlags {
     itemListings: boolean;
     combinedPayments: boolean;
     courierOffers: boolean;
+    messaging: boolean;
+    ratings: boolean;
   };
 
   delivery: {
@@ -558,7 +560,7 @@ export interface FeatureFlags {
     animations: boolean;
   };
 
-  senderrplace?: SenderrplaceFeatureFlags;
+  senderrplace: SenderrplaceFeatureFlags;
 }
 
 // ==================== ROUTES (LOCAL BATCHED DELIVERIES) ====================

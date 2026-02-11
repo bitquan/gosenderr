@@ -1,92 +1,13 @@
-// Initialize feature flags in Firestore
-// Run from project root: node scripts/init-feature-flags.js
-const admin = require("./firebase-admin-wrapper");
+#!/usr/bin/env node
 
-async function initializeFeatureFlags() {
-  try {
-    const db = admin.firestore();
-    const featureFlagsRef = db.collection("featureFlags").doc("config");
+const { spawnSync } = require("node:child_process");
+const path = require("node:path");
 
-    const flags = {
-      marketplace: {
-        enabled: true, // Already in production
-        itemListings: true,
-        combinedPayments: true,
-        courierOffers: false,
-        messaging: true,
-        ratings: true,
-      },
-      delivery: {
-        onDemand: true, // Already in production
-        routes: false, // NEW: Enable when ready to test local route batching
-        longRoutes: false, // NEW: Regional routes
-        longHaul: false, // NEW: Interstate logistics
-      },
-      courier: {
-        rateCards: true,
-        equipmentBadges: true,
-        workModes: true,
-      },
-      seller: {
-        stripeConnect: true, // Already in production
-        multiplePhotos: true,
-        foodListings: true,
-      },
-      customer: {
-        liveTracking: true, // Already in production
-        proofPhotos: true,
-        routeDelivery: false, // NEW: Customer can opt for route delivery discount
-        packageShipping: false, // NEW: Package shipping feature
-      },
-      packageRunner: {
-        enabled: false, // NEW: Enable to allow package runner onboarding
-        hubNetwork: false,
-        packageTracking: false,
-      },
-      admin: {
-        courierApproval: true,
-        equipmentReview: true,
-        disputeManagement: true,
-        analytics: true,
-        featureFlagsControl: true,
-        webPortalEnabled: true,
-        systemLogs: false,
-        firebaseExplorer: false,
-      },
-      advanced: {
-        pushNotifications: true,
-        ratingEnforcement: true,
-        autoCancel: true,
-        refunds: true,
-      },
-      ui: {
-        modernStyling: true,
-        darkMode: true,
-        animations: true,
-      },
-      senderrplace: {
-        marketplace_v2: true,
-        seller_portal_v2: true,
-        listing_create_v1: true,
-        checkout_v2: true,
-        messaging_v1: true,
-      },
-      updatedAt: new Date().toISOString(),
-    };
+const scriptPath = path.resolve(__dirname, "ensure-feature-flags.ts");
+const result = spawnSync(
+  "npx",
+  ["--yes", "tsx", scriptPath],
+  { stdio: "inherit", env: process.env },
+);
 
-    await featureFlagsRef.set(flags);
-    console.log("✅ Feature flags initialized successfully");
-    console.log("All PR #11 features are disabled by default");
-    console.log("\nTo enable features, update the document in Firestore:");
-    console.log(
-      "https://console.firebase.google.com/project/gosenderr-6773f/firestore/data/featureFlags/config",
-    );
-
-    process.exit(0);
-  } catch (error) {
-    console.error("❌ Error initializing feature flags:", error);
-    process.exit(1);
-  }
-}
-
-initializeFeatureFlags();
+process.exit(result.status ?? 1);
