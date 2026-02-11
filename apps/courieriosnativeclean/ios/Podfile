@@ -18,9 +18,8 @@ end
 
 platform :ios, '16.0'
 prepare_react_native_project!
-project 'Senderrappios.xcodeproj'
 
-# Keep new architecture disabled for RN 0.76 + react-native-maps 1.18 compatibility.
+# Keep new architecture disabled until explicitly migrated.
 ENV['RCT_NEW_ARCH_ENABLED'] = '0'
 
 target 'Senderrappios' do
@@ -34,12 +33,7 @@ target 'Senderrappios' do
   # AppDelegate imports FirebaseCore directly.
   pod 'FirebaseCore', :modular_headers => true
   pod 'FirebaseCoreInternal', :modular_headers => true
-  pod 'FirebaseCoreExtension', :modular_headers => true
-  pod 'FirebaseInstallations', :modular_headers => true
-  pod 'GoogleDataTransport', :modular_headers => true
-  pod 'FirebaseMessaging', :modular_headers => true
   pod 'GoogleUtilities', :modular_headers => true
-  pod 'nanopb', :modular_headers => true
 
   post_install do |installer|
     react_native_post_install(
