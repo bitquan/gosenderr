@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
@@ -17,7 +16,7 @@ export function useFeatureFlags() {
         if (snapshot.exists()) {
           setFlags(snapshot.data() as FeatureFlags);
         } else {
-          // Return default flags if document doesn't exist.
+          // Return default flags if document doesn't exist
           setFlags(DEFAULT_FEATURE_FLAGS);
         }
         setLoading(false);
