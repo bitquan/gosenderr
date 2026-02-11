@@ -18,7 +18,7 @@ export function useFeatureFlags() {
           setFlags(snapshot.data() as FeatureFlags);
         } else {
           // Return default flags if document doesn't exist.
-          setFlags(DEFAULT_FEATURE_FLAGS);
+          setFlags(DEFAULT_FEATURE_FLAGS as FeatureFlags);
         }
         setLoading(false);
       },
