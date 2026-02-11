@@ -71,8 +71,8 @@ function App() {
   const senderrplaceEnabled = flags?.senderrplace?.marketplace_v2 ?? true
   // V2 flag should be enough to enable Senderrplace even when legacy marketplace is off.
   const marketplaceEnabled = senderrplaceEnabled || baseMarketplaceEnabled
-  const messagingEnabled = marketplaceEnabled && ((flags as any)?.marketplace?.messaging ?? true)
-  const ratingsEnabled = marketplaceEnabled && ((flags as any)?.marketplace?.ratings ?? true)
+  const messagingEnabled = marketplaceEnabled && (flags?.marketplace?.messaging ?? true)
+  const ratingsEnabled = marketplaceEnabled && (flags?.marketplace?.ratings ?? true)
 
   return (
     <ErrorBoundary>

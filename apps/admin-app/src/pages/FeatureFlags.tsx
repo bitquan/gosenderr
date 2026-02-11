@@ -88,7 +88,7 @@ const categoryOrder: CategoryKey[] = [
   "admin",
   "advanced",
   "ui",
-  "senderrplaceV2",
+  "senderrplace",
 ];
 
 const categoryIcons: Record<CategoryKey, string> = {
@@ -101,7 +101,7 @@ const categoryIcons: Record<CategoryKey, string> = {
   admin: "🛠️",
   advanced: "⚙️",
   ui: "🎨",
-  senderrplaceV2: "🧭",
+  senderrplace: "🧭",
 };
 
 function normalizeFlags(flags: Partial<FeatureFlags> | null | undefined): FeatureFlags {
@@ -144,9 +144,9 @@ function normalizeFlags(flags: Partial<FeatureFlags> | null | undefined): Featur
       ...DEFAULT_FEATURE_FLAGS.ui,
       ...(source.ui || {}),
     },
-    senderrplaceV2: {
-      ...DEFAULT_FEATURE_FLAGS.senderrplaceV2,
-      ...(source.senderrplaceV2 || {}),
+    senderrplace: {
+      ...DEFAULT_FEATURE_FLAGS.senderrplace,
+      ...(source.senderrplace || {}),
     },
   };
 }
