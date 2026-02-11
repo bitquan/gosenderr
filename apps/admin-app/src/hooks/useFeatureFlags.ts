@@ -19,7 +19,6 @@ export function useFeatureFlags() {
         } else {
           setFlags(DEFAULT_FEATURE_FLAGS);
         }
-        }
         setLoading(false);
       },
       (err) => {
