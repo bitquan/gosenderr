@@ -1,27 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  deleteDoc,
-  doc,
-  getDoc,
-  setDoc,
-  updateDoc,
-  serverTimestamp,
-} from "firebase/firestore";
+import { collection, query, where, getDocs, deleteDoc, doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { SalesChart } from "@/components/seller/SalesChart";
-import {
-  buildSellerBookingLink,
-  getBookingLinkEligibility,
-} from "@/lib/sellerOnboarding";
-import { trackSellerOnboardingEvent } from "@/lib/onboardingEvents";
 
 interface Item {
   id: string;
@@ -43,44 +27,12 @@ interface SalesData {
   orders: number;
 }
 
-interface SellerBookingLink {
-  id: string;
-  itemId: string;
-  itemTitle: string;
-  url: string;
-  isActive: boolean;
-  openCount: number;
-  createdAt?: any;
-  updatedAt?: any;
-}
-
-function createBookingLinkId() {
-  return `sbl_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
-}
-
-function formatTimestamp(value: any): string {
-  if (value?.toDate) {
-    return value.toDate().toLocaleString();
-  }
-  if (typeof value === "string") {
-    return value;
-  }
-  return "-";
-}
-
 export default function SellerDashboard() {
   const { uid } = useAuthUser();
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [salesData, setSalesData] = useState<SalesData[]>([]);
   const [lowStockItems, setLowStockItems] = useState<Item[]>([]);
-  const [sellerUserData, setSellerUserData] = useState<Record<string, any> | null>(null);
-
-  const [bookingLinks, setBookingLinks] = useState<SellerBookingLink[]>([]);
-  const [selectedItemId, setSelectedItemId] = useState<string>("");
-  const [creatingBookingLink, setCreatingBookingLink] = useState(false);
-  const [refreshingLinks, setRefreshingLinks] = useState(false);
-
   const [stats, setStats] = useState({
     totalItems: 0,
     activeListings: 0,
@@ -92,14 +44,9 @@ export default function SellerDashboard() {
     ratingCount: 0,
   });
 
-  const bookingEligibility = useMemo(() => {
-    return getBookingLinkEligibility(sellerUserData);
-  }, [sellerUserData]);
-
   useEffect(() => {
     if (!uid) return;
     loadSellerItems();
-    loadBookingLinks();
   }, [uid]);
 
   const getSellerItemsTotal = (orderData: any) => {
@@ -110,49 +57,11 @@ export default function SellerDashboard() {
     );
   };
 
-  const loadBookingLinks = async () => {
-    if (!uid) return;
-
-    setRefreshingLinks(true);
-    try {
-      const linksQuery = query(
-        collection(db, "sellerBookingLinks"),
-        where("sellerId", "==", uid),
-      );
-      const linksSnap = await getDocs(linksQuery);
-      const links = linksSnap.docs
-        .map((linkDoc) => {
-          const data = linkDoc.data() as any;
-          return {
-            id: linkDoc.id,
-            itemId: data.itemId,
-            itemTitle: data.itemTitle || "Item",
-            url: data.url,
-            isActive: data.isActive !== false,
-            openCount: Number(data.openCount || 0),
-            createdAt: data.createdAt,
-            updatedAt: data.updatedAt,
-          } as SellerBookingLink;
-        })
-        .sort((a, b) => {
-          const aTime = a.createdAt?.toDate?.()?.getTime?.() || 0;
-          const bTime = b.createdAt?.toDate?.()?.getTime?.() || 0;
-          return bTime - aTime;
-        });
-
-      setBookingLinks(links);
-    } catch (error) {
-      console.error("Failed to load booking links:", error);
-    } finally {
-      setRefreshingLinks(false);
-    }
-  };
-
   const loadSellerItems = async () => {
     try {
       const itemsQuery = query(
         collection(db, "marketplaceItems"),
-        where("sellerId", "==", uid),
+        where("sellerId", "==", uid)
       );
       const snapshot = await getDocs(itemsQuery);
       const itemsList = snapshot.docs.map((doc) => ({
@@ -162,18 +71,17 @@ export default function SellerDashboard() {
 
       setItems(itemsList);
 
-      if (!selectedItemId && itemsList.length > 0) {
-        setSelectedItemId(itemsList[0].id);
-      }
-
       const activeListings = itemsList.filter((item) => item.status === "active").length;
       const soldItems = itemsList.filter((item) => item.status === "sold").length;
       const lowStock = itemsList.filter(
-        (item) => item.status === "active" && item.stock <= 5,
+        (item) => item.status === "active" && item.stock <= 5
       );
       setLowStockItems(lowStock);
 
-      const ordersQuery = query(collection(db, "orders"), where("sellerId", "==", uid));
+      const ordersQuery = query(
+        collection(db, "orders"),
+        where("sellerId", "==", uid)
+      );
       const ordersSnapshot = await getDocs(ordersQuery);
       const sellerOrders = ordersSnapshot.docs;
 
@@ -182,10 +90,7 @@ export default function SellerDashboard() {
       try {
         const sellerDoc = await getDoc(doc(db, "users", uid));
         if (sellerDoc.exists()) {
-          const sellerData = sellerDoc.data() as Record<string, any>;
-          setSellerUserData(sellerData);
-
-          const sellerProfile = sellerData?.sellerProfile || {};
+          const sellerProfile = sellerDoc.data().sellerProfile || {};
           if (typeof sellerProfile.ratingAvg === "number") {
             ratingAvg = sellerProfile.ratingAvg;
           }
@@ -194,11 +99,11 @@ export default function SellerDashboard() {
           }
         }
       } catch (error) {
-        console.error("Failed to load seller stats:", error);
+        console.error("Failed to load seller rating stats:", error);
       }
 
-      const totalRevenue = sellerOrders.reduce((sum, docSnap) => {
-        const orderData = docSnap.data();
+      const totalRevenue = sellerOrders.reduce((sum, doc) => {
+        const orderData = doc.data();
         return sum + getSellerItemsTotal(orderData);
       }, 0);
 
@@ -215,13 +120,13 @@ export default function SellerDashboard() {
           month: "short",
           day: "numeric",
         });
-        const dayOrders = sellerOrders.filter((docSnap) => {
-          const orderData = docSnap.data();
+        const dayOrders = sellerOrders.filter((doc) => {
+          const orderData = doc.data();
           const orderDate = orderData.createdAt?.toDate?.();
           return orderDate && orderDate.toDateString() === date.toDateString();
         });
-        const dayRevenue = dayOrders.reduce((sum, docSnap) => {
-          const orderData = docSnap.data();
+        const dayRevenue = dayOrders.reduce((sum, doc) => {
+          const orderData = doc.data();
           return sum + getSellerItemsTotal(orderData);
         }, 0);
 
@@ -260,86 +165,6 @@ export default function SellerDashboard() {
     } catch (error) {
       console.error("Failed to delete item:", error);
       alert("Failed to delete item");
-    }
-  };
-
-  const handleCreateBookingLink = async () => {
-    if (!uid || !selectedItemId) return;
-
-    const selectedItem = items.find((item) => item.id === selectedItemId);
-    if (!selectedItem) {
-      alert("Select an item first.");
-      return;
-    }
-
-    if (!bookingEligibility.allowed) {
-      alert(bookingEligibility.reason || "Complete onboarding first.");
-      await trackSellerOnboardingEvent(uid, "booking_link_blocked", {
-        reason: bookingEligibility.reason,
-      });
-      return;
-    }
-
-    setCreatingBookingLink(true);
-    try {
-      const bookingLinkId = createBookingLinkId();
-      const linkUrl = buildSellerBookingLink(window.location.origin, selectedItem.id, bookingLinkId);
-
-      await setDoc(doc(db, "sellerBookingLinks", bookingLinkId), {
-        sellerId: uid,
-        itemId: selectedItem.id,
-        itemTitle: selectedItem.title,
-        url: linkUrl,
-        isActive: true,
-        openCount: 0,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
-
-      await trackSellerOnboardingEvent(uid, "booking_link_created", {
-        itemId: selectedItem.id,
-        itemTitle: selectedItem.title,
-      });
-
-      await loadBookingLinks();
-
-      try {
-        await navigator.clipboard.writeText(linkUrl);
-        alert("Booking link created and copied.");
-      } catch (_err) {
-        alert(`Booking link created:\n${linkUrl}`);
-      }
-    } catch (error) {
-      console.error("Failed to create booking link:", error);
-      alert("Failed to create booking link.");
-    } finally {
-      setCreatingBookingLink(false);
-    }
-  };
-
-  const handleToggleBookingLink = async (link: SellerBookingLink) => {
-    try {
-      await updateDoc(doc(db, "sellerBookingLinks", link.id), {
-        isActive: !link.isActive,
-        updatedAt: serverTimestamp(),
-      });
-      setBookingLinks((prev) =>
-        prev.map((entry) =>
-          entry.id === link.id ? { ...entry, isActive: !entry.isActive } : entry,
-        ),
-      );
-    } catch (error) {
-      console.error("Failed to update booking link:", error);
-      alert("Failed to update booking link.");
-    }
-  };
-
-  const handleCopyBookingLink = async (url: string) => {
-    try {
-      await navigator.clipboard.writeText(url);
-      alert("Copied booking link.");
-    } catch (_err) {
-      alert(`Copy failed. Link:\n${url}`);
     }
   };
 
@@ -456,116 +281,9 @@ export default function SellerDashboard() {
           </div>
         )}
 
-        {/* Booking Link Manager */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900">Customer Booking Links</h2>
-              <p className="text-sm text-gray-600">
-                Create shareable links so customers can request courier delivery for your item.
-              </p>
-            </div>
-            <Link
-              to="/seller/apply"
-              className="text-sm text-blue-600 hover:text-blue-700 font-semibold"
-            >
-              Manage onboarding
-            </Link>
-          </div>
-
-          {!bookingEligibility.allowed ? (
-            <div className="mb-4 rounded-lg border border-orange-200 bg-orange-50 p-3 text-sm text-orange-800">
-              {bookingEligibility.reason}
-            </div>
-          ) : null}
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
-            <select
-              value={selectedItemId}
-              onChange={(e) => setSelectedItemId(e.target.value)}
-              className="md:col-span-3 px-3 py-2 border border-gray-300 rounded-lg"
-            >
-              <option value="">Select listing for booking link</option>
-              {items
-                .filter((item) => item.status === "active")
-                .map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.title}
-                  </option>
-                ))}
-            </select>
-
-            <button
-              onClick={handleCreateBookingLink}
-              disabled={
-                creatingBookingLink ||
-                !selectedItemId ||
-                !bookingEligibility.allowed ||
-                items.length === 0
-              }
-              className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold disabled:opacity-50"
-            >
-              {creatingBookingLink ? "Creating..." : "Create Link"}
-            </button>
-          </div>
-
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-gray-700">Generated Links</h3>
-            <button
-              onClick={loadBookingLinks}
-              disabled={refreshingLinks}
-              className="text-xs text-gray-600 hover:text-gray-900"
-            >
-              {refreshingLinks ? "Refreshing..." : "Refresh"}
-            </button>
-          </div>
-
-          {bookingLinks.length === 0 ? (
-            <p className="text-sm text-gray-500">No booking links yet.</p>
-          ) : (
-            <div className="space-y-3">
-              {bookingLinks.map((link) => (
-                <div
-                  key={link.id}
-                  className="border border-gray-200 rounded-lg p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3"
-                >
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-semibold text-gray-900">{link.itemTitle}</span>
-                      <Badge variant={link.isActive ? "success" : "default"}>
-                        {link.isActive ? "active" : "inactive"}
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-gray-500 truncate">{link.url}</p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Opens: {link.openCount} • Created: {formatTimestamp(link.createdAt)}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleCopyBookingLink(link.url)}
-                      className="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg"
-                    >
-                      Copy
-                    </button>
-                    <button
-                      onClick={() => handleToggleBookingLink(link)}
-                      className="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg"
-                    >
-                      {link.isActive ? "Deactivate" : "Activate"}
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
         {/* Sales Analytics Chart */}
         <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            Sales Overview (Last 7 Days)
-          </h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Sales Overview (Last 7 Days)</h2>
           <SalesChart data={salesData} />
         </div>
 
@@ -612,7 +330,9 @@ export default function SellerDashboard() {
                       {item.status}
                     </Badge>
                   </div>
-                  <p className="text-gray-600 text-sm mb-3 line-clamp-2">{item.description}</p>
+                  <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                    {item.description}
+                  </p>
                   <div className="flex items-center justify-between">
                     <span className="text-xl font-bold text-purple-600">${item.price}</span>
                     <div className="flex gap-2">

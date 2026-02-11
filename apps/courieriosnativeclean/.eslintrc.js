@@ -1,5 +1,3 @@
-/* eslint-env node */
-/* global module */
 module.exports = {
   root: true,
   extends: '@react-native',
