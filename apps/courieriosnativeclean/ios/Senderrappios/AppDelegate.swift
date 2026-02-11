@@ -72,14 +72,39 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
       return
     }
 
-    if Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") != nil {
+    // Prefer explicit GoogleService-Info.plist in app bundle
+    if hasUsableGoogleServicePlist() {
       FirebaseApp.configure()
       Messaging.messaging().delegate = self
-    } else {
+      return
+    }
+
+    if hasGoogleServicePlist() {
       NSLog(
-        "Firebase disabled: GoogleService-Info.plist is missing from app bundle for target Senderrappios."
+        "Firebase disabled: GoogleService-Info.plist is present but invalid (placeholder or malformed GOOGLE_APP_ID)."
       )
     }
+
+    // Fallback: try configuring from Info.plist overrides (safe for local dev without committing secrets)
+    if let appId = readInfoValue("SenderrFirebaseAppId"),
+       let apiKey = readInfoValue("SenderrFirebaseApiKey"),
+       let projectId = readInfoValue("SenderrFirebaseProjectId") {
+      let senderId = readInfoValue("SenderrFirebaseMessagingSenderId") ?? ""
+      let options = FirebaseOptions(googleAppID: appId, gcmSenderID: senderId)
+      options.apiKey = apiKey
+      options.projectID = projectId
+      if let storageBucket = readInfoValue("SenderrFirebaseStorageBucket") {
+        options.storageBucket = storageBucket
+      }
+      FirebaseApp.configure(options: options)
+      Messaging.messaging().delegate = self
+      NSLog("Firebase configured from Info.plist overrides for target Senderrappios.")
+      return
+    }
+
+    NSLog(
+      "Firebase disabled: GoogleService-Info.plist is missing and no Info.plist overrides found for target Senderrappios."
+    )
   }
 
   private func buildRuntimeInitialProperties() -> [String: Any] {
@@ -185,7 +210,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
   }
 
   private func readGoogleServiceValue(_ key: String) -> String? {
-    guard let path = Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist"),
+    guard hasUsableGoogleServicePlist(),
+      let path = Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist"),
       let dictionary = NSDictionary(contentsOfFile: path),
       let raw = dictionary[key] as? String
     else {
@@ -197,6 +223,48 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
       return nil
     }
     return value
+  }
+
+  private func hasGoogleServicePlist() -> Bool {
+    Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") != nil
+  }
+
+  private func hasUsableGoogleServicePlist() -> Bool {
+    guard let path = Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist"),
+      let dictionary = NSDictionary(contentsOfFile: path),
+      let rawAppID = dictionary["GOOGLE_APP_ID"] as? String
+    else {
+      return false
+    }
+
+    let appID = rawAppID.trimmingCharacters(in: .whitespacesAndNewlines)
+    if appID.isEmpty || appID.localizedCaseInsensitiveContains("placeholder") {
+      return false
+    }
+
+    let parts = appID.split(separator: ":")
+    if parts.count != 4 {
+      return false
+    }
+
+    if !parts[0].allSatisfy({ $0.isNumber }) || !parts[1].allSatisfy({ $0.isNumber }) {
+      return false
+    }
+
+    if parts[2] != "ios" || parts[3].isEmpty {
+      return false
+    }
+
+    if let plistBundleID = dictionary["BUNDLE_ID"] as? String,
+      let appBundleID = Bundle.main.bundleIdentifier
+    {
+      let normalizedPlistBundleID = plistBundleID.trimmingCharacters(in: .whitespacesAndNewlines)
+      if !normalizedPlistBundleID.isEmpty && normalizedPlistBundleID != appBundleID {
+        return false
+      }
+    }
+
+    return true
   }
 
   func userNotificationCenter(
