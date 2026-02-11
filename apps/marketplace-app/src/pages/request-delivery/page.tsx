@@ -292,7 +292,7 @@ export default function RequestDeliveryPage() {
   // Auth gate
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95 flex items-center justify-center">
         <div className="animate-pulse">
           <div className="w-16 h-16 bg-purple-200 rounded-full mx-auto mb-4"></div>
           <div className="h-4 bg-purple-200 rounded w-32 mx-auto"></div>
@@ -311,12 +311,12 @@ export default function RequestDeliveryPage() {
 
   if (!itemId) {
     return (
-      <div className="min-h-screen bg-[#F8F9FF] pb-24">
+      <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95 pb-24">
         <div className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] rounded-b-[32px] p-6 text-white shadow-lg">
           <div className="max-w-4xl mx-auto">
             <h1 className="text-2xl font-bold">Request a Delivery</h1>
             <p className="text-purple-100 text-sm">
-              Choose a marketplace item or create a custom send.
+              Choose a Senderrplace item or create a custom send.
             </p>
           </div>
         </div>
@@ -331,12 +331,12 @@ export default function RequestDeliveryPage() {
               Delivery Options
             </button>
           </div>
-          <div className={`bg-white rounded-2xl shadow-lg p-2 flex gap-2 ${showTabs ? 'flex' : 'hidden'} md:flex`}>
+          <div className={`bg-gradient-to-br from-violet-200/80 via-fuchsia-200/65 to-blue-200/70 border border-violet-200/80 rounded-2xl shadow-lg p-2 flex gap-2 ${showTabs ? 'flex' : 'hidden'} md:flex`}>
             <button
               className="flex-1 py-3 px-4 rounded-xl font-semibold text-gray-600 hover:bg-gray-50 transition-all"
               onClick={() => navigate('/marketplace')}
             >
-              Marketplace Item
+              Senderrplace Item
             </button>
             <button
               className="flex-1 py-3 px-4 rounded-xl font-semibold bg-green-600 text-white shadow-md"
@@ -347,17 +347,17 @@ export default function RequestDeliveryPage() {
           </div>
           <Card variant="elevated">
             <CardHeader>
-              <CardTitle>Marketplace Delivery</CardTitle>
+            <CardTitle>Senderrplace Delivery</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-gray-600 mb-4">
-                Pick an item from the marketplace and request delivery from a seller.
+                Pick an item from Senderrplace and request delivery from a seller.
               </p>
               <button
                 onClick={() => navigate("/marketplace")}
                 className="px-6 py-3 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-700"
               >
-                Browse Marketplace
+                Browse Senderrplace
               </button>
             </CardContent>
           </Card>
@@ -368,7 +368,7 @@ export default function RequestDeliveryPage() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-gray-600 mb-4">
-                Send anything that isn’t listed in the marketplace. Enter pickup and dropoff details.
+                Send anything that isn’t listed in Senderrplace. Enter pickup and dropoff details.
               </p>
               <button
                 onClick={() => navigate("/jobs/new")}
@@ -385,7 +385,7 @@ export default function RequestDeliveryPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95 flex items-center justify-center">
         <div className="animate-pulse">
           <div className="w-16 h-16 bg-purple-200 rounded-full mx-auto mb-4"></div>
           <div className="h-4 bg-purple-200 rounded w-32 mx-auto"></div>
@@ -400,14 +400,14 @@ export default function RequestDeliveryPage() {
         title={error || "Item not found"}
         description="Please choose another item to deliver or create a custom send."
         actionHref="/marketplace"
-        actionLabel="Back to Marketplace"
+        actionLabel="Back to Senderrplace"
         emoji="📦"
       />
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#F8F9FF] pb-24">
+    <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95 pb-24">
       {/* Header */}
       <div className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] rounded-b-[32px] p-6 text-white shadow-lg">
         <div className="max-w-4xl mx-auto">
@@ -448,12 +448,12 @@ export default function RequestDeliveryPage() {
             Delivery Options
           </button>
         </div>
-        <div className={`bg-white rounded-2xl shadow-lg p-2 flex gap-2 ${showTabs ? 'flex' : 'hidden'} md:flex`}>
+        <div className={`bg-gradient-to-br from-violet-200/80 via-fuchsia-200/65 to-blue-200/70 border border-violet-200/80 rounded-2xl shadow-lg p-2 flex gap-2 ${showTabs ? 'flex' : 'hidden'} md:flex`}>
           <button
             className="flex-1 py-3 px-4 rounded-xl font-semibold bg-purple-600 text-white shadow-md"
             onClick={() => navigate(`/request-delivery?itemId=${itemId}`)}
           >
-            Marketplace Item
+            Senderrplace Item
           </button>
           <button
             className="flex-1 py-3 px-4 rounded-xl font-semibold text-gray-600 hover:bg-gray-50 transition-all"

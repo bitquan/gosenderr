@@ -1,12 +1,14 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { CartProvider } from './contexts/CartContext'
+import { RoleProvider } from './hooks/useRole'
 import { CartSidebar } from './components/cart/CartSidebar'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 import { RoleGuard } from './components/auth/RoleGuard'
 import { PublicOnlyRoute } from './components/auth/RoleGuard'
 import { NotFoundPage } from './components/ui/NotFoundPage'
+import { MarketplaceDisabled } from './components/ui/MarketplaceDisabled'
 
 // Layouts
 import CustomerLayout from './layouts/CustomerLayout'
@@ -48,6 +50,7 @@ import MessagesPage from './pages/messages/page'
 import ConversationPage from './pages/messages/[conversationId]/page'
 import { useFeatureFlags } from './hooks/useFeatureFlags'
 import { StripeModeBanner } from './components/StripeModeBanner'
+import FoodPickupsPage from './pages/food-pickups/page'
 
 // Seller pages
 import SellerApplicationPage from './pages/seller/apply/page'
@@ -64,22 +67,16 @@ import SignupPage from './pages/Signup'
 function App() {
   console.log('App component rendering')
   const { flags, loading: flagsLoading } = useFeatureFlags()
-  const marketplaceEnabled = flags?.marketplace?.enabled ?? true
-  const messagingEnabled = (flags?.marketplace?.enabled && (flags as any)?.marketplace?.messaging) ?? true
-  const ratingsEnabled = (flags?.marketplace?.enabled && (flags as any)?.marketplace?.ratings) ?? true
-
-  const MarketplaceDisabled = () => (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Marketplace Disabled</h1>
-        <p className="text-gray-600">This feature is temporarily unavailable.</p>
-      </div>
-    </div>
-  )
+  const baseMarketplaceEnabled = flags?.marketplace?.enabled ?? true
+  const senderrplaceEnabled = flags?.senderrplace?.marketplace_v2 ?? true
+  const marketplaceEnabled = baseMarketplaceEnabled && senderrplaceEnabled
+  const messagingEnabled = marketplaceEnabled && ((flags as any)?.marketplace?.messaging ?? true)
+  const ratingsEnabled = marketplaceEnabled && ((flags as any)?.marketplace?.ratings ?? true)
 
   return (
     <ErrorBoundary>
       <AuthProvider>
+        <RoleProvider>
         <CartProvider>
           <CartSidebar />
           <StripeModeBanner />
@@ -171,6 +168,11 @@ function App() {
                 <FavoriteCouriersPage />
               </RoleGuard>
             } />
+            <Route path="/food-pickups" element={
+              <RoleGuard allowedRoles={['customer', 'buyer', 'seller']}>
+                <FoodPickupsPage />
+              </RoleGuard>
+            } />
             <Route path="/promo-codes" element={
               <RoleGuard allowedRoles={['customer', 'buyer']}>
                 <PromoCodesPage />
@@ -259,6 +261,7 @@ function App() {
         </Routes>
           )}
         </CartProvider>
+      </RoleProvider>
       </AuthProvider>
     </ErrorBoundary>
   )

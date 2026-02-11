@@ -21,7 +21,7 @@ export default function LoginPage() {
       // Sign in user
       await signInWithEmailAndPassword(auth, email, password)
 
-      // Navigate to marketplace home
+      // Navigate to Senderrplace home
       navigate('/marketplace')
     } catch (err: any) {
       setError(err.message || 'Failed to sign in')
@@ -39,7 +39,7 @@ export default function LoginPage() {
     >
       <div className="max-w-md w-full">
         <div 
-          className="bg-white rounded-3xl shadow-2xl overflow-hidden"
+          className="rounded-3xl border border-violet-200/80 bg-gradient-to-br from-violet-200/80 via-fuchsia-200/65 to-blue-200/70 shadow-2xl overflow-hidden"
           style={{
             boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
           }}
@@ -49,8 +49,8 @@ export default function LoginPage() {
             className="px-8 py-10 text-center text-white bg-gradient-to-r from-purple-600 to-blue-600"
           >
             <div className="text-6xl mb-3">🛍️</div>
-            <h1 className="text-3xl font-bold mb-2">Marketplace Portal</h1>
-            <p className="text-purple-100 text-sm">Buy, sell, and ship anything locally</p>
+            <h1 className="text-3xl font-bold mb-2">Senderrplace Portal</h1>
+            <p className="text-purple-100 text-sm">Buy, sell, and ship anything with Senderrplace trust</p>
           </div>
 
           {/* Form */}
@@ -120,15 +120,15 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Back to Marketplace */}
+        {/* Back to Senderrplace */}
         <div className="text-center mt-6">
-          <a 
-            href="/marketplace"
-            className="text-sm text-white hover:text-purple-100 font-medium transition-colors block mb-4"
-          >
-            ← Browse marketplace without signing in
-          </a>
-          <p className="text-white text-sm opacity-90">© 2026 GoSenderR Marketplace</p>
+            <a 
+              href="/marketplace"
+              className="text-sm text-white hover:text-purple-100 font-medium transition-colors block mb-4"
+            >
+              ← Browse Senderrplace without signing in
+            </a>
+            <p className="text-white text-sm opacity-90">© 2026 Senderrplace by GoSenderr</p>
         </div>
       </div>
     </div>

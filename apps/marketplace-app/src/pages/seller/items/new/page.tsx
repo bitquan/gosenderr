@@ -214,7 +214,7 @@ export default function NewSellerItem() {
 
   if (sellerStatusLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95 flex items-center justify-center">
         <div className="text-gray-600">Checking seller status...</div>
       </div>
     );
@@ -222,7 +222,7 @@ export default function NewSellerItem() {
 
   if (sellerStatus !== "approved") {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95 flex items-center justify-center p-6">
         <Card>
           <CardContent className="p-8 text-center">
             <div className="text-5xl mb-4">🏪</div>
@@ -265,7 +265,7 @@ export default function NewSellerItem() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95 pb-24">
       {/* Header */}
       <div className="bg-gradient-to-br from-blue-600 to-purple-600 text-white p-6">
         <div className="max-w-3xl mx-auto">

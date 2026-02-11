@@ -12,6 +12,9 @@ async function initializeFeatureFlags() {
         enabled: true, // Already in production
         itemListings: true,
         combinedPayments: true,
+        courierOffers: false,
+        messaging: true,
+        ratings: true,
       },
       delivery: {
         onDemand: true, // Already in production
@@ -20,8 +23,7 @@ async function initializeFeatureFlags() {
         longHaul: false, // NEW: Interstate logistics
       },
       courier: {
-       featureFlagsControl: true,
-       webPortalEnabled: false,
+        rateCards: true,
         equipmentBadges: true,
         workModes: true,
       },
@@ -38,8 +40,36 @@ async function initializeFeatureFlags() {
       },
       packageRunner: {
         enabled: false, // NEW: Enable to allow package runner onboarding
-        onboarding: false, // NEW: Onboarding flow
-        routeAcceptance: false, // NEW: Allow runners to accept routes
+        hubNetwork: false,
+        packageTracking: false,
+      },
+      admin: {
+        courierApproval: true,
+        equipmentReview: true,
+        disputeManagement: true,
+        analytics: true,
+        featureFlagsControl: true,
+        webPortalEnabled: true,
+        systemLogs: false,
+        firebaseExplorer: false,
+      },
+      advanced: {
+        pushNotifications: true,
+        ratingEnforcement: true,
+        autoCancel: true,
+        refunds: true,
+      },
+      ui: {
+        modernStyling: true,
+        darkMode: true,
+        animations: true,
+      },
+      senderrplace: {
+        marketplace_v2: true,
+        seller_portal_v2: true,
+        listing_create_v1: true,
+        checkout_v2: true,
+        messaging_v1: true,
       },
       updatedAt: new Date().toISOString(),
     };

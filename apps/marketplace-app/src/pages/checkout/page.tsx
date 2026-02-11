@@ -165,7 +165,7 @@ function OrderSummary({
   const total = item.price + resolvedDeliveryFee;
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 sticky top-6">
+    <div className="bg-gradient-to-br from-violet-200/80 via-fuchsia-200/65 to-blue-200/70 border border-violet-200/80 rounded-lg shadow-md p-6 sticky top-6">
       <h2 className="text-xl font-bold text-gray-900 mb-4">Order Summary</h2>
       
       {/* Item */}
@@ -513,7 +513,7 @@ function CheckoutForm({
 
   if (step === 'delivery') {
     return (
-      <div className="bg-white rounded-lg shadow-md p-8">
+      <div className="bg-gradient-to-br from-violet-200/80 via-fuchsia-200/65 to-blue-200/70 border border-violet-200/80 rounded-lg shadow-md p-8">
         <h2 className="text-2xl font-bold text-gray-900 mb-6">Delivery Information</h2>
         
         {/* Development Mode Warning */}
@@ -752,7 +752,7 @@ function CheckoutForm({
   // Payment step
   if (!clientSecret) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-8">
+      <div className="bg-gradient-to-br from-violet-200/80 via-fuchsia-200/65 to-blue-200/70 border border-violet-200/80 rounded-lg shadow-md p-8">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
           <p className="text-gray-600 mt-4">Initializing payment...</p>
@@ -762,7 +762,7 @@ function CheckoutForm({
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-8">
+    <div className="bg-gradient-to-br from-violet-200/80 via-fuchsia-200/65 to-blue-200/70 border border-violet-200/80 rounded-lg shadow-md p-8">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-900">Payment</h2>
         <button

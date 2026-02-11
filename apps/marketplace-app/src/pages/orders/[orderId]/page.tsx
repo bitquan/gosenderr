@@ -113,7 +113,7 @@ export default function OrderDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95 py-8 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading order details...</p>
@@ -124,9 +124,9 @@ export default function OrderDetailPage() {
 
   if (error || !order) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
+      <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95 py-8">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-white rounded-lg shadow-sm p-8 text-center">
+          <div className="bg-gradient-to-br from-violet-200/80 via-fuchsia-200/65 to-blue-200/70 border border-violet-200/80 rounded-lg shadow-sm p-8 text-center">
             <div className="text-6xl mb-4">❌</div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Order Not Found</h2>
             <p className="text-gray-600 mb-6">{error}</p>
@@ -134,7 +134,7 @@ export default function OrderDetailPage() {
               to="/marketplace"
               className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
             >
-              Back to Marketplace
+              Back to Senderrplace
             </Link>
           </div>
         </div>
@@ -172,10 +172,10 @@ export default function OrderDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Success Header */}
-        <div className="bg-white rounded-lg shadow-sm p-8 mb-6 text-center">
+        <div className="bg-gradient-to-br from-violet-200/80 via-fuchsia-200/65 to-blue-200/70 border border-violet-200/80 rounded-lg shadow-sm p-8 mb-6 text-center">
           <div className="text-6xl mb-4">✅</div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Order Confirmed!</h1>
           <p className="text-gray-600 mb-4">
@@ -189,7 +189,7 @@ export default function OrderDetailPage() {
         </div>
 
         {/* Order Status */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div className="bg-gradient-to-br from-violet-200/80 via-fuchsia-200/65 to-blue-200/70 border border-violet-200/80 rounded-lg shadow-sm p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold">Order Status</h2>
             <span className={`px-4 py-2 rounded-full text-sm font-semibold ${getStatusColor(order.status)}`}>
@@ -203,7 +203,7 @@ export default function OrderDetailPage() {
         </div>
 
         {/* Order Items */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div className="bg-gradient-to-br from-violet-200/80 via-fuchsia-200/65 to-blue-200/70 border border-violet-200/80 rounded-lg shadow-sm p-6 mb-6">
           <h2 className="text-xl font-bold mb-4">Order Items</h2>
           <div className="space-y-4">
             {order.items.map((item, index) => (
@@ -244,7 +244,7 @@ export default function OrderDetailPage() {
         </div>
 
         {/* Shipping Information */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div className="bg-gradient-to-br from-violet-200/80 via-fuchsia-200/65 to-blue-200/70 border border-violet-200/80 rounded-lg shadow-sm p-6 mb-6">
           <h2 className="text-xl font-bold mb-4">Shipping Information</h2>
           <div className="text-gray-700">
             <p className="font-semibold">{order.shippingInfo.fullName}</p>
@@ -263,7 +263,7 @@ export default function OrderDetailPage() {
         </div>
 
         {order.status === 'delivered' && order.items?.[0] && (
-          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <div className="bg-gradient-to-br from-violet-200/80 via-fuchsia-200/65 to-blue-200/70 border border-violet-200/80 rounded-lg shadow-sm p-6 mb-6">
             <h2 className="text-xl font-bold mb-2">Rate Your Order</h2>
             <p className="text-sm text-gray-600 mb-4">
               Share your feedback to help other shoppers.

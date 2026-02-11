@@ -72,6 +72,13 @@ export function useFeatureFlags() {
               darkMode: true,
               animations: true,
             },
+            senderrplace: {
+              marketplace_v2: true,
+              seller_portal_v2: true,
+              listing_create_v1: true,
+              checkout_v2: true,
+              messaging_v1: true,
+            },
           });
         }
         setLoading(false);

@@ -170,14 +170,14 @@ export default function SellerDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95 pb-24">
       {/* Header */}
       <div className="bg-gradient-to-br from-blue-600 to-purple-600 text-white p-6">
         <div className="max-w-6xl mx-auto">
@@ -282,7 +282,7 @@ export default function SellerDashboard() {
         )}
 
         {/* Sales Analytics Chart */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <div className="bg-gradient-to-br from-violet-200/80 via-fuchsia-200/65 to-blue-200/70 border border-violet-200/80 rounded-lg shadow p-6 mb-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Sales Overview (Last 7 Days)</h2>
           <SalesChart data={salesData} />
         </div>

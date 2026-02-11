@@ -9,7 +9,7 @@ import { doc, getDoc } from 'firebase/firestore'
 import { db } from '../../../lib/firebase/client'
 
 /**
- * Sell Page - Create new marketplace listing (Phase 2)
+ * Sell Page - Create new Senderrplace listing (Phase 2)
  * Any authenticated user can create a listing and become a seller
  */
 export default function SellPage() {
@@ -218,7 +218,7 @@ export default function SellPage() {
   if (sellerStatus !== 'approved') {
     return (
       <div className="max-w-2xl mx-auto px-4 py-12">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
+        <div className="bg-gradient-to-br from-violet-200/80 via-fuchsia-200/65 to-blue-200/70 border border-violet-200/80 rounded-xl shadow-sm border border-gray-200 p-8 text-center">
           <div className="text-5xl mb-4">🏪</div>
           {sellerStatus === 'pending' && (
             <>
@@ -246,7 +246,7 @@ export default function SellPage() {
             <>
               <h2 className="text-2xl font-bold mb-2">Apply to Become a Seller</h2>
               <p className="text-gray-600 mb-6">
-                Complete the seller application to start listing items on the marketplace.
+                Complete the seller application to start listing items on Senderrplace.
               </p>
               <button
                 onClick={() => navigate('/seller/apply')}
@@ -265,7 +265,7 @@ export default function SellPage() {
     <div className="max-w-3xl mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-2">Create Listing</h1>
       <p className="text-gray-600 mb-8">
-        List an item for sale and become a seller on GoSenderr Marketplace
+        List an item for sale and become a seller on Senderrplace
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-6">

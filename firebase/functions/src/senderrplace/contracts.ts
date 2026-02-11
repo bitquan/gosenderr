@@ -1,11 +1,25 @@
 import { createHash, randomBytes } from 'crypto';
 
 export type SenderrplacePaymentMode = 'required' | 'optional' | 'disabled';
+export type SenderrplaceJobType = 'package' | 'food';
+export type SenderrplaceAvailabilityReason =
+  | 'AVAILABLE'
+  | 'OUTSIDE_BOOKING_WINDOW'
+  | 'NO_ONLINE_COURIER'
+  | 'COURIER_LOCATION_UNAVAILABLE'
+  | 'OUT_OF_SERVICE_RADIUS'
+  | 'WORK_MODE_DISABLED'
+  | 'REQUIRED_EQUIPMENT_UNAVAILABLE'
+  | 'VEHICLE_REQUIREMENT_UNAVAILABLE'
+  | 'COURIER_CAPACITY_REACHED'
+  | 'NO_ELIGIBLE_COURIER';
 
 export const SENDERRPLACE_COLLECTIONS = {
   merchants: 'senderrplaceMerchants',
   bookingLinks: 'senderrplaceBookingLinks',
+  bookingHolds: 'senderrplaceBookingHolds',
   users: 'users',
+  deliveryJobs: 'deliveryJobs',
 } as const;
 
 export const SENDERRPLACE_ROLES = {
@@ -13,6 +27,29 @@ export const SENDERRPLACE_ROLES = {
   seller: 'seller',
   customer: 'customer',
 } as const;
+
+export const SENDERRPLACE_AVAILABILITY_REASON_MESSAGES: Record<
+  SenderrplaceAvailabilityReason,
+  string
+> = {
+  AVAILABLE: 'Courier availability confirmed.',
+  OUTSIDE_BOOKING_WINDOW:
+    'Delivery can only be booked within the supported scheduling window.',
+  NO_ONLINE_COURIER: 'No couriers are currently online for this request.',
+  COURIER_LOCATION_UNAVAILABLE:
+    'No online courier has an active location signal right now.',
+  OUT_OF_SERVICE_RADIUS:
+    'No online courier currently serves this pickup area.',
+  WORK_MODE_DISABLED:
+    'No online courier currently accepts this delivery type.',
+  REQUIRED_EQUIPMENT_UNAVAILABLE:
+    'No online courier has the required equipment for this delivery.',
+  VEHICLE_REQUIREMENT_UNAVAILABLE:
+    'No online courier matches the required vehicle type right now.',
+  COURIER_CAPACITY_REACHED:
+    'Couriers are currently at capacity. Please try again shortly.',
+  NO_ELIGIBLE_COURIER: 'No eligible courier is available right now.',
+};
 
 const CONFIRMATION_REGEX = /^[A-Z0-9][A-Z0-9-]{4,63}$/;
 
@@ -97,4 +134,3 @@ export function resolveUserRoles(userData: Record<string, unknown> | undefined):
 
   return Array.from(roles);
 }
-

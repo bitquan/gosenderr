@@ -115,7 +115,9 @@ export const FEATURE_FLAGS_CONFIG = {
     enabled: true,
     itemListings: true,
     combinedPayments: true,
-    courierOffers: false
+    courierOffers: false,
+    messaging: true,
+    ratings: true
   },
   delivery: {
     onDemand: true,
@@ -164,6 +166,13 @@ export const FEATURE_FLAGS_CONFIG = {
     modernStyling: true,
     darkMode: false,
     animations: true
+  },
+  senderrplace: {
+    marketplace_v2: true,
+    seller_portal_v2: true,
+    listing_create_v1: true,
+    checkout_v2: true,
+    messaging_v1: true
   }
 };
 

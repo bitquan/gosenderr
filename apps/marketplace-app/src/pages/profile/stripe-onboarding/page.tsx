@@ -205,7 +205,7 @@ export default function StripeOnboardingPage() {
 
   return (
     <div className="max-w-2xl mx-auto p-6">
-      <div className="bg-white rounded-lg shadow-md p-8">
+      <div className="bg-gradient-to-br from-violet-200/80 via-fuchsia-200/65 to-blue-200/70 border border-violet-200/80 rounded-lg shadow-md p-8">
         <div className="text-center mb-8">
           <div className="inline-block p-3 bg-purple-100 rounded-full mb-4">
             <svg className="w-12 h-12 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

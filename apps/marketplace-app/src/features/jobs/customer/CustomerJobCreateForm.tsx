@@ -29,12 +29,20 @@ const createTempJobId = () => {
 
 interface CustomerJobCreateFormProps {
   uid: string;
+  initialPickup?: GeoPoint | null;
+  initialPickupLabel?: string;
+  initialRestaurantName?: string;
 }
 
-export function CustomerJobCreateForm({ uid }: CustomerJobCreateFormProps) {
+export function CustomerJobCreateForm({
+  uid,
+  initialPickup = null,
+  initialPickupLabel = "",
+  initialRestaurantName = "",
+}: CustomerJobCreateFormProps) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [pickup, setPickup] = useState<GeoPoint | null>(null);
+  const [pickup, setPickup] = useState<GeoPoint | null>(initialPickup);
   const [dropoff, setDropoff] = useState<GeoPoint | null>(null);
   const [packageSize, setPackageSize] = useState<PackageSize | null>(null);
   const [packageFlags, setPackageFlags] = useState<PackageFlags>({});
@@ -42,6 +50,14 @@ export function CustomerJobCreateForm({ uid }: CustomerJobCreateFormProps) {
   const [photos, setPhotos] = useState<PhotoFile[]>([]);
   const [selectedCourierId, setSelectedCourierId] = useState<string | null>(null);
   const { settings: platformSettings } = usePlatformSettings();
+
+  const [pickupLabel, setPickupLabel] = useState(
+    initialPickup?.label || initialPickupLabel || "",
+  );
+  const [restaurantContext, setRestaurantContext] = useState(
+    initialRestaurantName,
+  );
+  const [showPickupPicker, setShowPickupPicker] = useState(!initialPickup);
 
   // Generate a stable temporary job ID for this session
   const [tempJobId] = useState(createTempJobId);
@@ -169,6 +185,11 @@ export function CustomerJobCreateForm({ uid }: CustomerJobCreateFormProps) {
         <p style={{ fontSize: "14px", color: "#666" }}>
           Fill in the details to request a courier
         </p>
+        {restaurantContext && (
+          <p style={{ fontSize: "13px", color: "#52525b" }}>
+            Ordering for pickup at <strong>{restaurantContext}</strong>
+          </p>
+        )}
       </div>
 
       <form
@@ -180,6 +201,7 @@ export function CustomerJobCreateForm({ uid }: CustomerJobCreateFormProps) {
           border: "1px solid #ddd",
         }}
       >
+      {!pickup || showPickupPicker ? (
         <div style={{ marginBottom: "24px" }}>
           <AddressAutocomplete
             label="Pickup Address"
@@ -190,9 +212,56 @@ export function CustomerJobCreateForm({ uid }: CustomerJobCreateFormProps) {
                 lng: result.lng,
                 label: result.address,
               });
+              setPickupLabel(result.address);
+              setRestaurantContext("");
+              setShowPickupPicker(false);
             }}
+            value={pickupLabel}
           />
         </div>
+      ) : (
+        <div
+          style={{
+            marginBottom: "24px",
+            borderRadius: "16px",
+            border: "1px solid #d1d5db",
+            padding: "16px",
+            background: "#f8fafc",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <div>
+              <p style={{ fontSize: "12px", letterSpacing: "0.2em", textTransform: "uppercase", color: "#6b7280" }}>
+                Pickup location
+              </p>
+              <p style={{ fontSize: "18px", fontWeight: 600, margin: "4px 0" }}>
+                {restaurantContext || pickupLabel || "Selected restaurant"}
+              </p>
+              <p style={{ fontSize: "14px", color: "#374151" }}>
+                {pickupLabel}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setShowPickupPicker(true);
+                setPickup(null);
+                setPickupLabel("");
+                setRestaurantContext("");
+              }}
+              style={{
+                color: "#7c3aed",
+                fontWeight: 600,
+                border: "none",
+                background: "transparent",
+                cursor: "pointer",
+              }}
+            >
+              Change
+            </button>
+          </div>
+        </div>
+      )}
 
         <div style={{ marginBottom: "24px" }}>
           <AddressAutocomplete

@@ -486,6 +486,14 @@ export interface DisputeDoc {
 
 // ==================== FEATURE FLAGS ====================
 
+export interface SenderrplaceFeatureFlags {
+  marketplace_v2: boolean;
+  seller_portal_v2: boolean;
+  listing_create_v1: boolean;
+  checkout_v2: boolean;
+  messaging_v1: boolean;
+}
+
 export interface FeatureFlags {
   marketplace: {
     enabled: boolean;
@@ -549,6 +557,8 @@ export interface FeatureFlags {
     darkMode: boolean;
     animations: boolean;
   };
+
+  senderrplace?: SenderrplaceFeatureFlags;
 }
 
 // ==================== ROUTES (LOCAL BATCHED DELIVERIES) ====================

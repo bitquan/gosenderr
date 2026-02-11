@@ -238,7 +238,7 @@ export default function CustomerDashboardNew() {
       allActivities.push({
         id: order.id,
         type: "order",
-        title: order.itemTitle || "Marketplace Order",
+        title: order.itemTitle || "Senderrplace Order",
         description: order.status || order.currentStatus || "pending",
         status: order.status || order.currentStatus,
         timestamp: order.updatedAt || order.createdAt,
@@ -281,7 +281,7 @@ export default function CustomerDashboardNew() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-[#F8F9FF] px-6 py-10">
+      <div className="min-h-screen bg-transparent px-6 py-10">
         <div className="max-w-6xl mx-auto space-y-6">
           <Skeleton className="h-24 w-full" variant="purple" />
           <div className="grid grid-cols-2 gap-4">
@@ -297,7 +297,7 @@ export default function CustomerDashboardNew() {
   const stats = getStats();
 
   return (
-    <div className="min-h-screen bg-[#F8F9FF] pb-24">
+    <div className="min-h-screen bg-transparent pb-24">
       {/* Header Section */}
       <div className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] rounded-b-[32px] p-6 text-white shadow-lg">
         <div className="max-w-6xl mx-auto">
@@ -333,7 +333,7 @@ export default function CustomerDashboardNew() {
             </div>
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4">
               <p className="text-3xl font-bold">{stats.totalOrders}</p>
-              <p className="text-sm text-purple-100">Marketplace Orders</p>
+            <p className="text-sm text-purple-100">Senderrplace Orders</p>
             </div>
           </div>
         </div>
@@ -362,7 +362,7 @@ export default function CustomerDashboardNew() {
             variant="warning"
           />
           <StatCard
-            title="Marketplace Orders"
+            title="Senderrplace Orders"
             value={stats.totalOrders}
             icon="🛒"
             variant="purple"
