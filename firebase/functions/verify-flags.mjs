@@ -87,13 +87,6 @@ async function verifyFeatureFlags() {
           darkMode: false,
           animations: true,
         },
-        senderrplaceV2: {
-          enabled: false,
-          ads: false,
-          badges: false,
-          bookingLinks: false,
-          adminControls: false,
-        },
       };
 
       await docRef.set(flags);
