@@ -1,9 +1,8 @@
 
 import { useState, useEffect } from "react";
 import { doc, getDoc } from "firebase/firestore";
-import { db, getDbOrThrow } from "@/lib/firebase/client";
-import { DEFAULT_FEATURE_FLAGS } from "@gosenderr/shared";
-import type { FeatureFlags } from "@gosenderr/shared";
+import { db } from "@/lib/firebase/client";
+import { DEFAULT_FEATURE_FLAGS, type FeatureFlags } from "@gosenderr/shared";
 
 export function useFeatureFlags() {
   const [flags, setFlags] = useState<FeatureFlags | null>(null);
@@ -11,32 +10,41 @@ export function useFeatureFlags() {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    let mounted = true;
+    let cancelled = false;
 
-    (async () => {
+    const loadFlags = async () => {
       try {
-        const safeDb = getDbOrThrow()
-        const snapshot = await getDoc(doc(safeDb, "featureFlags", "config"))
-        if (!mounted) return
+        const snapshot = await getDoc(doc(db, "featureFlags", "config"));
+        if (cancelled) return;
+
         if (snapshot.exists()) {
-          setFlags(snapshot.data() as FeatureFlags)
+          setFlags(snapshot.data() as FeatureFlags);
         } else {
-          setFlags(DEFAULT_FEATURE_FLAGS)
+          setFlags(DEFAULT_FEATURE_FLAGS);
         }
+        setError(null);
       } catch (err) {
-        if (!mounted) return
-        console.error("Error loading feature flags:", err)
-        setError(err as Error)
-        // Permission or init errors should not crash admin shell.
-        setFlags(DEFAULT_FEATURE_FLAGS)
+        if (cancelled) return;
+        const firestoreCode = (err as { code?: string } | null)?.code;
+        if (firestoreCode === "permission-denied") {
+          setFlags(DEFAULT_FEATURE_FLAGS);
+          setError(null);
+        } else {
+          console.error("Error loading feature flags:", err);
+          setError(err as Error);
+        }
       } finally {
-        if (mounted) setLoading(false)
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
-    })()
+    };
+
+    void loadFlags();
 
     return () => {
-      mounted = false
-    }
+      cancelled = true;
+    };
   }, []);
 
   return { flags, loading, error };
