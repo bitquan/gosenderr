@@ -1,90 +1,81 @@
-# Senderr App - Local Development
+# Senderr Web App
 
-## 🚚 Access Senderr Portal
+This is the Senderr courier web app in `apps/senderr-app`.
 
-**Local Development Server:** http://localhost:5174
+## Setup
 
-Already running in your terminal!
+1. Install dependencies from repo root:
+   - `pnpm install --frozen-lockfile`
+2. Start the app:
+   - `pnpm --filter @gosenderr/senderr-app dev`
 
----
+Default local URL: `http://localhost:5174`
 
-## 🔐 Login Options
+## Environment
 
-### Option 1: Create New Senderr Account
-1. Open http://localhost:3001
-2. You'll see the login page
-3. Use the same email/password you used for marketplace app
-4. The system will use your existing account
+This app reads the following env vars:
+- `VITE_FIREBASE_API_KEY`
+- `VITE_FIREBASE_AUTH_DOMAIN`
+- `VITE_FIREBASE_PROJECT_ID`
+- `VITE_FIREBASE_STORAGE_BUCKET`
+- `VITE_FIREBASE_MESSAGING_SENDER_ID`
+- `VITE_FIREBASE_APP_ID`
+- `VITE_MAPBOX_TOKEN`
+- `VITE_STRIPE_PUBLISHABLE_KEY`
+- `VITE_PUBLIC_CONFIG_URL`
 
-### Option 2: Use Existing Account
-- Use the same credentials from marketplace app
-- The auth is shared across both portals
+Use repo-level env guidance in `/README.md` until an app-local `.env.example` is added.
 
----
+## Run
 
-## 🎯 Features Available
+- Dev server:
+  - `pnpm --filter @gosenderr/senderr-app dev`
+- Production build:
+  - `pnpm --filter @gosenderr/senderr-app build`
+- Preview build:
+  - `pnpm --filter @gosenderr/senderr-app preview`
+- Lint:
+  - `pnpm --filter @gosenderr/senderr-app lint`
 
-### Dashboard (Current Page)
-- **Online/Offline Toggle** - Green button in header
-- **Available Jobs** - List of open delivery jobs
-- **My Active Deliveries** - Jobs you've accepted
-- **Stats**: Available, Active, Vehicle Type
+## Test
 
-### How to Use
-1. Click "Go Online" button (turns green)
-2. Browse available jobs below
-3. Click "Accept Job" to claim a delivery
-4. View your active deliveries at the top
+Current package scripts do not include an app-local test command.
 
----
+Use these validation commands from repo root:
 
-## 🚀 Development
+- App lint:
+  - `pnpm --filter @gosenderr/senderr-app lint`
+- App production build:
+  - `pnpm --filter @gosenderr/senderr-app build`
 
-### Start Dev Server
-\`\`\`bash
-cd apps/senderr-app
-pnpm dev
-\`\`\`
+## Mobile (Capacitor)
 
-### Build for Production
-\`\`\`bash
-pnpm build
-\`\`\`
+- Sync native projects:
+  - `pnpm --filter @gosenderr/senderr-app cap:sync`
+- Open iOS project:
+  - `pnpm --filter @gosenderr/senderr-app cap:open:ios`
+- Open Android project:
+  - `pnpm --filter @gosenderr/senderr-app cap:open:android`
 
-### Port
-- Default: 5174
-- Hot reload enabled ⚡
+## Deploy
 
----
+From repo root:
+- `pnpm deploy:senderr`
 
-## 📂 Project Structure
+Target:
+- Firebase Hosting site `gosenderr-courier`
 
-\`\`\`
-apps/senderr-app/
-├── src/
-│   ├── pages/
-│   │   ├── Login.tsx        # Auth page
-│   │   └── Dashboard.tsx    # Main senderr dashboard
-│   ├── components/         # Shared UI components
-│   ├── lib/                # Firebase, utils
-│   ├── contexts/           # Auth context
-│   └── hooks/              # Custom hooks
-└── dist/                   # Build output
-\`\`\`
+## Troubleshooting
 
----
+- Wrong port:
+  - This app runs on `5174` via `vite.config.ts`.
+- Firebase auth/config failures:
+  - Verify required `VITE_FIREBASE_*` vars are set.
+- Map errors:
+  - Verify `VITE_MAPBOX_TOKEN`.
 
-## 🔧 Next Steps
+## Links
 
-- [ ] Job Detail page (accept/update status)
-- [ ] Active Route page (navigation)
-- [ ] Jobs history
-- [ ] Profile/Settings
-- [ ] Deploy to Firebase Hosting
-
----
-
-## 📱 Related Apps
-
-- **Marketplace App (Deployed)**: https://gosenderr-marketplace.web.app
-- **Marketplace App (Local)**: Run \`pnpm dev\` in \`apps/marketplace-app\`
+- Repo docs policy: `/docs/BLUEPRINT.md`
+- App docs registry: `/docs/apps/README.md`
+- App-specific copilot guidance: `/apps/senderr-app/copilot-instructions.md`

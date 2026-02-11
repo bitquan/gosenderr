@@ -7,6 +7,53 @@ import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { useUserDoc } from "@/hooks/v2/useUserDoc";
 import { Card, CardContent } from "@/components/ui/Card";
 import { AddressAutocomplete } from "@/components/v2/AddressAutocomplete";
+import { parseUsAddressComponents } from "@/lib/pickupPrivacy";
+
+type PickupLocationState = {
+  address: string;
+  city: string;
+  state: string;
+  postalCode?: string;
+  lat: number;
+  lng: number;
+};
+
+const toPickupLocationState = (value: any): PickupLocationState | null => {
+  if (!value) return null;
+  const location = value.location || value;
+  const lat = location?.latitude ?? location?.lat;
+  const lng = location?.longitude ?? location?.lng;
+  if (typeof lat !== "number" || typeof lng !== "number") return null;
+
+  return {
+    address: value.address || "",
+    city: value.city || "",
+    state: value.state || "",
+    postalCode: value.postalCode || "",
+    lat,
+    lng,
+  };
+};
+
+const getSellerDefaultPickupLocation = (userData: any): PickupLocationState | null => {
+  const defaultPickup = toPickupLocationState(userData?.sellerProfile?.defaultPickupLocation);
+  if (defaultPickup) return defaultPickup;
+
+  const localConfig = userData?.sellerProfile?.localSellingConfig;
+  const localConfigPickup = toPickupLocationState(localConfig?.pickupLocation);
+  if (localConfigPickup) return localConfigPickup;
+
+  const localConfigWithLocation = toPickupLocationState({
+    address: localConfig?.address || "",
+    city: localConfig?.city || "",
+    state: localConfig?.state || "",
+    postalCode: localConfig?.postalCode || "",
+    location: localConfig?.location,
+  });
+  if (localConfigWithLocation) return localConfigWithLocation;
+
+  return null;
+};
 
 export default function EditSellerItem() {
   const { itemId } = useParams();
@@ -17,13 +64,7 @@ export default function EditSellerItem() {
   const [saving, setSaving] = useState(false);
   const [images, setImages] = useState<string[]>([]);
   const [newFiles, setNewFiles] = useState<File[]>([]);
-  const [pickupLocation, setPickupLocation] = useState<{
-    address: string;
-    city: string;
-    state: string;
-    lat: number;
-    lng: number;
-  } | null>(null);
+  const [pickupLocation, setPickupLocation] = useState<PickupLocationState | null>(null);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -42,14 +83,16 @@ export default function EditSellerItem() {
   ];
 
   const parseAddressParts = (address: string) => {
-    const parts = address.split(",").map((part) => part.trim());
-    const [street, city, stateZip] = parts;
-    const stateZipParts = (stateZip || "").split(" ").filter(Boolean);
-    const state = stateZipParts[0] || "";
+    const parts = address
+      .split(",")
+      .map((part) => part.trim())
+      .filter(Boolean);
+    const parsed = parseUsAddressComponents(address);
     return {
-      street: street || address,
-      city: city || "",
-      state,
+      street: parts[0] || address,
+      city: parsed.city,
+      state: parsed.state,
+      postalCode: parsed.zipCode,
     };
   };
 
@@ -77,6 +120,9 @@ export default function EditSellerItem() {
 
       setLoading(true);
       try {
+        const userSnap = await getDoc(doc(db, "users", uid));
+        const userData = userSnap.exists() ? userSnap.data() : {};
+
         const docRef = doc(db, "marketplaceItems", itemId as string);
         const snap = await getDoc(docRef);
         if (!snap.exists()) throw new Error("Item not found");
@@ -107,19 +153,13 @@ export default function EditSellerItem() {
           deliveryOptions: data.deliveryOptions || ["courier"],
         });
         setImages(data.images || data.photos || []);
-        if (data.pickupLocation) {
-          const pickupData = data.pickupLocation as any;
-          const location = pickupData.location || pickupData;
-          const lat = location?.latitude ?? location?.lat;
-          const lng = location?.longitude ?? location?.lng;
-          if (lat != null && lng != null) {
-            setPickupLocation({
-              address: pickupData.address || "",
-              city: pickupData.city || "",
-              state: pickupData.state || "",
-              lat,
-              lng,
-            });
+        const listingPickupLocation = toPickupLocationState(data.pickupLocation);
+        if (listingPickupLocation) {
+          setPickupLocation(listingPickupLocation);
+        } else {
+          const defaultPickupLocation = getSellerDefaultPickupLocation(userData);
+          if (defaultPickupLocation) {
+            setPickupLocation(defaultPickupLocation);
           }
         }
         console.log('EditPage loaded item data:', data);
@@ -220,6 +260,7 @@ export default function EditSellerItem() {
               address: pickupLocation.address,
               city: pickupLocation.city,
               state: pickupLocation.state,
+              postalCode: pickupLocation.postalCode || "",
               location: new GeoPoint(pickupLocation.lat, pickupLocation.lng),
             }
           : undefined,
@@ -227,6 +268,39 @@ export default function EditSellerItem() {
       };
 
       await updateDoc(doc(db, "marketplaceItems", itemId), updatePayload);
+      if (pickupLocation) {
+        const userRef = doc(db, "users", uid);
+        const userSnap = await getDoc(userRef);
+        const userData = userSnap.exists() ? userSnap.data() : {};
+        const existingLocalConfig = userData?.sellerProfile?.localSellingConfig || {};
+        const existingShareExact =
+          userData?.sellerProfile?.shareExactPickupLocation === true ||
+          existingLocalConfig?.shareExactPickupLocation === true;
+
+        await updateDoc(userRef, {
+          "sellerProfile.defaultPickupLocation": {
+            address: pickupLocation.address,
+            city: pickupLocation.city,
+            state: pickupLocation.state,
+            postalCode: pickupLocation.postalCode || "",
+            location: new GeoPoint(pickupLocation.lat, pickupLocation.lng),
+          },
+          "sellerProfile.shareExactPickupLocation": existingShareExact,
+          "sellerProfile.localSellingEnabled": true,
+          "sellerProfile.localSellingConfig": {
+            ...existingLocalConfig,
+            address: pickupLocation.address,
+            city: pickupLocation.city,
+            state: pickupLocation.state,
+            postalCode:
+              pickupLocation.postalCode || existingLocalConfig.postalCode || "",
+            location: new GeoPoint(pickupLocation.lat, pickupLocation.lng),
+            shareExactPickupLocation:
+              existingLocalConfig.shareExactPickupLocation ?? existingShareExact,
+          },
+          updatedAt: serverTimestamp(),
+        });
+      }
       navigate("/seller/dashboard");
     } catch (err) {
       console.error("Failed to update item:", err);
@@ -320,6 +394,7 @@ export default function EditSellerItem() {
                       address: result.address,
                       city: parsed.city,
                       state: parsed.state,
+                      postalCode: parsed.postalCode,
                       lat: result.lat,
                       lng: result.lng,
                     });

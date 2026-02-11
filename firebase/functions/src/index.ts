@@ -24,6 +24,18 @@ export { runTestFlow } from "./http/runTestFlow";
 export { getPublicConfig } from "./http/getPublicConfig";
 export { getPublicConfigHttp } from "./http/getPublicConfigHttp";
 export { createPaymentIntentHttp } from "./http/createPaymentIntentHttp";
+export {
+  upsertMerchantDirectoryEntry,
+  createSellerBookingLink,
+  revokeSellerBookingLink,
+  validateSellerBookingLink,
+} from "./senderrplace/domainContract";
+export {
+  evaluateSenderrplaceAvailability,
+  createSenderrplaceBookingHold,
+  releaseSenderrplaceBookingHold,
+  finalizeSenderrplaceBookingWithHold,
+} from "./senderrplace/availabilityGate";
 
 // Stripe Functions
 export * from "./stripe";

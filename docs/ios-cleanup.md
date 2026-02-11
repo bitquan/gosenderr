@@ -11,7 +11,7 @@ Quick safe actions (fast):
 Recommended Xcode settings for local dev:
 
 - Debug configuration: set `ONLY_ACTIVE_ARCH = YES` (improves simulator build times and avoids needing fat libs).
-  - You can use `apps/courieriosnativeclean/ios/LocalDebug.xcconfig` and attach it to the Debug configuration in Xcode's project settings.
+  - You can use `apps/courier-ios-native/ios/LocalDebug.xcconfig` and attach it to the Debug configuration in Xcode's project settings.
 - Set 'Build Active Architecture Only' = YES for Debug in Xcode project build settings (optional if you use the xcconfig).
 - Consider moving DerivedData to a fast external SSD if disk-limited: `Xcode Preferences → Locations → Derived Data → Advanced` (choose custom path).
 

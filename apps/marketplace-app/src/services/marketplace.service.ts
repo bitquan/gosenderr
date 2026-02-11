@@ -193,6 +193,7 @@ export class MarketplaceService {
     
     // Activate seller profile if needed
     await this.activateSellerProfile(currentUser.uid, userData);
+    await this.syncSellerDefaultPickupLocation(currentUser.uid, userData, input.pickupLocation);
     
     return docRef.id;
   }
@@ -222,6 +223,17 @@ export class MarketplaceService {
       ...updates,
       updatedAt: Timestamp.now()
     });
+
+    if (updates.pickupLocation) {
+      const userRef = doc(db, 'users', currentUser.uid);
+      const userSnap = await getDoc(userRef);
+      const userData = userSnap.exists() ? userSnap.data() : {};
+      await this.syncSellerDefaultPickupLocation(
+        currentUser.uid,
+        userData,
+        updates.pickupLocation,
+      );
+    }
   }
   
   /**
@@ -312,6 +324,41 @@ export class MarketplaceService {
         'sellerProfile.activeListings': (userData.sellerProfile.activeListings || 0) + 1
       });
     }
+  }
+
+  /**
+   * Persist the most recent pickup location so new listings can auto-fill it.
+   */
+  private async syncSellerDefaultPickupLocation(
+    userId: string,
+    userData: DocumentData,
+    pickupLocation?: CreateListingInput['pickupLocation'],
+  ): Promise<void> {
+    if (!pickupLocation) return;
+
+    const userRef = doc(db, 'users', userId);
+    const existingLocalConfig = userData?.sellerProfile?.localSellingConfig || {};
+    const existingShareExact =
+      userData?.sellerProfile?.shareExactPickupLocation === true ||
+      existingLocalConfig?.shareExactPickupLocation === true;
+
+    await updateDoc(userRef, {
+      'sellerProfile.defaultPickupLocation': pickupLocation,
+      'sellerProfile.shareExactPickupLocation': existingShareExact,
+      'sellerProfile.localSellingEnabled': true,
+      'sellerProfile.localSellingConfig': {
+        ...existingLocalConfig,
+        address: pickupLocation.address,
+        city: pickupLocation.city,
+        state: pickupLocation.state,
+        postalCode:
+          pickupLocation.postalCode || existingLocalConfig.postalCode || '',
+        location: pickupLocation.location,
+        shareExactPickupLocation:
+          existingLocalConfig.shareExactPickupLocation ?? existingShareExact,
+      },
+      updatedAt: Timestamp.now(),
+    });
   }
 }
 
