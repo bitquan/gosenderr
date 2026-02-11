@@ -53,7 +53,7 @@ class SenderrNotificationsModule: NSObject {
     rejecter reject: @escaping RCTPromiseRejectBlock
   ) {
     if FirebaseApp.app() == nil,
-      Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") != nil
+      hasUsableGoogleServicePlist()
     {
       FirebaseApp.configure()
     }
@@ -90,5 +90,43 @@ class SenderrNotificationsModule: NSObject {
       UserDefaults.standard.set(token, forKey: self.fcmTokenDefaultsKey)
       resolve(token)
     }
+  }
+
+  private func hasUsableGoogleServicePlist() -> Bool {
+    guard let path = Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist"),
+      let dictionary = NSDictionary(contentsOfFile: path),
+      let rawAppID = dictionary["GOOGLE_APP_ID"] as? String
+    else {
+      return false
+    }
+
+    let appID = rawAppID.trimmingCharacters(in: .whitespacesAndNewlines)
+    if appID.isEmpty || appID.localizedCaseInsensitiveContains("placeholder") {
+      return false
+    }
+
+    let parts = appID.split(separator: ":")
+    if parts.count != 4 {
+      return false
+    }
+
+    if !parts[0].allSatisfy({ $0.isNumber }) || !parts[1].allSatisfy({ $0.isNumber }) {
+      return false
+    }
+
+    if parts[2] != "ios" || parts[3].isEmpty {
+      return false
+    }
+
+    if let plistBundleID = dictionary["BUNDLE_ID"] as? String,
+      let appBundleID = Bundle.main.bundleIdentifier
+    {
+      let normalizedPlistBundleID = plistBundleID.trimmingCharacters(in: .whitespacesAndNewlines)
+      if !normalizedPlistBundleID.isEmpty && normalizedPlistBundleID != appBundleID {
+        return false
+      }
+    }
+
+    return true
   }
 }

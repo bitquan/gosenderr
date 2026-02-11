@@ -8,6 +8,10 @@ SCHEME="Senderr"
 GOOGLE_PLIST="$IOS_DIR/Senderrappios/GoogleService-Info.plist"
 TEMP_PLIST_CREATED=0
 
+is_generated_temp_plist() {
+  [[ -f "$GOOGLE_PLIST" ]] && grep -q "<key>SENDERR_TEMP_PLIST</key>" "$GOOGLE_PLIST"
+}
+
 if [[ ! -d "$IOS_DIR" ]]; then
   echo "error: iOS directory not found: $IOS_DIR" >&2
   exit 1
@@ -22,9 +26,20 @@ cleanup() {
   if [[ "$TEMP_PLIST_CREATED" == "1" && -f "$GOOGLE_PLIST" ]]; then
     rm -f "$GOOGLE_PLIST"
     echo "Removed temporary GoogleService-Info.plist"
+    return
+  fi
+
+  if is_generated_temp_plist; then
+    rm -f "$GOOGLE_PLIST"
+    echo "Removed temporary GoogleService-Info.plist"
   fi
 }
 trap cleanup EXIT
+
+if is_generated_temp_plist; then
+  rm -f "$GOOGLE_PLIST"
+  echo "Removed stale temporary GoogleService-Info.plist"
+fi
 
 if [[ ! -f "$GOOGLE_PLIST" ]]; then
   cat > "$GOOGLE_PLIST" <<'EOF'
@@ -32,14 +47,16 @@ if [[ ! -f "$GOOGLE_PLIST" ]]; then
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+  <key>SENDERR_TEMP_PLIST</key>
+  <true/>
   <key>API_KEY</key>
-  <string>placeholder-api-key</string>
+  <string>AIzaSyD-TemporaryBuildVerifyOnly</string>
   <key>BUNDLE_ID</key>
-  <string>com.gosenderr.senderr</string>
+  <string>com.gosenderr.courier</string>
   <key>GCM_SENDER_ID</key>
-  <string>000000000000</string>
+  <string>123456789012</string>
   <key>GOOGLE_APP_ID</key>
-  <string>1:000000000000:ios:placeholder</string>
+  <string>1:123456789012:ios:1111111111111111</string>
   <key>IS_ADS_ENABLED</key>
   <false/>
   <key>IS_ANALYTICS_ENABLED</key>
@@ -53,9 +70,9 @@ if [[ ! -f "$GOOGLE_PLIST" ]]; then
   <key>PLIST_VERSION</key>
   <string>1</string>
   <key>PROJECT_ID</key>
-  <string>placeholder-project</string>
+  <string>gosenderr-buildverify</string>
   <key>STORAGE_BUCKET</key>
-  <string>placeholder.appspot.com</string>
+  <string>gosenderr-buildverify.appspot.com</string>
 </dict>
 </plist>
 EOF

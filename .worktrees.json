@@ -1,0 +1,183 @@
+{
+  "protectedBranches": ["main"],
+  "baseBranches": {
+    "senderrapp": "V1/base-senderrapp",
+    "senderrplace": "V1/base-senderrplace",
+    "admin": "V1/base-admin"
+  },
+  "reconcilePrefixes": [
+    "V1/base-",
+    "V1/senderrapp/",
+    "V1/senderrplace/",
+    "V1/admin/"
+  ],
+  "worktrees": [
+    {
+      "branchPrefix": "V1/base-senderrapp",
+      "baseBranch": "main",
+      "allowedPaths": [
+        "apps/senderr-app/**",
+        "apps/courieriosnativeclean/**",
+        "packages/shared/**",
+        "packages/ui/**",
+        "docs/**",
+        "scripts/**",
+        ".github/**",
+        ".vscode/**",
+        "package.json",
+        "pnpm-lock.yaml",
+        "pnpm-workspace.yaml",
+        "turbo.json",
+        ".worktrees.json"
+      ],
+      "description": "V1 Senderr app baseline branch"
+    },
+    {
+      "branchPrefix": "V1/base-senderrplace",
+      "baseBranch": "main",
+      "allowedPaths": [
+        "apps/marketplace-app/**",
+        "apps/senderr-app/**",
+        "firebase/functions/src/senderrplace/**",
+        "firebase/functions/src/index.ts",
+        "firebase/firestore.rules",
+        "firebase/storage.rules",
+        "packages/shared/**",
+        "packages/ui/**",
+        "docs/**",
+        "scripts/**",
+        ".github/**",
+        ".vscode/**",
+        "package.json",
+        "pnpm-lock.yaml",
+        "pnpm-workspace.yaml",
+        "turbo.json",
+        ".worktrees.json"
+      ],
+      "description": "V1 Senderrplace baseline branch"
+    },
+    {
+      "branchPrefix": "V1/base-admin",
+      "baseBranch": "main",
+      "allowedPaths": [
+        "apps/admin-app/**",
+        "apps/admin-desktop/**",
+        "firebase/functions/**",
+        "packages/shared/**",
+        "packages/ui/**",
+        "docs/**",
+        "scripts/**",
+        ".github/**",
+        ".vscode/**",
+        "package.json",
+        "pnpm-lock.yaml",
+        "pnpm-workspace.yaml",
+        "turbo.json",
+        ".worktrees.json"
+      ],
+      "description": "V1 Admin baseline branch"
+    },
+    {
+      "branchPrefix": "V1/senderrapp/",
+      "baseBranch": "V1/base-senderrapp",
+      "allowedPaths": [
+        "apps/senderr-app/**",
+        "apps/courieriosnativeclean/**",
+        "packages/shared/**",
+        "packages/ui/**",
+        "docs/**",
+        "scripts/**",
+        ".github/**",
+        ".worktrees.json"
+      ],
+      "description": "Feature branches for senderr app lane"
+    },
+    {
+      "branchPrefix": "V1/senderrplace/",
+      "baseBranch": "V1/base-senderrplace",
+      "allowedPaths": [
+        "apps/marketplace-app/**",
+        "apps/senderr-app/**",
+        "firebase/functions/src/senderrplace/**",
+        "firebase/functions/src/index.ts",
+        "firebase/firestore.rules",
+        "firebase/storage.rules",
+        "firebase/tests/senderrplace*",
+        "firebase/tests/**",
+        "packages/shared/**",
+        "packages/ui/**",
+        "docs/**",
+        "scripts/**",
+        ".github/**",
+        ".worktrees.json"
+      ],
+      "description": "Feature branches for senderrplace lane"
+    },
+    {
+      "branchPrefix": "V1/admin/",
+      "baseBranch": "V1/base-admin",
+      "allowedPaths": [
+        "apps/admin-app/**",
+        "apps/admin-desktop/**",
+        "firebase/functions/**",
+        "packages/shared/**",
+        "packages/ui/**",
+        "docs/**",
+        "scripts/**",
+        ".github/**",
+        ".worktrees.json"
+      ],
+      "description": "Feature branches for admin lane"
+    },
+    {
+      "branchPrefix": "senderr-app/feature/",
+      "baseBranch": "senderr_app",
+      "allowedPaths": [
+        "apps/senderr-app/**",
+        "apps/courieriosnativeclean/**",
+        "packages/shared/**",
+        "packages/ui/**",
+        "docs/**",
+        "scripts/**",
+        ".github/**",
+        ".worktrees.json"
+      ],
+      "description": "Legacy senderr app feature branches"
+    },
+    {
+      "branchPrefix": "senderrplace/feature/",
+      "baseBranch": "senderr_app",
+      "allowedPaths": [
+        "apps/marketplace-app/**",
+        "apps/senderr-app/**",
+        "packages/shared/**",
+        "packages/ui/**",
+        "docs/**",
+        "scripts/**",
+        ".github/**",
+        ".worktrees.json"
+      ],
+      "description": "Legacy senderrplace feature branches"
+    },
+    {
+      "branchPrefix": "worktree/cleanup/",
+      "baseBranch": "main",
+      "allowedPaths": ["**"],
+      "description": "Cleanup utility branches (legacy)"
+    },
+    {
+      "branchPrefix": "worktree/salvage/",
+      "baseBranch": "main",
+      "allowedPaths": ["**"],
+      "description": "Salvage utility branches (legacy)"
+    }
+  ],
+  "defaultAllowed": [
+    "docs/**",
+    "packages/shared/**",
+    "packages/ui/**",
+    "scripts/**",
+    ".github/**",
+    ".worktrees.json"
+  ]
+}

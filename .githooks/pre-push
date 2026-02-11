@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+if [[ -z "${repo_root}" ]]; then
+  exit 0
+fi
+
+branch="$(git -C "${repo_root}" rev-parse --abbrev-ref HEAD)"
+
+if [[ "${branch}" == "main" ]]; then
+  echo "Push blocked: main is production-only."
+  echo "Create a feature branch under V1/<lane>/<feature> or use a V1/base-* branch."
+  exit 1
+fi
+
+if [[ -x "${repo_root}/scripts/wt-check.sh" ]]; then
+  bash "${repo_root}/scripts/wt-check.sh" --branch="${branch}"
+fi
+
+exit 0

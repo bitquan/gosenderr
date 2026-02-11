@@ -5,6 +5,7 @@ This is the repo-wide operating guide for developers.
 If you follow this file exactly, you avoid the common setup and branch mistakes.
 
 > Doc metadata
+>
 > - Owner: `@bitquan`
 > - Last verified: `2026-02-07`
 > - Review cadence: `monthly`

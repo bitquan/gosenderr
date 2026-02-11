@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -24,14 +23,14 @@ export function useFeatureFlags() {
         if (snapshot.exists()) {
           setFlags(normalizeFeatureFlags(snapshot.data()));
         } else {
-          setFlags(DEFAULT_FEATURE_FLAGS);
+          setFlags(DEFAULT_FEATURE_FLAGS as unknown as FeatureFlags);
         }
         setError(null);
       } catch (err) {
         if (cancelled) return;
         const firestoreCode = (err as { code?: string } | null)?.code;
         if (firestoreCode === "permission-denied") {
-          setFlags(DEFAULT_FEATURE_FLAGS);
+          setFlags(DEFAULT_FEATURE_FLAGS as unknown as FeatureFlags);
           setError(null);
         } else {
           console.error("Error loading feature flags:", err);

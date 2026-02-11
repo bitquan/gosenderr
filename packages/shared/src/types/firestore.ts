@@ -509,6 +509,7 @@ export interface FeatureFlags {
     routes: boolean;
     longRoutes: boolean;
     longHaul: boolean;
+    mapShell: boolean;
   };
 
   courier: {

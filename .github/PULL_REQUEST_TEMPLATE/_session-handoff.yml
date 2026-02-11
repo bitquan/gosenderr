@@ -1,0 +1,19 @@
+name: "Session handoff"
+about: "Select whether this PR included a session handoff (required)."
+
+body:
+  - type: markdown
+    attributes:
+      value: "This form ensures exactly one handoff option is selected when creating a PR."
+
+  - type: radio
+    id: handoff
+    attributes:
+      label: "Session handoff"
+      description: "Choose exactly one option (required). If you ran `bash scripts/dev-handoff.sh` and updated `docs/dev/SESSION_STATE.md` and `docs/dev/WORKLOG.md`, choose **handoff: updated**."
+      options:
+        - label: "handoff: updated — I ran `bash scripts/dev-handoff.sh` and updated docs/dev/SESSION_STATE.md + docs/dev/WORKLOG.md"
+          value: "updated"
+        - label: "handoff: not needed — docs-only or metadata-only PR with no behavior/process/setup impact"
+          value: "not_needed"
+      required: true

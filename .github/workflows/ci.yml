@@ -23,6 +23,19 @@ jobs:
             const notNeededChecked = /-\s*\[[xX]\]\s*`?handoff:\s*not needed`?/i.test(body);
 
             if ((updatedChecked && notNeededChecked) || (!updatedChecked && !notNeededChecked)) {
+              const prNumber = context.payload.pull_request?.number;
+              const owner = context.repo.owner;
+              const repo = context.repo.repo;
+              const commentBody = `⚠️ Please select exactly one handoff option in the PR description: ` +
+                "`handoff: updated` or `handoff: not needed`. You can edit the PR body to check the correct box. See `.github/pull_request_template.md` for guidance.";
+              if (prNumber) {
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number: prNumber,
+                  body: commentBody,
+                });
+              }
               core.setFailed(
                 "Select exactly one handoff option in the PR template: `handoff: updated` or `handoff: not needed`."
               );

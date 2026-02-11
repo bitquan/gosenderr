@@ -16,6 +16,7 @@ export const DEFAULT_FEATURE_FLAGS: FeatureFlags = {
     routes: true,
     longRoutes: false,
     longHaul: false,
+    mapShell: false,
   },
   courier: {
     rateCards: true,
@@ -89,7 +90,10 @@ function normalizeSection<TSection extends object>(
   for (const key of Object.keys(defaults) as Array<keyof TSection>) {
     const fallback = defaults[key];
     if (typeof fallback === "boolean") {
-      next[key] = coerceBool(rawRecord[key as string], fallback) as TSection[keyof TSection];
+      next[key] = coerceBool(
+        rawRecord[key as string],
+        fallback,
+      ) as TSection[keyof TSection];
       continue;
     }
     next[key] = fallback;
@@ -101,7 +105,10 @@ interface NormalizeOptions {
   forceAdminWebEnabled?: boolean;
 }
 
-function readLegacyFlagValue(rawFlags: UnknownRecord, legacyPath: string): unknown {
+function readLegacyFlagValue(
+  rawFlags: UnknownRecord,
+  legacyPath: string,
+): unknown {
   const parts = legacyPath.split(".");
   let cursor: unknown = rawFlags;
   for (const part of parts) {
@@ -121,7 +128,9 @@ export function normalizeFeatureFlags(
   const senderrplaceSeed = asRecord(root.senderrplace);
 
   // Backfill legacy flat aliases into the nested senderrplace namespace.
-  for (const [legacyKey, mappedPath] of Object.entries(FEATURE_FLAG_DEPRECATED_ALIASES)) {
+  for (const [legacyKey, mappedPath] of Object.entries(
+    FEATURE_FLAG_DEPRECATED_ALIASES,
+  )) {
     if (!mappedPath.startsWith("senderrplace.")) continue;
     const senderrplaceKey = mappedPath.replace("senderrplace.", "");
     if (typeof senderrplaceSeed[senderrplaceKey] === "boolean") continue;
@@ -132,16 +141,25 @@ export function normalizeFeatureFlags(
   }
 
   const normalized: FeatureFlags = {
-    marketplace: normalizeSection(root.marketplace, DEFAULT_FEATURE_FLAGS.marketplace),
+    marketplace: normalizeSection(
+      root.marketplace,
+      DEFAULT_FEATURE_FLAGS.marketplace,
+    ),
     delivery: normalizeSection(root.delivery, DEFAULT_FEATURE_FLAGS.delivery),
     courier: normalizeSection(root.courier, DEFAULT_FEATURE_FLAGS.courier),
     seller: normalizeSection(root.seller, DEFAULT_FEATURE_FLAGS.seller),
     customer: normalizeSection(root.customer, DEFAULT_FEATURE_FLAGS.customer),
-    packageRunner: normalizeSection(root.packageRunner, DEFAULT_FEATURE_FLAGS.packageRunner),
+    packageRunner: normalizeSection(
+      root.packageRunner,
+      DEFAULT_FEATURE_FLAGS.packageRunner,
+    ),
     admin: normalizeSection(root.admin, DEFAULT_FEATURE_FLAGS.admin),
     advanced: normalizeSection(root.advanced, DEFAULT_FEATURE_FLAGS.advanced),
     ui: normalizeSection(root.ui, DEFAULT_FEATURE_FLAGS.ui),
-    senderrplace: normalizeSection(senderrplaceSeed, DEFAULT_FEATURE_FLAGS.senderrplace),
+    senderrplace: normalizeSection(
+      senderrplaceSeed,
+      DEFAULT_FEATURE_FLAGS.senderrplace,
+    ),
   };
 
   if (options.forceAdminWebEnabled) {
@@ -151,11 +169,16 @@ export function normalizeFeatureFlags(
   return normalized;
 }
 
-function flattenBooleanPaths(rootKey: string, section: UnknownRecord): string[] {
+function flattenBooleanPaths(
+  rootKey: string,
+  section: UnknownRecord,
+): string[] {
   return Object.keys(section).map((key) => `${rootKey}.${key}`);
 }
 
-export const REQUIRED_FEATURE_FLAG_PATHS: string[] = Object.entries(DEFAULT_FEATURE_FLAGS)
+export const REQUIRED_FEATURE_FLAG_PATHS: string[] = Object.entries(
+  DEFAULT_FEATURE_FLAGS,
+)
   .flatMap(([sectionKey, sectionValue]) =>
     flattenBooleanPaths(sectionKey, sectionValue as UnknownRecord),
   )
@@ -173,12 +196,12 @@ export const FEATURE_FLAG_DEPRECATED_ALIASES: Record<string, string> = {
 export function getUnknownFeatureFlagPaths(rawFlags: unknown): string[] {
   const root = asRecord(rawFlags);
   const knownRootSections = Object.keys(DEFAULT_FEATURE_FLAGS);
-  const ignoredRootKeys = new Set(
-    [
-      "updatedAt",
-      ...Object.keys(FEATURE_FLAG_DEPRECATED_ALIASES).filter((key) => !key.includes(".")),
-    ],
-  );
+  const ignoredRootKeys = new Set([
+    "updatedAt",
+    ...Object.keys(FEATURE_FLAG_DEPRECATED_ALIASES).filter(
+      (key) => !key.includes("."),
+    ),
+  ]);
   const unknownPaths: string[] = [];
 
   for (const rootKey of Object.keys(root)) {
@@ -205,11 +228,15 @@ export function getUnknownFeatureFlagPaths(rawFlags: unknown): string[] {
   return unknownPaths.sort();
 }
 
-export function getMissingRequiredFeatureFlagPaths(rawFlags: unknown): string[] {
+export function getMissingRequiredFeatureFlagPaths(
+  rawFlags: unknown,
+): string[] {
   const root = asRecord(rawFlags);
   const missing: string[] = [];
 
-  for (const [rootKey, sectionDefaults] of Object.entries(DEFAULT_FEATURE_FLAGS)) {
+  for (const [rootKey, sectionDefaults] of Object.entries(
+    DEFAULT_FEATURE_FLAGS,
+  )) {
     const sectionRaw = asRecord(root[rootKey]);
     for (const sectionKey of Object.keys(sectionDefaults as UnknownRecord)) {
       if (typeof sectionRaw[sectionKey] !== "boolean") {

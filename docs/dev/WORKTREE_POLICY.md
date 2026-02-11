@@ -1,54 +1,60 @@
-# Worktree Policy & Best Practices
+# Worktree Policy
 
-Purpose
+This repo uses lane-based baseline branches and one-feature-per-worktree isolation.
 
-This document defines how to create and manage feature worktrees in this monorepo so feature work is isolated, reviewable, and easy to rebase onto updated baselines.
+## Production rule
 
-Principles
+- `main` is production-only.
+- Do not do feature development directly on `main`.
 
-- Each feature should get a dedicated worktree & branch when the scope is large or cross-cutting (e.g., navigation, rate-cards, payments).
-- Branch naming convention: `senderr-app/feature/<short-name>` (replace `senderr-app` with the relevant app prefix if needed).
-- Keep worktrees focused: include only the apps/packages needed for the feature via sparse-checkout.
-- Keep commits small and focused on the feature; rebase frequently when the baseline updates.
+## Branch model
 
-How to create a feature worktree (recommended)
+- Baseline branches (long-lived):
+  - `V1/base-senderrapp`
+  - `V1/base-senderrplace`
+  - `V1/base-admin`
+- Feature branches (short-lived, one concern each):
+  - `V1/senderrapp/<feature-slug>`
+  - `V1/senderrplace/<feature-slug>`
+  - `V1/admin/<feature-slug>`
 
-Use the helper script included in `scripts/create-feature-worktree.sh`:
+## Worktree model
 
-scripts/create-feature-worktree.sh <feature-slug> --apps="apps/senderr-app,apps/courieriosnativeclean" --base=<base-branch>
+- One branch = one worktree = one PR.
+- Worktree directory format:
+  - `.../worktrees/senderrapp-<feature-slug>`
+  - `.../worktrees/senderrplace-<feature-slug>`
+  - `.../worktrees/admin-<feature-slug>`
+- Never mix unrelated concerns in the same worktree.
+  - Example: no navigation refactors inside a food-pickup worktree.
 
-This will:
-- Create `senderr-app/feature/<feature-slug>` branch (if missing) from the specified base branch
-- Create a worktree at `worktrees/<feature-slug>` and enable sparse-checkout with the given paths
-- Add a `README.md`, a convenience `package.json` with start tasks, and `.vscode/tasks.json` that delegates to monorepo commands
+## Commands
 
-Notes on where to run the script
+- Create a new lane-scoped worktree:
+  - `bash scripts/wt-new.sh senderrapp map-shell-nav`
+  - `bash scripts/wt-new.sh senderrplace food-market-v1`
+  - `bash scripts/wt-new.sh admin feature-flags-audit`
+- Validate current branch scope:
+  - `bash scripts/wt-check.sh`
+- Sync base branches:
+  - `bash scripts/wt-sync.sh all`
 
-- Run this script from the monorepo root (e.g., `/Users/papadev/dev/apps/Gosenderr_local/worktrees/senderrplace-local`) to create the feature worktree next to other worktrees under the same `worktrees/` folder.
-- If you run the script from inside an existing worktree it will create the new worktree relative to that worktree's root. If you need to override where the new worktree is created, pass `--target-root=/abs/path` to select a different root directory.
-- Example:
-  - `scripts/create-feature-worktree.sh rate-cards --target-root=/Users/papadev/dev/apps/Gosenderr_local/worktrees/senderrplace-local`
+## Workflow
 
+1. Sync baselines with `bash scripts/wt-sync.sh all`.
+2. Create a feature worktree with `bash scripts/wt-new.sh <lane> <feature>`.
+3. Implement only in that lane's allowed paths.
+4. Run `bash scripts/wt-check.sh` before push/PR.
+5. Merge feature into `V1/base-<lane>`.
+6. Promote baseline into `main` only when production-ready.
 
-Worktree README and plan
+## Hook setup
 
-- Each worktree should include a short plan doc in `docs/` (e.g., `docs/senderr_app/<feature-slug>-worktree-plan.md`) describing:
-  - Goal and acceptance criteria
-  - Files to change
-  - Verification steps and tests
+- Enable repo hooks once per clone/worktree root:
+  - `bash scripts/enable-git-hooks.sh`
+- Hooks enforce production/main protection and run worktree checks on push.
 
-Merging & baseline updates
+## Legacy branches
 
-- When a feature is complete, open a PR to merge into the repo baseline (e.g., `senderr_app` or the agreed baseline branch).
-- After merging, other open worktrees should rebase on the new baseline branch.
-
-Checklist for maintainers
-
-- [ ] Worktree created with script and README present
-- [ ] Branch name follows `senderr-app/feature/<slug>` convention
-- [ ] Worktree plan doc added under `docs/` for reviewer reference
-- [ ] Rebase worktrees when the baseline changes
-
-Contact
-
-For questions about this policy, talk to the repository owners or open an issue using the `feature-request` template in `.github/ISSUE_TEMPLATE`.
+- Legacy prefixes (`senderr-app/feature/*`, `senderrplace/feature/*`, cleanup/salvage branches) are still recognized in `.worktrees.json` so existing PRs keep working.
+- New work should always use the `V1/*` model above.

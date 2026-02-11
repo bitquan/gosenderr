@@ -120,6 +120,47 @@ PR handoff requirement:
 - Treat security, CI, and docs drift as blocking for merge readiness.
 - Keep changes minimal and verifiable with concrete commands.
 
+## Lane-based Workflow (V1) — Implemented
+
+This repo now supports a lane/base model (V1). Key changes that were implemented in the repo and must be followed by contributors working with worktrees:
+
+- Added V1 workflow scripts:
+  - `scripts/wt-new.sh` — create a new worktree from a lane/base template
+  - `scripts/wt-check.sh` — run validation for a worktree or branch
+  - `scripts/wt-sync.sh` — sync lanes and bases
+- Upgraded validator for lane/base mapping and protected `main`:
+  - `scripts/validate-worktrees.js` updated to understand lane/base rules and `main` protections
+- Policy and helpers added/updated:
+  - `WORKTREE_POLICY.md` (V1/base-\* model, one branch/worktree/PR, main production-only)
+  - `pre-push` guard added to block pushes from `main` and run scope checks
+  - `create-feature-worktree.sh` retained as a compatibility shim
+- Manifest & CI changes:
+  - `.worktrees.json` updated to lane/base rules (keeps legacy compatibility so old cleanup PRs still validate)
+  - `validate-worktrees.yml` updated to call `wt-check` during PRs
+- NPM shortcuts added:
+  - `pnpm wt:new`, `pnpm wt:check`, `pnpm wt:sync`
+
+Verification performed:
+
+- Ran `wt-sync.sh` successfully across lanes
+- Created local base branches:
+  - `V1/base-senderrapp`, `V1/base-senderrplace`, `V1/base-admin`
+- Validated `main` protection: `wt-check` blocks direct pushes to `main`
+- Validated baseline checks: `wt-check --branch=V1/base-senderrapp --base=main` passed
+
+Important:
+
+- Activate git hooks locally once: `bash scripts/enable-git-hooks.sh`
+
+Recommended usage (V1 lanes):
+
+1. `bash scripts/wt-sync.sh all`
+2. `bash scripts/wt-new.sh senderrapp <feature-slug>` (or `senderrplace`, `admin`)
+3. Work only in that worktree
+4. `bash scripts/wt-check.sh` before push
+
+---
+
 ## Related Canonical Docs
 
 - `/README.md`

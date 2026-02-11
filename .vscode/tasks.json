@@ -41,7 +41,7 @@
         "focus": false
       }
     },
-    
+
     // ==================== DEV SERVERS (Run These) ====================
     {
       "label": "🔧 Admin App (Port 3000)",
@@ -154,6 +154,18 @@
         "panel": "dedicated",
         "focus": false,
         "clear": true
+      }
+    },
+    {
+      "label": "📱 Run Senderr iOS (simulator)",
+      "type": "shell",
+      "command": "pnpm --filter courieriosnativeclean ios",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true,
+        "clear": false
       }
     },
     {

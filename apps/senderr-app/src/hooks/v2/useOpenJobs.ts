@@ -1,6 +1,12 @@
-
 import { useEffect, useState } from "react";
-import { collection, query, where, onSnapshot, or, and } from "firebase/firestore";
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  or,
+  and,
+} from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Job } from "@/lib/v2/types";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
@@ -8,6 +14,7 @@ import { useAuthUser } from "@/hooks/v2/useAuthUser";
 export function useOpenJobs() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncState, setSyncState] = useState<any | undefined>(undefined);
   const { uid, loading: authLoading } = useAuthUser();
 
   useEffect(() => {
@@ -27,7 +34,10 @@ export function useOpenJobs() {
       jobsRef,
       or(
         and(where("status", "==", "open"), where("offerCourierUid", "==", uid)),
-        and(where("status", "==", "open"), where("offerCourierUid", "==", null)),
+        and(
+          where("status", "==", "open"),
+          where("offerCourierUid", "==", null),
+        ),
         where("courierUid", "==", uid),
       ),
     );
@@ -44,5 +54,5 @@ export function useOpenJobs() {
     return () => unsubscribe();
   }, [uid, authLoading]);
 
-  return { jobs, loading };
+  return { jobs, loading, syncState };
 }

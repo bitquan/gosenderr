@@ -1,36 +1,45 @@
-import { useState, useEffect } from 'react'
-import { doc, getDoc } from 'firebase/firestore'
-import { db } from '../../lib/firebase/client'
-import { marketplaceService } from '../../services/marketplace.service'
-import { ItemCategory, ItemCondition } from '../../types/marketplace'
-import type { MarketplaceItem } from '../../types/marketplace'
-import { SearchBar } from '../../components/marketplace/SearchBar'
-import { CategoryNav } from '../../components/marketplace/CategoryNav'
-import { FilterSidebar, FilterOptions } from '../../components/marketplace/FilterSidebar'
-import { ItemGrid } from '../../components/marketplace/ItemGrid'
+import { useState, useEffect } from "react";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "../../lib/firebase/client";
+import { marketplaceService } from "../../services/marketplace.service";
+import { ItemCategory, ItemCondition } from "../../types/marketplace";
+import type { MarketplaceItem } from "../../types/marketplace";
+import { SearchBar } from "../../components/marketplace/SearchBar";
+import { CategoryNav } from "../../components/marketplace/CategoryNav";
+import {
+  FilterSidebar,
+  FilterOptions,
+} from "../../components/marketplace/FilterSidebar";
+import { ItemGrid } from "../../components/marketplace/ItemGrid";
 
 /**
  * MarketplaceHome - Main marketplace page for browsing items (Phase 2)
  * Unified model: Browse items from sellers (who are just users with sellerProfile)
  */
 export default function MarketplaceHome() {
-  const [items, setItems] = useState<MarketplaceItem[]>([])
-  const [sellerBadgesMap, setSellerBadgesMap] = useState<Record<string, string[]>>({})
-  const [sellerRatingsMap, setSellerRatingsMap] = useState<Record<string, { average: number; count: number }>>({})
-  const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState<ItemCategory | null>(null)
-  const [showFilters, setShowFilters] = useState(false)
+  const [items, setItems] = useState<MarketplaceItem[]>([]);
+  const [sellerBadgesMap, setSellerBadgesMap] = useState<
+    Record<string, string[]>
+  >({});
+  const [sellerRatingsMap, setSellerRatingsMap] = useState<
+    Record<string, { average: number; count: number }>
+  >({});
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<ItemCategory | null>(
+    null,
+  );
+  const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<FilterOptions>({
     priceRange: [0, 10000],
     conditions: [],
-    sortBy: 'date_desc',
+    sortBy: "date_desc",
     badgeFilters: {
       buyerProtectionOnly: false,
       topRatedOnly: false,
-      verifiedOnly: false
-    }
-  })
+      verifiedOnly: false,
+    },
+  });
 
   const categories: ItemCategory[] = [
     ItemCategory.ELECTRONICS,
@@ -41,114 +50,126 @@ export default function MarketplaceHome() {
     ItemCategory.SPORTS,
     ItemCategory.AUTOMOTIVE,
     ItemCategory.OTHER,
-  ]
+  ];
 
   useEffect(() => {
-    fetchItems()
-  }, [selectedCategory, filters, searchQuery])
+    fetchItems();
+  }, [selectedCategory, filters, searchQuery]);
 
   const fetchItems = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
-      let fetchedItems: MarketplaceItem[] = []
+      let fetchedItems: MarketplaceItem[] = [];
 
       // If search query, use search
       if (searchQuery) {
-        fetchedItems = await marketplaceService.searchItems(searchQuery)
+        fetchedItems = await marketplaceService.searchItems(searchQuery);
       } else {
         // Otherwise use filters
         fetchedItems = await marketplaceService.getItems({
           category: selectedCategory || undefined,
-          condition: filters.conditions.length > 0 ? filters.conditions[0] as ItemCondition : undefined,
+          condition:
+            filters.conditions.length > 0
+              ? (filters.conditions[0] as ItemCondition)
+              : undefined,
           minPrice: filters.priceRange[0],
           maxPrice: filters.priceRange[1],
-          sortBy: (filters.sortBy === 'date_asc' ? 'date_desc' : filters.sortBy),
-          limit: 50
-        })
+          sortBy: filters.sortBy === "date_asc" ? "date_desc" : filters.sortBy,
+          limit: 50,
+        });
       }
 
       // Fetch seller badges + ratings for each item
-      const uniqueSellerIds = [...new Set(fetchedItems.map(item => item.sellerId))]
-      const badgesMap: Record<string, string[]> = {}
-      const ratingsMap: Record<string, { average: number; count: number }> = {}
-      
+      const uniqueSellerIds = [
+        ...new Set(fetchedItems.map((item) => item.sellerId)),
+      ];
+      const badgesMap: Record<string, string[]> = {};
+      const ratingsMap: Record<string, { average: number; count: number }> = {};
+
       await Promise.all(
         uniqueSellerIds.map(async (sellerId) => {
           try {
-            const userDoc = await getDoc(doc(db, 'users', sellerId))
+            const userDoc = await getDoc(doc(db, "users", sellerId));
             if (userDoc.exists()) {
-              const sellerProfile = userDoc.data().sellerProfile
-              badgesMap[sellerId] = sellerProfile?.badges || []
-              if (typeof sellerProfile?.ratingAvg === 'number' && typeof sellerProfile?.ratingCount === 'number') {
+              const sellerProfile = userDoc.data().sellerProfile;
+              badgesMap[sellerId] = sellerProfile?.badges || [];
+              if (
+                typeof sellerProfile?.ratingAvg === "number" &&
+                typeof sellerProfile?.ratingCount === "number"
+              ) {
                 ratingsMap[sellerId] = {
                   average: sellerProfile.ratingAvg,
-                  count: sellerProfile.ratingCount
-                }
+                  count: sellerProfile.ratingCount,
+                };
               }
             }
           } catch (error) {
-            console.error(`Error fetching badges for seller ${sellerId}:`, error)
-            badgesMap[sellerId] = []
+            console.error(
+              `Error fetching badges for seller ${sellerId}:`,
+              error,
+            );
+            badgesMap[sellerId] = [];
           }
-        })
-      )
-      
-      setSellerBadgesMap(badgesMap)
-      setSellerRatingsMap(ratingsMap)
-      
+        }),
+      );
+
+      setSellerBadgesMap(badgesMap);
+      setSellerRatingsMap(ratingsMap);
+
       // Apply badge filters
-      let filteredItems = fetchedItems
+      let filteredItems = fetchedItems;
       if (filters.badgeFilters?.buyerProtectionOnly) {
-        filteredItems = filteredItems.filter(item => 
-          badgesMap[item.sellerId]?.includes('buyer_protection')
-        )
+        filteredItems = filteredItems.filter((item) =>
+          badgesMap[item.sellerId]?.includes("buyer_protection"),
+        );
       }
       if (filters.badgeFilters?.topRatedOnly) {
-        filteredItems = filteredItems.filter(item => 
-          badgesMap[item.sellerId]?.includes('top_rated')
-        )
+        filteredItems = filteredItems.filter((item) =>
+          badgesMap[item.sellerId]?.includes("top_rated"),
+        );
       }
       if (filters.badgeFilters?.verifiedOnly) {
-        filteredItems = filteredItems.filter(item => 
-          badgesMap[item.sellerId]?.includes('verified')
-        )
+        filteredItems = filteredItems.filter((item) =>
+          badgesMap[item.sellerId]?.includes("verified"),
+        );
       }
 
-      setItems(filteredItems)
+      setItems(filteredItems);
     } catch (error) {
-      console.error('Error fetching items:', error)
-      setItems([])
+      console.error("Error fetching items:", error);
+      setItems([]);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleSearch = (query: string) => {
-    setSearchQuery(query)
-  }
+    setSearchQuery(query);
+  };
 
   const handleFilterChange = (newFilters: FilterOptions) => {
-    setFilters(newFilters)
-  }
+    setFilters(newFilters);
+  };
 
   const handleCategorySelect = (category: string | null) => {
-    setSelectedCategory(category as ItemCategory | null)
-  }
+    setSelectedCategory(category as ItemCategory | null);
+  };
 
   return (
-    <div className="min-h-screen bg-transparent text-white">
+    <div className="min-h-screen bg-transparent text-white overflow-x-hidden">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-blue-700 via-blue-600 to-purple-600 text-white rounded-b-3xl shadow-2xl border-b border-white/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">
+      <div className="bg-gradient-to-r from-blue-700 via-blue-600 to-purple-600 text-white rounded-b-3xl shadow-2xl border-b border-white/20 overflow-hidden">
+        <div className="w-full max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-9 md:py-12 min-h-[190px] sm:min-h-[260px] md:min-h-[420px]">
+          <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold mb-2 sm:mb-4">
             Senderrplace
           </h1>
-          <p className="text-xl text-blue-100/90 mb-8">
-            Buy and sell curated goods while Senderr couriers handle pickup and delivery
+          <p className="text-sm sm:text-xl text-blue-100/90 mb-4 sm:mb-8">
+            Buy and sell curated goods while Senderr couriers handle pickup and
+            delivery
           </p>
-          
+
           {/* Search Bar */}
-          <div className="max-w-2xl">
+          <div className="w-full mx-auto max-w-none sm:max-w-2xl md:max-w-3xl lg:max-w-4xl">
             <SearchBar
               onSearch={handleSearch}
               placeholder="Search for items..."
@@ -166,11 +187,16 @@ export default function MarketplaceHome() {
       />
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col lg:flex-row gap-8">
+      <div className="w-full max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
           {/* Filters - Desktop */}
-          <aside className="hidden lg:block w-64 flex-shrink-0">
-            <FilterSidebar filters={filters} onFilterChange={handleFilterChange} />
+          <aside className="hidden lg:block w-72 flex-shrink-0">
+            <div className="sticky top-24">
+              <FilterSidebar
+                filters={filters}
+                onFilterChange={handleFilterChange}
+              />
+            </div>
           </aside>
 
           {/* Mobile Filter Button */}
@@ -179,7 +205,12 @@ export default function MarketplaceHome() {
               onClick={() => setShowFilters(!showFilters)}
               className="w-full px-4 py-2 bg-slate-900/70 border border-white/20 rounded-lg flex items-center justify-center space-x-2 text-white hover:bg-slate-900/90 transition-colors"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -192,7 +223,10 @@ export default function MarketplaceHome() {
 
             {/* Mobile Filter Sidebar */}
             {showFilters && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 z-50" onClick={() => setShowFilters(false)}>
+              <div
+                className="fixed inset-0 bg-black bg-opacity-50 z-50"
+                onClick={() => setShowFilters(false)}
+              >
                 <div
                   className="absolute right-0 top-0 bottom-0 w-80 bg-gradient-to-b from-slate-900 via-purple-950 to-purple-900 shadow-xl overflow-y-auto"
                   onClick={(e) => e.stopPropagation()}
@@ -210,18 +244,18 @@ export default function MarketplaceHome() {
           </div>
 
           {/* Items Grid */}
-          <div className="flex-1">
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-white">
-                {selectedCategory || 'All Items'}
+          <div className="flex-1 min-w-0">
+            <div className="mb-4 sm:mb-6">
+              <h2 className="text-xl sm:text-2xl font-bold text-white">
+                {selectedCategory || "All Items"}
               </h2>
               <p className="text-white/70 mt-1">
-                {loading ? 'Loading...' : `${items.length} items found`}
+                {loading ? "Loading..." : `${items.length} items found`}
               </p>
             </div>
 
-            <ItemGrid 
-              items={items} 
+            <ItemGrid
+              items={items}
               loading={loading}
               sellerBadgesMap={sellerBadgesMap}
               sellerRatingsMap={sellerRatingsMap}
@@ -230,5 +264,5 @@ export default function MarketplaceHome() {
         </div>
       </div>
     </div>
-  )
+  );
 }

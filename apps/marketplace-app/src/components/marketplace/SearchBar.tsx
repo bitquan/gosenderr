@@ -1,21 +1,25 @@
-import { useState, FormEvent } from 'react'
+import { useState, FormEvent } from "react";
 
 interface SearchBarProps {
-  onSearch: (query: string) => void
-  placeholder?: string
-  initialValue?: string
+  onSearch: (query: string) => void;
+  placeholder?: string;
+  initialValue?: string;
 }
 
 /**
  * SearchBar - Search input for marketplace items
  */
-export function SearchBar({ onSearch, placeholder = 'Search items...', initialValue = '' }: SearchBarProps) {
-  const [query, setQuery] = useState(initialValue)
+export function SearchBar({
+  onSearch,
+  placeholder = "Search items...",
+  initialValue = "",
+}: SearchBarProps) {
+  const [query, setQuery] = useState(initialValue);
 
   const handleSubmit = (e: FormEvent) => {
-    e.preventDefault()
-    onSearch(query)
-  }
+    e.preventDefault();
+    onSearch(query);
+  };
 
   return (
     <form onSubmit={handleSubmit} className="w-full">
@@ -40,14 +44,14 @@ export function SearchBar({ onSearch, placeholder = 'Search items...', initialVa
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={placeholder}
-          className="block w-full pl-10 pr-3 py-3 border border-white/40 rounded-2xl leading-5 bg-white/10 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent backdrop-blur"
+          className="block w-full max-w-full box-border pl-10 pr-3 py-2.5 sm:py-3 border border-white/40 rounded-2xl leading-5 bg-white/10 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent backdrop-blur"
         />
         {query && (
           <button
             type="button"
             onClick={() => {
-              setQuery('')
-              onSearch('')
+              setQuery("");
+              onSearch("");
             }}
             className="absolute inset-y-0 right-0 pr-3 flex items-center"
           >
@@ -68,5 +72,5 @@ export function SearchBar({ onSearch, placeholder = 'Search items...', initialVa
         )}
       </div>
     </form>
-  )
+  );
 }

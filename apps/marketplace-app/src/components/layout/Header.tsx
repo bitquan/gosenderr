@@ -1,85 +1,105 @@
-import { Link, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
-import { useAuth } from '../../hooks/useAuth'
-import { useRole } from '../../hooks/useRole'
-import { useCart } from '../../contexts/CartContext'
-import { signOut } from 'firebase/auth'
-import { auth } from '../../lib/firebase/client'
+import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { useAuth } from "../../hooks/useAuth";
+import { useRole } from "../../hooks/useRole";
+import { useCart } from "../../contexts/CartContext";
+import { signOut } from "firebase/auth";
+import { auth } from "../../lib/firebase/client";
 
 /**
  * Header - Role-aware navigation header
  */
 export function Header() {
-  const { user, loading } = useAuth()
-  const { roles, primaryRole } = useRole()
-  const navigate = useNavigate()
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  
+  const { user, loading } = useAuth();
+  const { roles, primaryRole } = useRole();
+  const navigate = useNavigate();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   // Safety check for cart context (handles HMR edge cases)
-  let cart
+  let cart;
   try {
-    cart = useCart()
+    cart = useCart();
   } catch (e) {
     // Cart context not available yet, use defaults
-    cart = { itemCount: 0, openCart: () => {} }
+    cart = { itemCount: 0, openCart: () => {} };
   }
-  
-  const { itemCount, openCart } = cart
+
+  const { itemCount, openCart } = cart;
 
   const handleSignOut = async () => {
     try {
-      await signOut(auth)
-      navigate('/login')
+      await signOut(auth);
+      navigate("/login");
     } catch (error) {
-      console.error('Sign out error:', error)
+      console.error("Sign out error:", error);
     }
-  }
+  };
 
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
-      case 'customer':
-        return 'bg-purple-100 text-purple-800'
-      case 'seller':
-        return 'bg-blue-100 text-blue-800'
-      case 'courier':
-        return 'bg-green-100 text-green-800'
-      case 'admin':
-        return 'bg-red-100 text-red-800'
+      case "customer":
+        return "bg-purple-100 text-purple-800";
+      case "seller":
+        return "bg-blue-100 text-blue-800";
+      case "courier":
+        return "bg-green-100 text-green-800";
+      case "admin":
+        return "bg-red-100 text-red-800";
       default:
-        return 'bg-gray-100 text-gray-800'
+        return "bg-gray-100 text-gray-800";
     }
-  }
+  };
 
   return (
     <header className="bg-gradient-to-r from-blue-700 via-blue-600 to-blue-500 text-white shadow-lg border-b border-blue-300/30 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+        <div className="flex justify-between items-center h-16 gap-3">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
+          <Link
+            to="/"
+            className="flex items-center space-x-2 min-w-0 max-w-[65%]"
+          >
             <div className="text-2xl">📦</div>
-            <span className="text-xl font-bold text-white">
+            <span className="text-lg sm:text-xl font-bold text-white truncate">
               Senderrplace
             </span>
-            <span className="text-xs uppercase tracking-[0.6em] text-blue-100/70">by GoSenderr</span>
+            <span className="hidden sm:inline text-xs uppercase tracking-[0.35em] text-blue-100/70 whitespace-nowrap">
+              by GoSenderr
+            </span>
           </Link>
 
           {/* Navigation */}
           <nav className="hidden md:flex items-center space-x-6">
-            <Link to="/marketplace" className="text-white/85 hover:text-white transition-colors">
+            <Link
+              to="/marketplace"
+              className="text-white/85 hover:text-white transition-colors"
+            >
               Browse
             </Link>
-            <Link to="/food-pickups" className="text-white/85 hover:text-white transition-colors">
+            <Link
+              to="/food-pickups"
+              className="text-white/85 hover:text-white transition-colors"
+            >
               Food pickup
             </Link>
             {user && (
               <>
-                <Link to="/marketplace/sell" className="text-white/85 hover:text-white transition-colors">
+                <Link
+                  to="/marketplace/sell"
+                  className="text-white/85 hover:text-white transition-colors"
+                >
                   Sell
                 </Link>
-                <Link to="/orders" className="text-white/85 hover:text-white transition-colors">
+                <Link
+                  to="/orders"
+                  className="text-white/85 hover:text-white transition-colors"
+                >
                   Orders
                 </Link>
-                <Link to="/request-delivery" className="text-white/85 hover:text-white transition-colors">
+                <Link
+                  to="/request-delivery"
+                  className="text-white/85 hover:text-white transition-colors"
+                >
                   Ship
                 </Link>
               </>
@@ -87,7 +107,7 @@ export function Header() {
           </nav>
 
           {/* Right side - Cart & Auth */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4 flex-shrink-0">
             {/* Mobile menu toggle */}
             {user && (
               <button
@@ -103,7 +123,12 @@ export function Header() {
               onClick={openCart}
               className="relative p-2 text-white/90 hover:text-white transition-colors"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -155,7 +180,11 @@ export function Header() {
         </div>
       </div>
       {user && (
-        <div className={`md:hidden px-4 pb-3 ${mobileMenuOpen ? 'block' : 'hidden'}`}>
+        <div
+          className={`md:hidden px-4 pb-3 ${
+            mobileMenuOpen ? "block" : "hidden"
+          }`}
+        >
           <div className="rounded-2xl bg-blue-900/95 border border-white/20 p-3 space-y-2 text-white">
             <Link
               to="/marketplace"
@@ -189,5 +218,5 @@ export function Header() {
         </div>
       )}
     </header>
-  )
+  );
 }

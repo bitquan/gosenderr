@@ -1,0 +1,28 @@
+name: Validate Worktrees
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  validate:
+    name: Worktree validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+      - name: Install root deps
+        run: pnpm install -w --frozen-lockfile
+      - name: Run validation
+        env:
+          GITHUB_HEAD_REF: ${{ github.head_ref }}
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+        run: |
+          echo "Validating worktree for branch: ${GITHUB_HEAD_REF} (base: ${GITHUB_BASE_REF})"
+          BRANCH="${GITHUB_HEAD_REF}" BASE_BRANCH="${GITHUB_BASE_REF:-main}" bash scripts/wt-check.sh
