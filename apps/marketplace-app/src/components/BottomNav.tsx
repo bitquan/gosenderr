@@ -61,6 +61,7 @@ export const marketplaceNavItems: NavItem[] = [
   { icon: "🏠", label: "Home", href: "/marketplace" },
   { icon: "🔍", label: "Search", href: "/marketplace/search" },
   { icon: "➕", label: "Sell", href: "/marketplace/sell" },
+  { icon: "🍱", label: "Food", href: "/food-pickups" },
   { icon: "💬", label: "Messages", href: "/messages" },
   { icon: "👤", label: "Profile", href: "/profile" },
 ];

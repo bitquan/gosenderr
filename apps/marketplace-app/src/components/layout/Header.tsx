@@ -57,15 +57,19 @@ export function Header() {
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
             <div className="text-2xl">📦</div>
-            <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-              GoSenderR
+            <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-fuchsia-500 bg-clip-text text-transparent">
+              Senderrplace
             </span>
+            <span className="text-xs uppercase tracking-[0.6em] text-purple-200">by GoSenderr</span>
           </Link>
 
           {/* Navigation */}
           <nav className="hidden md:flex items-center space-x-6">
             <Link to="/marketplace" className="text-gray-700 hover:text-purple-600 transition-colors">
               Browse
+            </Link>
+            <Link to="/food-pickups" className="text-gray-700 hover:text-purple-600 transition-colors">
+              Food pickup
             </Link>
             {user && (
               <>
@@ -173,6 +177,13 @@ export function Header() {
               className="block w-full rounded-xl px-4 py-3 text-sm font-semibold text-purple-700 hover:bg-purple-50"
             >
               Delivery Options
+            </Link>
+            <Link
+              to="/food-pickups"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block w-full rounded-xl px-4 py-3 text-sm font-semibold text-purple-700 hover:bg-purple-50"
+            >
+              Food pickups
             </Link>
           </div>
         </div>

@@ -48,6 +48,7 @@ import MessagesPage from './pages/messages/page'
 import ConversationPage from './pages/messages/[conversationId]/page'
 import { useFeatureFlags } from './hooks/useFeatureFlags'
 import { StripeModeBanner } from './components/StripeModeBanner'
+import FoodPickupsPage from './pages/food-pickups/page'
 
 // Seller pages
 import SellerApplicationPage from './pages/seller/apply/page'
@@ -169,6 +170,11 @@ function App() {
             <Route path="/favorite-couriers" element={
               <RoleGuard allowedRoles={['customer', 'buyer']}>
                 <FavoriteCouriersPage />
+              </RoleGuard>
+            } />
+            <Route path="/food-pickups" element={
+              <RoleGuard allowedRoles={['customer', 'buyer', 'seller']}>
+                <FoodPickupsPage />
               </RoleGuard>
             } />
             <Route path="/promo-codes" element={

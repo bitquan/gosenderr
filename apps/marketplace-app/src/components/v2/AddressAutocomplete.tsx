@@ -7,6 +7,7 @@ interface AddressAutocompleteProps {
   placeholder?: string;
   onSelect: (result: { address: string; lat: number; lng: number }) => void;
   required?: boolean;
+  value?: string;
 }
 
 export function AddressAutocomplete({
@@ -14,6 +15,7 @@ export function AddressAutocomplete({
   placeholder = "Enter address...",
   onSelect,
   required = false,
+  value = "",
 }: AddressAutocompleteProps) {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<GeocodedAddress[]>([]);
@@ -81,6 +83,12 @@ export function AddressAutocomplete({
       setSelectedAddress("");
     }
   };
+
+  // Sync controlled value
+  useEffect(() => {
+    setQuery(value);
+    setSelectedAddress(value);
+  }, [value]);
 
   return (
     <div

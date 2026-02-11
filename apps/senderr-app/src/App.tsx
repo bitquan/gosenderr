@@ -29,6 +29,7 @@ import EarningsPage from "./pages/earnings/page";
 import ProfilePage from "./pages/Profile";
 import MapShellPage from "./pages/map-shell";
 import { StripeModeBanner } from "./components/StripeModeBanner";
+import RestaurantsPage from "./pages/restaurants/page";
 
 function ProtectedRoute() {
   const { user, loading } = useAuth();
@@ -116,6 +117,7 @@ function App() {
                   path="/onboarding/stripe"
                   element={<StripeOnboardingPage />}
                 />
+                <Route path="/restaurants" element={<RestaurantsPage />} />
               </Route>
             </Route>
           </Routes>
