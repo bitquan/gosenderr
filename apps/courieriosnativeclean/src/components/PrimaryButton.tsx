@@ -15,6 +15,7 @@ export const PrimaryButton = ({
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityState={{disabled: !!disabled}}
       onPress={onPress}
       disabled={disabled}
       style={[styles.base, styles[variant], disabled ? styles.disabled : null]}>

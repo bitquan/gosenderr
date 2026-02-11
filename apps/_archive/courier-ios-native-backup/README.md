@@ -89,3 +89,13 @@ To learn more about React Native, take a look at the following resources:
 - [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
 - [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
 - [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+
+## Sensitive files removed from archive
+
+This salvage snapshot intentionally removes files that contain live credentials or build secrets (for example Firebase `GoogleService-Info.plist` and hardcoded API keys). To restore those files for local debugging, follow these steps:
+
+1. Obtain the required credentials from the project owner or secret store.
+2. Place `GoogleService-Info.plist` (or equivalent) **locally** under the iOS target directory; do not commit it to the repository.
+3. Replace placeholder values (e.g., `YOUR_FIREBASE_API_KEY`) with environment-sourced values if restoring locally.
+
+After restoring local secrets, verify that you do NOT commit any real keys back into the repo. See project security guidelines for more details.
