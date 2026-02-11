@@ -1,11 +1,8 @@
-import { useEffect, useState } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { doc, getDoc } from 'firebase/firestore'
 import { AuthProvider } from './contexts/AuthContext'
 import { useAuth } from './hooks/useAuth'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import AdminSidebar from './components/AdminSidebar'
-import { db } from './lib/firebase'
 
 // Pages
 import DashboardPage from './pages/Dashboard'
@@ -38,72 +35,7 @@ import { useFeatureFlags } from './hooks/useFeatureFlags'
 import { StripeModeBanner } from './components/StripeModeBanner'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading, signOut } = useAuth()
-  const [adminCheckLoading, setAdminCheckLoading] = useState(true)
-  const [hasAdminAccess, setHasAdminAccess] = useState(false)
-
-  useEffect(() => {
-    let active = true
-
-    const checkAdminAccess = async () => {
-      if (!user) {
-        if (!active) return
-        setHasAdminAccess(false)
-        setAdminCheckLoading(false)
-        return
-      }
-
-      try {
-        const tokenResult = await user.getIdTokenResult()
-        const tokenRole = String(tokenResult.claims.role || '')
-        const hasTokenAdmin =
-          tokenResult.claims.admin === true || tokenRole.toLowerCase() === 'admin'
-
-        if (hasTokenAdmin) {
-          if (!active) return
-          setHasAdminAccess(true)
-          setAdminCheckLoading(false)
-          return
-        }
-
-        const userSnap = await getDoc(doc(db, 'users', user.uid))
-        const userData = userSnap.exists() ? (userSnap.data() as Record<string, unknown>) : null
-        const userRole = String(userData?.role || '').toLowerCase()
-
-        if (userRole === 'admin') {
-          if (!active) return
-          setHasAdminAccess(true)
-          return
-        }
-
-        let hasAdminProfile = false
-        try {
-          const adminProfileSnap = await getDoc(doc(db, 'adminProfiles', user.uid))
-          hasAdminProfile = adminProfileSnap.exists()
-        } catch {
-          hasAdminProfile = false
-        }
-
-        if (!active) return
-        setHasAdminAccess(hasAdminProfile)
-      } catch (error) {
-        console.error('Failed to verify admin access:', error)
-        if (!active) return
-        setHasAdminAccess(false)
-      } finally {
-        if (active) {
-          setAdminCheckLoading(false)
-        }
-      }
-    }
-
-    setAdminCheckLoading(true)
-    void checkAdminAccess()
-
-    return () => {
-      active = false
-    }
-  }, [user])
+  const { user, loading } = useAuth()
   
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">
@@ -113,35 +45,6 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   
   if (!user) {
     return <Navigate to="/login" replace />
-  }
-
-  if (adminCheckLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
-    )
-  }
-
-  if (!hasAdminAccess) {
-    return (
-      <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center px-6">
-        <div className="max-w-lg text-center bg-white rounded-2xl shadow-xl p-8 border border-gray-100 space-y-4">
-          <div className="text-5xl">⛔</div>
-          <h1 className="text-2xl font-bold text-gray-900">Admin Access Required</h1>
-          <p className="text-gray-600">
-            Your account is signed in but does not have admin access for this portal.
-            Sign in with an admin account or refresh your token after role changes.
-          </p>
-          <button
-            onClick={() => void signOut()}
-            className="px-4 py-2 rounded-lg bg-purple-600 text-white font-semibold hover:bg-purple-700"
-          >
-            Sign Out
-          </button>
-        </div>
-      </div>
-    )
   }
   
   return <>{children}</>

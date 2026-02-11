@@ -1,428 +1,117 @@
-import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {ActivityIndicator, Pressable, StyleSheet, Text, View} from 'react-native';
-import {doc, setDoc} from 'firebase/firestore';
+/**
+ * Sample React Native App
+ * https://github.com/facebook/react-native
+ *
+ * @format
+ */
 
-import {AuthProvider, useAuth} from './src/context/AuthContext';
-import {DashboardScreen} from './src/screens/DashboardScreen';
-import {JobDetailScreen} from './src/screens/JobDetailScreen';
-import {JobsScreen} from './src/screens/JobsScreen';
-import {LoginScreen} from './src/screens/LoginScreen';
-import {MapShellScreen} from './src/screens/MapShellScreen';
-import {SettingsScreen} from './src/screens/SettingsScreen';
-import {configureRuntime, type NativeRuntimeConfig} from './src/config/runtime';
-import {getFirebaseServices, isFirebaseReady} from './src/services/firebase';
-import type {JobsSubscription, JobsSyncState} from './src/services/ports/jobsPort';
-import {ServiceRegistryProvider, useServiceRegistry} from './src/services/serviceRegistry';
-import type {Job} from './src/types/jobs';
+import React from 'react';
+import type {PropsWithChildren} from 'react';
+import {
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  useColorScheme,
+  View,
+} from 'react-native';
 
-type TabKey = 'dashboard' | 'jobs' | 'settings';
+import {
+  Colors,
+  DebugInstructions,
+  Header,
+  LearnMoreLinks,
+  ReloadInstructions,
+} from 'react-native/Libraries/NewAppScreen';
 
-const DEFAULT_JOBS_SYNC_STATE: JobsSyncState = {
-  status: 'idle',
-  stale: false,
-  reconnectAttempt: 0,
-  lastSyncedAt: null,
-  message: null,
-  source: 'firebase',
-};
+type SectionProps = PropsWithChildren<{
+  title: string;
+}>;
 
-const AppShell = (): React.JSX.Element => {
-  const {session, initializing} = useAuth();
-  const {jobs: jobsService, notifications: notificationsService, analytics, featureFlags} =
-    useServiceRegistry();
-  const featureFlagsState = featureFlags.useFeatureFlags();
-  const jobsSubscriptionRef = useRef<JobsSubscription | null>(null);
-  const notificationsSetupForUidRef = useRef<string | null>(null);
-  const lastTrackedJobsCountRef = useRef<number | null>(null);
-  const lastSyncErrorRef = useRef<string | null>(null);
-  const notificationsEnabled = featureFlagsState.state.flags.notifications;
-  const [activeTab, setActiveTab] = useState<TabKey>('dashboard');
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
-  const [jobsLoading, setJobsLoading] = useState(false);
-  const [jobsError, setJobsError] = useState<string | null>(null);
-  const [jobsSyncState, setJobsSyncState] = useState<JobsSyncState>(DEFAULT_JOBS_SYNC_STATE);
-
-  useEffect(() => {
-    if (!notificationsEnabled) {
-      return;
-    }
-
-    const unsubscribe = notificationsService.subscribeToForegroundMessages(payload => {
-      void analytics.track('notification_foreground_received', {
-        hasTitle: payload.title ? 'yes' : 'no',
-        hasData: payload.data && Object.keys(payload.data).length > 0 ? 'yes' : 'no',
-      });
-    });
-
-    return unsubscribe;
-  }, [analytics, notificationsEnabled, notificationsService]);
-
-  useEffect(() => {
-    if (!session || !notificationsEnabled) {
-      notificationsSetupForUidRef.current = null;
-      return;
-    }
-    if (notificationsSetupForUidRef.current === session.uid) {
-      return;
-    }
-
-    notificationsSetupForUidRef.current = session.uid;
-    let cancelled = false;
-
-    const bootstrapNotifications = async (): Promise<void> => {
-      try {
-        const granted = await notificationsService.requestPermission();
-        if (cancelled) {
-          return;
-        }
-
-        void analytics.track('notifications_permission_checked', {
-          granted: granted ? 'yes' : 'no',
-        });
-
-        if (!granted) {
-          return;
-        }
-
-        const token = await notificationsService.registerDeviceToken();
-        if (cancelled || !token) {
-          return;
-        }
-
-        console.info('[notifications] device token registered', token);
-        void analytics.track('notifications_token_registered', {
-          tokenLength: token.length,
-        });
-      } catch (error) {
-        notificationsSetupForUidRef.current = null;
-        void analytics.recordError(error, 'notifications_bootstrap_failed');
-      }
-    };
-
-    void bootstrapNotifications();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [analytics, notificationsEnabled, notificationsService, session]);
-
-  useEffect(() => {
-    jobsSubscriptionRef.current?.unsubscribe();
-    jobsSubscriptionRef.current = null;
-
-    if (!session) {
-      setJobs([]);
-      setSelectedJobId(null);
-      setJobsLoading(false);
-      setJobsError(null);
-      setJobsSyncState(DEFAULT_JOBS_SYNC_STATE);
-      lastTrackedJobsCountRef.current = null;
-      lastSyncErrorRef.current = null;
-      return;
-    }
-
-    setJobsLoading(true);
-    setJobsError(null);
-
-    const subscription = jobsService.subscribeJobs(session, {
-      onJobs: nextJobs => {
-        setJobs(nextJobs);
-        setJobsLoading(false);
-        if (lastTrackedJobsCountRef.current !== nextJobs.length) {
-          lastTrackedJobsCountRef.current = nextJobs.length;
-          void analytics.track('jobs_loaded', {
-            count: nextJobs.length,
-          });
-        }
-      },
-      onSyncState: nextSyncState => {
-        setJobsSyncState(nextSyncState);
-        if (nextSyncState.status === 'error' && nextSyncState.message) {
-          setJobsError(nextSyncState.message);
-          setJobsLoading(false);
-          if (lastSyncErrorRef.current !== nextSyncState.message) {
-            lastSyncErrorRef.current = nextSyncState.message;
-            void analytics.recordError(new Error(nextSyncState.message), 'jobs_sync_error');
-          }
-        }
-        if (nextSyncState.status === 'live' || nextSyncState.status === 'stale') {
-          setJobsLoading(false);
-          lastSyncErrorRef.current = null;
-        }
-      },
-    });
-
-    jobsSubscriptionRef.current = subscription;
-
-    void subscription.refresh().catch(error => {
-      setJobsError(error instanceof Error ? error.message : 'Unable to load jobs.');
-      setJobsLoading(false);
-      void analytics.recordError(error, 'jobs_initial_refresh_failed');
-    });
-
-    return () => {
-      subscription.unsubscribe();
-      if (jobsSubscriptionRef.current === subscription) {
-        jobsSubscriptionRef.current = null;
-      }
-    };
-  }, [analytics, jobsService, session]);
-
-  useEffect(() => {
-    if (!session || !isFirebaseReady() || !notificationsEnabled) {
-      return;
-    }
-
-    let cancelled = false;
-
-    const syncPushToken = async (): Promise<void> => {
-      try {
-        await notificationsService.requestPermission();
-        for (let attempt = 0; attempt < 5 && !cancelled; attempt += 1) {
-          const apnsToken = await notificationsService.registerDeviceToken();
-          const fcmToken = await notificationsService.registerMessagingToken();
-          if (!apnsToken && !fcmToken) {
-            await new Promise(resolve => setTimeout(resolve, 1200));
-            continue;
-          }
-
-          const services = getFirebaseServices();
-          if (!services) {
-            return;
-          }
-
-          await setDoc(
-            doc(services.db, 'users', session.uid),
-            {
-              courierProfile: {
-                apnsToken: apnsToken ?? null,
-                apnsTokenUpdatedAt: new Date().toISOString(),
-                fcmToken: fcmToken ?? null,
-                fcmTokenUpdatedAt: new Date().toISOString(),
-              },
-              updatedAt: new Date().toISOString(),
-            },
-            {merge: true},
-          );
-          return;
-        }
-      } catch {
-        // Token upload failures should not block app usage.
-      }
-    };
-
-    void syncPushToken();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [notificationsEnabled, notificationsService, session]);
-
-  const refreshJobs = useCallback(async (): Promise<Job[]> => {
-    if (!session) {
-      return [];
-    }
-
-    setJobsError(null);
-    setJobsLoading(true);
-    try {
-      const nextJobs = jobsSubscriptionRef.current
-        ? await jobsSubscriptionRef.current.refresh()
-        : await jobsService.fetchJobs(session);
-      setJobs(nextJobs);
-      return nextJobs;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unable to refresh jobs.';
-      setJobsError(message);
-      void analytics.recordError(error, 'jobs_manual_refresh_failed');
-      throw error;
-    } finally {
-      setJobsLoading(false);
-    }
-  }, [analytics, jobsService, session]);
-
-  const selectedJob = useMemo(
-    () => (selectedJobId ? jobs.find(job => job.id === selectedJobId) ?? null : null),
-    [jobs, selectedJobId],
-  );
-  const activeJobs = useMemo(() => jobs.filter(job => job.status !== 'delivered' && job.status !== 'cancelled'), [jobs]);
-  const activeJobsCount = activeJobs.length;
-  const activeJob = activeJobs[0] ?? null;
-  const mapShellEnabled = featureFlagsState.state.flags.mapShell;
-
-  if (initializing) {
-    return (
-      <View style={styles.loadingRoot}>
-        <ActivityIndicator size="large" color="#1453ff" />
-        <Text style={styles.loadingText}>Starting Senderr...</Text>
-      </View>
-    );
-  }
-
-  if (!session) {
-    return <LoginScreen />;
-  }
-
-  if (selectedJob) {
-    return (
-      <JobDetailScreen
-        job={selectedJob}
-        onBack={() => setSelectedJobId(null)}
-        onJobUpdated={updatedJob => {
-          setJobs(prev => prev.map(job => (job.id === updatedJob.id ? updatedJob : job)));
-          setSelectedJobId(updatedJob.id);
-        }}
-      />
-    );
-  }
-
-  if (mapShellEnabled) {
-    return (
-      <MapShellScreen
-        jobs={jobs}
-        loadingJobs={jobsLoading}
-        jobsError={jobsError}
-        jobsSyncState={jobsSyncState}
-        activeJob={activeJob}
-        onRefreshJobs={refreshJobs}
-        onOpenJobDetail={setSelectedJobId}
-        onJobUpdated={updatedJob => {
-          setJobs(prev => {
-            const index = prev.findIndex(job => job.id === updatedJob.id);
-            if (index === -1) {
-              return [updatedJob, ...prev];
-            }
-            const next = [...prev];
-            next[index] = updatedJob;
-            return next;
-          });
-        }}
-      />
-    );
-  }
-
+function Section({children, title}: SectionProps): React.JSX.Element {
+  const isDarkMode = useColorScheme() === 'dark';
   return (
-    <View style={styles.root}>
-      <View style={styles.content}>
-        {activeTab === 'dashboard' ? (
-          <DashboardScreen
-            onOpenJobs={() => setActiveTab('jobs')}
-            onRetryJobs={() => {
-              void refreshJobs().catch(() => undefined);
-            }}
-            activeJobsCount={activeJobsCount}
-            loadingJobs={jobsLoading}
-            jobsError={jobsError}
-            jobsSyncState={jobsSyncState}
-            activeJob={activeJob}
-          />
-        ) : null}
-
-        {activeTab === 'jobs' ? (
-          <JobsScreen
-            jobs={jobs}
-            setJobs={setJobs}
-            loadingJobs={jobsLoading}
-            jobsError={jobsError}
-            syncState={jobsSyncState}
-            onRefresh={refreshJobs}
-            onOpenDetail={jobId => {
-              setSelectedJobId(jobId);
-            }}
-          />
-        ) : null}
-
-        {activeTab === 'settings' ? <SettingsScreen /> : null}
-      </View>
-
-      <View style={styles.tabBar}>
-        <TabButton active={activeTab === 'dashboard'} label="Dashboard" onPress={() => setActiveTab('dashboard')} />
-        <TabButton active={activeTab === 'jobs'} label="Jobs" onPress={() => setActiveTab('jobs')} />
-        <TabButton active={activeTab === 'settings'} label="Settings" onPress={() => setActiveTab('settings')} />
-      </View>
+    <View style={styles.sectionContainer}>
+      <Text
+        style={[
+          styles.sectionTitle,
+          {
+            color: isDarkMode ? Colors.white : Colors.black,
+          },
+        ]}>
+        {title}
+      </Text>
+      <Text
+        style={[
+          styles.sectionDescription,
+          {
+            color: isDarkMode ? Colors.light : Colors.dark,
+          },
+        ]}>
+        {children}
+      </Text>
     </View>
   );
-};
+}
 
-const TabButton = ({
-  active,
-  label,
-  onPress,
-}: {
-  active: boolean;
-  label: string;
-  onPress: () => void;
-}): React.JSX.Element => {
-  return (
-    <Pressable onPress={onPress} style={[styles.tabButton, active ? styles.tabButtonActive : null]}>
-      <Text style={[styles.tabLabel, active ? styles.tabLabelActive : null]}>{label}</Text>
-    </Pressable>
-  );
-};
+function App(): React.JSX.Element {
+  const isDarkMode = useColorScheme() === 'dark';
 
-type AppProps = {
-  runtimeConfig?: NativeRuntimeConfig;
-};
-
-function App({runtimeConfig}: AppProps): React.JSX.Element {
-  configureRuntime(runtimeConfig);
+  const backgroundStyle = {
+    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+  };
 
   return (
-    <ServiceRegistryProvider>
-      <AuthProvider>
-        <AppShell />
-      </AuthProvider>
-    </ServiceRegistryProvider>
+    <SafeAreaView style={backgroundStyle}>
+      <StatusBar
+        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+        backgroundColor={backgroundStyle.backgroundColor}
+      />
+      <ScrollView
+        contentInsetAdjustmentBehavior="automatic"
+        style={backgroundStyle}>
+        <Header />
+        <View
+          style={{
+            backgroundColor: isDarkMode ? Colors.black : Colors.white,
+          }}>
+          <Section title="Step One">
+            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
+            screen and then come back to see your edits.
+          </Section>
+          <Section title="See Your Changes">
+            <ReloadInstructions />
+          </Section>
+          <Section title="Debug">
+            <DebugInstructions />
+          </Section>
+          <Section title="Learn More">
+            Read the docs to discover what to do next:
+          </Section>
+          <LearnMoreLinks />
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: '#f4f7fb',
+  sectionContainer: {
+    marginTop: 32,
+    paddingHorizontal: 24,
   },
-  content: {
-    flex: 1,
-  },
-  loadingRoot: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#f4f7fb',
-    gap: 12,
-  },
-  loadingText: {
-    color: '#4b5563',
-    fontSize: 15,
+  sectionTitle: {
+    fontSize: 24,
     fontWeight: '600',
   },
-  tabBar: {
-    borderTopWidth: 1,
-    borderColor: '#dbe3f0',
-    backgroundColor: '#ffffff',
-    flexDirection: 'row',
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    gap: 8,
+  sectionDescription: {
+    marginTop: 8,
+    fontSize: 18,
+    fontWeight: '400',
   },
-  tabButton: {
-    flex: 1,
-    minHeight: 44,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#eef2ff',
-  },
-  tabButtonActive: {
-    backgroundColor: '#1453ff',
-  },
-  tabLabel: {
-    color: '#1f2937',
+  highlight: {
     fontWeight: '700',
-  },
-  tabLabelActive: {
-    color: '#ffffff',
   },
 });
 

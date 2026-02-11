@@ -2,12 +2,6 @@
 
 [![CI](https://github.com/bitquan/gosenderr/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/bitquan/gosenderr/actions/workflows/ci.yml)
 
-> Doc metadata
-> - Owner: `@bitquan`
-> - Last verified: `2026-02-08`
-> - Review cadence: `monthly`
-> - Status: `up to date`
-
 
 A modern on-demand delivery platform with web apps (Vite + React + TypeScript) that can be packaged as native iOS and Android apps using Capacitor.
 
@@ -16,20 +10,22 @@ A modern on-demand delivery platform with web apps (Vite + React + TypeScript) t
 ```
 /
 ├── apps/
-│   ├── marketplace-app/      # Senderrplace web app (Port 5173)
-│   ├── senderr-app/          # Senderr web app (Port 5174)
-│   ├── courieriosnativeclean/# Senderr iOS native app (Xcode workspace)
-│   ├── admin-app/            # Admin web dashboard (Port 3000)
-│   ├── admin-desktop/        # Electron admin desktop app (Port 5176)
-│   └── landing/              # Landing / marketing page
+│   ├── marketplace-app/  # Vite Marketplace Web App (Port 5173)
+│   ├── senderr-app/      # Vite Senderr Web App (Port 5174)
+│   ├── admin-app/        # Vite Admin Dashboard (Port 3000)
+│   ├── admin-desktop/    # Electron Admin Desktop App (Port 5176)
+│   └── landing/          # Landing / Marketing Page
 ├── packages/
 │   └── shared/           # Shared TypeScript types and utilities
 ├── firebase/             # Firebase security rules and Cloud Functions
 └── docs/                 # Project documentation
-    └── project-plan/      # Legacy planning archive — see `docs/project-plan/README.md`
+    └── project-plan/      # Project reorganization plan (v2) — see `docs/project-plan/README.md`
 ```
 
 **Note**: All web apps can be packaged as native iOS and Android apps using Capacitor.
+
+Native iOS source of truth: `apps/courieriosnativeclean` (workspace: `apps/courieriosnativeclean/ios/Senderrappios.xcworkspace`, scheme: `Senderr`).
+Bootstrap and validate canonical iOS setup with `pnpm run ios:bootstrap` and `pnpm run ios:check`.
 
 ## ✅ Testing & Deployment
 
@@ -37,24 +33,16 @@ See the rollout checklist in [docs/project-plan/09-DAILY-CHECKLIST.md](docs/proj
 
 ## 📚 Documentation System
 
-- Canonical hierarchy + policy: [docs/BLUEPRINT.md](docs/BLUEPRINT.md)
-- Docs ownership + review cadence: [docs/DOCS_OWNERSHIP.md](docs/DOCS_OWNERSHIP.md)
-- Developer playbook: [docs/DEVELOPER_PLAYBOOK.md](docs/DEVELOPER_PLAYBOOK.md)
-- Session state: [docs/dev/SESSION_STATE.md](docs/dev/SESSION_STATE.md)
-- Worklog: [docs/dev/WORKLOG.md](docs/dev/WORKLOG.md)
+- Global source of truth: [docs/BLUEPRINT.md](docs/BLUEPRINT.md)
 - App docs registry: [docs/apps/README.md](docs/apps/README.md)
-- Senderrplace V2 planning: [docs/senderrplace_v2/V2_PLANNING_TEMPLATE.md](docs/senderrplace_v2/V2_PLANNING_TEMPLATE.md)
-- Backend docs index: [docs/backend/README.md](docs/backend/README.md)
-- Legacy planning archive: [docs/project-plan/README.md](docs/project-plan/README.md)
 - Branch-specific delta docs: `.github/copilot/branches/*.md`
 
 ## 📱 Active Applications
 
 | App | Port | Hosting URL | Purpose |
 |-----|------|-------------|---------|
-| Senderrplace | 5173 | gosenderr.com (gosenderr-6773f.web.app) | Marketplace for local sellers/customers and delivery booking |
-| Senderr Web | 5174 | gosenderr-courier.web.app | Courier dashboard and job management |
-| Senderr iOS Native | N/A | via TestFlight / Xcode build | Production courier mobile app |
+| Marketplace | 5173 | gosenderr.com (gosenderr-6773f.web.app) | Browse and purchase items |
+| Courier | 5174 | gosenderr-courier.web.app | Accept and complete jobs |
 | Admin (Web) | 3000 | gosenderr-admin.web.app | Platform management |
 | Admin Desktop | 5176 | — | Native admin tooling |
 | Landing | - | gosenderr-landing.web.app | Marketing / entry point |
@@ -74,29 +62,27 @@ See the rollout checklist in [docs/project-plan/09-DAILY-CHECKLIST.md](docs/proj
 1. **Clone and install dependencies:**
 
 ```bash
-pnpm install --frozen-lockfile
+pnpm install
 ```
 
 > **Minimal developer setup:** If you want a disk-conservative, focused setup (shallow + sparse git checkout and install only a single app), see `docs/dev/MINIMAL-SETUP.md`. App-specific developer notes are available at `apps/marketplace-app/copilot-instructions.md` and `apps/senderr-app/copilot-instructions.md`.
 
 2. **Configure environment variables:**
 
-Create local env files from available templates:
+Each app needs its own `.env.local` file:
 
 ```bash
-# Root
-cp .env.example .env.local
-
-# Senderrplace App
+# Marketplace App
 cp apps/marketplace-app/.env.example apps/marketplace-app/.env.local
 
-# Landing App
-cp apps/landing/.env.example apps/landing/.env.local
+# Senderr App
+cp apps/senderr-app/.env.example apps/senderr-app/.env.local
+
+# Admin App
+cp apps/admin-app/.env.example apps/admin-app/.env.local
 ```
 
-For app-specific env keys that do not have `.env.example` yet (`admin-app`, `admin-desktop`, `senderr-app`), use values from `docs/dev/MINIMAL-SETUP.md` and app docs.
-
-Required variables for web apps:
+Required variables for all apps:
 
 - `VITE_FIREBASE_API_KEY` - From Firebase Console > Project Settings
 - `VITE_FIREBASE_AUTH_DOMAIN`
@@ -105,7 +91,7 @@ Required variables for web apps:
 - `VITE_FIREBASE_MESSAGING_SENDER_ID`
 - `VITE_FIREBASE_APP_ID`
 - `VITE_MAPBOX_TOKEN` - From https://mapbox.com
-- `VITE_APP_ROLE` - Set automatically per app (senderrplace/senderr/admin)
+- `VITE_APP_ROLE` - Set automatically per app (marketplace/courier/admin)
 
 3. **Build shared package:**
 
@@ -202,7 +188,7 @@ Firebase Hosting sites:
 
 ## 📱 Features
 
-### Senderrplace App (`apps/marketplace-app`)
+### Marketplace App (`apps/marketplace-app`)
 
 - **Authentication**: Phone Auth with Firebase + Email fallback
 - **Job Creation**: Create delivery jobs with pickup/dropoff locations via map or address search
@@ -211,7 +197,7 @@ Firebase Hosting sites:
 - **Rating System**: Rate couriers after delivery completion
 - **Bottom Navigation**: Home, Jobs, Settings tabs
 
-### Senderr Web App (`apps/senderr-app`)
+### Senderr App (`apps/senderr-app`)
 
 - **Map Shell Dashboard**: Full-screen map with floating controls and swipeable bottom sheet
 - **Job Discovery**: See available jobs on map with distance and payout info
@@ -219,13 +205,6 @@ Firebase Hosting sites:
 - **Earnings Tracking**: View completed jobs, pending payouts, and payout history
 - **Stripe Connect**: Onboard to receive payouts
 - **Bottom Navigation**: Dashboard, Active, Earnings, Settings tabs
-
-### Senderr iOS Native (`apps/courieriosnativeclean`)
-
-- **Native iOS runtime**: React Native build in Xcode workspace
-- **Realtime jobs**: Courier session sync and live job updates
-- **Location + notifications**: APNs/FCM token flow and courier tracking
-- **Operational checks**: iOS smoke, dependency audit, and release scripts
 
 ### Admin Desktop App (`apps/admin-desktop`)
 
@@ -294,7 +273,7 @@ firebase deploy --only storage:rules
 
 1. Sign up at https://mapbox.com
 2. Create an access token with `styles:read` and `tiles:read` scopes
-3. Add token to `.env.local` as `VITE_MAPBOX_TOKEN`
+3. Add token to `.env.local` as `NEXT_PUBLIC_MAPBOX_TOKEN`
 
 ## 📦 Package Scripts
 
@@ -334,7 +313,7 @@ pnpm dev        # Watch mode for development
 ## 🔐 Authentication Flow
 
 1. User visits marketplace at https://gosenderr.com (https://gosenderr-6773f.web.app)
-2. Selects role (Senderrplace, Senderr, or Admin)
+2. Selects role (Marketplace, Courier, or Admin)
 3. Redirected to role-specific app login page
 4. Authenticates via Phone Auth (or Email fallback)
 5. On first login, user profile is created with selected role
@@ -342,8 +321,8 @@ pnpm dev        # Watch mode for development
 
 ### Role-Specific Entry Points
 
-- Senderrplace: `gosenderr-marketplace.web.app/login`
-- Senderr: `gosenderr-courier.web.app/login`
+- Marketplace: `gosenderr-marketplace.web.app/login`
+- Courier: `gosenderr-courier.web.app/login`
 - Admin: `gosenderr-admin.web.app/login`
 
 ## 🛠️ Development

@@ -1,8 +1,7 @@
 
 import { useState, useEffect } from "react";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
-import { DEFAULT_FEATURE_FLAGS } from "@gosenderr/shared";
 import type { FeatureFlags } from "@gosenderr/shared";
 
 export function useFeatureFlags() {
@@ -11,31 +10,80 @@ export function useFeatureFlags() {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    let mounted = true;
-
-    getDoc(doc(db, "featureFlags", "config"))
-      .then((snapshot) => {
-        if (!mounted) return;
+    const unsubscribe = onSnapshot(
+      doc(db, "featureFlags", "config"),
+      (snapshot) => {
         if (snapshot.exists()) {
           setFlags(snapshot.data() as FeatureFlags);
         } else {
-          // Return default flags if document doesn't exist.
-          setFlags(DEFAULT_FEATURE_FLAGS);
+          // Return default flags if document doesn't exist
+          setFlags({
+            marketplace: {
+              enabled: true,
+              itemListings: true,
+              combinedPayments: true,
+              courierOffers: false,
+            },
+            delivery: {
+              onDemand: true,
+              routes: true,
+              longRoutes: false,
+              longHaul: false,
+            },
+            courier: {
+              rateCards: true,
+              equipmentBadges: true,
+              workModes: true,
+            },
+            seller: {
+              stripeConnect: true,
+              multiplePhotos: true,
+              foodListings: true,
+            },
+            customer: {
+              liveTracking: true,
+              proofPhotos: true,
+              routeDelivery: false,
+              packageShipping: true,
+            },
+            packageRunner: {
+              enabled: true,
+              hubNetwork: true,
+              packageTracking: true,
+            },
+            admin: {
+              courierApproval: true,
+              equipmentReview: true,
+              disputeManagement: true,
+              analytics: true,
+              featureFlagsControl: true,
+              webPortalEnabled: false,
+              systemLogs: false,
+              firebaseExplorer: false,
+            },
+            advanced: {
+              pushNotifications: true,
+              ratingEnforcement: true,
+              autoCancel: true,
+              refunds: true,
+            },
+            ui: {
+              modernStyling: true,
+              darkMode: true,
+              animations: true,
+            },
+          });
         }
         setLoading(false);
-      })
-      .catch((err) => {
-        if (!mounted) return;
+      },
+      (err) => {
         console.error("Error loading feature flags:", err);
         setError(err as Error);
-        // Permission errors should not crash admin shell.
-        setFlags(DEFAULT_FEATURE_FLAGS);
         setLoading(false);
-      });
+      },
+    );
 
-    return () => {
-      mounted = false;
-    };
+    return () => unsubscribe();
   }, []);
 
   return { flags, loading, error };
