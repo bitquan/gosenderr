@@ -51,6 +51,20 @@
       "problemMatcher": []
     },
     {
+      "label": "test",
+      "type": "shell",
+      "command": "pnpm test",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": [],
+      "group": "test"
+    },
+    {
       "label": "lint",
       "type": "shell",
       "command": "pnpm lint",
