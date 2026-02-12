@@ -115,7 +115,7 @@ export default function ConversationPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
       </div>
     );
@@ -123,7 +123,7 @@ export default function ConversationPage() {
 
   if (!conversation) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95 flex flex-col items-center justify-center text-center px-4">
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center text-center px-4">
         <div className="text-5xl mb-4">💬</div>
         <h2 className="text-xl font-semibold text-gray-900 mb-2">Conversation not found</h2>
         <button
@@ -137,7 +137,7 @@ export default function ConversationPage() {
   }
 
   const pageContent = (
-    <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95 flex flex-col">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-5xl mx-auto px-4 py-2 flex items-center gap-3 justify-between">
           <div className="flex items-center gap-3">

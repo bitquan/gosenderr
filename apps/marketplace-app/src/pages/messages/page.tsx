@@ -93,14 +93,14 @@ export default function MessagesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95 pb-24">
+    <div className="min-h-screen bg-gray-50 pb-24">
       <div className="bg-gradient-to-br from-blue-600 to-purple-600 text-white p-6">
         <div className="max-w-5xl mx-auto">
           <h1 className="text-3xl font-bold">Messages</h1>
@@ -115,13 +115,13 @@ export default function MessagesPage() {
           </div>
         )}
         {startingChat ? (
-          <div className="bg-gradient-to-br from-violet-200/80 via-fuchsia-200/65 to-blue-200/70 border border-violet-200/80 rounded-lg shadow p-10 text-center">
+          <div className="bg-white rounded-lg shadow p-10 text-center">
             <div className="text-5xl mb-4">💬</div>
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Starting conversation...</h2>
             <p className="text-gray-600">Hang tight while we open the chat.</p>
           </div>
         ) : sortedConversations.length === 0 ? (
-          <div className="bg-gradient-to-br from-violet-200/80 via-fuchsia-200/65 to-blue-200/70 border border-violet-200/80 rounded-lg shadow p-10 text-center">
+          <div className="bg-white rounded-lg shadow p-10 text-center">
             <div className="text-5xl mb-4">💬</div>
             <h2 className="text-xl font-semibold text-gray-900 mb-2">No conversations yet</h2>
             <p className="text-gray-600">Start a chat from any marketplace item.</p>
@@ -146,7 +146,7 @@ export default function MessagesPage() {
                   key={conversation.id}
                   to={`/messages/${conversation.id}`}
                   state={{ fullscreen: true }}
-                  className="block bg-gradient-to-br from-violet-200/80 via-fuchsia-200/65 to-blue-200/70 border border-violet-200/80 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition"
+                  className="block bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition"
                 >
                   <div className="p-4 flex items-center justify-between gap-4">
                     <div className="flex items-center gap-4">

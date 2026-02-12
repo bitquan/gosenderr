@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { doc, getDoc } from 'firebase/firestore'
+import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '@/lib/firebase/client'
 
 export interface PlatformPaymentSettings {
@@ -38,44 +38,25 @@ export function usePlatformSettings() {
   const [error, setError] = useState<Error | null>(null)
 
   useEffect(() => {
-    let cancelled = false
-
-    const loadSettings = async () => {
-      try {
-        const snapshot = await getDoc(doc(db, 'platformSettings', 'payment'))
-        if (cancelled) return
-
+    const unsubscribe = onSnapshot(
+      doc(db, 'platformSettings', 'payment'),
+      (snapshot) => {
         if (snapshot.exists()) {
           const data = snapshot.data() as Partial<PlatformPaymentSettings>
           setSettings({ ...DEFAULTS, ...data })
         } else {
           setSettings(DEFAULTS)
         }
-        setError(null)
-      } catch (err) {
-        if (cancelled) return
-        const firestoreCode = (err as { code?: string } | null)?.code
-        if (firestoreCode === 'permission-denied') {
-          // Non-admin users may not read platform settings in some environments.
-          // Use safe defaults so customer flows continue to function.
-          setSettings(DEFAULTS)
-          setError(null)
-        } else {
-          console.error('Error loading platform settings:', err)
-          setError(err as Error)
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false)
-        }
+        setLoading(false)
+      },
+      (err) => {
+        console.error('Error loading platform settings:', err)
+        setError(err as Error)
+        setLoading(false)
       }
-    }
+    )
 
-    void loadSettings()
-
-    return () => {
-      cancelled = true
-    }
+    return () => unsubscribe()
   }, [])
 
   return { settings, loading, error }

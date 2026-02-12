@@ -125,7 +125,7 @@ export default function SellerReviewsPage() {
   })();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95 px-6 py-10">
+    <div className="min-h-screen bg-[#F8F9FF] px-6 py-10">
       <div className="max-w-5xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -205,7 +205,7 @@ export default function SellerReviewsPage() {
                         <span className="text-2xl">🛍️</span>
                         <div className="flex-1">
                           <h3 className="font-semibold text-gray-900">
-                            {review.itemName || "Senderrplace Order"}
+                            {review.itemName || "Marketplace Order"}
                           </h3>
                           <p className="text-sm text-gray-600">
                             Order {review.orderId ? `#${review.orderId.slice(0, 8).toUpperCase()}` : ""}

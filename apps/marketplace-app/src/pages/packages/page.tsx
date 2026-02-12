@@ -193,7 +193,7 @@ export default function CustomerPackagesNew() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95 flex items-center justify-center">
+      <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center">
         <div className="animate-pulse">
           <div className="w-16 h-16 bg-purple-200 rounded-full mx-auto mb-4"></div>
           <div className="h-4 bg-purple-200 rounded w-32 mx-auto"></div>
@@ -203,7 +203,7 @@ export default function CustomerPackagesNew() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95 pb-24">
+    <div className="min-h-screen bg-[#F8F9FF] pb-24">
       {/* Header */}
       <div className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] p-6 text-white shadow-lg">
         <div className="max-w-4xl mx-auto">
@@ -226,7 +226,7 @@ export default function CustomerPackagesNew() {
 
       {/* Filter Tabs */}
       <div className="max-w-4xl mx-auto px-6 -mt-4 mb-6 space-y-3">
-        <div className="bg-gradient-to-br from-violet-200/80 via-fuchsia-200/65 to-blue-200/70 border border-violet-200/80 rounded-2xl shadow-lg p-2 flex gap-2 overflow-x-auto">
+        <div className="bg-white rounded-2xl shadow-lg p-2 flex gap-2 overflow-x-auto">
           {[
             { label: "All", value: "all" },
             { label: "Pending", value: "payment_pending" },

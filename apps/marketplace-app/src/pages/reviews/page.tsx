@@ -73,7 +73,7 @@ export default function MyReviewsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95 flex items-center justify-center">
+      <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center">
         <div className="animate-pulse text-gray-500">Loading...</div>
       </div>
     );
@@ -129,7 +129,7 @@ export default function MyReviewsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95 px-6 py-10">
+    <div className="min-h-screen bg-[#F8F9FF] px-6 py-10">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -154,7 +154,7 @@ export default function MyReviewsPage() {
               {[
                 { label: "All Reviews", value: "all" },
                 { label: "Deliveries", value: "delivery" },
-                { label: "Senderrplace", value: "marketplace" },
+                { label: "Marketplace", value: "marketplace" },
               ].map((filter) => (
                 <button
                   key={filter.value}
@@ -255,7 +255,7 @@ export default function MyReviewsPage() {
                           <h3 className="font-semibold text-gray-900">
                             {review.type === "delivery"
                               ? `Delivery with ${review.courierName || "Courier"}`
-                              : review.itemName || "Senderrplace Order"}
+                              : review.itemName || "Marketplace Order"}
                           </h3>
                           {review.type === "marketplace" && review.sellerName && (
                             <p className="text-sm text-gray-600">

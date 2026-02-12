@@ -38,28 +38,15 @@ export default function SignupPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password)
       const user = userCredential.user
 
-      // Create user document in Firestore with unified marketplace roles.
-      // Users start as customers and can later add the seller role.
+      // Create user document in Firestore with unified marketplace roles
       await setDoc(doc(db, 'users', user.uid), {
         email: user.email,
         displayName: displayName || user.email?.split('@')[0],
         role: 'customer', // single role used by security rules
-        primaryRole: 'customer',
-        roles: ['customer', 'buyer'],
+        roles: ['buyer', 'seller'], // Backwards-compatible array for UI
         profilePhotoUrl: '',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-        onboarding: {
-          customer: {
-            status: 'completed',
-            completedAt: serverTimestamp(),
-          },
-          seller: {
-            status: 'not_started',
-            currentStep: 'business',
-            lastSavedAt: null,
-          },
-        },
         // Buyer profile (active by default)
         buyerProfile: {
           favoriteItems: [],
@@ -72,7 +59,7 @@ export default function SignupPage() {
         totalRatings: 0,
       })
 
-      // Navigate to Senderrplace home
+      // Navigate to marketplace home
       navigate('/marketplace')
     } catch (err: any) {
       console.error('Signup error:', err)
@@ -91,7 +78,7 @@ export default function SignupPage() {
     >
       <div className="max-w-md w-full">
         <div 
-          className="rounded-3xl border border-violet-200/80 bg-gradient-to-br from-violet-200/80 via-fuchsia-200/65 to-blue-200/70 shadow-2xl overflow-hidden"
+          className="bg-white rounded-3xl shadow-2xl overflow-hidden"
           style={{
             boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
           }}
@@ -101,8 +88,8 @@ export default function SignupPage() {
             className="px-8 py-10 text-center text-white bg-gradient-to-r from-purple-600 to-blue-600"
           >
             <div className="text-6xl mb-3">🛍️</div>
-            <h1 className="text-3xl font-bold mb-2">Join Senderrplace</h1>
-            <p className="text-purple-100 text-sm">Get started selling curated goods with Senderrplace delivery</p>
+            <h1 className="text-3xl font-bold mb-2">Join GoSenderR Marketplace</h1>
+            <p className="text-purple-100 text-sm">Buy, sell, and ship anything locally</p>
           </div>
 
           {/* Form */}
@@ -198,13 +185,13 @@ export default function SignupPage() {
           </div>
         </div>
 
-        {/* Back to Senderrplace */}
+        {/* Back to Marketplace */}
         <div className="text-center mt-6">
           <a 
             href="/marketplace"
             className="text-sm text-white hover:text-purple-100 font-medium transition-colors"
           >
-            ← Browse Senderrplace without signing up
+            ← Browse marketplace without signing up
           </a>
         </div>
       </div>

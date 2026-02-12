@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
-import { Job } from '@/lib/v2/types';
+import { Job, JobDoc } from '@/lib/v2/types';
 
 export function useCustomerJobs(uid: string | null) {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -12,23 +12,19 @@ export function useCustomerJobs(uid: string | null) {
     if (!uid) {
       setJobs([]);
       setLoading(false);
-      setError(null);
       return;
     }
 
-    let cancelled = false;
+    const jobsRef = collection(db, 'jobs');
+    const q = query(
+      jobsRef,
+      where('createdByUid', '==', uid),
+      orderBy('createdAt', 'desc')
+    );
 
-    const loadJobs = async () => {
-      try {
-        const jobsRef = collection(db, 'jobs');
-        const q = query(
-          jobsRef,
-          where('createdByUid', '==', uid),
-          orderBy('createdAt', 'desc')
-        );
-        const snapshot = await getDocs(q);
-        if (cancelled) return;
-
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
         const jobList: Job[] = [];
         snapshot.forEach((doc) => {
           jobList.push({
@@ -37,23 +33,17 @@ export function useCustomerJobs(uid: string | null) {
           } as Job);
         });
         setJobs(jobList);
+        setLoading(false);
         setError(null);
-      } catch (err) {
-        if (cancelled) return;
+      },
+      (err) => {
         console.error('Error fetching customer jobs:', err);
         setError(err as Error);
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
-    };
+    );
 
-    void loadJobs();
-
-    return () => {
-      cancelled = true;
-    };
+    return () => unsubscribe();
   }, [uid]);
 
   return { jobs, loading, error };

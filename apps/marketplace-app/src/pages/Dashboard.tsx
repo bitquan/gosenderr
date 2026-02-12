@@ -159,7 +159,7 @@ export default function DashboardPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95 px-6 py-10">
+      <div className="min-h-screen bg-[#F8F9FF] px-6 py-10">
         <div className="max-w-6xl mx-auto space-y-6">
           <Skeleton className="h-24 w-full" variant="purple" />
           <div className="grid grid-cols-2 gap-4">
@@ -175,7 +175,7 @@ export default function DashboardPage() {
   const stats = getStats()
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95">
+    <div className="min-h-screen bg-[#F8F9FF]">
       {/* Purple Header Card - Starts from top */}
       <div className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] rounded-b-[32px] px-6 pt-6 pb-8 text-white shadow-lg">
         <div className="max-w-6xl mx-auto">
