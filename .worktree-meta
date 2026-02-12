@@ -1,0 +1,5 @@
+lane=senderrapp
+feature=job-lifecycle-local
+branch=V1/senderrapp/job-lifecycle-local
+base=V1/base-senderrapp
+created_utc=2026-02-12T19:06:29Z

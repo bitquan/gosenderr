@@ -9,7 +9,11 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test": "pnpm test",
+    "dev": "pnpm dev",
+    "build": "pnpm build",
+    "lint": "pnpm lint"
   },
   "peerDependencies": {
     "react": "^19.0.0",

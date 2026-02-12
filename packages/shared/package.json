@@ -6,7 +6,9 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "test": "pnpm test",
+    "lint": "pnpm lint"
   },
   "devDependencies": {
     "typescript": "^5.7.2"

@@ -42,6 +42,8 @@ if [[ "$CHECK_ONLY" == "1" ]]; then
   [[ -d "$APP_DIR/node_modules" ]] && echo "✅ app node_modules exists" || echo "⚠️  app node_modules missing"
   [[ -d "$APP_DIR/ios/App/App.xcodeproj" ]] && echo "✅ iOS project exists" || echo "⚠️  iOS project missing"
   [[ -d "$APP_DIR/android" ]] && echo "✅ Android project exists" || echo "⚠️  Android project missing"
+  [[ -f "$REPO_ROOT/worktree.json" ]] && echo "✅ worktree.json exists" || echo "⚠️  worktree.json missing"
+  [[ -f "$REPO_ROOT/.vscode/tasks.json" ]] && echo "✅ VS Code tasks exist" || echo "⚠️  VS Code tasks missing"
   exit 0
 fi
 
@@ -67,6 +69,9 @@ if ! pnpm exec cap sync android; then
   echo "⚠️  Android sync failed; iOS setup is still complete."
   echo "   You can retry later with: cd $APP_DIR && pnpm exec cap sync android"
 fi
+
+echo "→ Syncing lifecycle runtasks and VS Code tasks"
+bash "$REPO_ROOT/scripts/wt-local-runtasks.sh"
 
 echo
 if [[ "$IOS_SYNC_OK" == "1" ]]; then

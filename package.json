@@ -49,6 +49,7 @@
     "bootstrap:minimal": "bash scripts/bootstrap-minimal.sh",
     "wt:bootstrap": "bash scripts/wt-local-bootstrap.sh",
     "wt:bootstrap:check": "bash scripts/wt-local-bootstrap.sh --check-only",
+    "wt:runtasks:sync": "bash scripts/wt-local-runtasks.sh",
     "ios:pod:sync": "bash scripts/sync-ios-podfile.sh --sync",
     "ios:pod:check": "bash scripts/sync-ios-podfile.sh --check",
     "ios:check": "bash scripts/check-ios-canonical.sh",
