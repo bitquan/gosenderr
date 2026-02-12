@@ -1,7 +1,3 @@
 {
-  "extends": "@react-native/typescript-config/tsconfig.json",
-  "compilerOptions": {
-    "module": "es2020",
-    "types": ["jest"]
-  }
+  "extends": "@react-native/typescript-config/tsconfig.json"
 }
