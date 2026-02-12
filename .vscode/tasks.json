@@ -2,36 +2,32 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Lifecycle: Bootstrap",
+      "label": "ios-metro",
       "type": "shell",
-      "command": "pnpm run wt:bootstrap",
+      "command": "pnpm --filter v1-senderr-ios start",
       "options": {
-        "cwd": "${workspaceFolder}"
-      },
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared"
-      },
-      "problemMatcher": []
-    },
-    {
-      "label": "Lifecycle: Dev",
-      "type": "shell",
-      "command": "pnpm --filter @gosenderr/senderr-app dev",
-      "options": {
-        "cwd": "${workspaceFolder}"
+        "cwd": "${workspaceFolder}/apps/V1-senderr-ios"
       },
       "presentation": {
         "reveal": "always",
         "panel": "dedicated"
       },
-      "isBackground": true,
-      "problemMatcher": []
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^.*$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*(Welcome to Metro|Starting Metro).*",
+          "endsPattern": ".*(waiting on|Metro waiting|ready).*"
+        }
+      },
+      "isBackground": true
     },
     {
-      "label": "Lifecycle: Build",
+      "label": "ios-open-xcode",
       "type": "shell",
-      "command": "pnpm --filter @gosenderr/senderr-app build",
+      "command": "open -a Xcode apps/V1-senderr-ios/ios/Senderrappios.xcworkspace",
       "options": {
         "cwd": "${workspaceFolder}"
       },
@@ -42,9 +38,22 @@
       "problemMatcher": []
     },
     {
-      "label": "Lifecycle: iOS Sync",
+      "label": "ios-pods-install",
       "type": "shell",
-      "command": "pnpm --filter @gosenderr/senderr-app cap:sync:ios",
+      "command": "pod install",
+      "options": {
+        "cwd": "${workspaceFolder}/apps/V1-senderr-ios/ios"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "lint",
+      "type": "shell",
+      "command": "pnpm lint",
       "options": {
         "cwd": "${workspaceFolder}"
       },
@@ -55,12 +64,38 @@
       "problemMatcher": []
     },
     {
-      "label": "Lifecycle: iOS Open",
+      "label": "build",
       "type": "shell",
-      "command": "pnpm --filter @gosenderr/senderr-app cap:open:ios",
+      "command": "pnpm build",
       "options": {
         "cwd": "${workspaceFolder}"
       },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "dev",
+      "type": "shell",
+      "command": "pnpm dev",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "ios-profile",
+      "dependsOn": [
+        "ios-open-xcode",
+        "ios-metro"
+      ],
+      "dependsOrder": "parallel",
       "presentation": {
         "reveal": "always",
         "panel": "shared"
