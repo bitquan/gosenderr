@@ -1,415 +1,106 @@
 {
   "version": "2.0.0",
   "tasks": [
-    // ==================== MARKETPLACE DEV (NEW) ====================
     {
-      "label": "🛍️ Marketplace: Dev Mode",
-      "dependsOn": ["🔥 Firebase Emulators", "📦 Marketplace App (Port 5173)"],
-      "problemMatcher": [],
-      "group": {
-        "kind": "build",
-        "isDefault": false
+      "label": "ios-metro",
+      "type": "shell",
+      "command": "pnpm --filter v1-senderr-ios start",
+      "options": {
+        "cwd": "${workspaceFolder}/apps/V1-senderr-ios"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^.*$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*(Welcome to Metro|Starting Metro).*",
+          "endsPattern": ".*(waiting on|Metro waiting|ready).*"
+        }
+      },
+      "isBackground": true
+    },
+    {
+      "label": "ios-open-xcode",
+      "type": "shell",
+      "command": "open -a Xcode apps/V1-senderr-ios/ios/Senderrappios.xcworkspace",
+      "options": {
+        "cwd": "${workspaceFolder}"
       },
       "presentation": {
         "reveal": "always",
         "panel": "shared"
-      }
-    },
-    {
-      "label": "🔥 Firebase Emulators",
-      "type": "shell",
-      "command": "./scripts/start-emulators.sh",
-      "isBackground": true,
-      "problemMatcher": {
-        "pattern": {
-          "regexp": "^.*$",
-          "file": 1,
-          "location": 2,
-          "message": 3
-        },
-        "background": {
-          "activeOnStart": true,
-          "beginsPattern": ".*Starting.*Emulators.*",
-          "endsPattern": ".*Ready.*View Emulator.*"
-        }
       },
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated",
-        "clear": false,
-        "echo": true,
-        "focus": false
-      }
-    },
-    
-    // ==================== DEV SERVERS (Run These) ====================
-    {
-      "label": "🔧 Admin App (Port 3000)",
-      "type": "shell",
-      "command": "pnpm --filter @gosenderr/admin-app dev",
-      "isBackground": true,
-      "problemMatcher": {
-        "pattern": {
-          "regexp": "^([^\\s].*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
-          "file": 1,
-          "line": 2,
-          "column": 3,
-          "severity": 4,
-          "message": 5
-        },
-        "background": {
-          "activeOnStart": true,
-          "beginsPattern": "^.*VITE.*$",
-          "endsPattern": "^.*ready in.*$"
-        }
-      },
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated",
-        "focus": false,
-        "clear": true
-      },
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      }
-    },
-
-    {
-      "label": "📦 Marketplace App (Port 5173)",
-      "type": "shell",
-      "command": "pnpm --filter @gosenderr/marketplace-app dev",
-      "isBackground": true,
-      "problemMatcher": {
-        "pattern": {
-          "regexp": "^([^\\s].*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
-          "file": 1,
-          "line": 2,
-          "column": 3,
-          "severity": 4,
-          "message": 5
-        },
-        "background": {
-          "activeOnStart": true,
-          "beginsPattern": "^.*VITE.*$",
-          "endsPattern": "^.*ready in.*$"
-        }
-      },
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated",
-        "focus": false,
-        "clear": true
-      }
-    },
-    {
-      "label": "📦 Marketplace App (Port 5180)",
-      "type": "shell",
-      "command": "PORT=5180 VITE_PORT=5180 pnpm --filter @gosenderr/marketplace-app dev -- --host 127.0.0.1",
-      "isBackground": true,
-      "problemMatcher": {
-        "pattern": {
-          "regexp": "^([^\\s].*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
-          "file": 1,
-          "line": 2,
-          "column": 3,
-          "severity": 4,
-          "message": 5
-        },
-        "background": {
-          "activeOnStart": true,
-          "beginsPattern": "^.*VITE.*$",
-          "endsPattern": "^.*ready in.*$"
-        }
-      },
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated",
-        "focus": false,
-        "clear": true
-      }
-    },
-    {
-      "label": "⚡ Courier App (Port 5174)",
-      "type": "shell",
-      "command": "pnpm --filter @gosenderr/courier-app dev",
-      "isBackground": true,
-      "problemMatcher": {
-        "pattern": {
-          "regexp": "^([^\\s].*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
-          "file": 1,
-          "line": 2,
-          "column": 3,
-          "severity": 4,
-          "message": 5
-        },
-        "background": {
-          "activeOnStart": true,
-          "beginsPattern": "^.*VITE.*$",
-          "endsPattern": "^.*ready in.*$"
-        }
-      },
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated",
-        "focus": false,
-        "clear": true
-      }
-    },
-    {
-      "label": "�️ Admin Desktop: Vite Dev Server (Port 5176)",
-      "type": "shell",
-      "command": "pnpm --filter @gosenderr/admin-desktop dev",
-      "isBackground": true,
-      "problemMatcher": {
-        "pattern": {
-          "regexp": "^([^\\s].*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
-          "file": 1,
-          "line": 2,
-          "column": 3,
-          "severity": 4,
-          "message": 5
-        },
-        "background": {
-          "activeOnStart": true,
-          "beginsPattern": "^.*VITE.*$",
-          "endsPattern": "^.*ready in.*$"
-        }
-      },
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated",
-        "focus": false,
-        "clear": true
-      }
-    },
-    {
-      "label": "🖥️ Admin Desktop: Electron App",
-      "type": "shell",
-      "command": "sleep 3 && cd apps/admin-desktop && pnpm electron",
-      "isBackground": true,
-      "dependsOn": ["🖥️ Admin Desktop: Vite Dev Server (Port 5176)"],
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated",
-        "focus": true,
-        "clear": false
-      }
-    },
-    {
-      "label": "🌐 Web/Marketing App (Port 3003)",
-      "type": "shell",
-      "command": "pnpm --filter @gosenderr/web dev",
-      "isBackground": true,
-      "problemMatcher": {
-        "pattern": {
-          "regexp": "^([^\\s].*):(\\d+):(\\d+)\\s+-\\s+(warning|error)\\s+(.*)$",
-          "file": 1,
-          "line": 2,
-          "column": 3,
-          "severity": 4,
-          "message": 5
-        },
-        "background": {
-          "activeOnStart": true,
-          "beginsPattern": "^.*starting.*$",
-          "endsPattern": "^.*Local:.*$"
-        }
-      },
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated",
-        "focus": false
-      }
-    },
-    {
-      "label": "🚀 All Vite Apps",
-      "dependsOn": [
-        "🔧 Admin App (Port 3000)",
-        "📦 Marketplace App (Port 5173)",
-        "⚡ Courier App (Port 5174)"
-      ],
       "problemMatcher": []
     },
     {
-      "label": "🎯 Phase 1: Admin Desktop Dev",
-      "dependsOn": [
-        "🔥 Firebase Emulators",
-        "🖥️ Admin Desktop: Vite Dev Server (Port 5176)",
-        "🖥️ Admin Desktop: Electron App"
-      ],
-      "problemMatcher": [],
-      "group": {
-        "kind": "build",
-        "isDefault": false
+      "label": "ios-pods-install",
+      "type": "shell",
+      "command": "pod install",
+      "options": {
+        "cwd": "${workspaceFolder}/apps/V1-senderr-ios/ios"
       },
       "presentation": {
         "reveal": "always",
         "panel": "shared"
-      }
-    },
-    {
-      "label": "🌐 All Apps (All Ports)",
-      "type": "shell",
-      "command": "pnpm dev",
-      "isBackground": true,
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated",
-        "focus": false
-      }
-    },
-    {
-      "label": "Run Admin App Tests",
-      "type": "shell",
-      "command": "pnpm --prefix apps/admin-app run test -- --run --reporter verbose",
-      "group": "test",
-      "presentation": {
-        "reveal": "silent"
       },
       "problemMatcher": []
     },
-
-    // ==================== STOP TASKS ====================
     {
-      "label": "🛑 Stop All Apps",
-      "type": "shell",
-      "command": "lsof -ti:3000,4000,5173,5174,5176,5180,8080,9099,9199 | xargs kill -9 2>/dev/null; pkill -f 'electron|Electron' 2>/dev/null; echo 'All ports and Electron cleared'",
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared",
-        "focus": true,
-        "clear": false
-      }
-    },
-
-    // ==================== BUILD TASKS ====================
-    {
-      "label": "Build: Admin App",
-      "type": "shell",
-      "command": "pnpm --filter @gosenderr/admin-app build",
-      "problemMatcher": ["$tsc"],
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared"
-      }
-    },
-    {
-      "label": "Build: Courier App",
-      "type": "shell",
-      "command": "pnpm --filter @gosenderr/courier-app build",
-      "problemMatcher": ["$tsc"],
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared"
-      }
-    },
-    {
-      "label": "Build: Marketplace App",
-      "type": "shell",
-      "command": "pnpm --filter @gosenderr/marketplace-app build",
-      "problemMatcher": ["$tsc"],
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared"
-      }
-    },
-    {
-      "label": "Build: Web App",
-      "type": "shell",
-      "command": "pnpm --filter @gosenderr/web build",
-      "problemMatcher": ["$tsc"],
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared"
-      }
-    },
-
-    // ==================== DEPLOYMENT ====================
-    {
-      "label": "Deploy: Marketplace Hosting",
-      "type": "shell",
-      "command": "firebase deploy --only hosting:gosenderr-marketplace --project gosenderr-6773f",
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated"
-      }
-    },
-    {
-      "label": "Deploy: Firebase Functions",
-      "type": "shell",
-      "command": "firebase deploy --only functions --project gosenderr-6773f",
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated"
-      }
-    },
-    {
-      "label": "Deploy: Firestore Rules",
-      "type": "shell",
-      "command": "firebase deploy --only firestore:rules --project gosenderr-6773f",
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared"
-      }
-    },
-    {
-      "label": "Deploy: Cloud Run Web",
-      "type": "shell",
-      "command": "bash scripts/deploy-cloudrun-web.sh",
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated"
-      }
-    },
-
-    // ==================== UTILITIES ====================
-    {
-      "label": "Install All Dependencies",
-      "type": "shell",
-      "command": "pnpm install",
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared"
-      }
-    },
-    {
-      "label": "Lint All Projects",
+      "label": "lint",
       "type": "shell",
       "command": "pnpm lint",
-      "problemMatcher": ["$eslint-stylish"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
       "presentation": {
         "reveal": "always",
         "panel": "shared"
-      }
+      },
+      "problemMatcher": []
     },
     {
-      "label": "Type Check All Projects",
+      "label": "build",
       "type": "shell",
-      "command": "pnpm type-check",
-      "problemMatcher": ["$tsc"],
+      "command": "pnpm build",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
       "presentation": {
         "reveal": "always",
         "panel": "shared"
-      }
+      },
+      "problemMatcher": []
     },
     {
-      "label": "Clean Build Artifacts",
+      "label": "dev",
       "type": "shell",
-      "command": "rm -rf apps/*/dist apps/*/.next apps/*/out .firebase",
-      "problemMatcher": [],
+      "command": "pnpm dev",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
       "presentation": {
         "reveal": "always",
         "panel": "shared"
-      }
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "ios-profile",
+      "dependsOn": [
+        "ios-open-xcode",
+        "ios-metro"
+      ],
+      "dependsOrder": "parallel",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
     }
   ]
 }
