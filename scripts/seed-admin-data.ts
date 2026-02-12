@@ -2,14 +2,22 @@
 const admin = require('firebase-admin');
 const path = require('path');
 
-// Use admin SDK from functions folder
-const adminModule = require(path.join(__dirname, '../firebase/functions/node_modules/firebase-admin'));
+// Prefer top-level `firebase-admin` resolution; fall back to functions/node_modules if explicitly provided.
+let adminModule = admin;
+try {
+  // keep backward-compat shim (non-fatal if it doesn't exist)
+  // eslint-disable-next-line global-require, import/no-dynamic-require
+  const maybe = require(path.join(__dirname, '../firebase/functions/node_modules/firebase-admin'));
+  if (maybe) adminModule = maybe;
+} catch (_) {
+  /* ignore - use workspace-resolved firebase-admin */
+}
 
 // Connect to emulator
 process.env.FIRESTORE_EMULATOR_HOST = '127.0.0.1:8080';
 
 adminModule.initializeApp({
-  projectId: 'gosenderr-6773f'
+  projectId: process.env.FIREBASE_PROJECT_ID || 'gosenderr-6773f'
 });
 
 const db = adminModule.firestore();

@@ -10,19 +10,25 @@ import { resolve } from "path";
 
 // Initialize Firebase Admin
 if (getApps().length === 0) {
-  const serviceAccount = JSON.parse(
-    readFileSync(
-      resolve(
-        __dirname,
-        "../firebase/gosenderr-65e3a-firebase-adminsdk-juvhh-e8e16cd5a8.json",
-      ),
-      "utf-8",
-    ),
-  );
+  let initialized = false;
+  try {
+    // Prefer explicit service account when present (CI / developer-provided)
+    const saPath = resolve(__dirname, "../firebase/gosenderr-65e3a-firebase-adminsdk-juvhh-e8e16cd5a8.json");
+    try {
+      const serviceAccount = JSON.parse(readFileSync(saPath, 'utf-8'));
+      initializeApp({ credential: cert(serviceAccount) });
+      initialized = true;
+    } catch (err) {
+      // Missing service account — fall back to emulator-only initialization below
+    }
+  } catch (err) {
+    // no-op
+  }
 
-  initializeApp({
-    credential: cert(serviceAccount),
-  });
+  if (!initialized) {
+    // Running against local emulator or missing service account — initialize by projectId
+    initializeApp({ projectId: process.env.FIREBASE_PROJECT_ID || 'demo-senderr' });
+  }
 }
 
 const db = getFirestore();
