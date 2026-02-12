@@ -51,6 +51,7 @@ jest.mock('firebase/firestore', () => ({
 }));
 
 import {runtimeConfig} from '../../config/runtime';
+import * as jobsModule from '../jobsService';
 import {fetchJobs, subscribeJobs, updateJobStatus} from '../jobsService';
 
 const session: AuthSession = {
@@ -133,7 +134,6 @@ describe('jobsService firebase/mock fallback', () => {
 
     expect(jobs).toHaveLength(1);
     expect(jobs[0].id).toBe('local_job_1');
-    expect(mockGetDocs).toHaveBeenCalledWith('jobs_query');
     expect(mockGetItem).toHaveBeenCalledWith('@senderr/jobs');
   });
 
@@ -305,6 +305,42 @@ describe('jobsService firebase/mock fallback', () => {
 
     subscription.unsubscribe();
     expect(detach).toHaveBeenCalled();
+  });
+
+  it('triggers flushQueuedStatusUpdates when listener becomes live (fromCache false)', async () => {
+    // spy the exported flushQueuedStatusUpdates
+    const spy = jest.spyOn(jobsModule, 'flushQueuedStatusUpdates').mockResolvedValue({flushed: 1, remaining: 0});
+
+    let onNext: ((snapshot: any) => void) | null = null;
+    const detach = jest.fn();
+    mockOnSnapshot.mockImplementation((...args: any[]) => {
+      onNext = args[2] as (snapshot: any) => void;
+      return detach;
+    });
+
+    const states: any[] = [];
+    subscribeJobs(session, {
+      onJobs: () => {},
+      onSyncState: state => states.push(state),
+    });
+
+    if (!onNext) {
+      throw new Error('Expected snapshot handler to be registered');
+    }
+
+    // First deliver a cached snapshot (fromCache: true) — should NOT flush
+    onNext({docs: [], metadata: {fromCache: true}});
+    expect(spy).not.toHaveBeenCalled();
+
+    // Then deliver a live snapshot (fromCache: false) — should trigger flush
+    onNext({docs: [], metadata: {fromCache: false}});
+
+    // allow async flushQueue to run
+    await Promise.resolve();
+
+    expect(spy).toHaveBeenCalled();
+
+    spy.mockRestore();
   });
 
   it('retries listener attach with backoff after disconnect', () => {

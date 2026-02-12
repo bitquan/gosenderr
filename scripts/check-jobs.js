@@ -1,7 +1,8 @@
 const admin = require('firebase-admin');
+const projectId = process.env.FIREBASE_PROJECT_ID || 'demo-senderr';
 
 if (!admin.apps.length) {
-  admin.initializeApp({ projectId: 'gosenderr-6773f' });
+  admin.initializeApp({ projectId });
   const db = admin.firestore();
   db.settings({ host: 'localhost:8080', ssl: false });
 }
@@ -10,6 +11,7 @@ const db = admin.firestore();
 
 async function checkJobs() {
   console.log('🔍 Checking jobs in database...\n');
+  console.log('🧭 Project:', projectId);
   
   const snapshot = await db.collection('jobs').where('status', '==', 'open').get();
   console.log('📊 Total open jobs:', snapshot.size);

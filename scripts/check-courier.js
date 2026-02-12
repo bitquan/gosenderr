@@ -1,7 +1,8 @@
 const admin = require('firebase-admin');
+const projectId = process.env.FIREBASE_PROJECT_ID || 'demo-senderr';
 
 if (!admin.apps.length) {
-  admin.initializeApp({ projectId: 'gosenderr-6773f' });
+  admin.initializeApp({ projectId });
   const db = admin.firestore();
   db.settings({ host: 'localhost:8080', ssl: false });
 }
@@ -10,6 +11,7 @@ const db = admin.firestore();
 
 async function checkCourierSetup() {
   console.log('🔍 Checking courier profiles...\n');
+  console.log('🧭 Project:', projectId);
   
   const usersSnapshot = await db.collection('users').get();
   

@@ -1,9 +1,10 @@
 const admin = require('firebase-admin');
+const projectId = process.env.FIREBASE_PROJECT_ID || 'demo-senderr';
 
 // Initialize Firebase Admin for emulator
 if (!admin.apps.length) {
   admin.initializeApp({
-    projectId: 'gosenderr-6773f',
+    projectId,
   });
   
   // Connect to Firestore emulator
@@ -21,6 +22,7 @@ const db = admin.firestore();
 async function createTestJob() {
   try {
     console.log('📦 Creating test delivery job...');
+    console.log('🧭 Project:', projectId);
 
     const testJob = {
       // Job basics

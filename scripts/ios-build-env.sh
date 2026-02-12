@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-IOS_DIR="$ROOT_DIR/apps/courieriosnativeclean/ios"
+IOS_DIR="$ROOT_DIR/apps/V1-senderr-ios/ios"
 WORKSPACE="$IOS_DIR/Senderrappios.xcworkspace"
 SCHEME="Senderr"
 

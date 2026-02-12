@@ -150,6 +150,14 @@ const persistJobs = async (jobs: Job[]): Promise<void> => {
 const loadLocalJobs = async (): Promise<Job[]> => {
   const raw = await AsyncStorage.getItem(STORAGE_KEY);
   if (!raw) {
+    // In local smoke/dev builds don't auto-seed persistent jobs so emulator
+    // assigned jobs show correctly after clearing cache. Persist an empty
+    // list instead of the hardcoded demo seed to avoid confusing developers.
+    if (runtimeConfig.envName === 'dev') {
+      await persistJobs([]);
+      return [];
+    }
+
     await persistJobs(seedJobs);
     return seedJobs;
   }
@@ -305,6 +313,27 @@ const buildQueryForSession = (db: Firestore, session: AuthSession) => {
   return query(jobsRef, where('courierUid', '==', session.uid));
 };
 
+const mergeJobDocs = (
+  docs: Array<{id: string; data: () => Record<string, unknown>}>,
+): Job[] =>
+  sortJobsByNewest(docs.map(d => mapFirestoreJob(d.id, d.data() as Record<string, unknown>)));
+
+const readSnapshotDocs = (snapshot: unknown): Array<{id: string; data: () => Record<string, unknown>}> => {
+  if (!snapshot || typeof snapshot !== 'object') {
+    return [];
+  }
+
+  const docs = (snapshot as {docs?: unknown}).docs;
+  if (!Array.isArray(docs)) {
+    return [];
+  }
+
+  return docs.filter(
+    (doc): doc is {id: string; data: () => Record<string, unknown>} =>
+      Boolean(doc) && typeof (doc as {id?: unknown}).id === 'string' && typeof (doc as {data?: unknown}).data === 'function',
+  );
+};
+
 const parseUpdatedAtMs = (value: string): number => {
   const parsed = Date.parse(value);
   return Number.isFinite(parsed) ? parsed : 0;
@@ -320,7 +349,7 @@ const buildFirebaseError = (operation: string, error: unknown): Error => {
 
 const MAX_QUEUED_UPDATE_ATTEMPTS = 5;
 
-const flushQueuedStatusUpdates = async (session: AuthSession, db: Firestore): Promise<QueueFlushResult> => {
+export const flushQueuedStatusUpdates = async (session: AuthSession, db: Firestore): Promise<QueueFlushResult> => {
   const queue = await readQueuedStatusUpdates();
   const sessionQueue = queue
     .filter(entry => entry.sessionUid === session.uid)
@@ -415,16 +444,59 @@ export const fetchJobs = async (session: AuthSession): Promise<Job[]> => {
   }
 
   try {
-    // DEBUG: test instrumentation
-    // console.debug('[test-debug] fetchJobs - will call getDocs with query:', buildQueryForSession(services.db, session));
-    const snap = await getDocs(buildQueryForSession(services.db, session));
-    const jobs = sortJobsByNewest(
-      snap.docs.map(d => mapFirestoreJob(d.id, d.data() as Record<string, unknown>)),
+    const jobsRef = collection(services.db, 'jobs');
+
+    const [byCourierUid, byCourierId] = await Promise.all([
+      getDocs(query(jobsRef, where('courierUid', '==', session.uid))),
+      getDocs(query(jobsRef, where('courierId', '==', session.uid))),
+    ]);
+
+    const byUidDocs = readSnapshotDocs(byCourierUid);
+    const byIdDocs = readSnapshotDocs(byCourierId);
+
+    const byId = new Map<string, {id: string; data: () => Record<string, unknown>}>(
+      byUidDocs.map(d => [d.id, d]),
     );
+    for (const docSnap of byIdDocs) {
+      byId.set(docSnap.id, docSnap);
+    }
+
+    let jobs = mergeJobDocs(Array.from(byId.values()));
+
+    // Dev-only recovery path: if auth UID drifts but email is the same,
+    // gather alternate courier user docs by email and include their jobs.
+    if (jobs.length === 0 && runtimeConfig.envName !== 'prod' && session.email) {
+      const usersRef = collection(services.db, 'users');
+      const usersByEmail = await getDocs(query(usersRef, where('email', '==', session.email)));
+      const usersByEmailDocs = readSnapshotDocs(usersByEmail);
+      const aliasUids = usersByEmailDocs
+        .map(d => d.id)
+        .filter(uid => uid !== session.uid);
+
+      if (aliasUids.length > 0) {
+        const aliasDocs: Array<{id: string; data: () => Record<string, unknown>}> = [];
+        for (const aliasUid of aliasUids) {
+          const [aliasByUid, aliasById] = await Promise.all([
+            getDocs(query(jobsRef, where('courierUid', '==', aliasUid))),
+            getDocs(query(jobsRef, where('courierId', '==', aliasUid))),
+          ]);
+
+          readSnapshotDocs(aliasByUid).forEach(d => aliasDocs.push(d));
+          readSnapshotDocs(aliasById).forEach(d => aliasDocs.push(d));
+        }
+
+        if (aliasDocs.length > 0) {
+          const mergedAlias = new Map<string, {id: string; data: () => Record<string, unknown>}>(
+            aliasDocs.map(d => [d.id, d]),
+          );
+          jobs = mergeJobDocs(Array.from(mergedAlias.values()));
+        }
+      }
+    }
+
     await persistJobs(jobs);
     return jobs;
   } catch (error) {
-    // console.debug('[test-debug] fetchJobs - getDocs threw', error);
     return localFallbackOrThrow('fetchJobs', error);
   }
 };

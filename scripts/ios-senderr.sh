@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-APP_DIR="$ROOT_DIR/apps/courieriosnativeclean"
+APP_DIR="$ROOT_DIR/apps/V1-senderr-ios"
 IOS_DIR="$APP_DIR/ios"
 WORKSPACE="$IOS_DIR/Senderrappios.xcworkspace"
 
@@ -17,7 +17,8 @@ Commands:
   testflight-archive Build Release archive + IPA for TestFlight handoff
   testflight-upload  Build Release archive + IPA, then upload to App Store Connect
   open-xcode    Open the canonical Senderr iOS workspace
-  metro         Start Metro from the Senderr app directory
+  metro         Start Metro from the Senderr app directory (with cache reset)
+  metro-reset   Kill stale Metro/Watchman state, then start Metro
   help          Show this help
 EOF
 }
@@ -47,8 +48,21 @@ run_open_xcode() {
 }
 
 run_metro() {
+  if [[ ! -d "$APP_DIR" ]]; then
+    echo "error: app dir not found: $APP_DIR" >&2
+    exit 1
+  fi
   cd "$APP_DIR"
   npx react-native start --reset-cache
+}
+
+run_metro_reset() {
+  # Avoid stale Metro resolver state across concurrent local sessions.
+  pkill -f "react-native start" >/dev/null 2>&1 || true
+  pkill -f "node.*metro" >/dev/null 2>&1 || true
+  watchman watch-del-all >/dev/null 2>&1 || true
+  rm -rf "${TMPDIR:-/tmp}/metro-*" >/dev/null 2>&1 || true
+  run_metro
 }
 
 if [[ "${1:-}" == "--" ]]; then
@@ -80,6 +94,9 @@ case "$cmd" in
     ;;
   metro)
     run_metro
+    ;;
+  metro-reset)
+    run_metro_reset
     ;;
   help|-h|--help)
     usage

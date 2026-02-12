@@ -2,7 +2,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-IOS_DIR="${IOS_DIR:-$REPO_ROOT/apps/courieriosnativeclean/ios}"
+IOS_DIR="${IOS_DIR:-$REPO_ROOT/apps/V1-senderr-ios/ios}"
 WORKSPACE="${WORKSPACE:-$IOS_DIR/Senderrappios.xcworkspace}"
 SCHEME="${SCHEME:-Senderr}"
 DERIVED_ROOT="${DERIVED_ROOT:-$HOME/Library/Developer/Xcode/DerivedData}"
