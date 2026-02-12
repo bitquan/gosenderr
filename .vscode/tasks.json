@@ -2,23 +2,9 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "test",
+      "label": "Lifecycle: Bootstrap",
       "type": "shell",
-      "command": "pnpm test",
-      "options": {
-        "cwd": "${workspaceFolder}"
-      },
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared"
-      },
-      "problemMatcher": [],
-      "group": "test"
-    },
-    {
-      "label": "lint",
-      "type": "shell",
-      "command": "pnpm lint",
+      "command": "pnpm run wt:bootstrap",
       "options": {
         "cwd": "${workspaceFolder}"
       },
@@ -29,9 +15,23 @@
       "problemMatcher": []
     },
     {
-      "label": "build",
+      "label": "Lifecycle: Dev",
       "type": "shell",
-      "command": "pnpm build",
+      "command": "pnpm --filter @gosenderr/senderr-app dev",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "Lifecycle: Build",
+      "type": "shell",
+      "command": "pnpm --filter @gosenderr/senderr-app build",
       "options": {
         "cwd": "${workspaceFolder}"
       },
@@ -42,9 +42,22 @@
       "problemMatcher": []
     },
     {
-      "label": "dev",
+      "label": "Lifecycle: iOS Sync",
       "type": "shell",
-      "command": "pnpm dev",
+      "command": "pnpm --filter @gosenderr/senderr-app cap:sync:ios",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Lifecycle: iOS Open",
+      "type": "shell",
+      "command": "pnpm --filter @gosenderr/senderr-app cap:open:ios",
       "options": {
         "cwd": "${workspaceFolder}"
       },

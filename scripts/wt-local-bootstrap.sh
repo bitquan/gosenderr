@@ -70,9 +70,6 @@ if ! pnpm exec cap sync android; then
   echo "   You can retry later with: cd $APP_DIR && pnpm exec cap sync android"
 fi
 
-echo "→ Syncing lifecycle runtasks and VS Code tasks"
-bash "$REPO_ROOT/scripts/wt-local-runtasks.sh"
-
 echo
 if [[ "$IOS_SYNC_OK" == "1" ]]; then
   echo "✅ Local lifecycle setup complete"
@@ -83,3 +80,4 @@ echo "Next:"
 echo "  cd $APP_DIR"
 echo "  pnpm dev"
 echo "  pnpm cap:open:ios"
+echo "  pnpm run wt:runtasks:sync   # optional: refresh local VS Code tasks"

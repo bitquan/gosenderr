@@ -2,16 +2,8 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-WORKSPACE_ROOT="$(dirname "$REPO_ROOT")"
+VSCODE_DIR="$REPO_ROOT/.vscode"
 WORKTREE_JSON="$REPO_ROOT/worktree.json"
-SYNC_RUNTASKS_SCRIPT="$WORKSPACE_ROOT/V1-senderr-ios/scripts/wt-sync-runtasks.sh"
-SYNC_TASKS_SCRIPT="$WORKSPACE_ROOT/V1-senderr-ios/scripts/wt-sync-tasks.sh"
-SYNC_ROOT_TASKS_SCRIPT="$WORKSPACE_ROOT/V1-senderr-ios/scripts/wt-sync-root-tasks.sh"
-
-if [[ ! -f "$SYNC_RUNTASKS_SCRIPT" || ! -f "$SYNC_TASKS_SCRIPT" ]]; then
-  echo "❌ Missing sync scripts under: $WORKSPACE_ROOT/V1-senderr-ios/scripts"
-  exit 1
-fi
 
 if [[ ! -f "$WORKTREE_JSON" ]]; then
   BRANCH_NAME="$(git -C "$REPO_ROOT" rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)"
@@ -21,21 +13,156 @@ if [[ ! -f "$WORKTREE_JSON" ]]; then
 {
   "branch": "$BRANCH_NAME",
   "created_at": "$NOW_UTC",
-  "original_path": "$REPO_ROOT"
+  "original_path": "$REPO_ROOT",
+  "runtasks": [
+    {
+      "name": "lifecycle-bootstrap",
+      "cmd": "pnpm run wt:bootstrap",
+      "cwd": ".",
+      "description": "Install deps, build app, and sync native projects"
+    },
+    {
+      "name": "lifecycle-dev",
+      "cmd": "pnpm --filter @gosenderr/senderr-app dev",
+      "cwd": ".",
+      "description": "Run lifecycle senderr-app dev server"
+    },
+    {
+      "name": "lifecycle-build",
+      "cmd": "pnpm --filter @gosenderr/senderr-app build",
+      "cwd": ".",
+      "description": "Build lifecycle senderr-app"
+    },
+    {
+      "name": "lifecycle-open-ios",
+      "cmd": "pnpm --filter @gosenderr/senderr-app cap:open:ios",
+      "cwd": ".",
+      "description": "Open iOS project for senderr-app"
+    },
+    {
+      "name": "lifecycle-sync-ios",
+      "cmd": "pnpm --filter @gosenderr/senderr-app cap:sync:ios",
+      "cwd": ".",
+      "description": "Sync Capacitor iOS project"
+    }
+  ]
 }
 EOF
   echo "→ created $WORKTREE_JSON"
 fi
 
-echo "→ syncing runtasks for lifecycle worktree"
-bash "$SYNC_RUNTASKS_SCRIPT" "$REPO_ROOT"
+node - "$WORKTREE_JSON" <<'NODE'
+const fs = require('fs');
+const wtPath = process.argv[2];
+const wt = JSON.parse(fs.readFileSync(wtPath, 'utf8'));
+wt.runtasks = [
+  {
+    name: 'lifecycle-bootstrap',
+    cmd: 'pnpm run wt:bootstrap',
+    cwd: '.',
+    description: 'Install deps, build app, and sync native projects',
+  },
+  {
+    name: 'lifecycle-dev',
+    cmd: 'pnpm --filter @gosenderr/senderr-app dev',
+    cwd: '.',
+    description: 'Run lifecycle senderr-app dev server',
+  },
+  {
+    name: 'lifecycle-build',
+    cmd: 'pnpm --filter @gosenderr/senderr-app build',
+    cwd: '.',
+    description: 'Build lifecycle senderr-app',
+  },
+  {
+    name: 'lifecycle-open-ios',
+    cmd: 'pnpm --filter @gosenderr/senderr-app cap:open:ios',
+    cwd: '.',
+    description: 'Open iOS project for senderr-app',
+  },
+  {
+    name: 'lifecycle-sync-ios',
+    cmd: 'pnpm --filter @gosenderr/senderr-app cap:sync:ios',
+    cwd: '.',
+    description: 'Sync Capacitor iOS project',
+  },
+];
+fs.writeFileSync(wtPath, JSON.stringify(wt, null, 2) + '\n');
+NODE
 
-echo "→ generating .vscode/tasks.json for lifecycle worktree"
-bash "$SYNC_TASKS_SCRIPT" "$REPO_ROOT"
+mkdir -p "$VSCODE_DIR"
+cat > "$VSCODE_DIR/tasks.json" <<'EOF'
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Lifecycle: Bootstrap",
+      "type": "shell",
+      "command": "pnpm run wt:bootstrap",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Lifecycle: Dev",
+      "type": "shell",
+      "command": "pnpm --filter @gosenderr/senderr-app dev",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "Lifecycle: Build",
+      "type": "shell",
+      "command": "pnpm --filter @gosenderr/senderr-app build",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Lifecycle: iOS Sync",
+      "type": "shell",
+      "command": "pnpm --filter @gosenderr/senderr-app cap:sync:ios",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Lifecycle: iOS Open",
+      "type": "shell",
+      "command": "pnpm --filter @gosenderr/senderr-app cap:open:ios",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    }
+  ]
+}
+EOF
 
-if [[ -f "$SYNC_ROOT_TASKS_SCRIPT" ]]; then
-  echo "→ refreshing root picker tasks"
-  bash "$SYNC_ROOT_TASKS_SCRIPT" "$WORKSPACE_ROOT" || true
-fi
-
-echo "✅ runtasks + VS Code tasks synced"
+echo "✅ lifecycle runtasks + VS Code tasks synced"
