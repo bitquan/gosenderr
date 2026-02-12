@@ -293,6 +293,7 @@ const isLikelyConnectivityError = (error: unknown): boolean => {
   const messageMatches =
     message.includes('client is offline') ||
     message.includes('network request failed') ||
+    message.includes('network unavailable') ||
     message.includes('failed to get document because the client is offline') ||
     message.includes('timed out') ||
     message.includes('connection reset') ||

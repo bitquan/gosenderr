@@ -37,17 +37,18 @@ jest.mock('../firebase', () => ({
 }));
 
 jest.mock('firebase/firestore', () => ({
-  collection: mockCollection,
-  where: mockWhere,
-  orderBy: mockOrderBy,
-  query: mockQuery,
-  getDocs: mockGetDocs,
-  doc: mockDoc,
-  updateDoc: mockUpdateDoc,
-  getDoc: mockGetDoc,
-  runTransaction: mockRunTransaction,
+  __esModule: true,
+  collection: (...args: unknown[]) => mockCollection(...args),
+  where: (...args: unknown[]) => mockWhere(...args),
+  orderBy: (...args: unknown[]) => mockOrderBy(...args),
+  query: (...args: unknown[]) => mockQuery(...args),
+  getDocs: (...args: unknown[]) => mockGetDocs(...args),
+  doc: (...args: unknown[]) => mockDoc(...args),
+  updateDoc: (...args: unknown[]) => mockUpdateDoc(...args),
+  getDoc: (...args: unknown[]) => mockGetDoc(...args),
+  runTransaction: (...args: unknown[]) => mockRunTransaction(...args),
   serverTimestamp: () => mockServerTimestamp(),
-  onSnapshot: mockOnSnapshot,
+  onSnapshot: (...args: unknown[]) => mockOnSnapshot(...args),
 }));
 
 import {runtimeConfig} from '../../config/runtime';
@@ -308,8 +309,30 @@ describe('jobsService firebase/mock fallback', () => {
   });
 
   it('triggers flushQueuedStatusUpdates when listener becomes live (fromCache false)', async () => {
-    // spy the exported flushQueuedStatusUpdates
-    const spy = jest.spyOn(jobsModule, 'flushQueuedStatusUpdates').mockResolvedValue({flushed: 1, remaining: 0});
+    // seed queued updates so a live snapshot triggers queue processing
+    const now = new Date().toISOString();
+    mockGetItem.mockImplementation((key: string) => {
+      if (key === '@senderr/jobs') {
+        return Promise.resolve(JSON.stringify(makeLocalJobs()));
+      }
+      if (key === '@senderr/jobs/status-update-queue') {
+        return Promise.resolve(
+          JSON.stringify([
+            {
+              jobId: 'job_live_flush',
+              sessionUid: session.uid,
+              nextStatus: 'accepted',
+              enqueuedAt: now,
+              attempts: 1,
+              lastError: 'network unavailable',
+            },
+          ]),
+        );
+      }
+      return Promise.resolve(null);
+    });
+    mockDoc.mockImplementation((_db: any, _col: string, id: string) => `doc:${id}`);
+    mockUpdateDoc.mockResolvedValue(undefined);
 
     let onNext: ((snapshot: any) => void) | null = null;
     const detach = jest.fn();
@@ -330,17 +353,19 @@ describe('jobsService firebase/mock fallback', () => {
 
     // First deliver a cached snapshot (fromCache: true) — should NOT flush
     onNext({docs: [], metadata: {fromCache: true}});
-    expect(spy).not.toHaveBeenCalled();
+    expect(mockUpdateDoc).not.toHaveBeenCalled();
 
     // Then deliver a live snapshot (fromCache: false) — should trigger flush
     onNext({docs: [], metadata: {fromCache: false}});
 
     // allow async flushQueue to run
     await Promise.resolve();
+    await Promise.resolve();
 
-    expect(spy).toHaveBeenCalled();
-
-    spy.mockRestore();
+    expect(mockUpdateDoc).toHaveBeenCalledWith(
+      'doc:job_live_flush',
+      expect.objectContaining({status: 'accepted'}),
+    );
   });
 
   it('retries listener attach with backoff after disconnect', () => {
@@ -450,7 +475,11 @@ describe('jobsService firebase/mock fallback', () => {
       expect.stringContaining('job_retry'),
     );
 
-    const saved = JSON.parse(String(mockSetItem.mock.calls[mockSetItem.mock.calls.length - 1][1]));
+    const queuePersistCall = mockSetItem.mock.calls.find(
+      ([key]) => key === '@senderr/jobs/status-update-queue',
+    );
+    expect(queuePersistCall).toBeDefined();
+    const saved = JSON.parse(String(queuePersistCall?.[1]));
     const retryEntry = saved.find((e: any) => e.jobId === 'job_retry');
     expect(retryEntry.attempts).toBe(2);
 
