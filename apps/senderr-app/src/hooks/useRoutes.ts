@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import {
   collection,
@@ -48,7 +47,7 @@ export function useRoutes(options: UseRoutesOptions = {}) {
       constraints.push(where("courierId", "==", options.courierId));
     }
 
-    const q = query(collection(db, "routes"), ...constraints);
+    const q = query(coll("routes"), ...constraints);
 
     const unsubscribe = onSnapshot(
       q,
