@@ -4,9 +4,9 @@
     {
       "label": "ios-metro",
       "type": "shell",
-      "command": "pnpm --filter v1-senderr-ios start",
+      "command": "pnpm --filter @gosenderr/senderr-app dev",
       "options": {
-        "cwd": "${workspaceFolder}/apps/V1-senderr-ios"
+        "cwd": "${workspaceFolder}"
       },
       "presentation": {
         "reveal": "always",
@@ -27,7 +27,7 @@
     {
       "label": "ios-open-xcode",
       "type": "shell",
-      "command": "open -a Xcode apps/V1-senderr-ios/ios/Senderrappios.xcworkspace",
+      "command": "open -a Xcode apps/senderr-app/ios/App/App.xcodeproj",
       "options": {
         "cwd": "${workspaceFolder}"
       },
@@ -40,9 +40,9 @@
     {
       "label": "ios-pods-install",
       "type": "shell",
-      "command": "pod install",
+      "command": "if [ -f Podfile ]; then pod install; else echo \"No Podfile found, skipping pod install\"; fi",
       "options": {
-        "cwd": "${workspaceFolder}/apps/V1-senderr-ios/ios"
+        "cwd": "${workspaceFolder}/apps/senderr-app/ios/App"
       },
       "presentation": {
         "reveal": "always",
