@@ -25,6 +25,11 @@ const demoUsers = [
     displayName: "Demo Seller",
   },
   {
+    email: "courier@example.com",
+    role: "courier",
+    displayName: "Demo Courier",
+  },
+  {
     email: "admin@example.com",
     role: "admin",
     displayName: "Demo Admin",
@@ -345,10 +350,23 @@ async function run() {
     });
     const jobId = await createDemoJob(userRecords.customer.uid);
 
+    // Create an assigned demo job so the demo courier sees an active job immediately
+    if (userRecords.courier && userRecords.courier.uid) {
+      const assignedJobId = await createDemoJob(userRecords.customer.uid);
+      await db.collection('jobs').doc(assignedJobId).update({
+        courierUid: userRecords.courier.uid,
+        courierId: userRecords.courier.uid,
+        status: 'accepted',
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+      console.log(`\n🎯 Assigned demo job for courier: ${assignedJobId}`);
+    }
+
     console.log("\n🎯 Demo artifacts created:");
     console.log(JSON.stringify({ itemId, orderId, jobId }, null, 2));
     console.log("\n🔐 Demo password:", DEMO_PASSWORD);
-    console.log("\n👤 Admin user:");
+    console.log("\n👤 Demo accounts:");
+    console.log("   courier@example.com / " + DEMO_PASSWORD);
     console.log("   admin@example.com / " + DEMO_PASSWORD);
   } catch (error) {
     console.error("❌ Seed failed:", error);
