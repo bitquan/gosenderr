@@ -435,6 +435,10 @@ describe('jobsService firebase/mock fallback', () => {
     expect(mockUpdateDoc).toHaveBeenCalledTimes(2);
     // Queue key should be removed when nothing remains
     expect(mockRemoveItem).toHaveBeenCalledWith('@senderr/jobs/status-update-queue');
+
+    // telemetry should have recorded a dropped non-retryable entry
+    const telemetryDrop = (jobsModule as any).getQueueFlushTelemetry();
+    expect(telemetryDrop.drops).toBeGreaterThanOrEqual(1);
   });
 
   it('flushQueuedStatusUpdates stops on first retryable error and increments attempts', async () => {
@@ -474,6 +478,10 @@ describe('jobsService firebase/mock fallback', () => {
       '@senderr/jobs/status-update-queue',
       expect.stringContaining('job_retry'),
     );
+
+    // telemetry should record a retryable error occurrence
+    const telemetryRetry = (jobsModule as any).getQueueFlushTelemetry();
+    expect(telemetryRetry.retryableErrors).toBeGreaterThanOrEqual(1);
 
     const queuePersistCall = mockSetItem.mock.calls.find(
       ([key]) => key === '@senderr/jobs/status-update-queue',

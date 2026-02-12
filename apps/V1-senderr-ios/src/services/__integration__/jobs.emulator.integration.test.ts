@@ -112,6 +112,38 @@ describe('jobs critical flow (auth + firestore emulator)', () => {
     expect(after.data().status).toBe('picked_up');
   });
 
+  maybeIt('invalid status transition is rejected by security rules (pending -> delivered)', async () => {
+    // Create a pending job via admin then attempt invalid client update
+    const adminDb = getAdminFirestore();
+    const jobId = `job_bad_transition_${Date.now()}`;
+    await adminDb.collection('jobs').doc(jobId).set({
+      customerName: 'Bad Transition',
+      createdByUid: uid,
+      courierUid: uid,
+      courierId: uid,
+      status: 'pending',
+      pickupAddress: 'Nowhere',
+      dropoffAddress: 'Somewhere',
+      pickup: {label: 'Nowhere', latitude: 0, longitude: 0},
+      dropoff: {label: 'Somewhere', latitude: 0, longitude: 0},
+      etaMinutes: 10,
+      updatedAt: new Date(),
+    });
+
+    const ref = doc(db!, 'jobs', jobId);
+
+    // Attempt an invalid client-side transition: pending -> delivered
+    let threw = false;
+    try {
+      await updateDoc(ref, {status: 'delivered', updatedAt: new Date()});
+    } catch (err: any) {
+      threw = true;
+      expect(String(err).toLowerCase()).toContain('permission');
+    }
+
+    expect(threw).toBe(true);
+  });
+
   // Full end-to-end lifecycle: dispatch creates a pending job → courier accepts → picks up → delivers
   maybeIt('full job lifecycle: pending → accepted → picked_up → delivered', async () => {
     expect(db).not.toBeNull();

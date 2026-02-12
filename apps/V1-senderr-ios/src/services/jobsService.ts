@@ -350,6 +350,14 @@ const buildFirebaseError = (operation: string, error: unknown): Error => {
 
 const MAX_QUEUED_UPDATE_ATTEMPTS = 5;
 
+// Lightweight in-memory telemetry for queued-flush behavior (testable)
+const _queueFlushTelemetry = {
+  drops: 0,
+  retryableErrors: 0,
+};
+
+export const getQueueFlushTelemetry = () => ({..._queueFlushTelemetry});
+
 export const flushQueuedStatusUpdates = async (session: AuthSession, db: Firestore): Promise<QueueFlushResult> => {
   const queue = await readQueuedStatusUpdates();
   const sessionQueue = queue
@@ -376,6 +384,7 @@ export const flushQueuedStatusUpdates = async (session: AuthSession, db: Firesto
 
     // Drop entries that have retried too many times to avoid stuck queues
     if (latest.attempts >= MAX_QUEUED_UPDATE_ATTEMPTS) {
+      _queueFlushTelemetry.drops += 1;
       console.warn(`[jobsService] dropping queued status update for ${latest.jobId} after ${latest.attempts} attempts`);
       queueByKey.delete(key);
       continue;
@@ -395,6 +404,7 @@ export const flushQueuedStatusUpdates = async (session: AuthSession, db: Firesto
       const retryable = isLikelyConnectivityError(error);
 
       if (retryable) {
+        _queueFlushTelemetry.retryableErrors += 1;
         queueByKey.set(key, {
           ...latest,
           attempts: latest.attempts + 1,
@@ -404,6 +414,7 @@ export const flushQueuedStatusUpdates = async (session: AuthSession, db: Firesto
       }
 
       // Drop non-network failures (permission/conflict/validation) so sync status can recover.
+      _queueFlushTelemetry.drops += 1;
       console.warn(
         `[jobsService] dropping queued status update for ${latest.jobId} after non-retryable error: ${lastError}`,
       );
