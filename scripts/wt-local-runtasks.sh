@@ -97,7 +97,7 @@ const mapped = JSON.parse(JSON.stringify(sourceWt.runtasks)).map((task) => {
     if (next.name === 'ios-pods-install') {
         next.name = 'ios-pods-install-sync';
         next.cwd = '.';
-        next.cmd = `(pnpm --filter @gosenderr/senderr-app exec cap sync ios || true) && cd ${targetIosDirRel || 'apps/senderr-app/ios'} && if [ -f Podfile ]; then pod install; else echo "Podfile missing after cap sync ios (Capacitor sync failed)."; exit 1; fi`;
+        next.cmd = `(pnpm --filter @gosenderr/senderr-app exec cap sync ios || true) && cd ${targetIosDirRel || 'apps/senderr-app/ios'} && if [ -f Podfile ]; then pod install; else echo "No Podfile detected (Capacitor SPM mode); skipping pod install."; fi`;
     }
   }
 
@@ -143,7 +143,7 @@ tasksDoc.tasks = (tasksDoc.tasks || []).map((task) => {
 
     if (next.label === 'ios-pods-install') {
       next.label = 'ios-pods-install-sync';
-      next.command = `(pnpm --filter @gosenderr/senderr-app exec cap sync ios || true) && cd ${targetIosDirRel || 'apps/senderr-app/ios'} && if [ -f Podfile ]; then pod install; else echo "Podfile missing after cap sync ios (Capacitor sync failed)."; exit 1; fi`;
+      next.command = `(pnpm --filter @gosenderr/senderr-app exec cap sync ios || true) && cd ${targetIosDirRel || 'apps/senderr-app/ios'} && if [ -f Podfile ]; then pod install; else echo "No Podfile detected (Capacitor SPM mode); skipping pod install."; fi`;
       next.options = { ...(next.options || {}), cwd: '${workspaceFolder}' };
     }
   }

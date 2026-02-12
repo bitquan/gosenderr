@@ -40,7 +40,7 @@
     {
       "label": "ios-pods-install-sync",
       "type": "shell",
-      "command": "(pnpm --filter @gosenderr/senderr-app exec cap sync ios || true) && cd apps/senderr-app/ios/App && if [ -f Podfile ]; then pod install; else echo \"Podfile missing after cap sync ios (Capacitor sync failed).\"; exit 1; fi",
+      "command": "(pnpm --filter @gosenderr/senderr-app exec cap sync ios || true) && cd apps/senderr-app/ios/App && if [ -f Podfile ]; then pod install; else echo \"No Podfile detected (Capacitor SPM mode); skipping pod install.\"; fi",
       "options": {
         "cwd": "${workspaceFolder}"
       },
