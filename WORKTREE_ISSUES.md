@@ -49,4 +49,6 @@ Summary: the worktree is runnable (emulators, seed, Metro, Xcode tasks are worki
 
 ---
 
-If you want, I will create local issue files for each TASK-00x and commit them now.
+Created local issue files for TASK-001 → TASK-005 under `ISSUES/` and added unit/integration test updates + telemetry for queued flush. Some small worktree-only files (e.g. `.vscode/keybindings.json`) are present locally; tell me if you want me to force-commit them into the repo.
+
+If you want, I will also open PRs for these changes or add additional tests.

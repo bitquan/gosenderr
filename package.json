@@ -56,7 +56,9 @@
     "ios:clean:install": "bash scripts/ios-clean-install.sh",
     "ios:build:verify": "bash scripts/ios-build-verify.sh",
     "ios:smoke": "bash scripts/prepare-ios-smoke.sh && bash scripts/ios-smoke-checks.sh",
-    "ios:clean:build:debug": "bash scripts/ios-clean-install.sh && (cd apps/V1-senderr-ios/ios && xcodebuild -workspace Senderrappios.xcworkspace -scheme Senderr -configuration Debug -sdk iphoneos -destination 'generic/platform=iOS' clean build)"
+    "ios:clean:build:debug": "bash scripts/ios-clean-install.sh && (cd apps/V1-senderr-ios/ios && xcodebuild -workspace Senderrappios.xcworkspace -scheme Senderr -configuration Debug -sdk iphoneos -destination 'generic/platform=iOS' clean build)",
+    "wt:seed": "node scripts/seed-role-simulation.js",
+    "wt:stop": "pkill -f firebase || true"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "2.0.7",
