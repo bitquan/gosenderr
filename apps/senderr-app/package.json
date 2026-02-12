@@ -7,11 +7,12 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext ts,tsx",
-    "cap:sync": "pnpm build && npx cap sync",
-    "cap:open:ios": "npx cap open ios",
-    "cap:open:android": "npx cap open android",
-    "cap:run:ios": "pnpm cap:sync && npx cap run ios",
-    "cap:run:android": "pnpm cap:sync && npx cap run android"
+    "cap:sync": "pnpm build && pnpm exec cap sync",
+    "cap:open:ios": "pnpm exec cap open ios",
+    "cap:open:android": "pnpm exec cap open android",
+    "cap:run:ios": "pnpm cap:sync && pnpm exec cap run ios",
+    "cap:run:android": "pnpm cap:sync && pnpm exec cap run android",
+    "test": "pnpm test"
   },
   "dependencies": {
     "@capacitor/android": "^8.0.1",
