@@ -40,20 +40,7 @@
     {
       "label": "ios-pods-install",
       "type": "shell",
-      "command": "if [ -f Podfile ]; then pod install; else echo \"No Podfile found, skipping pod install\"; fi",
-      "options": {
-        "cwd": "${workspaceFolder}/apps/senderr-app/ios/App"
-      },
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared"
-      },
-      "problemMatcher": []
-    },
-    {
-      "label": "test",
-      "type": "shell",
-      "command": "pnpm test",
+      "command": "(pnpm --filter @gosenderr/senderr-app exec cap sync ios || true) && cd apps/senderr-app/ios/App && if [ -f Podfile ]; then pod install; else echo \"Podfile missing after cap sync ios (Capacitor sync failed).\"; exit 1; fi",
       "options": {
         "cwd": "${workspaceFolder}"
       },
@@ -61,8 +48,7 @@
         "reveal": "always",
         "panel": "shared"
       },
-      "problemMatcher": [],
-      "group": "test"
+      "problemMatcher": []
     },
     {
       "label": "lint",
