@@ -236,6 +236,21 @@ describe('jobsService firebase/mock fallback', () => {
     expect(result.job.status).toBe('accepted');
   });
 
+  it('does NOT queue non-network (permission/validation) errors in dev; surfaces fatal', async () => {
+    // Simulate a server-side permission/validation error (non-network)
+    mockRunTransaction.mockRejectedValue(new Error('permission denied'));
+
+    const result = await updateJobStatus(session, 'local_job_1', 'accepted');
+
+    expect(result.kind).toBe('fatal');
+    if (result.kind !== 'fatal') {
+      throw new Error('Expected fatal');
+    }
+
+    // Ensure nothing was enqueued in status-update queue
+    expect(mockSetItem).not.toHaveBeenCalledWith('@senderr/jobs/status-update-queue', expect.any(String));
+  });
+
   it('returns Firebase jobs when query succeeds', async () => {
     mockGetDocs.mockResolvedValue({
       empty: false,

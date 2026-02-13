@@ -723,7 +723,10 @@ export const updateJobStatus = async (
             return localValidation;
           }
 
-          if (!isLikelyConnectivityError(error) && !shouldUseLocalFallback()) {
+          // Only enqueue when the error is network/connectivity related. Non-network
+          // errors (validation/permission/etc.) should surface as fatal so they are
+          // visible to developers and not repeatedly queued.
+          if (!isLikelyConnectivityError(error)) {
             return buildCommandResultFatal(nextStatus, buildFirebaseError('updateJobStatus', error).message, localJob);
           }
 
