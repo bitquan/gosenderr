@@ -58,6 +58,13 @@
     "ios:smoke": "bash scripts/prepare-ios-smoke.sh && bash scripts/ios-smoke-checks.sh",
     "ios:clean:build:debug": "bash scripts/ios-clean-install.sh && (cd apps/V1-senderr-ios/ios && xcodebuild -workspace Senderrappios.xcworkspace -scheme Senderr -configuration Debug -sdk iphoneos -destination 'generic/platform=iOS' clean build)",
     "wt:seed": "node scripts/seed-role-simulation.js",
+    "emu:start:demo": "firebase emulators:start --project demo-senderr --only firestore,auth",
+    "emu:start:gosenderr": "firebase emulators:start --project gosenderr-6773f --only firestore,auth",
+    "emu:projects": "for P in demo-senderr gosenderr-6773f gosenderr-dev; do COUNT=$(curl -s \"http://127.0.0.1:8080/v1/projects/$P/databases/(default)/documents/jobs?pageSize=5\" | jq '.documents | length // 0'); echo \"$P=$COUNT\"; done",
+    "seed:emulator": "node scripts/seed-courier-emulator.js",
+    "seed:emulator:replace": "SEED_REPLACE=1 node scripts/seed-courier-emulator.js",
+    "seed:emulator:non-demo": "SEED_ALLOW_NON_DEMO=1 FIREBASE_PROJECT_ID=gosenderr-6773f node scripts/seed-courier-emulator.js",
+    "check:jobs": "node scripts/check-jobs.js",
     "wt:stop": "pkill -f firebase || true"
   },
   "devDependencies": {

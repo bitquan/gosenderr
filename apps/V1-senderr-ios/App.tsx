@@ -1,3 +1,6 @@
+// Polyfills that must run before other modules which may access `new URL(...)`
+import './src/polyfills/urlHostPolyfill';
+
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {ActivityIndicator, Pressable, StyleSheet, Text, View} from 'react-native';
 import {doc, setDoc} from 'firebase/firestore';
@@ -44,6 +47,9 @@ const AppShell = (): React.JSX.Element => {
   const [jobsLoading, setJobsLoading] = useState(false);
   const [jobsError, setJobsError] = useState<string | null>(null);
   const [jobsSyncState, setJobsSyncState] = useState<JobsSyncState>(DEFAULT_JOBS_SYNC_STATE);
+
+  // Index into the activeJobs array so UI can cycle through multiple active assignments
+  const [activeJobIndex, setActiveJobIndex] = useState(0);
 
   useEffect(() => {
     if (!notificationsEnabled) {
@@ -251,7 +257,21 @@ const AppShell = (): React.JSX.Element => {
   );
   const activeJobs = useMemo(() => jobs.filter(job => job.status !== 'delivered' && job.status !== 'cancelled'), [jobs]);
   const activeJobsCount = activeJobs.length;
-  const activeJob = activeJobs[0] ?? null;
+
+  // Clamp/normalize activeJobIndex when activeJobs change
+  useEffect(() => {
+    if (activeJobsCount === 0) {
+      setActiveJobIndex(0);
+      return;
+    }
+    setActiveJobIndex(idx => (idx >= activeJobsCount ? 0 : idx));
+  }, [activeJobsCount]);
+
+  const activeJob = useMemo(() => {
+    if (selectedJobId) return jobs.find(job => job.id === selectedJobId) ?? null;
+    return activeJobs[activeJobIndex] ?? null;
+  }, [jobs, selectedJobId, activeJobs, activeJobIndex]);
+
   const mapShellEnabled = featureFlagsState.state.flags.mapShell;
 
   if (initializing) {
@@ -315,6 +335,8 @@ const AppShell = (): React.JSX.Element => {
           });
         }}
         onOpenSettings={() => setMapShellView('settings')}
+        onNextActiveJob={() => setActiveJobIndex(i => (activeJobsCount === 0 ? 0 : (i + 1) % activeJobsCount))}
+        onPrevActiveJob={() => setActiveJobIndex(i => (activeJobsCount === 0 ? 0 : (i - 1 + activeJobsCount) % activeJobsCount))}
       />
     );
   }

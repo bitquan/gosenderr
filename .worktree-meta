@@ -1,0 +1,6 @@
+lane=senderrapp
+feature=job-lifecycle-smoke-local
+branch=senderr-app-feature-job-lifecycle-e2e-local
+base=senderr-app-feature-job-lifecycle-e2e
+created_utc=2026-02-12T00:00:00Z
+source=/Users/papadev/dev/worktrees/gosenderr/V1-senderr-ios-smoke

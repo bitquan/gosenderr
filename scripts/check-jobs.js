@@ -13,8 +13,8 @@ async function checkJobs() {
   console.log('🔍 Checking jobs in database...\n');
   console.log('🧭 Project:', projectId);
   
-  const snapshot = await db.collection('jobs').where('status', '==', 'open').get();
-  console.log('📊 Total open jobs:', snapshot.size);
+  const snapshot = await db.collection('jobs').where('status', 'in', ['open', 'pending']).get();
+  console.log('📊 Total open/pending jobs:', snapshot.size);
   console.log('');
   
   if (snapshot.empty) {

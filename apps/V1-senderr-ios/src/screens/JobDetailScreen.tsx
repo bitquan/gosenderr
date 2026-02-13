@@ -116,6 +116,37 @@ export const JobDetailScreen = ({job, onBack, onJobUpdated}: JobDetailScreenProp
             void handleUpdate();
           }}
         />
+
+        {/* Allow courier to close / skip a pending or accepted job */}
+        {(job.status === 'pending' || job.status === 'accepted') && statusActionsEnabled ? (
+          <PrimaryButton
+            label={updating ? 'Closing...' : 'Close Job'}
+            variant="secondary"
+            disabled={updating}
+            onPress={async () => {
+              if (!session) return;
+              setUpdating(true);
+              setFeedback(null);
+              try {
+                const res = await jobsService.updateJobStatus(session, job.id, 'cancelled');
+                if (res.kind === 'success' && res.job) {
+                  onJobUpdated(res.job);
+                  void analytics.track('job_status_updated', {from_status: job.status, to_status: res.job.status});
+                } else if (res.job) {
+                  onJobUpdated(res.job);
+                  setFeedback({message: res.message, tone: 'error'});
+                } else {
+                  setFeedback({message: res.message, tone: 'error'});
+                }
+              } catch (err) {
+                void analytics.recordError(err as Error, 'job_close_failed');
+                setFeedback({message: (err as Error).message ?? 'Failed to close job', tone: 'error'});
+              } finally {
+                setUpdating(false);
+              }
+            }}
+          />
+        ) : null}
       </View>
     </ScreenContainer>
   );

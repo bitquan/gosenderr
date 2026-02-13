@@ -6,6 +6,8 @@ import {PrimaryButton} from '../components/PrimaryButton';
 import {StatusBadge} from '../components/StatusBadge';
 import {useAuth} from '../context/AuthContext';
 import {useServiceRegistry} from '../services/serviceRegistry';
+import {getActiveFirebaseProjectId, isFirebaseEmulatorEnabled} from '../services/firebase';
+import {runtimeConfig} from '../config/runtime';
 import type {
   JobStatusCommandResult,
   JobsSyncState,
@@ -37,6 +39,9 @@ type MapShellScreenProps = {
   onOpenJobDetail: (jobId: string) => void;
   onJobUpdated: (job: Job) => void;
   onOpenSettings: () => void;
+  // Handlers to cycle through multiple active jobs (optional)
+  onNextActiveJob?: () => void;
+  onPrevActiveJob?: () => void;
 };
 
 type Feedback = {
@@ -136,6 +141,8 @@ export const MapShellScreen = ({
   onOpenJobDetail,
   onJobUpdated,
   onOpenSettings,
+  onNextActiveJob,
+  onPrevActiveJob,
 }: MapShellScreenProps): React.JSX.Element => {
   const {session} = useAuth();
   const {
@@ -520,6 +527,72 @@ export const MapShellScreen = ({
               })}
             </View>
             <View style={styles.headerActionsRow}>
+              {/* Job-cycle controls (visible when multiple jobs are present) */}
+              {jobs.length > 1 && (
+                <>
+                  <Pressable
+                    accessibilityLabel="prev-active-job"
+                    style={styles.cycleButton}
+                    onPress={onPrevActiveJob}
+                  >
+                    <Text style={styles.cycleButtonText}>‹</Text>
+                  </Pressable>
+
+                  <Pressable
+                    accessibilityLabel="next-active-job"
+                    style={styles.cycleButton}
+                    onPress={onNextActiveJob}
+                  >
+                    <Text style={styles.cycleButtonText}>›</Text>
+                  </Pressable>
+                </>
+              )}
+
+              {/* Close / Skip active job (pending or accepted) */}
+              {activeJob && (activeJob.status === 'pending' || activeJob.status === 'accepted') ? (
+                <Pressable
+                  accessibilityLabel="close-active-job"
+                  accessibilityRole="button"
+                  hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}
+                  style={[styles.cycleButton, {borderColor: 'rgba(220,38,38,0.6)'}]}
+                  onPress={async () => {
+                    // guard early if session/job not available
+                    if (!session || !activeJob) return;
+
+                    setActionBusy(true);
+                    setFeedback(null);
+
+                    try {
+                      const res = await jobsService.updateJobStatus(session, activeJob.id, 'cancelled');
+                      if (res.kind === 'success' && res.job) {
+                        onJobUpdated(res.job);
+                        setFeedback({message: 'Job closed.', tone: 'info'});
+                      } else if (res.job) {
+                        onJobUpdated(res.job);
+                        setFeedback({message: res.message, tone: 'error'});
+                      } else {
+                        setFeedback({message: res.message, tone: 'error'});
+                      }
+                    } catch (err) {
+                      setFeedback({message: (err as Error).message ?? 'Failed to close job', tone: 'error'});
+                    } finally {
+                      setActionBusy(false);
+                    }
+                  }}
+                >
+                  <Text style={styles.cycleButtonText}>✕</Text>
+                </Pressable>
+              ) : null}
+
+              {/** Show active Firebase project when running in non‑prod (helps avoid emulator/namespace confusion) */}
+              {typeof getActiveFirebaseProjectId === 'function' && runtimeConfig.envName !== 'prod' ? (
+                <View style={styles.projectChip} testID="runtime-project-chip">
+                  <Text style={styles.projectChipText} numberOfLines={1} ellipsizeMode="middle">
+                    {isFirebaseEmulatorEnabled() ? `Emulator: ${getActiveFirebaseProjectId()}` : `Project: ${getActiveFirebaseProjectId()}`}
+                  </Text>
+                </View>
+              ) : null}
+
               <Pressable style={styles.settingsChip} onPress={onOpenSettings}>
                 <Text style={styles.settingsChipText}>Settings</Text>
               </Pressable>
@@ -626,6 +699,20 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     marginTop: 2,
   },
+  projectChip: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.85)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginRight: 8,
+    backgroundColor: 'rgba(99, 102, 241, 0.06)',
+  },
+  projectChipText: {
+    color: '#c7d2fe',
+    fontSize: 11,
+    fontWeight: '600',
+  },
   settingsChip: {
     borderRadius: 999,
     borderWidth: 1,
@@ -637,6 +724,22 @@ const styles = StyleSheet.create({
     color: '#dbeafe',
     fontSize: 12,
     fontWeight: '700',
+  },
+  cycleButton: {
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.45)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginRight: 8,
+    minWidth: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cycleButtonText: {
+    color: '#e6eefc',
+    fontSize: 16,
+    fontWeight: '800',
   },
   cameraChip: {
     borderRadius: 999,

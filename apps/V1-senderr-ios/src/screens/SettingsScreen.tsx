@@ -7,6 +7,7 @@ import {ErrorState} from '../components/states/ErrorState';
 import {LoadingState} from '../components/states/LoadingState';
 import {ScreenContainer} from '../components/ScreenContainer';
 import {runtimeConfig} from '../config/runtime';
+import {getActiveFirebaseProjectId, isFirebaseEmulatorEnabled} from '../services/firebase';
 import {useAuth} from '../context/AuthContext';
 import type {CourierProfileValidationErrors} from '../services/ports/profilePort';
 import {useServiceRegistry} from '../services/serviceRegistry';
@@ -278,6 +279,9 @@ export const SettingsScreen = (): React.JSX.Element => {
         <Text style={styles.text}>Provider: {session?.provider ?? 'none'}</Text>
         <Text style={styles.text}>Session UID: {session?.uid ?? 'none'}</Text>
         <Text style={styles.text}>Firebase project: {runtimeConfig.firebase.projectId || 'unset'}</Text>
+        {runtimeConfig.envName !== 'prod' ? (
+          <Text style={styles.text} testID="runtime-project-id">Active runtime project: {isFirebaseEmulatorEnabled() ? `emulator:${getActiveFirebaseProjectId()}` : getActiveFirebaseProjectId()}</Text>
+        ) : null}
         <PrimaryButton
           label="Sign out"
           variant="danger"

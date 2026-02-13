@@ -42,6 +42,7 @@ const getEmulatorConfig = (): {
   firestoreHost: string;
   firestorePort: number;
   authHost: string;
+  projectId: string;
 } => {
   const defaultEnabled = runtimeConfig.envName === 'dev';
   const enabled = parseBoolean(readEnv('SENDERR_USE_FIREBASE_EMULATOR'), defaultEnabled);
@@ -52,6 +53,8 @@ const getEmulatorConfig = (): {
     : [firestoreAddress, ''];
 
   const defaultIosLanHost = '192.168.0.76';
+  const explicitProjectId = readEnv('SENDERR_FIREBASE_PROJECT_ID') || readEnv('FIREBASE_PROJECT_ID');
+  const projectId = explicitProjectId || 'demo-senderr';
   const firestoreHost = firestoreHostPart || '127.0.0.1';
   const firestorePort = Number(readEnv('SENDERR_FIRESTORE_EMULATOR_PORT') || firestorePortPart || '8080');
   const authHost =
@@ -72,6 +75,7 @@ const getEmulatorConfig = (): {
     firestoreHost: normalizedFirestoreHost,
     firestorePort: Number.isFinite(firestorePort) ? firestorePort : 8080,
     authHost: normalizedAuthHost,
+    projectId,
   };
 };
 
@@ -112,7 +116,15 @@ export const getFirebaseServices = (): {app: FirebaseApp; auth: Auth; db: Firest
   }
 
   if (!app) {
-    const config = runtimeConfig.firebase;
+    const emulator = getEmulatorConfig();
+    const config = emulator.enabled
+      ? {
+          ...runtimeConfig.firebase,
+          projectId: emulator.projectId,
+          authDomain: `${emulator.projectId}.firebaseapp.com`,
+          storageBucket: `${emulator.projectId}.appspot.com`,
+        }
+      : runtimeConfig.firebase;
     app = getApps().length > 0 ? getApp() : initializeApp(config);
   }
 
@@ -158,3 +170,11 @@ export const getFirebaseServices = (): {app: FirebaseApp; auth: Auth; db: Firest
 };
 
 export const isFirebaseReady = (): boolean => getFirebaseServices() !== null;
+
+// Return the currently active Firebase project id used at runtime (emulator overrides when enabled)
+export const getActiveFirebaseProjectId = (): string => {
+  const emulator = getEmulatorConfig();
+  return emulator.enabled ? emulator.projectId : runtimeConfig.firebase.projectId || '';
+};
+
+export const isFirebaseEmulatorEnabled = (): boolean => getEmulatorConfig().enabled;

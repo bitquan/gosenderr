@@ -311,7 +311,34 @@ const shouldUseLocalFallback = (): boolean => runtimeConfig.envName !== 'prod';
 
 const buildQueryForSession = (db: Firestore, session: AuthSession) => {
   const jobsRef = collection(db, 'jobs');
+  // Keep for backwards-compatibility (used nowhere else) — realtime now
+  // listens to assigned + pending feeds and merges them.
   return query(jobsRef, where('courierUid', '==', session.uid));
+};
+
+const mergeAssignedAndPendingDocs = (
+  assignedDocs: Array<{id: string; data: () => Record<string, unknown>}>,
+  assignedByIdDocs: Array<{id: string; data: () => Record<string, unknown>}>,
+  pendingDocs: Array<{id: string; data: () => Record<string, unknown>}>,
+): Job[] => {
+  const map = new Map<string, {id: string; data: () => Record<string, unknown>}>(
+    assignedDocs.map(d => [d.id, d]),
+  );
+  for (const d of assignedByIdDocs) {
+    map.set(d.id, d);
+  }
+
+  for (const p of pendingDocs) {
+    const data = p.data();
+    // include only truly unassigned pending jobs (no courierUid/courierId)
+    if (!('courierUid' in data) && !('courierId' in data)) {
+      if (!map.has(p.id)) {
+        map.set(p.id, p);
+      }
+    }
+  }
+
+  return sortJobsByNewest(Array.from(map.values()).map(d => mapFirestoreJob(d.id, d.data() as Record<string, unknown>)));
 };
 
 const mergeJobDocs = (
@@ -458,22 +485,20 @@ export const fetchJobs = async (session: AuthSession): Promise<Job[]> => {
   try {
     const jobsRef = collection(services.db, 'jobs');
 
-    const [byCourierUid, byCourierId] = await Promise.all([
+    const [byCourierUid, byCourierId, pendingSnapshot] = await Promise.all([
       getDocs(query(jobsRef, where('courierUid', '==', session.uid))),
       getDocs(query(jobsRef, where('courierId', '==', session.uid))),
+      // include global pending/unassigned jobs so couriers can see offers
+      getDocs(query(jobsRef, where('status', '==', 'pending'))),
     ]);
 
     const byUidDocs = readSnapshotDocs(byCourierUid);
     const byIdDocs = readSnapshotDocs(byCourierId);
+    const pendingDocs = readSnapshotDocs(pendingSnapshot);
 
-    const byId = new Map<string, {id: string; data: () => Record<string, unknown>}>(
-      byUidDocs.map(d => [d.id, d]),
-    );
-    for (const docSnap of byIdDocs) {
-      byId.set(docSnap.id, docSnap);
-    }
-
-    let jobs = mergeJobDocs(Array.from(byId.values()));
+    // Merge assigned (courierUid/courierId) + pending/unassigned offers
+    const jobsMerged = mergeAssignedAndPendingDocs(byUidDocs, byIdDocs, pendingDocs);
+    let jobs = jobsMerged;
 
     // Dev-only recovery path: if auth UID drifts but email is the same,
     // gather alternate courier user docs by email and include their jobs.
@@ -879,55 +904,219 @@ export const subscribeJobs = (session: AuthSession, handlers: JobsSubscriptionHa
     });
 
     try {
-      detachSnapshot = onSnapshot(
-        buildQueryForSession(services.db, session),
+      // Attach three listeners and merge their results:
+      //  - assigned by courierUid
+      //  - assigned by courierId
+      //  - pending (unassigned offers)
+      let detachA: (() => void) | null = null;
+      let detachB: (() => void) | null = null;
+      let detachC: (() => void) | null = null;
+
+      const assignedByUidMap = new Map<string, {id: string; data: () => Record<string, unknown>}>([]);
+      const assignedByIdMap = new Map<string, {id: string; data: () => Record<string, unknown>}>([]);
+      const pendingMap = new Map<string, {id: string; data: () => Record<string, unknown>}>([]);
+      const listenerMetadata: Record<string, boolean> = {assignedUid: true, assignedId: true, pending: true};
+
+      // Resilience: track listener error counts and fall back to polling if unstable
+      let listenerErrorCount = 0;
+      let listenerFirstErrorAt: number | null = null;
+      let pollingFallback = false;
+      let pollingInterval: ReturnType<typeof setInterval> | null = null;
+      const LISTENER_ERROR_WINDOW_MS = 60_000; // window to count errors
+      const LISTENER_ERROR_THRESHOLD = 3; // errors within window to trigger fallback
+      const POLLING_INTERVAL_MS = 5000; // when fallback active
+
+      const enablePollingFallback = (): void => {
+        if (pollingFallback) return;
+        pollingFallback = true;
+        publishState({
+          status: 'reconnecting',
+          stale: true,
+          reconnectAttempt,
+          lastSyncedAt,
+          message: 'Watch stream unstable — switching to polling fallback.',
+          source: 'firebase',
+        });
+
+        // detach real-time listeners (they will be cleaned by detachSnapshot when unsubscribe is called)
+        if (detachA) detachA();
+        if (detachB) detachB();
+        if (detachC) detachC();
+        detachA = detachB = detachC = null;
+
+        // start polling
+        pollingInterval = setInterval(async () => {
+          try {
+            const jobs = await fetchJobs(session);
+            publishJobs(jobs);
+            publishState({status: 'reconnecting', stale: true, reconnectAttempt, lastSyncedAt: new Date().toISOString(), message: 'Polling for jobs while Watch stream is unstable.', source: 'firebase'});
+          } catch (err) {
+            // keep trying; don't crash
+          }
+        }, POLLING_INTERVAL_MS);
+      };
+
+      const disablePollingFallback = (): void => {
+        pollingFallback = false;
+        if (pollingInterval) {
+          clearInterval(pollingInterval);
+          pollingInterval = null;
+        }
+      };
+
+      const recordListenerError = (err: unknown): void => {
+        const now = Date.now();
+        if (!listenerFirstErrorAt || now - listenerFirstErrorAt > LISTENER_ERROR_WINDOW_MS) {
+          listenerFirstErrorAt = now;
+          listenerErrorCount = 1;
+        } else {
+          listenerErrorCount += 1;
+        }
+
+        if (listenerErrorCount >= LISTENER_ERROR_THRESHOLD) {
+          enablePollingFallback();
+        }
+      };
+
+      const recomputeAndPublish = (sourceKey: string, snapshot: any) => {
+        listenerMetadata[sourceKey] = snapshot.metadata?.fromCache ?? true;
+
+        const assignedDocs = Array.from(assignedByUidMap.values());
+        const assignedIdDocs = Array.from(assignedByIdMap.values());
+        const pendingDocs = Array.from(pendingMap.values());
+
+        const merged = mergeAssignedAndPendingDocs(assignedDocs, assignedIdDocs, pendingDocs);
+
+        const fromCache = Object.values(listenerMetadata).every(v => v === true);
+
+        if (!fromCache) {
+          reconnectAttempt = 0;
+          lastSyncedAt = new Date().toISOString();
+          void persistJobs(merged);
+        }
+
+        publishJobs(merged);
+        publishState({
+          status: fromCache ? (reconnectAttempt > 0 ? 'reconnecting' : 'stale') : 'live',
+          stale: fromCache,
+          reconnectAttempt,
+          lastSyncedAt,
+          message: fromCache ? 'Showing cached jobs while reconnecting.' : null,
+          source: 'firebase',
+        });
+
+        if (!fromCache) {
+          flushQueue();
+        }
+
+        if (!fromCache && pollingFallback) {
+          disablePollingFallback();
+        }
+      };
+
+      detachA = onSnapshot(
+        query(collection(services.db, 'jobs'), where('courierUid', '==', session.uid)),
         {includeMetadataChanges: true},
         snapshot => {
-          const jobs = sortJobsByNewest(
-            snapshot.docs.map(d => mapFirestoreJob(d.id, d.data() as Record<string, unknown>)),
-          );
-          const fromCache = snapshot.metadata.fromCache;
-
-          if (!fromCache) {
-            reconnectAttempt = 0;
-            lastSyncedAt = new Date().toISOString();
-            void persistJobs(jobs);
-          }
-
-          publishJobs(jobs);
-          publishState({
-            status: fromCache ? (reconnectAttempt > 0 ? 'reconnecting' : 'stale') : 'live',
-            stale: fromCache,
-            reconnectAttempt,
-            lastSyncedAt,
-            message: fromCache ? 'Showing cached jobs while reconnecting.' : null,
-            source: 'firebase',
-          });
-
-          if (!fromCache) {
-            flushQueue();
+          try {
+            const docs = readSnapshotDocs(snapshot);
+            assignedByUidMap.clear();
+            docs.forEach(d => assignedByUidMap.set(d.id, d));
+            recomputeAndPublish('assignedUid', snapshot);
+          } catch (err) {
+            console.error('[jobsService] assignedUid handler threw', err);
+            recordListenerError(err);
           }
         },
         error => {
-          const reason = error instanceof Error ? error.message : String(error);
+          console.error('[jobsService] assignedUid listener error', error);
+          recordListenerError(error);
           clearSnapshot();
           reconnectAttempt += 1;
           const delay = Math.min(BASE_RECONNECT_DELAY_MS * 2 ** (reconnectAttempt - 1), MAX_RECONNECT_DELAY_MS);
-
           publishState({
             status: 'reconnecting',
             stale: true,
             reconnectAttempt,
             lastSyncedAt,
-            message: `Live jobs feed disconnected (${reason}). Retrying in ${Math.ceil(delay / 1000)}s.`,
+            message: `Live jobs feed disconnected (assignedUid) — ${String(error)}. Retrying in ${Math.ceil(delay / 1000)}s.`,
             source: 'firebase',
           });
-
-          reconnectTimer = setTimeout(() => {
-            connect();
-          }, delay);
+          reconnectTimer = setTimeout(() => connect(), delay);
         },
       );
+
+      detachB = onSnapshot(
+        query(collection(services.db, 'jobs'), where('courierId', '==', session.uid)),
+        {includeMetadataChanges: true},
+        snapshot => {
+          try {
+            const docs = readSnapshotDocs(snapshot);
+            assignedByIdMap.clear();
+            docs.forEach(d => assignedByIdMap.set(d.id, d));
+            recomputeAndPublish('assignedId', snapshot);
+          } catch (err) {
+            console.error('[jobsService] assignedId handler threw', err);
+            recordListenerError(err);
+          }
+        },
+        error => {
+          console.error('[jobsService] assignedId listener error', error);
+          recordListenerError(error);
+          clearSnapshot();
+          reconnectAttempt += 1;
+          const delay = Math.min(BASE_RECONNECT_DELAY_MS * 2 ** (reconnectAttempt - 1), MAX_RECONNECT_DELAY_MS);
+          publishState({
+            status: 'reconnecting',
+            stale: true,
+            reconnectAttempt,
+            lastSyncedAt,
+            message: `Live jobs feed disconnected (assignedId) — ${String(error)}. Retrying in ${Math.ceil(delay / 1000)}s.`,
+            source: 'firebase',
+          });
+          reconnectTimer = setTimeout(() => connect(), delay);
+        },
+      );
+
+      detachC = onSnapshot(
+        query(collection(services.db, 'jobs'), where('status', '==', 'pending')),
+        {includeMetadataChanges: true},
+        snapshot => {
+          try {
+            const docs = readSnapshotDocs(snapshot);
+            pendingMap.clear();
+            docs.forEach(d => pendingMap.set(d.id, d));
+            recomputeAndPublish('pending', snapshot);
+          } catch (err) {
+            console.error('[jobsService] pending handler threw', err);
+            recordListenerError(err);
+          }
+        },
+        error => {
+          console.error('[jobsService] pending listener error', error);
+          recordListenerError(error);
+          clearSnapshot();
+          reconnectAttempt += 1;
+          const delay = Math.min(BASE_RECONNECT_DELAY_MS * 2 ** (reconnectAttempt - 1), MAX_RECONNECT_DELAY_MS);
+          publishState({
+            status: 'reconnecting',
+            stale: true,
+            reconnectAttempt,
+            lastSyncedAt,
+            message: `Live jobs feed disconnected (pending) — ${String(error)}. Retrying in ${Math.ceil(delay / 1000)}s.`,
+            source: 'firebase',
+          });
+          reconnectTimer = setTimeout(() => connect(), delay);
+        },
+      );
+
+      // detachSnapshot will clear all three listeners
+      detachSnapshot = () => {
+        if (detachA) detachA();
+        if (detachB) detachB();
+        if (detachC) detachC();
+        detachA = detachB = detachC = null;
+      };
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
       reconnectAttempt += 1;
