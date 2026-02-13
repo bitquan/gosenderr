@@ -1,4 +1,4 @@
-import React, {useMemo, useState} from 'react';
+import React, {useMemo, useState, useRef} from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 
 import {PrimaryButton} from '../components/PrimaryButton';
@@ -66,7 +66,13 @@ export const JobDetailScreen = ({job, onBack, onJobUpdated}: JobDetailScreenProp
           to_status: result.job.status,
           result_kind: result.kind,
         });
-        setFeedback({message: result.message, tone: 'error'});
+
+        // Conflicts are user-facing errors; retryable (queued) updates are informative.
+        if (result.kind === 'conflict') {
+          setFeedback({message: result.message, tone: 'error'});
+        } else {
+          setFeedback({message: result.message, tone: 'info'});
+        }
         return;
       }
 
