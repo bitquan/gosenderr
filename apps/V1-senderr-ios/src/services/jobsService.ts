@@ -634,123 +634,137 @@ const validateTransitionAgainstJob = (job: Job, nextStatus: JobStatus): JobStatu
   return null;
 };
 
+const _inFlightStatusUpdates = new Map<string, Promise<JobStatusCommandResult>>();
+
 export const updateJobStatus = async (
   session: AuthSession,
   id: string,
   nextStatus: JobStatus,
 ): Promise<JobStatusCommandResult> => {
-  if (!featureFlagsService.isEnabled('jobStatusActions')) {
-    return buildCommandResultFatal(nextStatus, 'Status updates are temporarily disabled by rollout controls.');
+  const key = `${session.uid}:${id}:${nextStatus}`;
+  const existing = _inFlightStatusUpdates.get(key);
+  if (existing) {
+    return existing;
   }
 
-  if (isFirebaseReady()) {
-    const services = getFirebaseServices();
-    if (services) {
-      try {
-        const ref = doc(services.db, 'jobs', id);
-        const transactionOutcome = await runTransaction(services.db, async transaction => {
-          const snap = await transaction.get(ref);
-          if (!snap.exists()) {
-            return {kind: 'missing' as const};
-          }
+  const doUpdate = (async (): Promise<JobStatusCommandResult> => {
+    if (!featureFlagsService.isEnabled('jobStatusActions')) {
+      return buildCommandResultFatal(nextStatus, 'Status updates are temporarily disabled by rollout controls.');
+    }
 
-          const remoteJob = mapFirestoreJob(snap.id, snap.data() as Record<string, unknown>);
-          const validation = validateTransitionAgainstJob(remoteJob, nextStatus);
-          if (validation?.kind === 'conflict') {
-            return {kind: 'conflict' as const, job: remoteJob};
-          }
-          if (validation?.kind === 'success' && validation.idempotent) {
-            return {kind: 'idempotent' as const, job: remoteJob};
-          }
+    if (isFirebaseReady()) {
+      const services = getFirebaseServices();
+      if (services) {
+        try {
+          const ref = doc(services.db, 'jobs', id);
+          const transactionOutcome = await runTransaction(services.db, async transaction => {
+            const snap = await transaction.get(ref);
+            if (!snap.exists()) {
+              return {kind: 'missing' as const};
+            }
 
-          transaction.update(ref, {
-            status: nextStatus,
-            courierUid: session.uid,
-            updatedAt: serverTimestamp(),
+            const remoteJob = mapFirestoreJob(snap.id, snap.data() as Record<string, unknown>);
+            const validation = validateTransitionAgainstJob(remoteJob, nextStatus);
+            if (validation?.kind === 'conflict') {
+              return {kind: 'conflict' as const, job: remoteJob};
+            }
+            if (validation?.kind === 'success' && validation.idempotent) {
+              return {kind: 'idempotent' as const, job: remoteJob};
+            }
+
+            transaction.update(ref, {
+              status: nextStatus,
+              courierUid: session.uid,
+              updatedAt: serverTimestamp(),
+            });
+
+            return {kind: 'updated' as const};
           });
 
-          return {kind: 'updated' as const};
-        });
+          if (transactionOutcome.kind === 'missing') {
+            return buildCommandResultFatal(nextStatus, 'Job no longer exists. Refresh your jobs list and retry.');
+          }
 
-        if (transactionOutcome.kind === 'missing') {
-          return buildCommandResultFatal(nextStatus, 'Job no longer exists. Refresh your jobs list and retry.');
-        }
+          if (transactionOutcome.kind === 'conflict') {
+            await upsertLocalJob(transactionOutcome.job);
+            return buildCommandResultConflict(
+              transactionOutcome.job,
+              nextStatus,
+              `${buildTransitionConflictMessage(transactionOutcome.job.status, nextStatus)} Refresh and retry.`,
+            );
+          }
 
-        if (transactionOutcome.kind === 'conflict') {
-          await upsertLocalJob(transactionOutcome.job);
-          return buildCommandResultConflict(
-            transactionOutcome.job,
-            nextStatus,
-            `${buildTransitionConflictMessage(transactionOutcome.job.status, nextStatus)} Refresh and retry.`,
-          );
-        }
+          if (transactionOutcome.kind === 'idempotent') {
+            await upsertLocalJob(transactionOutcome.job);
+            await dequeueStatusUpdate(session, id);
+            return buildCommandResultSuccess(transactionOutcome.job, nextStatus, true, 'Job status is already up to date.');
+          }
 
-        if (transactionOutcome.kind === 'idempotent') {
-          await upsertLocalJob(transactionOutcome.job);
           await dequeueStatusUpdate(session, id);
-          return buildCommandResultSuccess(transactionOutcome.job, nextStatus, true, 'Job status is already up to date.');
+          void flushQueuedStatusUpdates(session, services.db);
+
+          const updated = await getDoc(ref);
+          if (updated.exists()) {
+            const mapped = mapFirestoreJob(updated.id, updated.data() as Record<string, unknown>);
+            await upsertLocalJob(mapped);
+            return buildCommandResultSuccess(mapped, nextStatus, false, null);
+          }
+
+          const updatedLocal = await updateLocalJobStatus(id, nextStatus);
+          return buildCommandResultSuccess(updatedLocal, nextStatus, false, null);
+        } catch (error) {
+          const localJob = await loadLocalJobById(id);
+          if (!localJob) {
+            return buildCommandResultFatal(nextStatus, 'Job was not found in local cache.', null);
+          }
+
+          const localValidation = validateTransitionAgainstJob(localJob, nextStatus);
+          if (localValidation) {
+            return localValidation;
+          }
+
+          if (!isLikelyConnectivityError(error) && !shouldUseLocalFallback()) {
+            return buildCommandResultFatal(nextStatus, buildFirebaseError('updateJobStatus', error).message, localJob);
+          }
+
+          if (shouldUseLocalFallback()) {
+            logFirebaseFallback('updateJobStatus', error);
+          }
+
+          const queuedCount = await enqueueStatusUpdate(session, id, nextStatus, error);
+          const updatedLocal = await updateLocalJobStatus(id, nextStatus);
+          const queuedMessage = `Status update queued while connection recovers. Pending updates: ${queuedCount}.`;
+          console.warn(
+            `[jobsService] queued status update for ${id} (${nextStatus}) while offline. pending updates: ${queuedCount}`
+          );
+          return buildCommandResultRetryable(updatedLocal, nextStatus, queuedMessage);
         }
-
-        await dequeueStatusUpdate(session, id);
-        void flushQueuedStatusUpdates(session, services.db);
-
-        const updated = await getDoc(ref);
-        if (updated.exists()) {
-          const mapped = mapFirestoreJob(updated.id, updated.data() as Record<string, unknown>);
-          await upsertLocalJob(mapped);
-          return buildCommandResultSuccess(mapped, nextStatus, false, null);
-        }
-
-        const updatedLocal = await updateLocalJobStatus(id, nextStatus);
-        return buildCommandResultSuccess(updatedLocal, nextStatus, false, null);
-      } catch (error) {
-        const localJob = await loadLocalJobById(id);
-        if (!localJob) {
-          return buildCommandResultFatal(nextStatus, 'Job was not found in local cache.', null);
-        }
-
-        const localValidation = validateTransitionAgainstJob(localJob, nextStatus);
-        if (localValidation) {
-          return localValidation;
-        }
-
-        if (!isLikelyConnectivityError(error) && !shouldUseLocalFallback()) {
-          return buildCommandResultFatal(nextStatus, buildFirebaseError('updateJobStatus', error).message, localJob);
-        }
-
-        if (shouldUseLocalFallback()) {
-          logFirebaseFallback('updateJobStatus', error);
-        }
-
-        const queuedCount = await enqueueStatusUpdate(session, id, nextStatus, error);
-        const updatedLocal = await updateLocalJobStatus(id, nextStatus);
-        const queuedMessage = `Status update queued while connection recovers. Pending updates: ${queuedCount}.`;
-        console.warn(
-          `[jobsService] queued status update for ${id} (${nextStatus}) while offline. pending updates: ${queuedCount}`
-        );
-        return buildCommandResultRetryable(updatedLocal, nextStatus, queuedMessage);
       }
+
+      if (!shouldUseLocalFallback()) {
+        return buildCommandResultFatal(nextStatus, 'Firebase services are unavailable in production mode.');
+      }
+    } else if (!shouldUseLocalFallback()) {
+      return buildCommandResultFatal(nextStatus, 'Firebase is required in production and is not configured.');
     }
 
-    if (!shouldUseLocalFallback()) {
-      return buildCommandResultFatal(nextStatus, 'Firebase services are unavailable in production mode.');
+    const localJob = await loadLocalJobById(id);
+    if (!localJob) {
+      return buildCommandResultFatal(nextStatus, 'Job not found.');
     }
-  } else if (!shouldUseLocalFallback()) {
-    return buildCommandResultFatal(nextStatus, 'Firebase is required in production and is not configured.');
-  }
 
-  const localJob = await loadLocalJobById(id);
-  if (!localJob) {
-    return buildCommandResultFatal(nextStatus, 'Job not found.');
-  }
+    const validation = validateTransitionAgainstJob(localJob, nextStatus);
+    if (validation) {
+      return validation;
+    }
 
-  const validation = validateTransitionAgainstJob(localJob, nextStatus);
-  if (validation) {
-    return validation;
-  }
+    const updatedLocal = await updateLocalJobStatus(id, nextStatus);
+    return buildCommandResultSuccess(updatedLocal, nextStatus, false, 'Status updated locally.');
+  })();
 
-  const updatedLocal = await updateLocalJobStatus(id, nextStatus);
-  return buildCommandResultSuccess(updatedLocal, nextStatus, false, 'Status updated locally.');
+  _inFlightStatusUpdates.set(key, doUpdate);
+  doUpdate.finally(() => _inFlightStatusUpdates.delete(key));
+  return doUpdate;
 };
 
 const createSyncState = (partial: Partial<JobsSyncState>): JobsSyncState => ({

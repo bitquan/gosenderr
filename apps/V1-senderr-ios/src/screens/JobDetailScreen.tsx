@@ -25,16 +25,18 @@ export const JobDetailScreen = ({job, onBack, onJobUpdated}: JobDetailScreenProp
   const {state: featureFlagState} = featureFlags.useFeatureFlags();
   const statusActionsEnabled = featureFlagState.flags.jobStatusActions;
   const [updating, setUpdating] = useState(false);
+  const updatingRef = useRef(false);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
 
   const nextStatus = useMemo<JobStatus | null>(() => NEXT_STATUS[job.status] ?? null, [job.status]);
 
   const handleUpdate = async (): Promise<void> => {
-    if (!session || !nextStatus || !statusActionsEnabled) {
+    if (!session || !nextStatus || !statusActionsEnabled || updatingRef.current) {
       return;
     }
 
     setUpdating(true);
+    updatingRef.current = true;
     setFeedback(null);
 
     try {
@@ -77,6 +79,7 @@ export const JobDetailScreen = ({job, onBack, onJobUpdated}: JobDetailScreenProp
       });
     } finally {
       setUpdating(false);
+      updatingRef.current = false;
     }
   };
 

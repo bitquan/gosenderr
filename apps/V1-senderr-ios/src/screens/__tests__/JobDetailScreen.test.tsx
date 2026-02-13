@@ -103,6 +103,32 @@ describe('JobDetailScreen', () => {
     );
   });
 
+  it('ignores duplicate update requests while updating is in-flight', async () => {
+    // Make updateJobStatus return a promise that resolves later so we can tap twice
+    let resolveUpdate: (val?: unknown) => void;
+    updateJobStatus.mockImplementation(() => new Promise(resolve => { resolveUpdate = resolve; }));
+
+    const screen = renderer.create(
+      <JobDetailScreen
+        job={sampleJob}
+        onBack={jest.fn()}
+        onJobUpdated={onJobUpdated}
+      />,
+    );
+    const actionButton = screen.root.findByProps({label: 'Mark as accepted'});
+
+    act(() => {
+      actionButton.props.onPress();
+      actionButton.props.onPress();
+    });
+
+    expect(updateJobStatus).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      resolveUpdate({kind: 'success', requestedStatus: 'accepted', idempotent: false, message: null, job: {...sampleJob, status: 'accepted'}});
+    });
+  });
+
   it('disables status action when rollout flag is off', () => {
     (useServiceRegistry as jest.Mock).mockReturnValue({
       jobs: {

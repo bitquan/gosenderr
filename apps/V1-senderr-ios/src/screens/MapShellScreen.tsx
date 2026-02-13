@@ -157,6 +157,7 @@ export const MapShellScreen = ({
   } = locationService.useLocationTracking();
 
   const [actionBusy, setActionBusy] = useState(false);
+  const actionBusyRef = useRef(false);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [cameraMode, setCameraMode] = useState<MapShellCameraMode>('fit_route');
   const [routeState, setRouteState] = useState<ResolvedRouteState | null>(null);
@@ -430,7 +431,9 @@ export const MapShellScreen = ({
   };
 
   const runPrimaryAction = async (): Promise<void> => {
+    if (actionBusyRef.current) return;
     setActionBusy(true);
+    actionBusyRef.current = true;
     try {
       switch (overlay.primaryAction) {
         case 'refresh_jobs':
@@ -467,6 +470,7 @@ export const MapShellScreen = ({
       });
     } finally {
       setActionBusy(false);
+      actionBusyRef.current = false;
     }
   };
 
@@ -554,12 +558,13 @@ export const MapShellScreen = ({
                   accessibilityLabel="close-active-job"
                   accessibilityRole="button"
                   hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}
-                  style={[styles.cycleButton, {borderColor: 'rgba(220,38,38,0.6)'}]}
+                  style={[styles.cycleButton, {borderColor: 'rgba(220,38,38,0.6)', opacity: actionBusy ? 0.6 : 1}]}
                   onPress={async () => {
-                    // guard early if session/job not available
-                    if (!session || !activeJob) return;
+                    // guard early if session/job not available or another action in-flight
+                    if (!session || !activeJob || actionBusyRef.current) return;
 
                     setActionBusy(true);
+                    actionBusyRef.current = true;
                     setFeedback(null);
 
                     try {
@@ -577,6 +582,7 @@ export const MapShellScreen = ({
                       setFeedback({message: (err as Error).message ?? 'Failed to close job', tone: 'error'});
                     } finally {
                       setActionBusy(false);
+                      actionBusyRef.current = false;
                     }
                   }}
                 >

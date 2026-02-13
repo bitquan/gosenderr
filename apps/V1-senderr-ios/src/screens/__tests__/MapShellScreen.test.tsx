@@ -89,11 +89,22 @@ describe('MapShellScreen', () => {
 
     // Close/Skip action should render for pending/accepted active job
     const close = screen.root.findByProps({accessibilityLabel: 'close-active-job'});
+
+    // simulate long-running update and ensure duplicate taps are ignored
+    const {jobs} = (require('../../services/serviceRegistry').useServiceRegistry as jest.Mock)();
+    let resolveUpdate: (value?: unknown) => void;
+    jobs.updateJobStatus.mockImplementation(() => new Promise(resolve => { resolveUpdate = resolve; }));
+
     act(() => {
       close.props.onPress();
+      close.props.onPress();
     });
-    // jobs.updateJobStatus is mocked in the serviceRegistry stub — assert it was callable
-    const {jobs} = (require('../../services/serviceRegistry').useServiceRegistry as jest.Mock)();
-    expect(jobs.updateJobStatus).toHaveBeenCalled();
+
+    expect(jobs.updateJobStatus).toHaveBeenCalledTimes(1);
+
+    // finish pending update
+    act(() => {
+      resolveUpdate();
+    });
   });
 });
