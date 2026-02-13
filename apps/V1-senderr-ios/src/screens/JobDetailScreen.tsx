@@ -71,7 +71,8 @@ export const JobDetailScreen = ({job, onBack, onJobUpdated}: JobDetailScreenProp
         if (result.kind === 'conflict') {
           setFeedback({message: result.message, tone: 'error'});
         } else {
-          setFeedback({message: result.message, tone: 'info'});
+          // Make queued updates explicit and show the why/reason
+          setFeedback({message: `Queued — ${result.message}`, tone: 'info'});
         }
         return;
       }

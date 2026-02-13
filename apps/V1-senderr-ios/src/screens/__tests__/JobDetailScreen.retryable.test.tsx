@@ -73,8 +73,9 @@ describe('JobDetailScreen — retryable feedback', () => {
       await Promise.resolve();
     });
 
-    // feedback should render as informational (not error)
-    const feedbackText = screen.root.findAllByProps({children: 'Status update queued while connection recovers. Pending updates: 1.'});
-    expect(feedbackText.length).toBeGreaterThan(0);
+    // feedback should render as informational and indicate it's queued (includes reason)
+    const feedbackNodes = screen.root.findAll(node => typeof node.props?.children === 'string' && node.props.children.includes('Queued —'));
+    expect(feedbackNodes.length).toBeGreaterThan(0);
+    expect(feedbackNodes.some(n => n.props.children.includes('Pending updates: 1'))).toBe(true);
   });
 });

@@ -125,7 +125,8 @@ const toFeedbackFromResult = (
   }
 
   if (result.kind === 'retryable_error') {
-    return {message: result.message, tone: 'info'};
+    // explicit label so couriers understand the update was queued and why
+    return {message: `Queued — ${result.message}`, tone: 'info'};
   }
 
   return {message: result.message, tone: 'error'};
