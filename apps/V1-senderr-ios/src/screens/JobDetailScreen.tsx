@@ -49,6 +49,10 @@ export const JobDetailScreen = ({job, onBack, onJobUpdated}: JobDetailScreenProp
           to_status: result.job.status,
           idempotent: result.idempotent,
         });
+        // If the courier accepted the job, close the detail view and return to map-shell.
+        if (result.job.status === 'accepted') {
+          onBack();
+        }
         if (result.message) {
           setFeedback({message: result.message, tone: 'info'});
         }

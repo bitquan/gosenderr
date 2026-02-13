@@ -65,7 +65,7 @@ describe('JobDetailScreen', () => {
     });
   });
 
-  it('updates status and publishes analytics on success', async () => {
+  it('updates status and publishes analytics on success and closes detail when accepted', async () => {
     updateJobStatus.mockResolvedValueOnce({
       kind: 'success',
       requestedStatus: 'accepted',
@@ -77,10 +77,11 @@ describe('JobDetailScreen', () => {
       },
     });
 
+    const onBack = jest.fn();
     const screen = renderer.create(
       <JobDetailScreen
         job={sampleJob}
-        onBack={jest.fn()}
+        onBack={onBack}
         onJobUpdated={onJobUpdated}
       />,
     );
@@ -101,6 +102,7 @@ describe('JobDetailScreen', () => {
         to_status: 'accepted',
       }),
     );
+    expect(onBack).toHaveBeenCalled();
   });
 
   it('ignores duplicate update requests while updating is in-flight', async () => {
