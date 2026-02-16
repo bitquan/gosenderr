@@ -106,6 +106,9 @@ function App() {
             <Route index element={marketplaceEnabled ? <MarketplaceHome /> : <MarketplaceDisabled />} />
             <Route path="/marketplace" element={marketplaceEnabled ? <MarketplaceHome /> : <MarketplaceDisabled />} />
             <Route path="/marketplace/:itemId" element={marketplaceEnabled ? <MarketplaceItemPage /> : <MarketplaceDisabled />} />
+            <Route path="/food-pickups" element={<Navigate to="/marketplace" replace />} />
+            <Route path="/food-pickups/:restaurantId/order" element={<Navigate to="/request-delivery" replace />} />
+            <Route path="/store/:sellerId" element={<Navigate to="/marketplace" replace />} />
             <Route path="/unauthorized" element={<UnauthorizedPage />} />
           </Route>
           
@@ -238,6 +241,8 @@ function App() {
                 <SellerOrders />
               </RoleGuard>
             } />
+            <Route path="/seller/ads" element={<Navigate to="/seller/dashboard" replace />} />
+            <Route path="/seller/ads/:adId" element={<Navigate to="/seller/dashboard" replace />} />
             <Route path="/seller/reviews" element={
               <RoleGuard allowedRoles={['admin', 'seller']}>
                 {ratingsEnabled ? <SellerReviews /> : <MarketplaceDisabled />}
