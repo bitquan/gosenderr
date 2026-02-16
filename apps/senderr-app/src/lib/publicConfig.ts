@@ -2,6 +2,9 @@ export interface PublicConfig {
   stripePublishableKey?: string
   stripeMode?: 'test' | 'live'
   mapboxPublicToken?: string
+  firebaseProjectId?: string
+  expectedAuthDomain?: string
+  firestoreRulesSource?: string
 }
 
 let cachedConfig: PublicConfig | null = null

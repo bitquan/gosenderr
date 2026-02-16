@@ -69,12 +69,25 @@ export const getPublicConfigHttp = functions.https.onRequest(
         ? livePublishableKey
         : testPublishableKey;
       const effectiveMode = useLive ? "live" : "test";
+      const firebaseProjectId =
+        process.env.GCLOUD_PROJECT ||
+        process.env.FIREBASE_PROJECT ||
+        admin.app().options.projectId ||
+        "";
+      const expectedAuthDomain = firebaseProjectId
+        ? `${firebaseProjectId}.firebaseapp.com`
+        : "";
+      const firestoreRulesSource =
+        process.env.FIRESTORE_RULES_FILE || "firebase/firestore.rules";
 
       res.set("Cache-Control", "public, max-age=60, s-maxage=300");
       res.json({
         stripePublishableKey,
         stripeMode: effectiveMode,
         mapboxPublicToken: mapboxData?.publicToken || "",
+        firebaseProjectId,
+        expectedAuthDomain,
+        firestoreRulesSource,
       });
     });
   },

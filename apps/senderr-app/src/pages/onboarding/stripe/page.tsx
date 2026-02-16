@@ -5,6 +5,8 @@ import { createStripeConnectLink } from "@/lib/cloudFunctions";
 import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { getAuthSafe } from "@/lib/firebase";
+import { getPublicConfig } from "@/lib/publicConfig";
+import { isLiveWebRuntime } from "@/lib/runtimeEnv";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 
 interface CourierProfile {
@@ -26,6 +28,7 @@ export default function CourierStripeOnboardingPage() {
     null,
   );
   const [userId, setUserId] = useState<string | null>(null);
+  const [stripeMode, setStripeMode] = useState<"test" | "live" | null>(null);
 
   useEffect(() => {
     const auth = getAuthSafe();
@@ -58,8 +61,36 @@ export default function CourierStripeOnboardingPage() {
     return () => unsubscribe();
   }, [navigate]);
 
+  useEffect(() => {
+    let mounted = true;
+    void getPublicConfig()
+      .then((config) => {
+        if (!mounted) return;
+        if (config.stripeMode === "live" || config.stripeMode === "test") {
+          setStripeMode(config.stripeMode);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to read public config for Stripe mode:", err);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const stripeConnectBlocked = isLiveWebRuntime() && stripeMode !== "live";
+
   const handleConnect = async () => {
     if (!userId) return;
+
+    if (stripeConnectBlocked) {
+      setError(
+        "Stripe onboarding is disabled because this live runtime is not configured for live Stripe mode.",
+      );
+      return;
+    }
+
     setConnecting(true);
     setError(null);
 
@@ -170,10 +201,16 @@ export default function CourierStripeOnboardingPage() {
                 </div>
               )}
 
+              {stripeConnectBlocked && (
+                <div className="rounded-xl bg-red-50 border border-red-200 p-4 text-sm text-red-700">
+                  ⚠️ Live Stripe mode is required before courier Stripe onboarding can be used on this host.
+                </div>
+              )}
+
               <div className="flex gap-3">
                 <button
                   onClick={handleConnect}
-                  disabled={connecting}
+                  disabled={connecting || stripeConnectBlocked}
                   className="flex-1 rounded-xl bg-purple-600 text-white py-3 font-semibold hover:bg-purple-700 transition disabled:opacity-60"
                 >
                   {connecting

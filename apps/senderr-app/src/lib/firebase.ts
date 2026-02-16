@@ -12,6 +12,7 @@ import {
 import { getStorage, FirebaseStorage } from 'firebase/storage'
 import { getFunctions, Functions } from 'firebase/functions'
 import { Capacitor } from '@capacitor/core'
+import { isLiveWebRuntime } from './runtimeEnv'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
@@ -22,7 +23,23 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID || '',
 }
 
-const isValidConfig = firebaseConfig.apiKey && firebaseConfig.apiKey.startsWith('AIza')
+const hasUnsafeLiveFirebaseConfig =
+  isLiveWebRuntime() &&
+  (!firebaseConfig.projectId ||
+    !firebaseConfig.authDomain ||
+    /localhost|127\.0\.0\.1|::1/i.test(firebaseConfig.authDomain))
+
+if (hasUnsafeLiveFirebaseConfig) {
+  console.error('Unsafe live Firebase configuration detected; initialization is blocked.', {
+    projectId: firebaseConfig.projectId,
+    authDomain: firebaseConfig.authDomain,
+  })
+}
+
+const isValidConfig =
+  firebaseConfig.apiKey &&
+  firebaseConfig.apiKey.startsWith('AIza') &&
+  !hasUnsafeLiveFirebaseConfig
 
 let app: FirebaseApp | undefined
 let dbInstance: Firestore | undefined
