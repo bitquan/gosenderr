@@ -1,0 +1,6 @@
+module FirebaseRemoteConfigInterop {
+  umbrella header "FirebaseRemoteConfigInterop-umbrella.h"
+
+  export *
+  module * { export * }
+}

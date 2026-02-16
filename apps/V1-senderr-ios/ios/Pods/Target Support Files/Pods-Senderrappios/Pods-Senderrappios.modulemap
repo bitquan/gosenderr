@@ -1,0 +1,6 @@
+module Pods_Senderrappios {
+  umbrella header "Pods-Senderrappios-umbrella.h"
+
+  export *
+  module * { export * }
+}
