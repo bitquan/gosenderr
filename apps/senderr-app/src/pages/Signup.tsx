@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link, useLocation } from 'react-router-dom'
 import { doc, setDoc } from 'firebase/firestore'
 import { signUpWithEmail, db } from '../lib/firebase'
 
@@ -12,6 +12,7 @@ export default function SignupPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
+  const location = useLocation()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -64,8 +65,14 @@ export default function SignupPage() {
       console.log('✅ Firestore user document created')
 
       console.log('🚀 Navigating to onboarding...')
-      // Navigate to onboarding
-      navigate('/onboarding')
+      // Navigate to onboarding or intended redirect target
+      const params = new URLSearchParams(location.search)
+      const redirect = params.get('redirect')
+      if (redirect && redirect.startsWith('/')) {
+        navigate(redirect, { replace: true })
+      } else {
+        navigate('/onboarding', { replace: true })
+      }
     } catch (err: any) {
       console.error('❌ Signup error:', err)
       if (err.code === 'auth/email-already-in-use') {
