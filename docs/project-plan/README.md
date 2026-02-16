@@ -1,10 +1,16 @@
 # GoSenderr v2 - Project Planning Documentation
 
-> **Status:** ✅ **Ready for implementation** — _Reviewed Jan 30, 2026_
+> **Status:** 📦 **Legacy planning archive** — superseded by canonical docs in `docs/` and `apps/*/README.md`
 
-**Complete reorganization plan for building GoSenderr v2**
+**Historical reorganization plan for GoSenderr v2**
 
-This directory contains comprehensive planning documentation for the GoSenderr v2 project reorganization. These documents serve as the **single source of truth** for development - no code changes required, only documentation.
+This directory contains historical planning documentation for earlier execution phases. It is valuable for context, but it is not the current operational source of truth for setup/build/run/release workflows.
+
+Current canonical guidance:
+- `docs/BLUEPRINT.md`
+- `docs/DEVELOPER_PLAYBOOK.md`
+- `docs/apps/README.md`
+- `apps/*/README.md`
 
 ---
 

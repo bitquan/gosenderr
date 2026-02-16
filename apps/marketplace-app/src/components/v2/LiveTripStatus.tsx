@@ -198,6 +198,8 @@ export function LiveTripStatus({
           pickup={pickup}
           dropoff={dropoff}
           courierLocation={courierLocation || null}
+          pickupProof={pickupPhoto || null}
+          dropoffProof={dropoffPhoto || null}
           height="400px"
         />
       </div>

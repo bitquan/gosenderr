@@ -3,10 +3,21 @@ name: Senderr App CI
 on:
   pull_request:
     branches: [senderr_app]
+    paths:
+      - "apps/courieriosnativeclean/**"
+      - "packages/**"
+      - "firebase/**"
+      - "docs/senderr_app/**"
+      - "scripts/ios-*.sh"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "turbo.json"
+      - ".github/workflows/senderr_app-ci.yml"
 
 jobs:
   checks:
-    name: Lint, Type-check, Tests
+    name: Lint + Type-check + Unit Tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -25,11 +36,40 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Senderr iOS dependency audit
+        run: pnpm run ios:audit:deps:check
+
+      - name: Senderr iOS smoke checks
+        run: pnpm run ios:smoke -- ci
+
       - name: Lint
         run: pnpm -w turbo run lint --filter '!courieriosnativeclean'
 
       - name: Type check
         run: pnpm -r --if-present type-check
 
-      - name: Run tests
-        run: pnpm -w test --if-present
+      - name: Run courier unit tests
+        run: pnpm --filter courieriosnativeclean test:unit
+
+  integration:
+    name: Courier Integration (Firestore Emulator)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Enable corepack and install pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@8.0.0 --activate
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run courier integration tests on emulator
+        run: pnpm exec firebase emulators:exec --project demo-senderr --only firestore,auth "pnpm --filter courieriosnativeclean test:integration"

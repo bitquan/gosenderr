@@ -5,6 +5,9 @@ import { ItemCategory } from "@/types/marketplace";
 import type { MarketplaceItem } from "@/types/marketplace";
 import { ItemCard } from "@/components/marketplace/ItemCard";
 import { Card, CardContent } from "@/components/ui/Card";
+import { useAuthUser } from "@/hooks/v2/useAuthUser";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { db } from "@/lib/firebase/client";
 
 const CATEGORIES: Array<{ value: ItemCategory | "all"; label: string }> = [
   { value: "all", label: "All Items" },
@@ -19,12 +22,15 @@ const CATEGORIES: Array<{ value: ItemCategory | "all"; label: string }> = [
 ];
 
 export default function MarketplacePage() {
+  const { uid } = useAuthUser();
   const [searchParams, setSearchParams] = useSearchParams();
   const [items, setItems] = useState<MarketplaceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<ItemCategory | "all">("all");
+  const [customerAddressSet, setCustomerAddressSet] = useState(false);
+  const [customerLocation, setCustomerLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   useEffect(() => {
     const initialCategory = searchParams.get("category") as ItemCategory | null;
@@ -64,6 +70,57 @@ export default function MarketplacePage() {
       active = false;
     };
   }, [selectedCategory]);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadCustomerAddress = async () => {
+      if (!uid) {
+        setCustomerAddressSet(false);
+        setCustomerLocation(null);
+        return;
+      }
+
+      try {
+        const savedAddressesQuery = query(
+          collection(db, "savedAddresses"),
+          where("userId", "==", uid),
+        );
+        const snapshot = await getDocs(savedAddressesQuery);
+        const docs = snapshot.docs.map((docSnap) => ({
+          id: docSnap.id,
+          ...(docSnap.data() as {
+            isDefault?: boolean;
+            lat?: number;
+            lng?: number;
+          }),
+        }));
+
+        const defaultAddress = docs.find((addr) => addr.isDefault) || docs[0];
+        const hasCoordinates =
+          typeof defaultAddress?.lat === "number" &&
+          typeof defaultAddress?.lng === "number";
+
+        if (!active) return;
+        setCustomerAddressSet(Boolean(defaultAddress));
+        setCustomerLocation(
+          hasCoordinates
+            ? { lat: defaultAddress.lat as number, lng: defaultAddress.lng as number }
+            : null,
+        );
+      } catch (loadError) {
+        console.error("Failed to load saved addresses for marketplace:", loadError);
+        if (!active) return;
+        setCustomerAddressSet(false);
+        setCustomerLocation(null);
+      }
+    };
+
+    loadCustomerAddress();
+    return () => {
+      active = false;
+    };
+  }, [uid]);
 
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
@@ -156,7 +213,12 @@ export default function MarketplacePage() {
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {filteredItems.map((item) => (
-              <ItemCard key={item.id} item={item} />
+              <ItemCard
+                key={item.id}
+                item={item}
+                customerAddressSet={customerAddressSet}
+                customerLocation={customerLocation}
+              />
             ))}
           </div>
         )}

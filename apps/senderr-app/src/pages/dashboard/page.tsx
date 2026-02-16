@@ -23,7 +23,8 @@ export default function CourierDashboardMobile() {
   const transportMode = userDoc?.courierProfile?.vehicleType || "car";
   const courierStatus = (userDoc?.courierProfile as any)?.status || "none";
   const isApproved = courierStatus === "approved";
-  const rejectionReason = (userDoc?.courierProfile as any)?.rejectionReason || null;
+  const rejectionReason =
+    (userDoc?.courierProfile as any)?.rejectionReason || null;
   const isOnline = Boolean(userDoc?.courierProfile?.isOnline);
 
   const activeJobs = useMemo(() => {
@@ -63,7 +64,10 @@ export default function CourierDashboardMobile() {
     const calcEarnings = (items: Job[]) => {
       return items.reduce((sum, job) => {
         const fee =
-          job.agreedFee ?? job.pricing?.courierRate ?? job.pricing?.totalAmount ?? 0;
+          job.agreedFee ??
+          job.pricing?.courierRate ??
+          job.pricing?.totalAmount ??
+          0;
         return sum + (fee || 0);
       }, 0);
     };
@@ -196,7 +200,11 @@ export default function CourierDashboardMobile() {
                 userDoc?.courierProfile?.isOnline
                   ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
                   : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
-              } ${togglingOnline || !isApproved ? "opacity-60 cursor-not-allowed" : ""}`}
+              } ${
+                togglingOnline || !isApproved
+                  ? "opacity-60 cursor-not-allowed"
+                  : ""
+              }`}
             >
               {userDoc?.courierProfile?.isOnline ? "🟢 Online" : "⚪ Offline"}
             </button>
@@ -227,16 +235,24 @@ export default function CourierDashboardMobile() {
         {!isApproved && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 text-yellow-900">
             {courierStatus === "pending" && (
-              <p className="font-semibold">⏳ Your courier application is under review.</p>
+              <p className="font-semibold">
+                ⏳ Your courier application is under review.
+              </p>
             )}
             {courierStatus === "rejected" && (
               <div>
-                <p className="font-semibold">❌ Your courier application was rejected.</p>
-                {rejectionReason && <p className="text-sm mt-1">Reason: {rejectionReason}</p>}
+                <p className="font-semibold">
+                  ❌ Your courier application was rejected.
+                </p>
+                {rejectionReason && (
+                  <p className="text-sm mt-1">Reason: {rejectionReason}</p>
+                )}
               </div>
             )}
             {courierStatus === "none" && (
-              <p className="font-semibold">Complete onboarding to start accepting jobs.</p>
+              <p className="font-semibold">
+                Complete onboarding to start accepting jobs.
+              </p>
             )}
             <div className="mt-3">
               <Link
@@ -291,7 +307,9 @@ export default function CourierDashboardMobile() {
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div>
                 <p className="text-sm text-gray-600">Current Job</p>
-                <p className="text-lg font-semibold text-gray-900">No active job</p>
+                <p className="text-lg font-semibold text-gray-900">
+                  No active job
+                </p>
               </div>
               <div className="flex gap-2">
                 <button className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold">
@@ -300,6 +318,15 @@ export default function CourierDashboardMobile() {
                 <button className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-semibold">
                   Contact Support
                 </button>
+                {process.env.NODE_ENV !== "production" && (
+                  <button
+                    onClick={() => navigate("/map-shell?dev_preview=1")}
+                    className="px-4 py-2 rounded-lg bg-white border border-gray-200 text-sm font-semibold"
+                    data-testid="preview-mapshell-button"
+                  >
+                    Preview MapShell
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -308,8 +335,12 @@ export default function CourierDashboardMobile() {
             <p className="text-3xl font-bold text-gray-900">0h 00m</p>
             <p className="text-xs text-gray-400">Current shift</p>
             <div className="mt-3 flex gap-2">
-              <button className="flex-1 px-3 py-2 rounded-lg bg-gray-100 text-sm font-semibold">Pause</button>
-              <button className="flex-1 px-3 py-2 rounded-lg bg-gray-100 text-sm font-semibold">End</button>
+              <button className="flex-1 px-3 py-2 rounded-lg bg-gray-100 text-sm font-semibold">
+                Pause
+              </button>
+              <button className="flex-1 px-3 py-2 rounded-lg bg-gray-100 text-sm font-semibold">
+                End
+              </button>
             </div>
           </div>
         </div>
@@ -328,7 +359,9 @@ export default function CourierDashboardMobile() {
               {formatMoney(timeWindowStats.weekEarnings)}
             </p>
             <p className="text-xs text-gray-500">Scheduled: —</p>
-            <div className="mt-3 text-xs text-gray-500">Pending tips: $0.00</div>
+            <div className="mt-3 text-xs text-gray-500">
+              Pending tips: $0.00
+            </div>
           </div>
         </div>
 
@@ -340,7 +373,9 @@ export default function CourierDashboardMobile() {
               <p className="text-3xl font-bold">4.9</p>
               <p className="text-xs text-gray-400">Last 30 days</p>
             </div>
-            <p className="text-sm text-gray-600 mt-3">“Great service!” — Recent feedback</p>
+            <p className="text-sm text-gray-600 mt-3">
+              “Great service!” — Recent feedback
+            </p>
           </div>
           <div className="bg-white border border-gray-200 rounded-2xl p-4">
             <p className="text-sm text-gray-600">Reliability</p>
@@ -387,7 +422,9 @@ export default function CourierDashboardMobile() {
           </div>
           <div className="bg-white border border-gray-200 rounded-2xl p-4">
             <p className="text-sm text-gray-600">Compliance</p>
-            <p className="text-sm text-gray-500 mt-2">All documents up to date</p>
+            <p className="text-sm text-gray-500 mt-2">
+              All documents up to date
+            </p>
             <p className="text-xs text-gray-400 mt-1">No actions required</p>
           </div>
           <div className="bg-white border border-gray-200 rounded-2xl p-4">
@@ -450,7 +487,11 @@ export default function CourierDashboardMobile() {
                   transportMode={transportMode}
                   viewerUid={uid || undefined}
                   onAccept={handleAccept}
-                  onDecline={(job as any).offerCourierUid === uid ? handleDeclineOffer : undefined}
+                  onDecline={
+                    (job as any).offerCourierUid === uid
+                      ? handleDeclineOffer
+                      : undefined
+                  }
                   loading={acceptingJobId === job.id}
                   enableRoute={true}
                   showAcceptButton={true}

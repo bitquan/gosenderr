@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { addDoc, collection } from 'firebase/firestore'
 import { db } from '../lib/firebase'
+import { geocodeAddress } from '../lib/mapbox/geocode'
 
 interface LocationSuggestion {
   name: string
@@ -16,12 +17,11 @@ interface CreateJobModalProps {
   onJobCreated: () => void
 }
 
-const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || ''
-
 export function CreateJobModal({ isOpen, onClose, onJobCreated }: CreateJobModalProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [jobType, setJobType] = useState<'package' | 'food'>('package')
+  const [jobMode, setJobMode] = useState<'regular' | 'test'>('test')
   
   const [pickupQuery, setPickupQuery] = useState('')
   const [pickupSuggestions, setPickupSuggestions] = useState<LocationSuggestion[]>([])
@@ -39,27 +39,40 @@ export function CreateJobModal({ isOpen, onClose, onJobCreated }: CreateJobModal
   const pickupRef = useRef<HTMLDivElement>(null)
   const dropoffRef = useRef<HTMLDivElement>(null)
 
+  const toManualLocation = (query: string): LocationSuggestion => {
+    const trimmed = query.trim()
+    return {
+      name: trimmed.split(',')[0] || trimmed,
+      address: trimmed,
+      lat: 0,
+      lng: 0,
+      placeId: `manual:${trimmed.toLowerCase()}`,
+    }
+  }
+
   // Search Mapbox for locations
   const searchMapbox = async (query: string): Promise<LocationSuggestion[]> => {
-    if (!query.trim() || !MAPBOX_TOKEN) return []
-
     try {
-      const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_TOKEN}&limit=5`
-      )
-      const data = await response.json()
-
-      return data.features.map((feature: any) => ({
+      if (!query.trim()) return []
+      const results = (await geocodeAddress(query)) ?? []
+      return results.map((feature) => ({
         name: feature.place_name.split(',')[0],
         address: feature.place_name,
-        lat: feature.center[1],
-        lng: feature.center[0],
-        placeId: feature.id,
+        lat: feature.lat,
+        lng: feature.lng,
+        placeId: `${feature.lat},${feature.lng}`,
       }))
     } catch (err) {
       console.error('Mapbox search error:', err)
       return []
     }
+  }
+
+  const resolveLocation = async (query: string): Promise<LocationSuggestion | null> => {
+    const trimmed = query.trim()
+    if (!trimmed) return null
+    const [first] = await searchMapbox(trimmed)
+    return first ?? toManualLocation(trimmed)
   }
 
   // Handle pickup search
@@ -125,7 +138,10 @@ export function CreateJobModal({ isOpen, onClose, onJobCreated }: CreateJobModal
     e.preventDefault()
     setError('')
 
-    if (!pickupSelected || !dropoffSelected) {
+    const pickupLocation = pickupSelected ?? await resolveLocation(pickupQuery)
+    const dropoffLocation = dropoffSelected ?? await resolveLocation(dropoffQuery)
+
+    if (!pickupLocation || !dropoffLocation) {
       setError('Please select both pickup and dropoff locations')
       return
     }
@@ -141,26 +157,26 @@ export function CreateJobModal({ isOpen, onClose, onJobCreated }: CreateJobModal
         type: jobType,
         status: 'open',
         // Flat fields for compatibility with Jobs page
-        pickupAddress: pickupSelected.address,
-        deliveryAddress: dropoffSelected.address,
+        pickupAddress: pickupLocation.address,
+        deliveryAddress: dropoffLocation.address,
         // Nested fields for full location data
         pickup: {
-          label: pickupSelected.name,
-          address: pickupSelected.address,
-          lat: pickupSelected.lat,
-          lng: pickupSelected.lng,
+          label: pickupLocation.name,
+          address: pickupLocation.address,
+          lat: pickupLocation.lat,
+          lng: pickupLocation.lng,
         },
         dropoff: {
-          label: dropoffSelected.name,
-          address: dropoffSelected.address,
-          lat: dropoffSelected.lat,
-          lng: dropoffSelected.lng,
+          label: dropoffLocation.name,
+          address: dropoffLocation.address,
+          lat: dropoffLocation.lat,
+          lng: dropoffLocation.lng,
         },
         estimatedFee: parseFloat(estimatedFee),
         vehicleType: jobType === 'package' ? 'car' : 'scooter',
         description: description || '',
         createdAt: new Date(),
-        testRecord: true,
+        testRecord: jobMode === 'test',
         createdByAdmin: true,
       }
 
@@ -174,6 +190,7 @@ export function CreateJobModal({ isOpen, onClose, onJobCreated }: CreateJobModal
       setEstimatedFee('')
       setDescription('')
       setJobType('package')
+      setJobMode('test')
       
       onJobCreated()
       onClose()
@@ -190,7 +207,7 @@ export function CreateJobModal({ isOpen, onClose, onJobCreated }: CreateJobModal
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-900">+ Create Test Job</h2>
+          <h2 className="text-2xl font-bold text-gray-900">+ Create Job</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 text-2xl"
@@ -229,6 +246,35 @@ export function CreateJobModal({ isOpen, onClose, onJobCreated }: CreateJobModal
             </div>
           </div>
 
+          {/* Job Mode */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-900 mb-3">
+              Job Mode
+            </label>
+            <div className="flex gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  value="test"
+                  checked={jobMode === 'test'}
+                  onChange={(e) => setJobMode(e.target.value as 'regular' | 'test')}
+                  className="w-4 h-4"
+                />
+                <span className="text-gray-700">🧪 Test Job</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  value="regular"
+                  checked={jobMode === 'regular'}
+                  onChange={(e) => setJobMode(e.target.value as 'regular' | 'test')}
+                  className="w-4 h-4"
+                />
+                <span className="text-gray-700">✅ Regular Job</span>
+              </label>
+            </div>
+          </div>
+
           {/* Pickup Location */}
           <div className="border-t pt-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">📍 Pickup Location</h3>
@@ -239,7 +285,22 @@ export function CreateJobModal({ isOpen, onClose, onJobCreated }: CreateJobModal
               <input
                 type="text"
                 value={pickupQuery}
-                onChange={(e) => setPickupQuery(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value
+                  setPickupQuery(value)
+                  if (pickupSelected && value !== pickupSelected.address) {
+                    setPickupSelected(null)
+                  }
+                }}
+                onBlur={async () => {
+                  if (!pickupSelected && pickupQuery.trim()) {
+                    const resolved = await resolveLocation(pickupQuery)
+                    if (resolved) {
+                      setPickupSelected(resolved)
+                      setPickupQuery(resolved.address)
+                    }
+                  }
+                }}
                 placeholder="Search for pickup address..."
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -284,7 +345,22 @@ export function CreateJobModal({ isOpen, onClose, onJobCreated }: CreateJobModal
               <input
                 type="text"
                 value={dropoffQuery}
-                onChange={(e) => setDropoffQuery(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value
+                  setDropoffQuery(value)
+                  if (dropoffSelected && value !== dropoffSelected.address) {
+                    setDropoffSelected(null)
+                  }
+                }}
+                onBlur={async () => {
+                  if (!dropoffSelected && dropoffQuery.trim()) {
+                    const resolved = await resolveLocation(dropoffQuery)
+                    if (resolved) {
+                      setDropoffSelected(resolved)
+                      setDropoffQuery(resolved.address)
+                    }
+                  }
+                }}
                 placeholder="Search for dropoff address..."
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />

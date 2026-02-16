@@ -6,6 +6,15 @@ import { Card, CardHeader, CardTitle, CardContent } from '../components/Card'
 
 interface PaymentSettings {
   platformCommissionRate: number
+  sellerMonthlySubscriptionFee: number
+  platformFeePackage: number
+  platformFeeFood: number
+  orderAdFeeEnabled: boolean
+  orderAdFeeFlat: number
+  deliveryBaseFee: number
+  deliveryPerMileFee: number
+  deliveryPerStopFee: number
+  deliveryMinimumFee: number
   sellerPayoutSchedule: 'daily' | 'weekly' | 'monthly'
   minimumPayoutAmount: number
   autoPayouts: boolean
@@ -23,6 +32,15 @@ export default function PaymentSettingsPage() {
   const { user } = useAuth()
   const [settings, setSettings] = useState<PaymentSettings>({
     platformCommissionRate: 10,
+    sellerMonthlySubscriptionFee: 10,
+    platformFeePackage: 2.5,
+    platformFeeFood: 1.5,
+    orderAdFeeEnabled: false,
+    orderAdFeeFlat: 0,
+    deliveryBaseFee: 3.99,
+    deliveryPerMileFee: 0.85,
+    deliveryPerStopFee: 0.65,
+    deliveryMinimumFee: 4.99,
     sellerPayoutSchedule: 'weekly',
     minimumPayoutAmount: 50,
     autoPayouts: true,
@@ -42,6 +60,12 @@ export default function PaymentSettingsPage() {
     loadSettings()
   }, [])
 
+  const parseNumberInput = (value: string, fallback: number) => {
+    const parsed = Number(value)
+    if (!Number.isFinite(parsed)) return fallback
+    return parsed
+  }
+
   const loadSettings = async () => {
     try {
       const docRef = doc(db, 'platformSettings', 'payment')
@@ -51,6 +75,15 @@ export default function PaymentSettingsPage() {
         const raw = docSnap.data() as any
         setSettings({
           platformCommissionRate: raw.platformCommissionRate ?? 10,
+          sellerMonthlySubscriptionFee: raw.sellerMonthlySubscriptionFee ?? 10,
+          platformFeePackage: raw.platformFeePackage ?? 2.5,
+          platformFeeFood: raw.platformFeeFood ?? 1.5,
+          orderAdFeeEnabled: raw.orderAdFeeEnabled ?? raw.adFeeEnabled ?? false,
+          orderAdFeeFlat: raw.orderAdFeeFlat ?? 0,
+          deliveryBaseFee: raw.deliveryBaseFee ?? 3.99,
+          deliveryPerMileFee: raw.deliveryPerMileFee ?? 0.85,
+          deliveryPerStopFee: raw.deliveryPerStopFee ?? 0.65,
+          deliveryMinimumFee: raw.deliveryMinimumFee ?? 4.99,
           sellerPayoutSchedule: raw.sellerPayoutSchedule ?? raw.vendorPayoutSchedule ?? 'weekly',
           minimumPayoutAmount: raw.minimumPayoutAmount ?? 50,
           autoPayouts: raw.autoPayouts ?? true,
@@ -72,7 +105,16 @@ export default function PaymentSettingsPage() {
     
     setSaving(true)
     try {
-      await setDoc(doc(db, 'platformSettings', 'payment'), settings)
+      await setDoc(
+        doc(db, 'platformSettings', 'payment'),
+        {
+          ...settings,
+          adFeeEnabled: settings.orderAdFeeEnabled,
+          updatedAt: new Date().toISOString(),
+          updatedBy: (user as any)?.uid || (user as any)?.email || 'admin',
+        },
+        { merge: true }
+      )
       alert('Payment settings saved successfully!')
     } catch (error) {
       console.error('Error saving payment settings:', error)
@@ -132,12 +174,55 @@ export default function PaymentSettingsPage() {
                   max="100"
                   step="0.5"
                   value={settings.platformCommissionRate}
-                  onChange={(e) => setSettings({...settings, platformCommissionRate: parseFloat(e.target.value)})}
+                  onChange={(e) => setSettings({...settings, platformCommissionRate: parseNumberInput(e.target.value, settings.platformCommissionRate)})}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   Platform takes {settings.platformCommissionRate}% from each transaction
                 </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Seller Monthly Fee ($)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={settings.sellerMonthlySubscriptionFee}
+                    onChange={(e) => setSettings({...settings, sellerMonthlySubscriptionFee: parseNumberInput(e.target.value, settings.sellerMonthlySubscriptionFee)})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Platform Fee (Package) ($)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={settings.platformFeePackage}
+                    onChange={(e) => setSettings({...settings, platformFeePackage: parseNumberInput(e.target.value, settings.platformFeePackage)})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Platform Fee (Food) ($)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={settings.platformFeeFood}
+                  onChange={(e) => setSettings({...settings, platformFeeFood: parseNumberInput(e.target.value, settings.platformFeeFood)})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
               </div>
               
               <div>
@@ -163,11 +248,113 @@ export default function PaymentSettingsPage() {
                     max="100"
                     step="0.1"
                     value={settings.taxRate}
-                    onChange={(e) => setSettings({...settings, taxRate: parseFloat(e.target.value)})}
+                    onChange={(e) => setSettings({...settings, taxRate: parseNumberInput(e.target.value, settings.taxRate)})}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                   />
                 </div>
               )}
+
+              <p className="text-xs text-gray-500">
+                These values directly drive senderrplace checkout fee calculation.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Ad Fees */}
+        <Card variant="elevated">
+          <CardHeader>
+            <CardTitle>Ad / Listing Fees</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={settings.orderAdFeeEnabled}
+                  onChange={(e) => setSettings({ ...settings, orderAdFeeEnabled: e.target.checked })}
+                  className="w-4 h-4 text-purple-600 rounded focus:ring-2 focus:ring-purple-500"
+                />
+                <span className="text-sm font-medium text-gray-700">Enable per-order ad fee</span>
+              </label>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Ad Fee Amount ($)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={settings.orderAdFeeFlat}
+                  onChange={(e) => setSettings({ ...settings, orderAdFeeFlat: parseNumberInput(e.target.value, settings.orderAdFeeFlat) })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  disabled={!settings.orderAdFeeEnabled}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Delivery Fee Policy */}
+        <Card variant="elevated">
+          <CardHeader>
+            <CardTitle>Delivery Fee Policy</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Base Fee ($)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={settings.deliveryBaseFee}
+                  onChange={(e) => setSettings({...settings, deliveryBaseFee: parseNumberInput(e.target.value, settings.deliveryBaseFee)})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Per Mile ($)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={settings.deliveryPerMileFee}
+                  onChange={(e) => setSettings({...settings, deliveryPerMileFee: parseNumberInput(e.target.value, settings.deliveryPerMileFee)})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Per Extra Stop ($)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={settings.deliveryPerStopFee}
+                  onChange={(e) => setSettings({...settings, deliveryPerStopFee: parseNumberInput(e.target.value, settings.deliveryPerStopFee)})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Minimum Fee ($)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={settings.deliveryMinimumFee}
+                  onChange={(e) => setSettings({...settings, deliveryMinimumFee: parseNumberInput(e.target.value, settings.deliveryMinimumFee)})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -203,7 +390,7 @@ export default function PaymentSettingsPage() {
                   min="0"
                   step="10"
                   value={settings.minimumPayoutAmount}
-                  onChange={(e) => setSettings({...settings, minimumPayoutAmount: parseFloat(e.target.value)})}
+                  onChange={(e) => setSettings({...settings, minimumPayoutAmount: parseNumberInput(e.target.value, settings.minimumPayoutAmount)})}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
                 <p className="text-xs text-gray-500 mt-1">

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
-import { collection, getDocs, orderBy, query, where, doc, updateDoc } from 'firebase/firestore'
+import { useNavigate } from 'react-router-dom'
+import { collection, getDocs, orderBy, query } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { Card, CardHeader, CardTitle, CardContent } from '../components/Card'
 import { StatusBadge } from '../components/Badge'
@@ -8,6 +8,22 @@ import { formatCurrency, formatDate } from '../lib/utils'
 import { getFunctions, httpsCallable } from 'firebase/functions'
 import { exportToCSV, formatJobsForExport } from '../lib/csvExport'
 import { CreateJobModal } from '../components/CreateJobModal'
+
+type JobStatusFilter = 'all' | 'open' | 'active' | 'completed' | 'cancelled' | 'exceptions'
+
+type NormalizedJobStatus =
+  | 'open'
+  | 'assigned'
+  | 'enroute_pickup'
+  | 'arrived_pickup'
+  | 'picked_up'
+  | 'enroute_dropoff'
+  | 'arrived_dropoff'
+  | 'completed'
+  | 'cancelled'
+  | 'disputed'
+  | 'expired'
+  | 'failed'
 
 interface Job {
   id: string
@@ -27,11 +43,72 @@ interface Job {
   assignedAt?: any
 }
 
+interface AdminCancelJobRequest {
+  jobId: string
+  reason: string
+}
+
+interface AdminCancelJobResult {
+  success: boolean
+  jobId: string
+  status: 'cancelled'
+}
+
+const FILTER_LABELS: Record<JobStatusFilter, string> = {
+  all: 'all',
+  open: 'open',
+  active: 'active',
+  completed: 'completed',
+  cancelled: 'cancelled',
+  exceptions: 'exceptions',
+}
+
+const ACTIVE_STATUSES = new Set<NormalizedJobStatus>([
+  'assigned',
+  'enroute_pickup',
+  'arrived_pickup',
+  'picked_up',
+  'enroute_dropoff',
+  'arrived_dropoff',
+])
+
+const TERMINAL_STATUSES = new Set<NormalizedJobStatus>([
+  'completed',
+  'cancelled',
+  'disputed',
+  'expired',
+  'failed',
+])
+
+function normalizeJobStatus(status: string | undefined): NormalizedJobStatus {
+  switch (status) {
+    case 'pending':
+      return 'open'
+    case 'in_progress':
+      return 'enroute_pickup'
+    case 'open':
+    case 'assigned':
+    case 'enroute_pickup':
+    case 'arrived_pickup':
+    case 'picked_up':
+    case 'enroute_dropoff':
+    case 'arrived_dropoff':
+    case 'completed':
+    case 'cancelled':
+    case 'disputed':
+    case 'expired':
+    case 'failed':
+      return status
+    default:
+      return 'open'
+  }
+}
+
 export default function AdminJobsPage() {
   const navigate = useNavigate()
   const [jobs, setJobs] = useState<Job[]>([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState<'all' | 'pending' | 'active' | 'completed' | 'cancelled'>('all')
+  const [filter, setFilter] = useState<JobStatusFilter>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>('all')
   const [showCancelModal, setShowCancelModal] = useState(false)
@@ -39,6 +116,10 @@ export default function AdminJobsPage() {
   const [cancellingJobId, setCancellingJobId] = useState<string | null>(null)
   const [cancelReason, setCancelReason] = useState('')
   const [processing, setProcessing] = useState<string | null>(null)
+  const adminCancelJob = httpsCallable<AdminCancelJobRequest, AdminCancelJobResult>(
+    getFunctions(),
+    'adminCancelJob',
+  )
 
   useEffect(() => {
     loadJobs()
@@ -65,11 +146,9 @@ export default function AdminJobsPage() {
 
     setProcessing(cancellingJobId)
     try {
-      await updateDoc(doc(db, 'jobs', cancellingJobId), {
-        status: 'cancelled',
-        cancelledAt: new Date(),
-        cancelledBy: 'admin',
-        cancelReason: cancelReason
+      await adminCancelJob({
+        jobId: cancellingJobId,
+        reason: cancelReason.trim(),
       })
       alert('Job cancelled successfully')
       setShowCancelModal(false)
@@ -107,11 +186,15 @@ export default function AdminJobsPage() {
 
   const filteredJobs = jobs
     .filter(job => {
+      const status = normalizeJobStatus(job.status)
       if (filter === 'all') return true
-      if (filter === 'pending') return job.status === 'pending' && !job.courierUid
-      if (filter === 'active') return ['assigned', 'in_progress'].includes(job.status)
-      if (filter === 'completed') return job.status === 'completed'
-      if (filter === 'cancelled') return job.status === 'cancelled'
+      if (filter === 'open') return status === 'open'
+      if (filter === 'active') return ACTIVE_STATUSES.has(status)
+      if (filter === 'completed') return status === 'completed'
+      if (filter === 'cancelled') return status === 'cancelled'
+      if (filter === 'exceptions') {
+        return status === 'disputed' || status === 'expired' || status === 'failed'
+      }
       return true
     })
     .filter(job => {
@@ -196,7 +279,7 @@ export default function AdminJobsPage() {
 
         {/* Status Filters */}
         <div className="bg-white rounded-2xl shadow-lg p-2 flex gap-2 flex-wrap">
-          {(['all', 'pending', 'active', 'completed', 'cancelled'] as const).map((f) => (
+          {(['all', 'open', 'active', 'completed', 'cancelled', 'exceptions'] as const).map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
@@ -206,7 +289,7 @@ export default function AdminJobsPage() {
                   : 'text-gray-600 hover:bg-gray-50'
               }`}
             >
-              {f}
+              {FILTER_LABELS[f]}
             </button>
           ))}
         </div>
@@ -243,15 +326,7 @@ export default function AdminJobsPage() {
                       <div className="flex items-center gap-2 mb-2">
                         <span className="text-sm font-mono text-gray-500">#{job.id.slice(0, 8)}</span>
                         <StatusBadge
-                          status={
-                            job.status === 'completed'
-                              ? 'completed'
-                              : ['in_progress', 'assigned'].includes(job.status)
-                              ? 'in_progress'
-                              : job.status === 'cancelled'
-                              ? 'cancelled'
-                              : 'pending'
-                          }
+                          status={normalizeJobStatus(job.status)}
                         />
                       </div>
                       <p className="text-xs text-gray-500">
@@ -288,7 +363,7 @@ export default function AdminJobsPage() {
                   </div>
 
                   {/* Admin Actions */}
-                  {!['completed', 'cancelled'].includes(job.status) && (
+                  {!TERMINAL_STATUSES.has(normalizeJobStatus(job.status)) && (
                     <div className="mt-3 pt-3 border-t border-gray-100 flex gap-2" onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={() => {
