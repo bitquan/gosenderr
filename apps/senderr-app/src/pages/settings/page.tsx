@@ -63,6 +63,19 @@ const STATE_OPTIONS = [
   { code: "DC", name: "District of Columbia" },
 ];
 
+const PAYOUT_MODE_OPTIONS = [
+  {
+    value: "stripe_auto",
+    label: "Automatic Stripe payouts",
+    help: "Send payouts automatically when jobs complete.",
+  },
+  {
+    value: "manual_review",
+    label: "Manual review",
+    help: "Hold payouts until manually reviewed.",
+  },
+] as const;
+
 export default function CourierSettingsPage() {
   const navigate = useNavigate();
   const { user, loading } = useAuthUser();
@@ -72,6 +85,8 @@ export default function CourierSettingsPage() {
   const [availability, setAvailability] = useState(false);
   const [serviceRadius, setServiceRadius] = useState(10);
   const [taxState, setTaxState] = useState('');
+  const [payoutMode, setPayoutMode] = useState<(typeof PAYOUT_MODE_OPTIONS)[number]["value"]>("stripe_auto");
+  const [showTokenWallet, setShowTokenWallet] = useState(true);
   const [notificationPrefs, setNotificationPrefs] = useState({
     jobOffers: true,
     payoutUpdates: true,
@@ -101,6 +116,10 @@ export default function CourierSettingsPage() {
               setAvailability(Boolean(profile.isOnline));
               setServiceRadius(Number(profile.serviceRadius || 10));
               setTaxState(profile.taxState || userDoc.data().taxState || '');
+              setPayoutMode(
+                profile.payoutMode === "manual_review" ? "manual_review" : "stripe_auto"
+              );
+              setShowTokenWallet(profile.showTokenWallet ?? true);
               setNotificationPrefs({
                 jobOffers: profile.notificationPrefs?.jobOffers ?? true,
                 payoutUpdates: profile.notificationPrefs?.payoutUpdates ?? true,
@@ -142,6 +161,8 @@ export default function CourierSettingsPage() {
         'courierProfile.isOnline': availability,
         'courierProfile.serviceRadius': serviceRadius,
         'courierProfile.taxState': taxState,
+        'courierProfile.payoutMode': payoutMode,
+        'courierProfile.showTokenWallet': showTokenWallet,
         'courierProfile.notificationPrefs': notificationPrefs,
         updatedAt: serverTimestamp(),
       });
@@ -240,6 +261,14 @@ export default function CourierSettingsPage() {
     navigate("/login");
     return null;
   }
+
+  const walletBalanceRaw =
+    courierData?.courierProfile?.tokenWallet?.balance ??
+    courierData?.tokenWallet?.balance ??
+    courierData?.wallet?.tokenBalance ??
+    null;
+  const hasWalletBalance = walletBalanceRaw !== null && walletBalanceRaw !== undefined;
+  const walletBalance = Number(walletBalanceRaw || 0);
 
   return (
     <div className="min-h-screen bg-[#F8F9FF]">
@@ -412,7 +441,7 @@ export default function CourierSettingsPage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-6">
               🧾 Taxes & Payouts
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="bg-gray-50 rounded-xl p-4">
                 <p className="text-xs text-gray-600 font-medium mb-1">Tax State</p>
                 <select
@@ -432,18 +461,60 @@ export default function CourierSettingsPage() {
                 </p>
               </div>
               <div className="bg-gray-50 rounded-xl p-4">
-                <p className="text-xs text-gray-600 font-medium mb-1">Payouts</p>
+                <p className="text-xs text-gray-600 font-medium mb-1">Payout Mode</p>
+                <select
+                  value={payoutMode}
+                  onChange={(event) =>
+                    setPayoutMode(event.target.value as (typeof PAYOUT_MODE_OPTIONS)[number]["value"])
+                  }
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                >
+                  {PAYOUT_MODE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-2">
+                  {PAYOUT_MODE_OPTIONS.find((option) => option.value === payoutMode)?.help}
+                </p>
                 <Link
                   to="/earnings"
                   className="inline-flex items-center gap-2 mt-1 text-sm font-semibold text-indigo-600"
                 >
                   View earnings & payouts →
                 </Link>
-                <p className="text-xs text-gray-500 mt-2">
+                <p className="text-xs text-gray-500 mt-1">
                   Update your Stripe Connect details in Earnings.
                 </p>
               </div>
+              <div className="bg-gray-50 rounded-xl p-4">
+                <p className="text-xs text-gray-600 font-medium mb-1">Token Wallet</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {hasWalletBalance ? walletBalance.toLocaleString() : "Not available"}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Wallet visibility on courier surfaces
+                </p>
+                <button
+                  onClick={() => setShowTokenWallet((previous) => !previous)}
+                  className={`mt-3 px-4 py-2 rounded-full text-xs font-semibold border transition-colors ${
+                    showTokenWallet
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      : "bg-white text-gray-600 border-gray-200"
+                  }`}
+                >
+                  {showTokenWallet ? "Visible" : "Hidden"}
+                </button>
+              </div>
             </div>
+            <button
+              onClick={handleSavePreferences}
+              disabled={savingPreferences}
+              className="mt-4 w-full sm:w-auto rounded-xl bg-purple-600 px-4 py-3 text-sm font-semibold text-white hover:bg-purple-700 disabled:opacity-60"
+            >
+              {savingPreferences ? "Saving..." : "Save Tax & Payout Settings"}
+            </button>
           </div>
         </div>
 
