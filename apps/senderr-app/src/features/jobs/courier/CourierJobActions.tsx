@@ -1,4 +1,4 @@
-
+import { useEffect, useState } from 'react';
 import { Job } from '../shared/types';
 import { claimJob, updateJobStatus } from '@/lib/v2/jobs';
 import { captureGPSPhoto } from '@/lib/gpsPhoto';
@@ -19,6 +19,27 @@ export function CourierJobActions({ job, courierUid, estimatedFee, onJobUpdated 
   const canAccept = job.status === 'open' && !job.courierUid;
   const MAX_DISTANCE_MILES = 0.2; // ~320 meters
   const MAX_ACCURACY_METERS = 100;
+  const [actionLoading, setActionLoading] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [lastAction, setLastAction] = useState<'accept' | 'status' | null>(null);
+  const [isOffline, setIsOffline] = useState(
+    typeof navigator !== 'undefined' ? !navigator.onLine : false,
+  );
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const goOnline = () => setIsOffline(false);
+    const goOffline = () => setIsOffline(true);
+
+    window.addEventListener('online', goOnline);
+    window.addEventListener('offline', goOffline);
+
+    return () => {
+      window.removeEventListener('online', goOnline);
+      window.removeEventListener('offline', goOffline);
+    };
+  }, []);
   
   // Define valid status transitions for courier
   const getNextStatus = (currentStatus: JobStatus): JobStatus | null => {
@@ -42,30 +63,55 @@ export function CourierJobActions({ job, courierUid, estimatedFee, onJobUpdated 
   const nextStatus = isAssignedToCourier ? getNextStatus(job.status) : null;
 
   const handleAccept = async () => {
-    if (!estimatedFee) {
-      alert('Cannot accept job: no fee calculated');
+    const fee =
+      estimatedFee ??
+      job.agreedFee ??
+      (job as any)?.pricing?.courierRate ??
+      (job as any)?.pricing?.totalAmount ??
+      0;
+
+    if (!fee || fee <= 0) {
+      setActionError('Cannot accept job: no fee calculated for this offer.');
+      return;
+    }
+
+    if (isOffline) {
+      setActionError('You are offline. Reconnect to accept this job.');
       return;
     }
 
     try {
-      await claimJob(job.id, courierUid, estimatedFee);
-      alert('Job accepted successfully!');
+      setActionLoading(true);
+      setActionError(null);
+      setLastAction('accept');
+      await claimJob(job.id, courierUid, fee);
       onJobUpdated?.();
     } catch (error) {
       console.error('Failed to accept job:', error);
-      alert('Failed to accept job. It may have been claimed by another courier.');
+      const message = error instanceof Error ? error.message : 'Failed to accept job. It may have been claimed by another courier.';
+      setActionError(message);
+    } finally {
+      setActionLoading(false);
     }
   };
 
   const handleUpdateStatus = async () => {
     if (!nextStatus) return;
 
+    if (isOffline) {
+      setActionError('You are offline. Reconnect to update delivery status.');
+      return;
+    }
+
     if (job.paymentStatus !== 'authorized') {
-      alert('Payment not authorized yet. Please wait for customer payment before starting this trip.');
+      setActionError('Payment not authorized yet. Please wait for customer payment before starting this trip.');
       return;
     }
 
     try {
+      setActionLoading(true);
+      setActionError(null);
+      setLastAction('status');
       if (nextStatus === 'picked_up') {
         await handleProofCapture('pickup');
       }
@@ -79,9 +125,45 @@ export function CourierJobActions({ job, courierUid, estimatedFee, onJobUpdated 
     } catch (error) {
       console.error('Failed to update job status:', error);
       const message = error instanceof Error ? error.message : 'Failed to update job status. Please try again.';
-      alert(message);
+      setActionError(message);
+    } finally {
+      setActionLoading(false);
     }
   };
+
+  const handleRetry = () => {
+    if (lastAction === 'accept') {
+      void handleAccept();
+      return;
+    }
+    if (lastAction === 'status') {
+      void handleUpdateStatus();
+    }
+  };
+
+  const buttonDisabled = actionLoading || isOffline;
+
+  const statusErrorCard = actionError ? (
+    <div className="mt-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+      <div className="font-semibold">Action failed</div>
+      <div className="mt-1">{actionError}</div>
+      {lastAction && (
+        <button
+          onClick={handleRetry}
+          disabled={buttonDisabled}
+          className="mt-2 rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-red-700 border border-red-200 hover:bg-red-100 disabled:opacity-60"
+        >
+          Retry
+        </button>
+      )}
+    </div>
+  ) : null;
+
+  const offlineCard = isOffline ? (
+    <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+      You are offline. Lifecycle commands will resume once your connection is restored.
+    </div>
+  ) : null;
 
   const handleProofCapture = async (type: 'pickup' | 'dropoff') => {
     const target = type === 'pickup' ? job.pickup : job.dropoff;
@@ -118,12 +200,19 @@ export function CourierJobActions({ job, courierUid, estimatedFee, onJobUpdated 
 
   if (canAccept) {
     return (
-      <button
-        onClick={handleAccept}
-        className="w-full py-4 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl active:scale-95 transition-all"
-      >
-        Accept Job {estimatedFee && `- $${estimatedFee.toFixed(2)}`}
-      </button>
+      <div>
+        <button
+          onClick={handleAccept}
+          disabled={buttonDisabled}
+          className="w-full py-4 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          {actionLoading
+            ? 'Accepting...'
+            : `Accept Job${estimatedFee ? ` - $${estimatedFee.toFixed(2)}` : ''}`}
+        </button>
+        {offlineCard}
+        {statusErrorCard}
+      </div>
     );
   }
 
@@ -159,12 +248,17 @@ export function CourierJobActions({ job, courierUid, estimatedFee, onJobUpdated 
     };
 
     return (
-      <button
-        onClick={handleUpdateStatus}
-        className={`w-full py-4 ${buttonColors[nextStatus]} text-white rounded-xl font-semibold shadow-lg hover:shadow-xl active:scale-95 transition-all`}
-      >
-        {statusLabels[nextStatus]}
-      </button>
+      <div>
+        <button
+          onClick={handleUpdateStatus}
+          disabled={buttonDisabled}
+          className={`w-full py-4 ${buttonColors[nextStatus]} text-white rounded-xl font-semibold shadow-lg hover:shadow-xl active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed`}
+        >
+          {actionLoading ? 'Updating...' : statusLabels[nextStatus]}
+        </button>
+        {offlineCard}
+        {statusErrorCard}
+      </div>
     );
   }
 

@@ -15,7 +15,7 @@ export default function CourierDashboardMobile() {
   const navigate = useNavigate();
   const { uid, loading: authLoading } = useAuthUser();
   const { userDoc, loading: userLoading } = useUserDoc();
-  const { jobs, loading: jobsLoading } = useOpenJobs();
+  const { jobs, loading: jobsLoading, error: jobsError, retry: retryJobs, isOffline } = useOpenJobs();
   const [acceptingJobId, setAcceptingJobId] = useState<string | null>(null);
   const [togglingOnline, setTogglingOnline] = useState(false);
 
@@ -221,6 +221,26 @@ export default function CourierDashboardMobile() {
                 Set Rate Card
               </Link>
             </div>
+          </div>
+        )}
+
+        {jobsError && (
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-red-900">
+            <p className="font-semibold">Unable to load live jobs</p>
+            <p className="text-sm mt-1">{jobsError.message}</p>
+            <button
+              onClick={retryJobs}
+              className="mt-3 inline-flex items-center px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
+        {isOffline && (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-amber-900">
+            <p className="font-semibold">Offline mode</p>
+            <p className="text-sm mt-1">You can browse cached jobs, but accept/command actions need connection.</p>
           </div>
         )}
 
