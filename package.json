@@ -47,13 +47,16 @@
     "dev:check": "sh ./scripts/dev-checks.sh",
     "clean:env": "bash scripts/clean-environment.sh",
     "bootstrap:minimal": "bash scripts/bootstrap-minimal.sh",
-    "ios:pod:sync": "bash scripts/sync-ios-podfile.sh --sync",
-    "ios:pod:check": "bash scripts/sync-ios-podfile.sh --check",
-    "ios:check": "bash scripts/check-ios-canonical.sh",
-    "ios:bootstrap": "bash scripts/bootstrap-senderr-ios.sh",
-    "ios:pods:install": "bash scripts/bootstrap-senderr-ios.sh",
-    "ios:clean:install": "bash scripts/ios-clean-install.sh",
-    "ios:clean:build:debug": "bash scripts/ios-clean-install.sh && (cd apps/courieriosnativeclean/ios && xcodebuild -workspace Senderrappios.xcworkspace -scheme Senderr -configuration Debug -sdk iphoneos -destination 'generic/platform=iOS' clean build)"
+    "ios:senderr": "bash scripts/ios-senderr.sh",
+    "ios:clean:install": "bash scripts/ios-senderr.sh clean-install",
+    "ios:build:verify": "bash scripts/ios-senderr.sh build-verify",
+    "ios:testflight:archive": "bash scripts/ios-testflight.sh archive",
+    "ios:testflight:upload": "bash scripts/ios-testflight.sh upload",
+    "ios:audit:deps": "bash scripts/ios-dependency-audit.sh",
+    "ios:audit:deps:check": "bash scripts/ios-dependency-audit.sh check",
+    "ios:smoke": "bash scripts/ios-smoke-checks.sh",
+    "emu:start:gosenderr": "bash scripts/start-emulators.sh",
+    "emu:seed:gosenderr": "bash -lc 'FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID:-gosenderr-6773f} FIRESTORE_EMULATOR_HOST=${FIRESTORE_EMULATOR_HOST:-127.0.0.1:8080} FIREBASE_AUTH_EMULATOR_HOST=${FIREBASE_AUTH_EMULATOR_HOST:-127.0.0.1:9099} node scripts/seed-role-simulation.js && ( [ -f scripts/seed-admin-data.ts ] && npx --yes tsx scripts/seed-admin-data.ts || true ) && ( [ -f scripts/seed-feature-flags.js ] && node scripts/seed-feature-flags.js || true ) && ( [ -f scripts/seed-courier-emulator.js ] && node scripts/seed-courier-emulator.js || true )'"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "2.0.7",
@@ -84,7 +87,6 @@
       "firebase": "12.0.0",
       "react": "18.3.1",
       "react-dom": "18.3.1",
-      "@isaacs/brace-expansion": "5.0.1",
       "@types/react": "18.3.1",
       "@types/react-dom": "18.3.1"
     }

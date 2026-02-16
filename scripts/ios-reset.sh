@@ -8,9 +8,8 @@ set -euo pipefail
 # - verify abseil/gRPC headers & libs exist
 # - run a clean simulator build and collect logs
 
-IOS_APP_DIR="${IOS_APP_DIR:-apps/courieriosnativeclean/ios}"
-WORKSPACE="$IOS_APP_DIR/Senderrappios.xcworkspace"
-SCHEME="Senderr"
+WORKSPACE="apps/courier-ios-native/ios/Senderrappios.xcworkspace"
+SCHEME="Senderrappios"
 CONFIG="Debug"
 SIMULATOR="iPhone 17"
 DERIVED_LOG_DIR="ios/build"
@@ -43,16 +42,16 @@ fi
 
 # Deintegrate pods from the iOS project
 title "Deintegrating Pods"
-if [ -d "$IOS_APP_DIR/Pods" ]; then
-  (cd "$IOS_APP_DIR" && pod deintegrate) || true
+if [ -d "apps/courier-ios-native/ios/Pods" ]; then
+  (cd apps/courier-ios-native/ios && pod deintegrate) || true
 else
   echo "No Pods folder found, skipping deintegrate.";
 fi
 
 # Clear Pods and lockfile
 title "Removing Pods directories & lockfiles"
-rm -rf "$IOS_APP_DIR/Pods"
-rm -f "$IOS_APP_DIR/Podfile.lock"
+rm -rf apps/courier-ios-native/ios/Pods
+rm -f apps/courier-ios-native/ios/Podfile.lock
 
 # Clear CocoaPods cache
 title "Clearing CocoaPods caches"
@@ -71,16 +70,16 @@ done
 
 # Reinstall pods
 title "Running pod install"
-(cd "$IOS_APP_DIR" && pod install --repo-update --ansi)
+(cd apps/courier-ios-native/ios && pod install --repo-update --ansi)
 
 # Verify abseil / gRPC pods exist in Pods directory
 title "Verifying Pods: abseil and gRPC-Core presence"
-if [ -d "$IOS_APP_DIR/Pods/abseil" ]; then
+if [ -d "apps/courier-ios-native/ios/Pods/abseil" ]; then
   echo "Found abseil pod directory.";
 else
   echo "Warning: abseil pod directory not found.";
 fi
-if [ -d "$IOS_APP_DIR/Pods/gRPC-Core" ]; then
+if [ -d "apps/courier-ios-native/ios/Pods/gRPC-Core" ]; then
   echo "Found gRPC-Core pod directory.";
 else
   echo "Warning: gRPC-Core pod directory not found.";

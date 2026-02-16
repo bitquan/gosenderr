@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { useJob } from "@/hooks/v2/useJob";
@@ -27,6 +26,13 @@ export default function CourierJobDetail() {
   const { job: jobDoc, loading: jobLoading } = useJob(jobId);
   const { userDoc } = useUserDoc();
   const { startNavigation, isNavigating } = useNavigation();
+  const profileLocation = userDoc?.courierProfile?.currentLocation;
+  const courierLocation = userDoc?.location
+    ? userDoc.location
+    : profileLocation && userDoc
+    ? { ...profileLocation, updatedAt: userDoc.updatedAt }
+    : null;
+  const hasLocation = Boolean(courierLocation);
 
   if (jobLoading) {
     return (
@@ -64,23 +70,27 @@ export default function CourierJobDetail() {
 
   const visibility = getJobVisibility(job, { uid, role: "courier" });
   const isPaymentLocked = job.paymentStatus !== "authorized";
-  const canNavigateToPickup = ["assigned", "enroute_pickup", "arrived_pickup"].includes(
-    job.status,
-  );
+  const canNavigateToPickup = [
+    "assigned",
+    "enroute_pickup",
+    "arrived_pickup",
+  ].includes(job.status);
   const canNavigateToDropoff = [
     "picked_up",
     "enroute_dropoff",
     "arrived_dropoff",
   ].includes(job.status);
-  
-  const handleStartNavigation = async (destination: 'pickup' | 'dropoff') => {
-    if (!userDoc?.location) {
-      alert('Unable to get your current location. Please enable location services.');
+
+  const handleStartNavigation = async (destination: "pickup" | "dropoff") => {
+    if (!courierLocation) {
+      alert(
+        "Unable to get your current location. Please enable location services.",
+      );
       return;
     }
 
-    const targetLocation = destination === 'pickup' ? job.pickup : job.dropoff;
-    await startNavigation(job, userDoc.location, targetLocation);
+    const targetLocation = destination === "pickup" ? job.pickup : job.dropoff;
+    await startNavigation(job, courierLocation, targetLocation);
   };
 
   return (
@@ -104,7 +114,10 @@ export default function CourierJobDetail() {
         {isPaymentLocked && (
           <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl p-4">
             <p className="font-semibold">Awaiting customer payment</p>
-            <p className="text-sm">You can view details, but trip actions are locked until payment is authorized.</p>
+            <p className="text-sm">
+              You can view details, but trip actions are locked until payment is
+              authorized.
+            </p>
           </div>
         )}
         {/* Next Action */}
@@ -126,7 +139,10 @@ export default function CourierJobDetail() {
         {/* Status Timeline */}
         <div className="bg-white rounded-2xl shadow-lg p-6">
           <h2 className="text-lg font-bold text-gray-900 mb-4">Progress</h2>
-          <StatusTimeline currentStatus={job.status} isPaymentLocked={isPaymentLocked} />
+          <StatusTimeline
+            currentStatus={job.status}
+            isPaymentLocked={isPaymentLocked}
+          />
         </div>
 
         {/* Live Map */}
@@ -137,29 +153,33 @@ export default function CourierJobDetail() {
           <MapboxMap
             pickup={job.pickup}
             dropoff={job.dropoff}
-            courierLocation={userDoc?.location || null}
+            courierLocation={courierLocation}
             height="300px"
           />
         </div>
 
         {/* Job Details Panel with Actions */}
         <div className="bg-white rounded-2xl shadow-lg p-6">
-          <JobDetailsPanel job={job} visibility={visibility} showStatus={true} />
+          <JobDetailsPanel
+            job={job}
+            visibility={visibility}
+            showStatus={true}
+          />
         </div>
 
         {/* Navigation Buttons */}
         <div className="grid grid-cols-2 gap-3">
           <button
-            onClick={() => handleStartNavigation('pickup')}
+            onClick={() => handleStartNavigation("pickup")}
             disabled={
               isNavigating ||
-              !userDoc?.location ||
+              !hasLocation ||
               isPaymentLocked ||
               !canNavigateToPickup
             }
             className={`py-4 px-4 rounded-xl font-semibold text-white shadow-lg transition-all ${
               isNavigating ||
-              !userDoc?.location ||
+              !hasLocation ||
               isPaymentLocked ||
               !canNavigateToPickup
                 ? "bg-gray-400 cursor-not-allowed"
@@ -174,16 +194,16 @@ export default function CourierJobDetail() {
             </div>
           </button>
           <button
-            onClick={() => handleStartNavigation('dropoff')}
+            onClick={() => handleStartNavigation("dropoff")}
             disabled={
               isNavigating ||
-              !userDoc?.location ||
+              !hasLocation ||
               isPaymentLocked ||
               !canNavigateToDropoff
             }
             className={`py-4 px-4 rounded-xl font-semibold text-white shadow-lg transition-all ${
               isNavigating ||
-              !userDoc?.location ||
+              !hasLocation ||
               isPaymentLocked ||
               !canNavigateToDropoff
                 ? "bg-gray-400 cursor-not-allowed"

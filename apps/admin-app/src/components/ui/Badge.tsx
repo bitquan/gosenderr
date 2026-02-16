@@ -48,15 +48,7 @@ export function Badge({
 }
 
 interface StatusBadgeProps {
-  status:
-    | "pending"
-    | "approved"
-    | "rejected"
-    | "active"
-    | "completed"
-    | "cancelled"
-    | "in_progress"
-    | "ready_for_pickup";
+  status: string;
   className?: string;
 }
 
@@ -65,6 +57,10 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
     pending: {
       variant: "warning" as const,
       label: "Pending",
+    },
+    open: {
+      variant: "warning" as const,
+      label: "Open",
     },
     approved: {
       variant: "success" as const,
@@ -77,6 +73,30 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
     active: {
       variant: "success" as const,
       label: "Active",
+    },
+    assigned: {
+      variant: "info" as const,
+      label: "Assigned",
+    },
+    enroute_pickup: {
+      variant: "info" as const,
+      label: "En Route to Pickup",
+    },
+    arrived_pickup: {
+      variant: "info" as const,
+      label: "Arrived at Pickup",
+    },
+    picked_up: {
+      variant: "info" as const,
+      label: "Picked Up",
+    },
+    enroute_dropoff: {
+      variant: "info" as const,
+      label: "En Route to Dropoff",
+    },
+    arrived_dropoff: {
+      variant: "info" as const,
+      label: "Arrived at Dropoff",
     },
     completed: {
       variant: "success" as const,
@@ -110,9 +130,21 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
       variant: "error" as const,
       label: "Banned",
     },
+    disputed: {
+      variant: "warning" as const,
+      label: "Disputed",
+    },
+    expired: {
+      variant: "warning" as const,
+      label: "Expired",
+    },
+    failed: {
+      variant: "error" as const,
+      label: "Failed",
+    },
   };
 
-  const config = statusConfig[status] || {
+  const config = statusConfig[status as keyof typeof statusConfig] || {
     variant: "default" as const,
     label: status.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
   };

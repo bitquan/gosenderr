@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { getStripePromise } from '@/lib/stripeConfig';
-import { addDoc, collection, onSnapshot, query, serverTimestamp, where } from 'firebase/firestore';
+import { addDoc, collection, doc, getDoc, onSnapshot, query, serverTimestamp, where } from 'firebase/firestore';
 import { marketplaceService } from '@/services/marketplace.service';
 import { stripeService } from '@/services/stripe.service';
 import { useAuth } from '@/hooks/useAuth';
@@ -21,6 +21,7 @@ import { AddressAutocomplete } from '@/components/v2/AddressAutocomplete';
 import { CourierSelector, CourierWithRate } from '@/components/v2/CourierSelector';
 import { UserDoc } from '@gosenderr/shared';
 import { usePlatformSettings } from '@/hooks/usePlatformSettings';
+import { getPickupDisplayAddress, parseUsAddressComponents } from '@/lib/pickupPrivacy';
 
 const stripePromise = getStripePromise();
 
@@ -40,17 +41,17 @@ interface CheckoutSummary {
 
 
 function parseAddressParts(address: string) {
-  const parts = address.split(',').map((part) => part.trim());
-  const [street, city, stateZip] = parts;
-  const stateZipParts = (stateZip || '').split(' ').filter(Boolean);
-  const state = stateZipParts[0] || '';
-  const zipCode = stateZipParts.slice(1).join(' ');
+  const parts = address
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const parsed = parseUsAddressComponents(address);
 
   return {
-    street: street || address,
-    city: city || '',
-    state,
-    zipCode,
+    street: parts[0] || address,
+    city: parsed.city,
+    state: parsed.state,
+    zipCode: parsed.zipCode,
   };
 }
 
@@ -67,6 +68,7 @@ export default function CheckoutPage() {
     courierEtaMinutes: null,
     courierDistance: null,
   });
+  const [sellerSharesExactPickup, setSellerSharesExactPickup] = useState(false);
 
   useEffect(() => {
     if (itemId) {
@@ -93,6 +95,20 @@ export default function CheckoutPage() {
       setLoading(true);
       const itemData = await marketplaceService.getItem(itemId!);
       setItem(itemData);
+      if (itemData?.sellerId) {
+        const sellerSnap = await getDoc(doc(db, 'users', itemData.sellerId));
+        if (sellerSnap.exists()) {
+          const sellerData = sellerSnap.data() as any;
+          const shareExact =
+            sellerData?.sellerProfile?.shareExactPickupLocation === true ||
+            sellerData?.sellerProfile?.localSellingConfig?.shareExactPickupLocation === true;
+          setSellerSharesExactPickup(shareExact);
+        } else {
+          setSellerSharesExactPickup(false);
+        }
+      } else {
+        setSellerSharesExactPickup(false);
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to load item');
     } finally {
@@ -126,7 +142,11 @@ export default function CheckoutPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left: Checkout Form */}
         <div className="lg:col-span-2">
-          <CheckoutForm item={item} onSummaryChange={setSummary} />
+          <CheckoutForm
+            item={item}
+            onSummaryChange={setSummary}
+            sellerSharesExactPickup={sellerSharesExactPickup}
+          />
         </div>
 
         {/* Right: Order Summary */}
@@ -249,9 +269,11 @@ function OrderSummary({
 function CheckoutForm({
   item,
   onSummaryChange,
+  sellerSharesExactPickup,
 }: {
   item: MarketplaceItem;
   onSummaryChange: (summary: CheckoutSummary) => void;
+  sellerSharesExactPickup: boolean;
 }) {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -283,6 +305,10 @@ function CheckoutForm({
   const pickupLocation = (item.pickupLocation as any)?.location || (item.pickupLocation as any);
   const pickupLat = pickupLocation?.latitude ?? pickupLocation?.lat;
   const pickupLng = pickupLocation?.longitude ?? pickupLocation?.lng;
+  const pickupDisplayAddress = getPickupDisplayAddress(
+    item.pickupLocation || {},
+    sellerSharesExactPickup,
+  );
   const isFoodItem = (item as any).isFoodItem || (item as any).category === 'food';
 
   const resolvedDeliveryFee =
@@ -721,12 +747,11 @@ function CheckoutForm({
           {deliveryOption === 'pickup' && item.pickupLocation && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <h3 className="font-semibold text-blue-900 mb-2">📍 Pickup Location</h3>
-              <p className="text-blue-800">
-                {item.pickupLocation.address}<br />
-                {item.pickupLocation.city}, {item.pickupLocation.state}
-              </p>
+              <p className="text-blue-800">{pickupDisplayAddress}</p>
               <p className="text-sm text-blue-700 mt-2">
-                You'll receive the seller's contact information after payment to arrange pickup.
+                {sellerSharesExactPickup
+                  ? "You'll receive the seller's contact information after payment to arrange pickup."
+                  : "Exact pickup address is shared only after booking is confirmed."}
               </p>
             </div>
           )}

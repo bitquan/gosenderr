@@ -89,6 +89,15 @@ service cloud.firestore {
       allow read, create, update: if isAdmin();
       
       allow delete: if false;
+
+      // Seller onboarding analytics events (non-blocking client telemetry)
+      match /onboardingEvents/{eventId} {
+        allow read: if isSelf(uid) || isAdmin();
+        allow create: if isSelf(uid)
+          && request.resource.data.flow is string
+          && request.resource.data.eventName is string;
+        allow update, delete: if false;
+      }
     }
 
     // ========== ADMIN PROFILES ==========
@@ -626,6 +635,18 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    // ========== SENDERRPLACE ADS ==========
+    match /senderrplaceAds/{adId} {
+      // Ads governance is admin-only for now.
+      allow read, create, update, delete: if isAdmin();
+    }
+
+    // ========== SENDERRPLACE SELLER BADGES ==========
+    match /senderrplaceSellerBadges/{sellerId} {
+      // Badge override management is admin-only for now.
+      allow read, create, update, delete: if isAdmin();
+    }
+
     // ========== EQUIPMENT SUBMISSIONS ==========
     match /equipmentSubmissions/{submissionId} {
       // Couriers can read their own submissions
@@ -661,6 +682,50 @@ service cloud.firestore {
     match /platformSettings/{settingId} {
       // Only admins can read and write platform settings
       allow read, write: if isAdmin();
+    }
+
+    // ========== SAVED ADDRESSES ==========
+    match /savedAddresses/{addressId} {
+      // Users can manage their own saved addresses
+      allow read: if signedIn() && resource.data.userId == request.auth.uid;
+      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if signedIn() && resource.data.userId == request.auth.uid;
+
+      // Admins can read all saved addresses for support/debug workflows
+      allow read: if isAdmin();
+    }
+
+    // ========== SELLER BOOKING LINKS ==========
+    // Legacy name used by seller dashboard UI
+    match /sellerBookingLinks/{linkId} {
+      allow read: if signedIn() && (
+        resource.data.sellerId == request.auth.uid || isAdmin()
+      );
+
+      allow create: if signedIn()
+        && request.resource.data.sellerId == request.auth.uid
+        && request.resource.data.itemId is string
+        && request.resource.data.url is string;
+
+      allow update, delete: if signedIn() && (
+        resource.data.sellerId == request.auth.uid || isAdmin()
+      );
+    }
+
+    // Canonical Senderrplace collection name used by backend contracts
+    match /senderrplaceBookingLinks/{linkId} {
+      allow read: if signedIn() && (
+        resource.data.sellerId == request.auth.uid || isAdmin()
+      );
+
+      allow create: if signedIn()
+        && request.resource.data.sellerId == request.auth.uid
+        && request.resource.data.itemId is string
+        && request.resource.data.url is string;
+
+      allow update, delete: if signedIn() && (
+        resource.data.sellerId == request.auth.uid || isAdmin()
+      );
     }
 
     // ========== MARKETPLACE ITEMS ==========

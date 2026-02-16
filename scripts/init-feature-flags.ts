@@ -84,7 +84,7 @@ async function initFeatureFlags() {
       disputeManagement: true,
       analytics: true,
       featureFlagsControl: true,
-      webPortalEnabled: false,
+      webPortalEnabled: true,
     },
     advanced: {
       pushNotifications: true,
@@ -96,6 +96,13 @@ async function initFeatureFlags() {
       modernStyling: true,
       darkMode: true,
       animations: true,
+    },
+    senderrplaceV2: {
+      enabled: false,
+      ads: false,
+      badges: false,
+      bookingLinks: false,
+      adminControls: false,
     },
   };
 

@@ -28,8 +28,56 @@ interface Stats {
   topCategories: { name: string; items: number; sales: number }[]
 }
 
+type NormalizedJobStatus =
+  | 'open'
+  | 'assigned'
+  | 'enroute_pickup'
+  | 'arrived_pickup'
+  | 'picked_up'
+  | 'enroute_dropoff'
+  | 'arrived_dropoff'
+  | 'completed'
+  | 'cancelled'
+  | 'disputed'
+  | 'expired'
+  | 'failed'
+
+const ACTIVE_JOB_STATUSES = new Set<NormalizedJobStatus>([
+  'assigned',
+  'enroute_pickup',
+  'arrived_pickup',
+  'picked_up',
+  'enroute_dropoff',
+  'arrived_dropoff',
+])
+
+function normalizeJobStatus(status: string | undefined): NormalizedJobStatus {
+  switch (status) {
+    case 'pending':
+      return 'open'
+    case 'in_progress':
+      return 'enroute_pickup'
+    case 'open':
+    case 'assigned':
+    case 'enroute_pickup':
+    case 'arrived_pickup':
+    case 'picked_up':
+    case 'enroute_dropoff':
+    case 'arrived_dropoff':
+    case 'completed':
+    case 'cancelled':
+    case 'disputed':
+    case 'expired':
+    case 'failed':
+      return status
+    default:
+      return 'open'
+  }
+}
+
 export default function AdminDashboardPage() {
   const { user } = useAuth()
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [stats, setStats] = useState<Stats>({
     totalUsers: 0,
     totalJobs: 0,
@@ -55,6 +103,7 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     const loadStats = async () => {
       try {
+        setLoadError(null)
         // Load users
         const usersSnap = await getDocs(collection(db, 'users'))
         const users = usersSnap.docs.map(doc => doc.data())
@@ -78,19 +127,26 @@ export default function AdminDashboardPage() {
         // Load jobs
         const jobsSnap = await getDocs(collection(db, 'jobs'))
         const jobs = jobsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }))
+        const normalizedJobs = jobs.map(j => normalizeJobStatus(j.status))
+        const statusCount = (status: NormalizedJobStatus) =>
+          normalizedJobs.filter(s => s === status).length
         
         const totalJobs = jobs.length
-        const activeJobs = jobs.filter(j => ['pending', 'assigned', 'in_progress'].includes(j.status)).length
-        const completedJobs = jobs.filter(j => j.status === 'completed').length
-        const totalRevenue = jobs.filter(j => j.status === 'completed').reduce((sum, j) => sum + (j.agreedFee || 0), 0)
+        const activeJobs = normalizedJobs.filter(s => ACTIVE_JOB_STATUSES.has(s)).length
+        const completedJobs = statusCount('completed')
+        const totalRevenue = jobs
+          .filter((_, index) => normalizedJobs[index] === 'completed')
+          .reduce((sum, j) => sum + (j.agreedFee || 0), 0)
 
         // Jobs by status
         const jobsByStatus = [
-          { name: 'Pending', value: jobs.filter(j => j.status === 'pending').length },
-          { name: 'Assigned', value: jobs.filter(j => j.status === 'assigned').length },
-          { name: 'In Progress', value: jobs.filter(j => j.status === 'in_progress').length },
+          { name: 'Open', value: statusCount('open') },
+          { name: 'Assigned', value: statusCount('assigned') },
+          { name: 'Pickup Flow', value: statusCount('enroute_pickup') + statusCount('arrived_pickup') },
+          { name: 'Dropoff Flow', value: statusCount('picked_up') + statusCount('enroute_dropoff') + statusCount('arrived_dropoff') },
           { name: 'Completed', value: completedJobs },
-          { name: 'Cancelled', value: jobs.filter(j => j.status === 'cancelled').length }
+          { name: 'Cancelled', value: statusCount('cancelled') },
+          { name: 'Exceptions', value: statusCount('disputed') + statusCount('expired') + statusCount('failed') },
         ]
 
         const today = new Date()
@@ -115,7 +171,7 @@ export default function AdminDashboardPage() {
           })
 
           const dayRevenue = dayJobs
-            .filter(j => j.status === 'completed')
+            .filter(j => normalizeJobStatus(j.status) === 'completed')
             .reduce((sum, j) => sum + (j.agreedFee || 0), 0)
 
           last7Days.push({
@@ -167,14 +223,14 @@ export default function AdminDashboardPage() {
         const revenueLast7 = jobs
           .filter(j => {
             const createdAt = j.createdAt?.toDate?.()
-            return createdAt && createdAt >= sevenDaysAgo && j.status === 'completed'
+            return createdAt && createdAt >= sevenDaysAgo && normalizeJobStatus(j.status) === 'completed'
           })
           .reduce((sum, j) => sum + (j.agreedFee || 0), 0)
 
         const revenuePrevious7 = jobs
           .filter(j => {
             const createdAt = j.createdAt?.toDate?.()
-            return createdAt && createdAt >= fourteenDaysAgo && createdAt < sevenDaysAgo && j.status === 'completed'
+            return createdAt && createdAt >= fourteenDaysAgo && createdAt < sevenDaysAgo && normalizeJobStatus(j.status) === 'completed'
           })
           .reduce((sum, j) => sum + (j.agreedFee || 0), 0)
 
@@ -199,7 +255,7 @@ export default function AdminDashboardPage() {
           const dayRevenue = jobs
             .filter(j => {
               const createdAt = j.createdAt?.toDate?.()
-              return createdAt && createdAt >= date && createdAt < nextDate && j.status === 'completed'
+              return createdAt && createdAt >= date && createdAt < nextDate && normalizeJobStatus(j.status) === 'completed'
             })
             .reduce((sum, j) => sum + (j.agreedFee || 0), 0) +
           orders
@@ -253,7 +309,14 @@ export default function AdminDashboardPage() {
           topCategories
         })
       } catch (error) {
-        console.error('Error loading stats:', error)
+        const code = (error as { code?: string } | null)?.code
+        if (code === 'permission-denied') {
+          setLoadError('Admin permissions are required to load dashboard stats.')
+          console.warn('Dashboard stats blocked by Firestore rules (permission-denied).')
+        } else {
+          setLoadError('Failed to load dashboard stats.')
+          console.error('Error loading stats:', error)
+        }
       } finally {
         setLoading(false)
       }
@@ -272,6 +335,14 @@ export default function AdminDashboardPage() {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 -mt-8 space-y-6">
+        {loadError && (
+          <Card variant="elevated">
+            <CardContent className="p-4">
+              <p className="text-sm font-semibold text-red-700">{loadError}</p>
+            </CardContent>
+          </Card>
+        )}
+
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           <Card variant="elevated">
             <CardContent className="p-6 text-center">

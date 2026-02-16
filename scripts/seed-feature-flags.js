@@ -50,7 +50,8 @@ const featureFlagsData = {
     equipmentReview: true,
     disputeManagement: true,
     analytics: true,
-    featureFlagsControl: true
+    featureFlagsControl: true,
+    webPortalEnabled: true
   },
   advanced: {
     pushNotifications: false,
@@ -62,6 +63,13 @@ const featureFlagsData = {
     modernStyling: true,
     darkMode: false,
     animations: true
+  },
+  senderrplaceV2: {
+    enabled: false,
+    ads: false,
+    badges: false,
+    bookingLinks: false,
+    adminControls: false
   }
 };
 

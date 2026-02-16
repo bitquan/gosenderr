@@ -25,6 +25,7 @@ import { DonutChart } from "@/components/charts/DonutChart";
 import { Skeleton } from "@/components/ui/Skeleton";
 import type { User } from "firebase/auth";
 import type { QuerySnapshot, DocumentData } from "firebase/firestore";
+import { parseUsAddressComponents } from "@/lib/pickupPrivacy";
 
 export default function CustomerDashboardNew() {
   const navigate = useNavigate();
@@ -36,8 +37,17 @@ export default function CustomerDashboardNew() {
   const [loading, setLoading] = useState(true);
   const [activities, setActivities] = useState<any[]>([]);
   const [savedAddresses, setSavedAddresses] = useState<
-    Array<{ id: string; label: string; address: string }>
+    Array<{ id: string; label: string; address: string; city: string; state: string; zipCode: string }>
   >([]);
+
+  const parseAddressParts = (address: string) => {
+    const parsed = parseUsAddressComponents(address);
+    return {
+      city: parsed.city,
+      state: parsed.state,
+      zipCode: parsed.zipCode,
+    };
+  };
 
   const spendingData = useMemo(() => {
     const deliverySpend = jobs.reduce(
@@ -100,11 +110,23 @@ export default function CustomerDashboardNew() {
       );
       const addressSnapshot = await getDocs(addressesQuery);
       const addressData = addressSnapshot.docs.map((docSnap) => {
-        const data = docSnap.data() as { label?: string; address?: string };
+        const data = docSnap.data() as {
+          label?: string;
+          name?: string;
+          address?: string;
+          city?: string;
+          state?: string;
+          zipCode?: string;
+          postalCode?: string;
+        };
+        const parsed = parseAddressParts(data.address || "");
         return {
           id: docSnap.id,
-          label: data.label || "",
+          label: data.label || data.name || "",
           address: data.address || "",
+          city: data.city || parsed.city,
+          state: data.state || parsed.state,
+          zipCode: data.zipCode || data.postalCode || parsed.zipCode,
         };
       });
       setSavedAddresses(addressData);
@@ -187,14 +209,30 @@ export default function CustomerDashboardNew() {
     if (!label) return;
     const address = prompt("Full address");
     if (!address) return;
+    const parsed = parseAddressParts(address);
 
     const docRef = await addDoc(collection(db, "savedAddresses"), {
       userId: currentUser.uid,
       label,
+      name: label,
       address,
+      city: parsed.city,
+      state: parsed.state,
+      zipCode: parsed.zipCode,
+      postalCode: parsed.zipCode,
       createdAt: serverTimestamp(),
     });
-    setSavedAddresses((prev) => [...prev, { id: docRef.id, label, address }]);
+    setSavedAddresses((prev) => [
+      ...prev,
+      {
+        id: docRef.id,
+        label,
+        address,
+        city: parsed.city,
+        state: parsed.state,
+        zipCode: parsed.zipCode,
+      },
+    ]);
   };
 
   const handleRemoveAddress = async (addressId: string) => {
@@ -404,6 +442,11 @@ export default function CustomerDashboardNew() {
                     <div>
                       <p className="font-medium text-gray-900">{addr.label}</p>
                       <p className="text-sm text-gray-500">{addr.address}</p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {addr.city}
+                        {addr.state ? `, ${addr.state}` : ""}
+                        {addr.zipCode ? ` ${addr.zipCode}` : ""}
+                      </p>
                     </div>
                     <button
                       onClick={() => handleRemoveAddress(addr.id)}
