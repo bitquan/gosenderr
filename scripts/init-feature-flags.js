@@ -47,7 +47,7 @@ async function initializeFeatureFlags() {
         disputeManagement: true,
         analytics: true,
         featureFlagsControl: true,
-        webPortalEnabled: false,
+        webPortalEnabled: true,
         systemLogs: false,
         firebaseExplorer: false,
       },

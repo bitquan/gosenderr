@@ -2,19 +2,28 @@ import {runtimeConfig} from '../../config/runtime';
 import type {AuthSession} from '../../types/auth';
 import type {AnalyticsEventName, AnalyticsServicePort} from '../ports/analyticsPort';
 
-type AnalyticsInstance = {
-  logEvent: (name: string, params?: Record<string, string | number>) => Promise<void>;
-  setAnalyticsCollectionEnabled: (enabled: boolean) => Promise<void>;
-  setUserId: (id: string | null) => Promise<void>;
-  setUserProperties: (properties: Record<string, string>) => Promise<void>;
+type AnalyticsInstance = unknown;
+type CrashlyticsInstance = unknown;
+
+type AnalyticsModule = {
+  getAnalytics?: () => AnalyticsInstance;
+  logEvent?: (
+    analytics: AnalyticsInstance,
+    name: string,
+    params?: Record<string, string | number>,
+  ) => Promise<void>;
+  setAnalyticsCollectionEnabled?: (analytics: AnalyticsInstance, enabled: boolean) => Promise<void>;
+  setUserId?: (analytics: AnalyticsInstance, id: string | null) => Promise<void>;
+  setUserProperties?: (analytics: AnalyticsInstance, properties: Record<string, string>) => Promise<void>;
 };
 
-type CrashlyticsInstance = {
-  setCrashlyticsCollectionEnabled: (enabled: boolean) => Promise<void>;
-  setAttribute: (name: string, value: string) => void;
-  setUserId: (id: string) => void;
-  log: (message: string) => void;
-  recordError: (error: Error, stack?: string) => void;
+type CrashlyticsModule = {
+  getCrashlytics?: () => CrashlyticsInstance;
+  setCrashlyticsCollectionEnabled?: (crashlytics: CrashlyticsInstance, enabled: boolean) => Promise<null | void>;
+  setAttribute?: (crashlytics: CrashlyticsInstance, name: string, value: string) => Promise<null | void>;
+  setUserId?: (crashlytics: CrashlyticsInstance, id: string) => Promise<null | void>;
+  log?: (crashlytics: CrashlyticsInstance, message: string) => void;
+  recordError?: (crashlytics: CrashlyticsInstance, error: Error, jsErrorName?: string) => void;
 };
 
 type ErrorUtilsShape = {
@@ -25,24 +34,38 @@ type ErrorUtilsShape = {
 let initialized = false;
 let missingDependencyWarningShown = false;
 
-const getAnalyticsInstance = (): AnalyticsInstance | null => {
+const getAnalyticsModule = (): AnalyticsModule | null => {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports,global-require
-    const analyticsFactory = require('@react-native-firebase/analytics').default as (() => AnalyticsInstance) | undefined;
-    return analyticsFactory ? analyticsFactory() : null;
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require('@react-native-firebase/analytics') as AnalyticsModule;
   } catch {
     return null;
   }
 };
 
-const getCrashlyticsInstance = (): CrashlyticsInstance | null => {
+const getCrashlyticsModule = (): CrashlyticsModule | null => {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports,global-require
-    const crashlyticsFactory = require('@react-native-firebase/crashlytics').default as (() => CrashlyticsInstance) | undefined;
-    return crashlyticsFactory ? crashlyticsFactory() : null;
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require('@react-native-firebase/crashlytics') as CrashlyticsModule;
   } catch {
     return null;
   }
+};
+
+const getAnalyticsInstance = (): AnalyticsInstance | null => {
+  const analyticsModule = getAnalyticsModule();
+  if (!analyticsModule?.getAnalytics) {
+    return null;
+  }
+  return analyticsModule.getAnalytics();
+};
+
+const getCrashlyticsInstance = (): CrashlyticsInstance | null => {
+  const crashlyticsModule = getCrashlyticsModule();
+  if (!crashlyticsModule?.getCrashlytics) {
+    return null;
+  }
+  return crashlyticsModule.getCrashlytics();
 };
 
 const normalizeParamKey = (key: string): string => {
@@ -105,16 +128,23 @@ const warnMissingDeps = (): void => {
 };
 
 const installGlobalErrorHandler = (crashlytics: CrashlyticsInstance | null): void => {
+  const crashlyticsModule = getCrashlyticsModule();
   const errorUtils = getErrorUtils();
-  if (!errorUtils?.setGlobalHandler || !errorUtils.getGlobalHandler || !crashlytics) {
+  if (
+    !errorUtils?.setGlobalHandler ||
+    !errorUtils.getGlobalHandler ||
+    !crashlytics ||
+    !crashlyticsModule?.log ||
+    !crashlyticsModule.recordError
+  ) {
     return;
   }
 
   const previousHandler = errorUtils.getGlobalHandler();
   errorUtils.setGlobalHandler((error, isFatal) => {
     try {
-      crashlytics.log(`js_exception fatal=${isFatal ? '1' : '0'}`);
-      crashlytics.recordError(toError(error));
+      crashlyticsModule.log?.(crashlytics, `js_exception fatal=${isFatal ? '1' : '0'}`);
+      crashlyticsModule.recordError?.(crashlytics, toError(error));
     } catch {
       // no-op
     }
@@ -130,18 +160,26 @@ const ensureInitialized = async (): Promise<void> => {
     return;
   }
 
+  const analyticsModule = getAnalyticsModule();
+  const crashlyticsModule = getCrashlyticsModule();
   const analytics = getAnalyticsInstance();
   const crashlytics = getCrashlyticsInstance();
-  if (!analytics || !crashlytics) {
+  if (
+    !analytics ||
+    !crashlytics ||
+    !analyticsModule?.setAnalyticsCollectionEnabled ||
+    !crashlyticsModule?.setCrashlyticsCollectionEnabled ||
+    !crashlyticsModule.setAttribute
+  ) {
     warnMissingDeps();
     initialized = true;
     return;
   }
 
-  await analytics.setAnalyticsCollectionEnabled(true);
-  await crashlytics.setCrashlyticsCollectionEnabled(true);
-  crashlytics.setAttribute('senderr_env', runtimeConfig.envName);
-  crashlytics.setAttribute('map_provider', runtimeConfig.maps.provider);
+  await analyticsModule.setAnalyticsCollectionEnabled(analytics, true);
+  await crashlyticsModule.setCrashlyticsCollectionEnabled(crashlytics, true);
+  await crashlyticsModule.setAttribute(crashlytics, 'senderr_env', runtimeConfig.envName);
+  await crashlyticsModule.setAttribute(crashlytics, 'map_provider', runtimeConfig.maps.provider);
   installGlobalErrorHandler(crashlytics);
   initialized = true;
 };
@@ -157,17 +195,25 @@ export const analyticsFirebaseAdapter: AnalyticsServicePort = {
   identifyUser: async (session: AuthSession) => {
     try {
       await ensureInitialized();
+      const analyticsModule = getAnalyticsModule();
+      const crashlyticsModule = getCrashlyticsModule();
       const analytics = getAnalyticsInstance();
       const crashlytics = getCrashlyticsInstance();
-      if (!analytics || !crashlytics) {
+      if (
+        !analytics ||
+        !crashlytics ||
+        !analyticsModule?.setUserId ||
+        !analyticsModule.setUserProperties ||
+        !crashlyticsModule?.setUserId
+      ) {
         return;
       }
 
-      await analytics.setUserId(session.uid);
-      await analytics.setUserProperties({
+      await analyticsModule.setUserId(analytics, session.uid);
+      await analyticsModule.setUserProperties(analytics, {
         auth_provider: session.provider,
       });
-      crashlytics.setUserId(session.uid);
+      await crashlyticsModule.setUserId(crashlytics, session.uid);
     } catch (error) {
       console.warn('[analytics] identifyUser failed', error);
     }
@@ -175,9 +221,10 @@ export const analyticsFirebaseAdapter: AnalyticsServicePort = {
   clearUser: async () => {
     try {
       await ensureInitialized();
+      const analyticsModule = getAnalyticsModule();
       const analytics = getAnalyticsInstance();
-      if (analytics) {
-        await analytics.setUserId(null);
+      if (analytics && analyticsModule?.setUserId) {
+        await analyticsModule.setUserId(analytics, null);
       }
     } catch (error) {
       console.warn('[analytics] clearUser failed', error);
@@ -186,15 +233,17 @@ export const analyticsFirebaseAdapter: AnalyticsServicePort = {
   track: async (event: AnalyticsEventName, payload) => {
     try {
       await ensureInitialized();
+      const analyticsModule = getAnalyticsModule();
+      const crashlyticsModule = getCrashlyticsModule();
       const analytics = getAnalyticsInstance();
       const crashlytics = getCrashlyticsInstance();
-      if (!analytics || !crashlytics) {
+      if (!analytics || !crashlytics || !analyticsModule?.logEvent || !crashlyticsModule?.log) {
         return;
       }
 
       const normalizedPayload = normalizeEventPayload(payload);
-      await analytics.logEvent(event, normalizedPayload);
-      crashlytics.log(`[event] ${event}`);
+      await analyticsModule.logEvent(analytics, event, normalizedPayload);
+      crashlyticsModule.log(crashlytics, `[event] ${event}`);
     } catch (error) {
       console.warn(`[analytics] track failed for ${event}`, error);
     }
@@ -202,14 +251,15 @@ export const analyticsFirebaseAdapter: AnalyticsServicePort = {
   recordError: async (error: unknown, context?: string) => {
     try {
       await ensureInitialized();
+      const crashlyticsModule = getCrashlyticsModule();
       const crashlytics = getCrashlyticsInstance();
-      if (!crashlytics) {
+      if (!crashlytics || !crashlyticsModule?.recordError) {
         return;
       }
       if (context) {
-        crashlytics.log(`[error] ${context}`);
+        crashlyticsModule.log?.(crashlytics, `[error] ${context}`);
       }
-      crashlytics.recordError(toError(error));
+      crashlyticsModule.recordError(crashlytics, toError(error));
     } catch (recordErrorFailure) {
       console.warn('[analytics] recordError failed', recordErrorFailure);
     }

@@ -12,7 +12,7 @@ const sampleJob: Job = {
   pickupAddress: '123 Pickup Ave',
   dropoffAddress: '456 Dropoff Blvd',
   etaMinutes: 18,
-  status: 'pending',
+  status: 'open',
   updatedAt: '2026-02-08T08:00:00.000Z',
 };
 

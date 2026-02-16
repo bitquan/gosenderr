@@ -1,6 +1,8 @@
 import React from 'react';
 import {Pressable, StyleSheet, Text} from 'react-native';
 
+import {senderrTheme} from '../theme/senderrTheme';
+
 export const PrimaryButton = ({
   label,
   disabled,
@@ -26,29 +28,31 @@ export const PrimaryButton = ({
 const styles = StyleSheet.create({
   base: {
     minHeight: 44,
-    borderRadius: 10,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 14,
   },
   primary: {
-    backgroundColor: '#1453ff',
+    backgroundColor: senderrTheme.colors.brandPrimary,
   },
   secondary: {
-    backgroundColor: '#edf2ff',
+    backgroundColor: senderrTheme.colors.brandSoft,
+    borderWidth: 1,
+    borderColor: senderrTheme.colors.borderStrong,
   },
   danger: {
-    backgroundColor: '#dc2626',
+    backgroundColor: senderrTheme.colors.danger,
   },
   disabled: {
     opacity: 0.55,
   },
   label: {
-    color: '#ffffff',
+    color: senderrTheme.colors.surface,
     fontWeight: '700',
     fontSize: 15,
   },
   secondaryLabel: {
-    color: '#1453ff',
+    color: senderrTheme.colors.brandPrimary,
   },
 });

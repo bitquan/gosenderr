@@ -1,8 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
+  createUserWithEmailAndPassword,
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
+  updateProfile,
   type IdTokenResult,
   type Unsubscribe,
 } from 'firebase/auth';
@@ -322,6 +324,82 @@ export const signIn = async (email: string, password: string): Promise<AuthSessi
     uid: `mock_${normalizedEmail.replace(/[^a-z0-9]/g, '_')}`,
     email: normalizedEmail,
     displayName: normalizeDisplayName(normalizedEmail),
+    token: toSessionToken(),
+    provider: 'mock',
+  };
+
+  await persistSession(session);
+  return session;
+};
+
+export const signUp = async (
+  email: string,
+  password: string,
+  displayName?: string,
+): Promise<AuthSession> => {
+  const normalizedEmail = email.trim().toLowerCase();
+  const normalizedDisplayName = (displayName ?? '').trim();
+  if (!normalizedEmail || !password) {
+    throw new Error('Email and password are required.');
+  }
+
+  if (password.length < 6) {
+    throw new Error('Password must be at least 6 characters.');
+  }
+
+  if (isFirebaseReady()) {
+    const services = getFirebaseServices();
+    if (!services) {
+      throw new Error('Firebase configuration is missing.');
+    }
+
+    const credential = await createUserWithEmailAndPassword(
+      services.auth,
+      normalizedEmail,
+      password,
+    );
+    if (normalizedDisplayName) {
+      await updateProfile(credential.user, {
+        displayName: normalizedDisplayName,
+      });
+    }
+
+    const idTokenClaims = await getClaims(() => credential.user.getIdTokenResult());
+    try {
+      await assertCourierRole(credential.user.uid, {
+        idTokenClaims,
+        email: credential.user.email ?? normalizedEmail,
+      });
+    } catch (error) {
+      await firebaseSignOut(services.auth);
+      throw error;
+    }
+
+    const token = await credential.user.getIdToken();
+    const session: AuthSession = {
+      uid: credential.user.uid,
+      email: credential.user.email ?? normalizedEmail,
+      displayName:
+        normalizedDisplayName ||
+        credential.user.displayName ||
+        normalizeDisplayName(credential.user.email ?? normalizedEmail),
+      token,
+      provider: 'firebase',
+    };
+    await persistSession(session);
+    return session;
+  }
+
+  if (!isMockAuthEnabled()) {
+    throw new Error(
+      'Firebase auth is required. Configure SENDERR_FIREBASE_* and GoogleService-Info.plist, or enable SENDERR_ALLOW_MOCK_AUTH=1 for local-only development.',
+    );
+  }
+
+  const session: AuthSession = {
+    uid: `mock_${normalizedEmail.replace(/[^a-z0-9]/g, '_')}`,
+    email: normalizedEmail,
+    displayName: normalizedDisplayName || normalizeDisplayName(normalizedEmail),
     token: toSessionToken(),
     provider: 'mock',
   };

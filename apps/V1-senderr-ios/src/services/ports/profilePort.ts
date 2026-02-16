@@ -6,6 +6,8 @@ export type CourierProfileValidationErrors = Partial<
     | 'fullName'
     | 'phoneNumber'
     | 'availability'
+    | 'serviceRadiusMiles'
+    | 'taxState'
     | 'vehicleMakeModel'
     | 'vehiclePlateNumber'
     | 'vehicleColor'

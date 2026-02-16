@@ -1,5 +1,5 @@
 const admin = require('firebase-admin');
-const projectId = process.env.FIREBASE_PROJECT_ID || 'demo-senderr';
+const projectId = process.env.FIREBASE_PROJECT_ID || process.env.SENDERR_FIREBASE_PROJECT_ID || 'gosenderr-6773f';
 
 if (!admin.apps.length) {
   admin.initializeApp({ projectId });

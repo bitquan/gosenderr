@@ -1,17 +1,23 @@
+// Ensure URL.host polyfill runs before any third-party SDKs that may access `new URL(...).host`
+import '../polyfills/urlHostPolyfill';
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {getApp, getApps, initializeApp, type FirebaseApp} from 'firebase/app';
 import * as FirebaseAuth from 'firebase/auth';
 import {connectAuthEmulator, getAuth, initializeAuth, type Auth, type Persistence} from 'firebase/auth';
 import {connectFirestoreEmulator, getFirestore, initializeFirestore, type Firestore} from 'firebase/firestore';
-import {Platform} from 'react-native';
+import {connectFunctionsEmulator, getFunctions, type Functions} from 'firebase/functions';
+import {NativeModules, Platform} from 'react-native';
 
 import {hasFirebaseConfig, runtimeConfig} from '../config/runtime';
 
 let app: FirebaseApp | null = null;
 let auth: Auth | null = null;
 let db: Firestore | null = null;
+let functionsInstance: Functions | null = null;
 let authEmulatorConnected = false;
 let firestoreEmulatorConnected = false;
+let functionsEmulatorConnected = false;
 let firebaseTargetLogged = false;
 
 type ReactNativePersistenceFactory = (storage: typeof AsyncStorage) => unknown;
@@ -37,13 +43,36 @@ const parseBoolean = (value: string, fallback: boolean): boolean => {
   return fallback;
 };
 
+const inferMetroHost = (): string | null => {
+  const sourceCode = (NativeModules as {SourceCode?: {scriptURL?: string}} | undefined)?.SourceCode;
+  const scriptURL = sourceCode?.scriptURL;
+  if (!scriptURL) {
+    return null;
+  }
+
+  const match = scriptURL.match(/^https?:\/\/([^/:]+)/i);
+  if (!match || !match[1]) {
+    return null;
+  }
+
+  const host = match[1].trim();
+  if (!host || host === 'localhost' || host === '127.0.0.1') {
+    return null;
+  }
+
+  return host;
+};
+
 const getEmulatorConfig = (): {
   enabled: boolean;
   firestoreHost: string;
   firestorePort: number;
   authHost: string;
+  functionsHost: string;
+  functionsPort: number;
+  projectId: string;
 } => {
-  const defaultEnabled = runtimeConfig.envName === 'dev';
+  const defaultEnabled = __DEV__ || runtimeConfig.envName === 'dev';
   const enabled = parseBoolean(readEnv('SENDERR_USE_FIREBASE_EMULATOR'), defaultEnabled);
 
   const firestoreAddress = readEnv('SENDERR_FIRESTORE_EMULATOR_HOST') || readEnv('FIRESTORE_EMULATOR_HOST');
@@ -51,36 +80,65 @@ const getEmulatorConfig = (): {
     ? firestoreAddress.split(':')
     : [firestoreAddress, ''];
 
-  const defaultIosLanHost = '192.168.0.76';
+  const explicitProjectId = readEnv('SENDERR_FIREBASE_PROJECT_ID') || readEnv('FIREBASE_PROJECT_ID');
+  const projectId = explicitProjectId || runtimeConfig.firebase.projectId || 'gosenderr-6773f';
   const firestoreHost = firestoreHostPart || '127.0.0.1';
   const firestorePort = Number(readEnv('SENDERR_FIRESTORE_EMULATOR_PORT') || firestorePortPart || '8080');
   const authHost =
     readEnv('SENDERR_FIREBASE_AUTH_EMULATOR_HOST') || readEnv('FIREBASE_AUTH_EMULATOR_HOST') || '127.0.0.1:9099';
+  const functionsAddress =
+    readEnv('SENDERR_FUNCTIONS_EMULATOR_HOST') || readEnv('FIREBASE_FUNCTIONS_EMULATOR_HOST');
+  const [functionsHostPart, functionsPortPart] = functionsAddress.includes(':')
+    ? functionsAddress.split(':')
+    : [functionsAddress, ''];
+  const functionsHost = functionsHostPart || '127.0.0.1';
+  const functionsPort = Number(readEnv('SENDERR_FUNCTIONS_EMULATOR_PORT') || functionsPortPart || '5001');
 
-  const shouldUseIosLanFallback =
+  const inferredMetroHost = inferMetroHost();
+  const shouldUseMetroHost =
     Platform.OS === 'ios' &&
+    Boolean(inferredMetroHost) &&
     (firestoreHost === '127.0.0.1' || firestoreHost === 'localhost');
 
-  const normalizedFirestoreHost = shouldUseIosLanFallback ? defaultIosLanHost : firestoreHost;
+  const normalizedFirestoreHost = shouldUseMetroHost && inferredMetroHost ? inferredMetroHost : firestoreHost;
   const normalizedAuthHost =
-    shouldUseIosLanFallback && (authHost === '127.0.0.1:9099' || authHost === 'localhost:9099')
-      ? `${defaultIosLanHost}:9099`
+    shouldUseMetroHost && inferredMetroHost && (authHost === '127.0.0.1:9099' || authHost === 'localhost:9099')
+      ? `${inferredMetroHost}:9099`
       : authHost;
+  const normalizedFunctionsHost =
+    shouldUseMetroHost && inferredMetroHost && (functionsHost === '127.0.0.1' || functionsHost === 'localhost')
+      ? inferredMetroHost
+      : functionsHost;
 
   return {
     enabled,
     firestoreHost: normalizedFirestoreHost,
     firestorePort: Number.isFinite(firestorePort) ? firestorePort : 8080,
     authHost: normalizedAuthHost,
+    functionsHost: normalizedFunctionsHost,
+    functionsPort: Number.isFinite(functionsPort) ? functionsPort : 5001,
+    projectId,
   };
 };
 
-const createFirestore = (firebaseApp: FirebaseApp): Firestore => {
+const createFirestore = (firebaseApp: FirebaseApp, emulatorEnabled: boolean): Firestore => {
+  const settings: Record<string, unknown> = {
+    useFetchStreams: false,
+    // Profile/job payloads include optional keys; let Firestore drop `undefined`
+    // instead of rejecting writes and forcing offline fallback saves.
+    ignoreUndefinedProperties: true,
+  };
+
+  if (Platform.OS === 'ios' && emulatorEnabled) {
+    // Physical iOS + emulator can fail repeatedly with WebChannel transport.
+    // Force long-polling to stabilize connectivity over LAN.
+    settings.experimentalForceLongPolling = true;
+  } else {
+    settings.experimentalAutoDetectLongPolling = true;
+  }
+
   try {
-    return initializeFirestore(firebaseApp, {
-      experimentalAutoDetectLongPolling: true,
-      useFetchStreams: false,
-    });
+    return initializeFirestore(firebaseApp, settings as never);
   } catch {
     return getFirestore(firebaseApp);
   }
@@ -112,7 +170,15 @@ export const getFirebaseServices = (): {app: FirebaseApp; auth: Auth; db: Firest
   }
 
   if (!app) {
-    const config = runtimeConfig.firebase;
+    const emulator = getEmulatorConfig();
+    const config = emulator.enabled
+      ? {
+          ...runtimeConfig.firebase,
+          projectId: emulator.projectId,
+          authDomain: `${emulator.projectId}.firebaseapp.com`,
+          storageBucket: `${emulator.projectId}.appspot.com`,
+        }
+      : runtimeConfig.firebase;
     app = getApps().length > 0 ? getApp() : initializeApp(config);
   }
 
@@ -142,7 +208,7 @@ export const getFirebaseServices = (): {app: FirebaseApp; auth: Auth; db: Firest
 
   if (!db && app) {
     const emulator = getEmulatorConfig();
-    db = createFirestore(app);
+    db = createFirestore(app, emulator.enabled);
     logFirebaseTarget(emulator.enabled, emulator.firestoreHost, emulator.firestorePort);
     if (emulator.enabled && !firestoreEmulatorConnected) {
       connectFirestoreEmulator(db, emulator.firestoreHost, emulator.firestorePort);
@@ -158,3 +224,54 @@ export const getFirebaseServices = (): {app: FirebaseApp; auth: Auth; db: Firest
 };
 
 export const isFirebaseReady = (): boolean => getFirebaseServices() !== null;
+
+export const getActiveFirebaseProjectId = (): string => {
+  const emulator = getEmulatorConfig();
+  return emulator.enabled ? emulator.projectId : runtimeConfig.firebase.projectId || '';
+};
+
+export const isFirebaseEmulatorEnabled = (): boolean => getEmulatorConfig().enabled;
+
+export const getFirebaseFunctions = (): Functions | null => {
+  if (!hasFirebaseConfig()) {
+    return null;
+  }
+
+  const services = getFirebaseServices();
+  if (!services) {
+    return null;
+  }
+
+  if (!functionsInstance) {
+    const emulator = getEmulatorConfig();
+    functionsInstance = getFunctions(services.app, 'us-central1');
+
+    if (emulator.enabled && !functionsEmulatorConnected) {
+      connectFunctionsEmulator(functionsInstance, emulator.functionsHost, emulator.functionsPort);
+      functionsEmulatorConnected = true;
+    }
+  }
+
+  return functionsInstance;
+};
+
+// Storage helper (used to upload proof images)
+let storageInstance: any | null = null;
+export const getFirebaseStorage = (): any | null => {
+  if (!hasFirebaseConfig()) return null;
+  if (!app) {
+    // ensure app is initialized by calling getFirebaseServices
+    getFirebaseServices();
+  }
+  try {
+    // lazy require to avoid side effects in environments without firebase config
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const {getStorage} = require('firebase/storage');
+    if (!storageInstance) {
+      storageInstance = getStorage(app as any);
+    }
+    return storageInstance;
+  } catch (e) {
+    return null;
+  }
+};

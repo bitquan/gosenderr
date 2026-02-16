@@ -12,14 +12,32 @@ import {
   where,
   type Firestore,
 } from 'firebase/firestore';
+import {httpsCallable} from 'firebase/functions';
+import {
+  buildJobTransitionConflictMessage,
+  canTransitionJobStatus,
+  type JobStatus,
+} from '@gosenderr/contracts';
 
-import {getFirebaseServices, isFirebaseReady} from './firebase';
+import {getFirebaseFunctions, getFirebaseServices, isFirebaseEmulatorEnabled, isFirebaseReady} from './firebase';
 import {featureFlagsService} from './featureFlagsService';
+import {
+  buildCapabilityRequirementsForRawJob,
+  isCourierEligibleForJobMode,
+  missingCapabilityRequirements,
+  resolveCourierJobMode,
+} from './jobEligibilityRules';
 import {runtimeConfig} from '../config/runtime';
-import {buildTransitionConflictMessage, canTransitionJobStatus} from './jobTransitionRules';
 import type {JobStatusCommandResult, JobsSubscription, JobsSubscriptionHandlers, JobsSyncState} from './ports/jobsPort';
 import type {AuthSession} from '../types/auth';
-import type {Job, JobStatus} from '../types/jobs';
+import type {Job} from '../types/jobs';
+import {
+  COURIER_EQUIPMENT_TYPES,
+  buildDefaultCourierEquipment,
+  deriveCourierCapabilities,
+  type CourierCapabilities,
+  type CourierWorkModes,
+} from '../types/profile';
 
 const STORAGE_KEY = '@senderr/jobs';
 const STATUS_UPDATE_QUEUE_KEY = '@senderr/jobs/status-update-queue';
@@ -40,6 +58,49 @@ type QueueFlushResult = {
   remaining: number;
 };
 
+type CommandJobStatusCallableRequest = {
+  jobId: string;
+  correlationId: string;
+};
+
+type CommandJobStatusCallableResponse = {
+  kind?: 'success' | 'conflict' | 'retryable_error' | 'fatal_error';
+  requestedStatus?: string;
+  idempotent?: boolean;
+  message?: string | null;
+  correlationId?: string;
+  job?: Record<string, unknown> | null;
+};
+
+type CallableCommandName =
+  | 'commandAcceptJob'
+  | 'commandStartPickup'
+  | 'commandMarkArrivedPickup'
+  | 'commandConfirmPickup'
+  | 'commandStartDropoff'
+  | 'commandCompleteDelivery';
+
+type JobPhoto = NonNullable<Job['photos']>[number];
+type CourierFeedEligibility = {
+  workModes: CourierWorkModes;
+  capabilities: CourierCapabilities;
+};
+
+const DEFAULT_COURIER_FEED_ELIGIBILITY: CourierFeedEligibility = {
+  workModes: {
+    packagesEnabled: true,
+    foodEnabled: true,
+  },
+  capabilities: {
+    canDeliverHot: true,
+    canDeliverCold: true,
+    canDeliverFrozen: true,
+    canDeliverDrinks: true,
+    canDeliverHeavy: true,
+    canDeliverFurniture: true,
+  },
+};
+
 const seedJobs: Job[] = [
   {
     id: 'job_1001',
@@ -58,7 +119,7 @@ const seedJobs: Job[] = [
     },
     notes: 'Fragile package. Ring doorbell at delivery.',
     etaMinutes: 18,
-    status: 'pending',
+    status: 'open',
     updatedAt: new Date().toISOString(),
   },
   {
@@ -78,16 +139,43 @@ const seedJobs: Job[] = [
     },
     notes: 'Customer prefers contactless drop-off.',
     etaMinutes: 25,
-    status: 'accepted',
+    status: 'assigned',
     updatedAt: new Date().toISOString(),
   },
 ];
 
+const KNOWN_STATUSES: ReadonlySet<JobStatus> = new Set([
+  'open',
+  'assigned',
+  'enroute_pickup',
+  'arrived_pickup',
+  'picked_up',
+  'enroute_dropoff',
+  'arrived_dropoff',
+  'completed',
+  'cancelled',
+  'disputed',
+  'expired',
+  'failed',
+]);
+
+const LEGACY_STATUS_ALIASES: Record<string, JobStatus> = {
+  pending: 'open',
+  accepted: 'assigned',
+  delivered: 'completed',
+};
+
 const normalizeStatus = (status: string): JobStatus => {
-  if (status === 'accepted' || status === 'picked_up' || status === 'delivered' || status === 'cancelled') {
-    return status;
+  const normalized = status.trim().toLowerCase();
+  if (LEGACY_STATUS_ALIASES[normalized]) {
+    return LEGACY_STATUS_ALIASES[normalized];
   }
-  return 'pending';
+  if (KNOWN_STATUSES.has(normalized as JobStatus)) {
+    return normalized as JobStatus;
+  }
+
+  console.warn(`[jobsService] unknown job status "${status}" received from backend; defaulting to open.`);
+  return 'open';
 };
 
 const normalizeLocation = (value: unknown): Job['pickupLocation'] | undefined => {
@@ -113,11 +201,188 @@ const normalizeLocation = (value: unknown): Job['pickupLocation'] | undefined =>
   };
 };
 
+const normalizePaymentStatus = (value: unknown): Job['paymentStatus'] | undefined => {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+  const normalized = value.trim().toLowerCase();
+  if (
+    normalized === 'pending' ||
+    normalized === 'authorized' ||
+    normalized === 'captured' ||
+    normalized === 'refunded' ||
+    normalized === 'paid'
+  ) {
+    return normalized;
+  }
+  return undefined;
+};
+
+const normalizeProof = (value: unknown): Job['pickupProof'] | undefined => {
+  if (!value || typeof value !== 'object') {
+    return undefined;
+  }
+
+  const proof = value as Record<string, unknown>;
+  const location = proof.location as Record<string, unknown> | undefined;
+  const latitudeRaw = location?.latitude;
+  const longitudeRaw = location?.longitude;
+  const accuracyRaw = proof.accuracy;
+  const timestampRaw = proof.timestamp;
+  const url = typeof proof.url === 'string' ? proof.url : undefined;
+  const latitude = typeof latitudeRaw === 'number' ? latitudeRaw : Number(latitudeRaw);
+  const longitude = typeof longitudeRaw === 'number' ? longitudeRaw : Number(longitudeRaw);
+  const accuracy = typeof accuracyRaw === 'number' ? accuracyRaw : Number(accuracyRaw);
+
+  if (!url || !Number.isFinite(latitude) || !Number.isFinite(longitude) || !Number.isFinite(accuracy)) {
+    return undefined;
+  }
+
+  let timestamp = new Date().toISOString();
+  if (typeof timestampRaw === 'string') {
+    timestamp = timestampRaw;
+  } else if (timestampRaw instanceof Date) {
+    timestamp = timestampRaw.toISOString();
+  } else if (
+    timestampRaw &&
+    typeof timestampRaw === 'object' &&
+    typeof (timestampRaw as {toDate?: unknown}).toDate === 'function'
+  ) {
+    timestamp = ((timestampRaw as {toDate: () => Date}).toDate()).toISOString();
+  }
+
+  return {
+    url,
+    location: {
+      latitude,
+      longitude,
+    },
+    accuracy,
+    timestamp,
+  };
+};
+
+const normalizeOptionalIsoDate = (value: unknown): string | undefined => {
+  if (!value) {
+    return undefined;
+  }
+  if (typeof value === 'string') {
+    return value;
+  }
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+  if (
+    typeof value === 'object' &&
+    typeof (value as {toDate?: unknown}).toDate === 'function'
+  ) {
+    return ((value as {toDate: () => Date}).toDate()).toISOString();
+  }
+  return undefined;
+};
+
+const normalizePhoto = (value: unknown): JobPhoto | undefined => {
+  if (!value || typeof value !== 'object') {
+    return undefined;
+  }
+
+  const photo = value as Record<string, unknown>;
+  const url = typeof photo.url === 'string' ? photo.url.trim() : '';
+  if (url.length === 0) {
+    return undefined;
+  }
+
+  const path = typeof photo.path === 'string' && photo.path.trim().length > 0 ? photo.path : undefined;
+  const uploadedBy =
+    typeof photo.uploadedBy === 'string' && photo.uploadedBy.trim().length > 0
+      ? photo.uploadedBy
+      : undefined;
+  const uploadedAt = normalizeOptionalIsoDate(photo.uploadedAt);
+
+  return {
+    url,
+    path,
+    uploadedAt,
+    uploadedBy,
+  };
+};
+
+const normalizePhotos = (value: unknown): Job['photos'] | undefined => {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const photos = value
+    .map(entry => normalizePhoto(entry))
+    .filter((entry): entry is JobPhoto => Boolean(entry));
+
+  return photos.length > 0 ? photos : undefined;
+};
+
+const normalizeText = (value: unknown): string | undefined => {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+};
+
+const buildFoodOrderSummary = (foodDetails: Record<string, unknown> | undefined): string | undefined => {
+  if (!foodDetails) {
+    return undefined;
+  }
+
+  const restaurantName = normalizeText(foodDetails.restaurantName);
+  const confirmationName = normalizeText(foodDetails.confirmationName);
+  const orderNumber = normalizeText(foodDetails.orderNumber);
+  const pickupCode = normalizeText(foodDetails.pickupCode);
+  const pickupInstructions = normalizeText(foodDetails.pickupInstructions);
+  const customerNotes = normalizeText(foodDetails.customerNotes);
+
+  const summaryParts: string[] = [];
+  if (restaurantName) {
+    summaryParts.push(`Restaurant: ${restaurantName}`);
+  }
+  if (confirmationName) {
+    summaryParts.push(`Order name: ${confirmationName}`);
+  }
+  if (orderNumber) {
+    summaryParts.push(`Order #: ${orderNumber}`);
+  }
+  if (pickupCode) {
+    summaryParts.push(`Pickup code: ${pickupCode}`);
+  }
+  if (pickupInstructions) {
+    summaryParts.push(`Pickup instructions: ${pickupInstructions}`);
+  }
+  if (customerNotes) {
+    summaryParts.push(`Customer notes: ${customerNotes}`);
+  }
+
+  return summaryParts.length > 0 ? summaryParts.join(' • ') : undefined;
+};
+
 const mapFirestoreJob = (id: string, data: Record<string, unknown>): Job => {
-  const pickup = data.pickup as {label?: string} | undefined;
-  const dropoff = data.dropoff as {label?: string} | undefined;
+  const pickup = data.pickup as {label?: string; address?: string} | undefined;
+  const dropoff = data.dropoff as {label?: string; address?: string} | undefined;
+  const packageData = data.package as Record<string, unknown> | undefined;
+  const foodDetails = data.foodDetails as Record<string, unknown> | undefined;
   const pickupLocation = normalizeLocation(data.pickup) ?? normalizeLocation(data.pickupLocation);
   const dropoffLocation = normalizeLocation(data.dropoff) ?? normalizeLocation(data.dropoffLocation);
+  const pickupAddressFromPayload =
+    (typeof pickup?.label === 'string' && pickup.label.trim().length > 0
+      ? pickup.label
+      : undefined) ??
+    (typeof pickup?.address === 'string' && pickup.address.trim().length > 0
+      ? pickup.address
+      : undefined);
+  const dropoffAddressFromPayload =
+    (typeof dropoff?.label === 'string' && dropoff.label.trim().length > 0
+      ? dropoff.label
+      : undefined) ??
+    (typeof dropoff?.address === 'string' && dropoff.address.trim().length > 0
+      ? dropoff.address
+      : undefined);
   const updatedAt = data.updatedAt as {toDate?: () => Date} | string | Date | undefined;
 
   let normalizedUpdatedAt = new Date().toISOString();
@@ -129,16 +394,46 @@ const mapFirestoreJob = (id: string, data: Record<string, unknown>): Job => {
     normalizedUpdatedAt = updatedAt.toDate().toISOString();
   }
 
+  const rawNotes = normalizeText(data.notes);
+  const packageNotes = normalizeText(packageData?.notes);
+  const foodSummaryNotes = buildFoodOrderSummary(foodDetails);
+  const notesParts = [rawNotes, packageNotes, foodSummaryNotes].filter((part): part is string => Boolean(part));
+  const dedupedNotes = Array.from(new Set(notesParts));
+  const normalizedNotes = dedupedNotes.length > 0 ? dedupedNotes.join('\n') : undefined;
+  const customerName =
+    normalizeText(data.customerName) ??
+    normalizeText(foodDetails?.restaurantName) ??
+    'Customer';
+
   return {
     id,
-    customerName: String(data.customerName ?? 'Customer'),
-    pickupAddress: pickup?.label ?? String(data.pickupAddress ?? 'Pickup address unavailable'),
-    dropoffAddress: dropoff?.label ?? String(data.dropoffAddress ?? 'Dropoff address unavailable'),
+    customerName,
+    pickupAddress: pickupAddressFromPayload ?? String(data.pickupAddress ?? 'Pickup address unavailable'),
+    dropoffAddress: dropoffAddressFromPayload ?? String(data.dropoffAddress ?? 'Dropoff address unavailable'),
     pickupLocation,
     dropoffLocation,
-    notes: data.notes ? String(data.notes) : undefined,
+    notes: normalizedNotes,
     etaMinutes: Number(data.etaMinutes ?? 20),
-    status: normalizeStatus(String(data.status ?? 'pending')),
+    status: normalizeStatus(String(data.status ?? 'open')),
+    paymentStatus: normalizePaymentStatus(data.paymentStatus),
+    photos: normalizePhotos(data.photos),
+    pickupProof: normalizeProof(data.pickupProof),
+    dropoffProof: normalizeProof(data.dropoffProof),
+    pricing:
+      data.pricing && typeof data.pricing === 'object'
+        ? ({
+            courierRate: Number((data.pricing as Record<string, unknown>).courierRate ?? 0),
+            platformFee: Number((data.pricing as Record<string, unknown>).platformFee ?? 0),
+            totalAmount: Number((data.pricing as Record<string, unknown>).totalAmount ?? 0),
+          } as Job['pricing'])
+        : undefined,
+    courierSnapshot:
+      data.courierSnapshot && typeof data.courierSnapshot === 'object'
+        ? ({
+            displayName: String((data.courierSnapshot as Record<string, unknown>).displayName ?? ''),
+            transportMode: String((data.courierSnapshot as Record<string, unknown>).transportMode ?? ''),
+          } as Job['courierSnapshot'])
+        : undefined,
     updatedAt: normalizedUpdatedAt,
   };
 };
@@ -307,17 +602,343 @@ const logFirebaseFallback = (operation: string, error: unknown): void => {
   console.warn(`[jobsService] ${operation} failed in Firebase mode; falling back to local mock data.`, message);
 };
 
+const STATUS_UPDATE_TIMEOUT_MS = 12_000;
+
+const withTimeout = async <T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  label: string,
+): Promise<T> =>
+  new Promise<T>((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      reject(new Error(`${label} timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+
+    promise.then(
+      value => {
+        clearTimeout(timeout);
+        resolve(value);
+      },
+      error => {
+        clearTimeout(timeout);
+        reject(error);
+      },
+    );
+  });
+
 const shouldUseLocalFallback = (): boolean => runtimeConfig.envName !== 'prod';
 
-const buildQueryForSession = (db: Firestore, session: AuthSession) => {
-  const jobsRef = collection(db, 'jobs');
-  return query(jobsRef, where('courierUid', '==', session.uid));
+const shouldUseDevEmulatorActiveJobsFeed = (): boolean =>
+  runtimeConfig.envName === 'dev' && isFirebaseEmulatorEnabled();
+
+type FirestoreJobDocRecord = {
+  id: string;
+  data: () => Record<string, unknown>;
 };
 
-const mergeJobDocs = (
-  docs: Array<{id: string; data: () => Record<string, unknown>}>,
-): Job[] =>
-  sortJobsByNewest(docs.map(d => mapFirestoreJob(d.id, d.data() as Record<string, unknown>)));
+const FEED_QUERY_STATUSES = [
+  'open',
+  'pending',
+  'assigned',
+  'accepted',
+  'enroute_pickup',
+  'arrived_pickup',
+  'picked_up',
+  'enroute_dropoff',
+  'arrived_dropoff',
+] as const;
+
+const OFFER_TARGET_FIELDS = [
+  'offeredToCourierUid',
+  'offeredCourierUid',
+  'offerCourierUid',
+  'offerOwnerUid',
+  'offerOwnerCourierUid',
+] as const;
+
+const OFFER_TARGET_ARRAY_FIELDS = [
+  'offeredToCourierUids',
+  'offeredCourierUids',
+  'eligibleCourierUids',
+  'offerCourierUids',
+] as const;
+
+const normalizedUid = (value: unknown): string => {
+  if (typeof value !== 'string') {
+    return '';
+  }
+  return value.trim();
+};
+
+const toBoolean = (value: unknown, fallback: boolean): boolean =>
+  typeof value === 'boolean' ? value : fallback;
+
+const normalizeWorkModesForEligibility = (value: unknown): CourierWorkModes => {
+  const record = value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
+  return {
+    packagesEnabled: toBoolean(record.packagesEnabled, true),
+    foodEnabled: toBoolean(record.foodEnabled, true),
+  };
+};
+
+const normalizeCapabilitiesForEligibility = (value: unknown): CourierCapabilities | null => {
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+  const record = value as Record<string, unknown>;
+  return {
+    canDeliverHot: toBoolean(record.canDeliverHot, false),
+    canDeliverCold: toBoolean(record.canDeliverCold, false),
+    canDeliverFrozen: toBoolean(record.canDeliverFrozen, false),
+    canDeliverDrinks: toBoolean(record.canDeliverDrinks, false),
+    canDeliverHeavy: toBoolean(record.canDeliverHeavy, false),
+    canDeliverFurniture: toBoolean(record.canDeliverFurniture, false),
+  };
+};
+
+const deriveCapabilitiesFromEquipment = (value: unknown): CourierCapabilities | null => {
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+  const equipmentRaw = value as Record<string, unknown>;
+  const equipment = buildDefaultCourierEquipment();
+  let sawEquipmentValue = false;
+  for (const type of COURIER_EQUIPMENT_TYPES) {
+    const itemRaw = equipmentRaw[type];
+    if (!itemRaw || typeof itemRaw !== 'object') {
+      continue;
+    }
+    const item = itemRaw as Record<string, unknown>;
+    sawEquipmentValue = true;
+    equipment[type] = {
+      ...equipment[type],
+      has: toBoolean(item.has, false),
+      approved: toBoolean(item.approved, false),
+      photoUrl: typeof item.photoUrl === 'string' ? item.photoUrl : undefined,
+      approvedAt: typeof item.approvedAt === 'string' ? item.approvedAt : undefined,
+      rejectedReason: typeof item.rejectedReason === 'string' ? item.rejectedReason : undefined,
+    };
+  }
+  if (!sawEquipmentValue) {
+    return null;
+  }
+  return deriveCourierCapabilities(equipment);
+};
+
+const parseCourierFeedEligibility = (rawUserData: Record<string, unknown>): CourierFeedEligibility => {
+  const profileRaw =
+    (rawUserData.courierProfileV1 as Record<string, unknown> | undefined) ??
+    (rawUserData.courierProfile as Record<string, unknown> | undefined) ??
+    {};
+  const capabilities =
+    normalizeCapabilitiesForEligibility(profileRaw.capabilities) ??
+    deriveCapabilitiesFromEquipment(profileRaw.equipment) ??
+    DEFAULT_COURIER_FEED_ELIGIBILITY.capabilities;
+
+  return {
+    workModes: normalizeWorkModesForEligibility(profileRaw.workModes),
+    capabilities,
+  };
+};
+
+const resolveCourierFeedEligibility = async (
+  db: Firestore,
+  session: AuthSession,
+): Promise<CourierFeedEligibility> => {
+  try {
+    const userRef = doc(db, 'users', session.uid);
+    const userSnap = await getDoc(userRef);
+    if (!userSnap.exists()) {
+      return DEFAULT_COURIER_FEED_ELIGIBILITY;
+    }
+    const data = userSnap.data() as Record<string, unknown>;
+    return parseCourierFeedEligibility(data);
+  } catch {
+    return DEFAULT_COURIER_FEED_ELIGIBILITY;
+  }
+};
+
+const isCourierAssignedToJob = (
+  raw: Record<string, unknown>,
+  allowedCourierUids: ReadonlySet<string>,
+): boolean => {
+  const courierUid = normalizedUid(raw.courierUid);
+  const courierId = normalizedUid(raw.courierId);
+  return (
+    (courierUid.length > 0 && allowedCourierUids.has(courierUid)) ||
+    (courierId.length > 0 && allowedCourierUids.has(courierId))
+  );
+};
+
+const openJobOfferSignals = (raw: Record<string, unknown>): string[] => {
+  const signals: string[] = [];
+  for (const field of OFFER_TARGET_FIELDS) {
+    const value = normalizedUid(raw[field]);
+    if (value.length > 0) {
+      signals.push(value);
+    }
+  }
+
+  for (const field of OFFER_TARGET_ARRAY_FIELDS) {
+    const value = raw[field];
+    if (!Array.isArray(value)) {
+      continue;
+    }
+    for (const item of value) {
+      const uid = normalizedUid(item);
+      if (uid.length > 0) {
+        signals.push(uid);
+      }
+    }
+  }
+
+  return signals;
+};
+
+const shouldIncludeOpenJobForCourier = (
+  raw: Record<string, unknown>,
+  allowedCourierUids: ReadonlySet<string>,
+): boolean => {
+  if (isCourierAssignedToJob(raw, allowedCourierUids)) {
+    return true;
+  }
+  const signals = openJobOfferSignals(raw);
+  if (signals.length === 0) {
+    return true; // open + unoffered
+  }
+  return signals.some(uid => allowedCourierUids.has(uid)); // open + offered to this courier
+};
+
+const shouldIncludeJobInCourierFeed = (
+  job: Job,
+  raw: Record<string, unknown>,
+  allowedCourierUids: ReadonlySet<string>,
+  eligibility: CourierFeedEligibility,
+): boolean => {
+  if (job.status === 'open') {
+    if (!shouldIncludeOpenJobForCourier(raw, allowedCourierUids)) {
+      return false;
+    }
+
+    const mode = resolveCourierJobMode(raw);
+    if (!isCourierEligibleForJobMode(mode, eligibility.workModes)) {
+      return false;
+    }
+
+    const requirements = buildCapabilityRequirementsForRawJob(raw, job);
+    if (missingCapabilityRequirements(eligibility.capabilities, requirements).length > 0) {
+      return false;
+    }
+    return true;
+  }
+  const hasAssignment =
+    normalizedUid(raw.courierUid).length > 0 || normalizedUid(raw.courierId).length > 0;
+  if (!hasAssignment) {
+    return true;
+  }
+  return isCourierAssignedToJob(raw, allowedCourierUids);
+};
+
+const maskAddress = (address: string): string => {
+  const normalized = address.trim();
+  const cityStateZipRegex = /([A-Za-z .'-]+),\s*([A-Z]{2})\s*(\d{5}(?:-\d{4})?)/g;
+  const cityStateZipMatches = [...normalized.matchAll(cityStateZipRegex)];
+  if (cityStateZipMatches.length > 0) {
+    const match = cityStateZipMatches[cityStateZipMatches.length - 1];
+    return `${match[1].trim()}, ${match[2].trim()} ${match[3].trim()}`;
+  }
+
+  const parts = normalized
+    .split(',')
+    .map(part => part.trim())
+    .filter(Boolean)
+    .filter(part => {
+      const lower = part.toLowerCase();
+      return lower !== 'usa' && lower !== 'united states' && lower !== 'united states of america';
+    });
+
+  if (parts.length >= 2) {
+    return `${parts[parts.length - 2]}, ${parts[parts.length - 1]}`;
+  }
+
+  return 'Approximate location';
+};
+
+const coarsenLocation = (location: Job['pickupLocation']): Job['pickupLocation'] | undefined => {
+  if (!location) {
+    return undefined;
+  }
+  return {
+    latitude: Math.round(location.latitude * 100) / 100,
+    longitude: Math.round(location.longitude * 100) / 100,
+    label: 'Approximate location',
+  };
+};
+
+const applyCourierFeedPrivacy = (
+  job: Job,
+  raw: Record<string, unknown>,
+  allowedCourierUids: ReadonlySet<string>,
+): Job => {
+  const canSeeExactAddresses = job.status !== 'open' || isCourierAssignedToJob(raw, allowedCourierUids);
+  if (canSeeExactAddresses) {
+    return job;
+  }
+
+  return {
+    ...job,
+    customerName: 'Customer',
+    pickupAddress: maskAddress(job.pickupAddress),
+    dropoffAddress: maskAddress(job.dropoffAddress),
+    pickupLocation: coarsenLocation(job.pickupLocation),
+    dropoffLocation: coarsenLocation(job.dropoffLocation),
+    notes: undefined,
+  };
+};
+
+const buildQueryForSession = (db: Firestore, _session: AuthSession) => {
+  const jobsRef = collection(db, 'jobs');
+  if (shouldUseDevEmulatorActiveJobsFeed()) {
+    // Dev emulator mode: show active jobs even if seeded assignment does not
+    // match the signed-in courier UID yet.
+    return query(
+      jobsRef,
+      where('status', 'in', [
+        'open',
+        'assigned',
+        'enroute_pickup',
+        'arrived_pickup',
+        'picked_up',
+        'enroute_dropoff',
+        'arrived_dropoff',
+        // legacy compatibility for dev emulator datasets
+        'pending',
+        'accepted',
+        ]),
+    );
+  }
+  return query(
+    jobsRef,
+    where('status', 'in', FEED_QUERY_STATUSES as unknown as string[]),
+  );
+};
+
+const mapDocsToCourierFeedJobs = (
+  docs: FirestoreJobDocRecord[],
+  allowedCourierUids: ReadonlySet<string>,
+  eligibility: CourierFeedEligibility,
+): Job[] => {
+  const byId = new Map<string, Job>();
+  for (const doc of docs) {
+    const raw = doc.data() as Record<string, unknown>;
+    const mapped = mapFirestoreJob(doc.id, raw);
+    if (!shouldIncludeJobInCourierFeed(mapped, raw, allowedCourierUids, eligibility)) {
+      continue;
+    }
+    byId.set(doc.id, applyCourierFeedPrivacy(mapped, raw, allowedCourierUids));
+  }
+  return sortJobsByNewest(Array.from(byId.values()));
+};
 
 const readSnapshotDocs = (snapshot: unknown): Array<{id: string; data: () => Record<string, unknown>}> => {
   if (!snapshot || typeof snapshot !== 'object') {
@@ -445,24 +1066,10 @@ export const fetchJobs = async (session: AuthSession): Promise<Job[]> => {
   }
 
   try {
-    const jobsRef = collection(services.db, 'jobs');
-
-    const [byCourierUid, byCourierId] = await Promise.all([
-      getDocs(query(jobsRef, where('courierUid', '==', session.uid))),
-      getDocs(query(jobsRef, where('courierId', '==', session.uid))),
-    ]);
-
-    const byUidDocs = readSnapshotDocs(byCourierUid);
-    const byIdDocs = readSnapshotDocs(byCourierId);
-
-    const byId = new Map<string, {id: string; data: () => Record<string, unknown>}>(
-      byUidDocs.map(d => [d.id, d]),
-    );
-    for (const docSnap of byIdDocs) {
-      byId.set(docSnap.id, docSnap);
-    }
-
-    let jobs = mergeJobDocs(Array.from(byId.values()));
+    const snapshot = await getDocs(buildQueryForSession(services.db, session));
+    const feedEligibility = await resolveCourierFeedEligibility(services.db, session);
+    let allowedCourierUids = new Set<string>([session.uid]);
+    let jobs = mapDocsToCourierFeedJobs(readSnapshotDocs(snapshot), allowedCourierUids, feedEligibility);
 
     // Dev-only recovery path: if auth UID drifts but email is the same,
     // gather alternate courier user docs by email and include their jobs.
@@ -475,23 +1082,8 @@ export const fetchJobs = async (session: AuthSession): Promise<Job[]> => {
         .filter(uid => uid !== session.uid);
 
       if (aliasUids.length > 0) {
-        const aliasDocs: Array<{id: string; data: () => Record<string, unknown>}> = [];
-        for (const aliasUid of aliasUids) {
-          const [aliasByUid, aliasById] = await Promise.all([
-            getDocs(query(jobsRef, where('courierUid', '==', aliasUid))),
-            getDocs(query(jobsRef, where('courierId', '==', aliasUid))),
-          ]);
-
-          readSnapshotDocs(aliasByUid).forEach(d => aliasDocs.push(d));
-          readSnapshotDocs(aliasById).forEach(d => aliasDocs.push(d));
-        }
-
-        if (aliasDocs.length > 0) {
-          const mergedAlias = new Map<string, {id: string; data: () => Record<string, unknown>}>(
-            aliasDocs.map(d => [d.id, d]),
-          );
-          jobs = mergeJobDocs(Array.from(mergedAlias.values()));
-        }
+        allowedCourierUids = new Set<string>([session.uid, ...aliasUids]);
+        jobs = mapDocsToCourierFeedJobs(readSnapshotDocs(snapshot), allowedCourierUids, feedEligibility);
       }
     }
 
@@ -524,7 +1116,10 @@ export const getJobById = async (session: AuthSession, id: string): Promise<Job 
     const ref = doc(services.db, 'jobs', id);
     const snap = await getDoc(ref);
     if (snap.exists()) {
-      const job = mapFirestoreJob(snap.id, snap.data() as Record<string, unknown>);
+      const raw = snap.data() as Record<string, unknown>;
+      const allowedCourierUids = new Set<string>([session.uid]);
+      const mapped = mapFirestoreJob(snap.id, raw);
+      const job = applyCourierFeedPrivacy(mapped, raw, allowedCourierUids);
       await upsertLocalJob(job);
       return job;
     }
@@ -542,6 +1137,102 @@ export const getJobById = async (session: AuthSession, id: string): Promise<Job 
 const loadLocalJobById = async (id: string): Promise<Job | null> => {
   const local = await loadLocalJobs();
   return local.find(job => job.id === id) ?? null;
+};
+
+/**
+ * Attach proof (photo) to a job. Stores the proof in Firestore when available,
+ * otherwise persists to local cache. Returns the updated Job object.
+ */
+export const attachProof = async (
+  session: AuthSession,
+  id: string,
+  type: 'pickup' | 'dropoff',
+  proof: {url: string; location?: {latitude: number; longitude: number}; accuracy?: number; timestamp?: string},
+): Promise<Job> => {
+  const localJob = await loadLocalJobById(id);
+  if (!localJob) {
+    throw new Error('Job not found.');
+  }
+
+  if (isFirebaseReady()) {
+    const services = getFirebaseServices();
+    if (services) {
+      try {
+        // If the proof payload is a data URL or local file URI, prefer uploading to Firebase Storage
+        let proofToStore = proof;
+        try {
+          const storage = require('./firebase').getFirebaseStorage();
+          if (storage && proof.url && typeof proof.url === 'string') {
+            const isDataUrl = proof.url.startsWith('data:');
+            const isFileUri = proof.url.startsWith('file:') || proof.url.startsWith('content:');
+            if (isDataUrl || isFileUri) {
+              // lazy-import storage helpers
+              // eslint-disable-next-line @typescript-eslint/no-var-requires
+              const {ref: storageRef, uploadString, uploadBytes, getDownloadURL} = require('firebase/storage');
+
+              const ext = proof.url.match(/^data:(image\/[^;]+);/)?.[1].split('/')[1] ?? 'jpg';
+              const filename = `jobs/${id}/${type}-${Date.now()}.${ext}`;
+              const destRef = storageRef(storage, filename);
+
+              if (isDataUrl) {
+                // upload base64 data URL
+                await uploadString(destRef, proof.url, 'data_url');
+              } else {
+                // file/content URI: fetch blob then upload
+                try {
+                  // react-native fetch supports file:// URIs
+                  // eslint-disable-next-line no-undef
+                  const resp = await fetch(proof.url);
+                  const blob = await resp.blob();
+                  await uploadBytes(destRef, blob as any);
+                } catch (uploadErr) {
+                  // fall back to not uploading
+                  console.warn('[attachProof] storage upload failed, falling back to inline proof', uploadErr);
+                }
+              }
+
+              try {
+                const downloadUrl = await getDownloadURL(destRef);
+                proofToStore = {...proof, url: downloadUrl};
+              } catch (err) {
+                console.warn('[attachProof] getDownloadURL failed, keeping inline proof');
+              }
+            }
+          }
+        } catch (err) {
+          // storage not configured or upload failed; continue with inline proof
+        }
+
+        const ref = doc(services.db, 'jobs', id);
+        await updateDoc(ref, {
+          ...(type === 'pickup' ? {pickupProof: proofToStore} : {dropoffProof: proofToStore}),
+          updatedAt: serverTimestamp(),
+        } as Record<string, unknown>);
+
+        const updatedSnap = await getDoc(ref);
+        if (updatedSnap.exists()) {
+          const mapped = mapFirestoreJob(updatedSnap.id, updatedSnap.data() as Record<string, unknown>);
+          await upsertLocalJob(mapped);
+          return mapped;
+        }
+      } catch (error) {
+        if (shouldUseLocalFallback()) {
+          logFirebaseFallback('attachProof', error);
+        } else {
+          throw buildFirebaseError('attachProof', error);
+        }
+      }
+    }
+  }
+
+  // Local fallback: persist proof into local cache and return updated job.
+  const updated: Job = {
+    ...localJob,
+    ...(type === 'pickup' ? {pickupProof: proof} : {dropoffProof: proof}),
+    updatedAt: new Date().toISOString(),
+  };
+  await upsertLocalJob(updated);
+  return updated;
 };
 
 const buildCommandResultSuccess = (
@@ -582,6 +1273,48 @@ const buildCommandResultFatal = (
   message,
 });
 
+const addCorrelationId = (
+  result: JobStatusCommandResult,
+  correlationId: string | null,
+): JobStatusCommandResult => (correlationId ? {...result, correlationId} : result);
+
+const PAYMENT_AUTH_REQUIRED_STATUSES: ReadonlySet<JobStatus> = new Set([
+  'picked_up',
+  'enroute_dropoff',
+  'arrived_dropoff',
+  'completed',
+]);
+
+const AUTHORIZED_PAYMENT_STATUSES: ReadonlySet<NonNullable<Job['paymentStatus']>> = new Set([
+  'authorized',
+  'captured',
+  'paid',
+]);
+
+const hasAuthorizedPayment = (job: Job): boolean =>
+  !job.paymentStatus || AUTHORIZED_PAYMENT_STATUSES.has(job.paymentStatus);
+
+const requiresProofCapture = (job: Job): boolean => {
+  if (!job.notes) {
+    return false;
+  }
+  const notes = job.notes.toLowerCase();
+  return notes.includes('proof') || notes.includes('photo') || notes.includes('signature');
+};
+
+const hasProofPayload = (proof: Job['pickupProof'] | Job['dropoffProof'] | undefined): boolean => {
+  if (!proof) {
+    return false;
+  }
+  return (
+    typeof proof.url === 'string' &&
+    proof.url.length > 0 &&
+    Number.isFinite(proof.location.latitude) &&
+    Number.isFinite(proof.location.longitude) &&
+    Number.isFinite(proof.accuracy)
+  );
+};
+
 const validateTransitionAgainstJob = (job: Job, nextStatus: JobStatus): JobStatusCommandResult | null => {
   if (job.status === nextStatus) {
     return buildCommandResultSuccess(job, nextStatus, true, 'Job status is already up to date.');
@@ -591,7 +1324,31 @@ const validateTransitionAgainstJob = (job: Job, nextStatus: JobStatus): JobStatu
     return buildCommandResultConflict(
       job,
       nextStatus,
-      `${buildTransitionConflictMessage(job.status, nextStatus)} Refresh job state and retry.`,
+      `${buildJobTransitionConflictMessage(job.status, nextStatus)} Refresh job state and retry.`,
+    );
+  }
+
+  if (PAYMENT_AUTH_REQUIRED_STATUSES.has(nextStatus) && !hasAuthorizedPayment(job)) {
+    return buildCommandResultConflict(
+      job,
+      nextStatus,
+      'Payment is not authorized for this job yet. Wait for authorization before continuing.',
+    );
+  }
+
+  if (nextStatus === 'picked_up' && requiresProofCapture(job) && !hasProofPayload(job.pickupProof)) {
+    return buildCommandResultConflict(
+      job,
+      nextStatus,
+      'Pickup proof is required before confirming pickup.',
+    );
+  }
+
+  if (nextStatus === 'completed' && requiresProofCapture(job) && !hasProofPayload(job.dropoffProof)) {
+    return buildCommandResultConflict(
+      job,
+      nextStatus,
+      'Dropoff proof is required before completing delivery.',
     );
   }
 
@@ -612,29 +1369,33 @@ export const updateJobStatus = async (
     if (services) {
       try {
         const ref = doc(services.db, 'jobs', id);
-        const transactionOutcome = await runTransaction(services.db, async transaction => {
-          const snap = await transaction.get(ref);
-          if (!snap.exists()) {
-            return {kind: 'missing' as const};
-          }
+        const transactionOutcome = await withTimeout(
+          runTransaction(services.db, async transaction => {
+            const snap = await transaction.get(ref);
+            if (!snap.exists()) {
+              return {kind: 'missing' as const};
+            }
 
-          const remoteJob = mapFirestoreJob(snap.id, snap.data() as Record<string, unknown>);
-          const validation = validateTransitionAgainstJob(remoteJob, nextStatus);
-          if (validation?.kind === 'conflict') {
-            return {kind: 'conflict' as const, job: remoteJob};
-          }
-          if (validation?.kind === 'success' && validation.idempotent) {
-            return {kind: 'idempotent' as const, job: remoteJob};
-          }
+            const remoteJob = mapFirestoreJob(snap.id, snap.data() as Record<string, unknown>);
+            const validation = validateTransitionAgainstJob(remoteJob, nextStatus);
+            if (validation?.kind === 'conflict') {
+              return {kind: 'conflict' as const, job: remoteJob, message: validation.message};
+            }
+            if (validation?.kind === 'success' && validation.idempotent) {
+              return {kind: 'idempotent' as const, job: remoteJob};
+            }
 
-          transaction.update(ref, {
-            status: nextStatus,
-            courierUid: session.uid,
-            updatedAt: serverTimestamp(),
-          });
+            transaction.update(ref, {
+              status: nextStatus,
+              courierUid: session.uid,
+              updatedAt: serverTimestamp(),
+            });
 
-          return {kind: 'updated' as const};
-        });
+            return {kind: 'updated' as const};
+          }),
+          STATUS_UPDATE_TIMEOUT_MS,
+          'updateJobStatus transaction',
+        );
 
         if (transactionOutcome.kind === 'missing') {
           return buildCommandResultFatal(nextStatus, 'Job no longer exists. Refresh your jobs list and retry.');
@@ -645,7 +1406,7 @@ export const updateJobStatus = async (
           return buildCommandResultConflict(
             transactionOutcome.job,
             nextStatus,
-            `${buildTransitionConflictMessage(transactionOutcome.job.status, nextStatus)} Refresh and retry.`,
+            transactionOutcome.message,
           );
         }
 
@@ -658,7 +1419,11 @@ export const updateJobStatus = async (
         await dequeueStatusUpdate(session, id);
         void flushQueuedStatusUpdates(session, services.db);
 
-        const updated = await getDoc(ref);
+        const updated = await withTimeout(
+          getDoc(ref),
+          STATUS_UPDATE_TIMEOUT_MS,
+          'updateJobStatus readback',
+        );
         if (updated.exists()) {
           const mapped = mapFirestoreJob(updated.id, updated.data() as Record<string, unknown>);
           await upsertLocalJob(mapped);
@@ -717,6 +1482,231 @@ export const updateJobStatus = async (
   return buildCommandResultSuccess(updatedLocal, nextStatus, false, 'Status updated locally.');
 };
 
+const runStatusCommand = async (
+  session: AuthSession,
+  id: string,
+  nextStatus: JobStatus,
+): Promise<JobStatusCommandResult> => updateJobStatus(session, id, nextStatus);
+
+const generateCorrelationId = (): string =>
+  `corr_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+
+const getCallableErrorCode = (error: unknown): string => {
+  if (!error || typeof error !== 'object' || !('code' in error)) {
+    return '';
+  }
+  return String((error as {code?: unknown}).code ?? '').trim().toLowerCase();
+};
+
+const getCallableErrorMessage = (error: unknown): string => {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return String(error);
+};
+
+const shouldFallbackCallableStatusCommand = (error: unknown): boolean => {
+  const code = getCallableErrorCode(error);
+  const message = getCallableErrorMessage(error).toLowerCase();
+
+  if (code === 'functions/unimplemented') {
+    return true;
+  }
+
+  if (
+    code === 'functions/not-found' &&
+    (message === 'not found' ||
+      message.includes('function') ||
+      message.includes('not found') ||
+      message.includes('not-found'))
+  ) {
+    return true;
+  }
+
+  return (
+    code === 'functions/unavailable' ||
+    code === 'functions/deadline-exceeded' ||
+    code === 'functions/internal' ||
+    code === 'functions/cancelled' ||
+    isLikelyConnectivityError(error)
+  );
+};
+
+const mapCallableStatusCommandResult = async (
+  session: AuthSession,
+  id: string,
+  requestedStatus: JobStatus,
+  commandName: CallableCommandName,
+  payload: unknown,
+): Promise<JobStatusCommandResult> => {
+  const data = payload && typeof payload === 'object' ? (payload as CommandJobStatusCallableResponse) : null;
+  if (!data || !data.kind) {
+    return buildCommandResultFatal(requestedStatus, `${commandName} returned an invalid payload.`);
+  }
+
+  const correlationId = typeof data.correlationId === 'string' ? data.correlationId : null;
+  const message =
+    typeof data.message === 'string' ? data.message : data.message === null ? null : `${commandName} failed.`;
+  const rawJob = data.job && typeof data.job === 'object' ? data.job : null;
+  const mappedJob = rawJob ? mapFirestoreJob(typeof rawJob.id === 'string' ? rawJob.id : id, rawJob) : null;
+
+  if (mappedJob) {
+    await upsertLocalJob(mappedJob);
+  }
+
+  if (data.kind === 'success') {
+    if (!mappedJob) {
+      return addCorrelationId(
+        buildCommandResultFatal(requestedStatus, `${commandName} succeeded without a job payload.`),
+        correlationId,
+      );
+    }
+    await dequeueStatusUpdate(session, id);
+    return addCorrelationId(
+      buildCommandResultSuccess(mappedJob, requestedStatus, Boolean(data.idempotent), message),
+      correlationId,
+    );
+  }
+
+  if (data.kind === 'conflict') {
+    if (!mappedJob) {
+      return addCorrelationId(
+        buildCommandResultFatal(requestedStatus, message ?? `Unable to complete ${commandName}.`),
+        correlationId,
+      );
+    }
+    return addCorrelationId(
+      buildCommandResultConflict(mappedJob, requestedStatus, message ?? `Unable to complete ${commandName}.`),
+      correlationId,
+    );
+  }
+
+  if (data.kind === 'retryable_error') {
+    if (!mappedJob) {
+      const localJob = await loadLocalJobById(id);
+      return addCorrelationId(
+        buildCommandResultFatal(requestedStatus, message ?? `Unable to complete ${commandName}.`, localJob),
+        correlationId,
+      );
+    }
+    return addCorrelationId(
+      buildCommandResultRetryable(mappedJob, requestedStatus, message ?? `Unable to complete ${commandName}.`),
+      correlationId,
+    );
+  }
+
+  return addCorrelationId(
+    buildCommandResultFatal(requestedStatus, message ?? `Unable to complete ${commandName}.`, mappedJob),
+    correlationId,
+  );
+};
+
+const callStatusCommand = async (
+  session: AuthSession,
+  id: string,
+  requestedStatus: JobStatus,
+  commandName: CallableCommandName,
+): Promise<JobStatusCommandResult | null> => {
+  const functions = getFirebaseFunctions();
+  if (!functions) {
+    return null;
+  }
+
+  const callable = httpsCallable<CommandJobStatusCallableRequest, CommandJobStatusCallableResponse>(
+    functions,
+    commandName,
+  );
+
+  try {
+    const response = await withTimeout(
+      callable({
+        jobId: id,
+        correlationId: generateCorrelationId(),
+      }),
+      STATUS_UPDATE_TIMEOUT_MS,
+      `${commandName} callable`,
+    );
+    return mapCallableStatusCommandResult(session, id, requestedStatus, commandName, response.data);
+  } catch (error) {
+    if (shouldFallbackCallableStatusCommand(error)) {
+      return null;
+    }
+
+    const code = getCallableErrorCode(error);
+    const message = getCallableErrorMessage(error);
+    const latestJob = await getJobById(session, id);
+
+    if (code === 'functions/failed-precondition' || code === 'functions/permission-denied') {
+      if (latestJob) {
+        return buildCommandResultConflict(latestJob, requestedStatus, message);
+      }
+      return buildCommandResultFatal(requestedStatus, message);
+    }
+
+    if (code === 'functions/not-found') {
+      return buildCommandResultFatal(requestedStatus, message, latestJob);
+    }
+
+    return buildCommandResultFatal(requestedStatus, message, latestJob);
+  }
+};
+
+const runCommandWithCallableFallback = async (
+  session: AuthSession,
+  id: string,
+  requestedStatus: JobStatus,
+  commandName: CallableCommandName,
+): Promise<JobStatusCommandResult> => {
+  if (!featureFlagsService.isEnabled('jobStatusActions')) {
+    return buildCommandResultFatal(requestedStatus, 'Status updates are temporarily disabled by rollout controls.');
+  }
+
+  if (isFirebaseReady()) {
+    const callableResult = await callStatusCommand(session, id, requestedStatus, commandName);
+    if (callableResult) {
+      return callableResult;
+    }
+  }
+
+  return runStatusCommand(session, id, requestedStatus);
+};
+
+export const commandAcceptJob = async (
+  session: AuthSession,
+  id: string,
+): Promise<JobStatusCommandResult> =>
+  runCommandWithCallableFallback(session, id, 'assigned', 'commandAcceptJob');
+
+export const commandMarkArrivedPickup = async (
+  session: AuthSession,
+  id: string,
+): Promise<JobStatusCommandResult> =>
+  runCommandWithCallableFallback(session, id, 'arrived_pickup', 'commandMarkArrivedPickup');
+
+export const commandStartPickup = async (
+  session: AuthSession,
+  id: string,
+): Promise<JobStatusCommandResult> =>
+  runCommandWithCallableFallback(session, id, 'enroute_pickup', 'commandStartPickup');
+
+export const commandConfirmPickup = async (
+  session: AuthSession,
+  id: string,
+): Promise<JobStatusCommandResult> =>
+  runCommandWithCallableFallback(session, id, 'picked_up', 'commandConfirmPickup');
+
+export const commandStartDropoff = async (
+  session: AuthSession,
+  id: string,
+): Promise<JobStatusCommandResult> =>
+  runCommandWithCallableFallback(session, id, 'enroute_dropoff', 'commandStartDropoff');
+
+export const commandCompleteDelivery = async (
+  session: AuthSession,
+  id: string,
+): Promise<JobStatusCommandResult> =>
+  runCommandWithCallableFallback(session, id, 'completed', 'commandCompleteDelivery');
+
 const createSyncState = (partial: Partial<JobsSyncState>): JobsSyncState => ({
   status: partial.status ?? 'idle',
   stale: partial.stale ?? false,
@@ -770,6 +1760,7 @@ export const subscribeJobs = (session: AuthSession, handlers: JobsSubscriptionHa
   let reconnectAttempt = 0;
   let lastSyncedAt: string | null = null;
   let active = true;
+  let feedEligibility: CourierFeedEligibility = DEFAULT_COURIER_FEED_ELIGIBILITY;
   let detachSnapshot: (() => void) | null = null;
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   let queueFlushPromise: Promise<void> | null = null;
@@ -850,6 +1841,10 @@ export const subscribeJobs = (session: AuthSession, handlers: JobsSubscriptionHa
     }
   };
 
+  const refreshFeedEligibility = async (): Promise<void> => {
+    feedEligibility = await resolveCourierFeedEligibility(services.db, session);
+  };
+
   const connect = (): void => {
     if (!active) {
       return;
@@ -868,12 +1863,15 @@ export const subscribeJobs = (session: AuthSession, handlers: JobsSubscriptionHa
     });
 
     try {
+      void refreshFeedEligibility();
       detachSnapshot = onSnapshot(
         buildQueryForSession(services.db, session),
         {includeMetadataChanges: true},
         snapshot => {
-          const jobs = sortJobsByNewest(
-            snapshot.docs.map(d => mapFirestoreJob(d.id, d.data() as Record<string, unknown>)),
+          const jobs = mapDocsToCourierFeedJobs(
+            readSnapshotDocs(snapshot),
+            new Set<string>([session.uid]),
+            feedEligibility,
           );
           const fromCache = snapshot.metadata.fromCache;
 

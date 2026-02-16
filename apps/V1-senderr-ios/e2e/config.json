@@ -1,0 +1,19 @@
+{
+  "preset": "react-native",
+  "rootDir": "..",
+  "testMatch": ["**/e2e/**/*.e2e.(js|ts)"],
+  "testEnvironment": "node",
+  "setupFiles": [],
+  "setupFilesAfterEnv": ["<rootDir>/e2e/init.js"],
+  "testTimeout": 120000,
+  "transform": {
+    "^.+\\.(js|jsx|ts|tsx)$": "babel-jest"
+  },
+  "moduleNameMapper": {
+    "^@react-native/js-polyfills$": "<rootDir>/e2e/__mocks__/js-polyfills-mock.js",
+    "^@react-native/js-polyfills/(.*)$": "<rootDir>/e2e/__mocks__/js-polyfills-mock.js"
+  },
+  "transformIgnorePatterns": [
+    "node_modules/(?!(?:.*(?:@react-native|react-native|@react-native-community|@react-navigation|@react-native-async-storage|@react-native-community\\+geolocation).*))"
+  ]
+}

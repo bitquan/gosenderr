@@ -1,3 +1,6 @@
+// Polyfills that must run before other modules which may access `new URL(...)`
+import './src/polyfills/urlHostPolyfill';
+
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {ActivityIndicator, Pressable, StyleSheet, Text, View} from 'react-native';
 import {doc, setDoc} from 'firebase/firestore';
@@ -8,8 +11,10 @@ import {JobDetailScreen} from './src/screens/JobDetailScreen';
 import {JobsScreen} from './src/screens/JobsScreen';
 import {LoginScreen} from './src/screens/LoginScreen';
 import {MapShellScreen} from './src/screens/MapShellScreen';
+import {OnboardingScreen} from './src/screens/OnboardingScreen';
 import {SettingsScreen} from './src/screens/SettingsScreen';
 import {configureRuntime, type NativeRuntimeConfig} from './src/config/runtime';
+import {classifyUnknownError, formatErrorContext} from './src/services/errorSystem';
 import {getFirebaseServices, isFirebaseReady} from './src/services/firebase';
 import type {JobsSubscription, JobsSyncState} from './src/services/ports/jobsPort';
 import {ServiceRegistryProvider, useServiceRegistry} from './src/services/serviceRegistry';
@@ -28,12 +33,25 @@ const DEFAULT_JOBS_SYNC_STATE: JobsSyncState = {
 };
 
 const AppShell = (): React.JSX.Element => {
-  const {session, initializing} = useAuth();
-  const {jobs: jobsService, notifications: notificationsService, analytics, featureFlags} =
+  const {session, initializing, onboardingRequired, completeOnboarding} = useAuth();
+  const {
+    jobs: jobsService,
+    notifications: notificationsService,
+    analytics,
+    featureFlags,
+    location: locationService,
+    profile: profileService,
+  } =
     useServiceRegistry();
   const featureFlagsState = featureFlags.useFeatureFlags();
+  const {
+    state: locationState,
+    requestPermission: requestLocationPermission,
+    startTracking: startLocationTracking,
+  } = locationService.useLocationTracking();
   const jobsSubscriptionRef = useRef<JobsSubscription | null>(null);
   const notificationsSetupForUidRef = useRef<string | null>(null);
+  const autoTrackingSetupForUidRef = useRef<string | null>(null);
   const lastTrackedJobsCountRef = useRef<number | null>(null);
   const lastSyncErrorRef = useRef<string | null>(null);
   const notificationsEnabled = featureFlagsState.state.flags.notifications;
@@ -44,6 +62,22 @@ const AppShell = (): React.JSX.Element => {
   const [jobsLoading, setJobsLoading] = useState(false);
   const [jobsError, setJobsError] = useState<string | null>(null);
   const [jobsSyncState, setJobsSyncState] = useState<JobsSyncState>(DEFAULT_JOBS_SYNC_STATE);
+
+  const recordClassifiedError = useCallback(
+    (
+      error: unknown,
+      source: string,
+      fallbackMessage: string,
+    ): ReturnType<typeof classifyUnknownError> => {
+      const classified = classifyUnknownError(error, {
+        source,
+        fallbackMessage,
+      });
+      void analytics.recordError(error, formatErrorContext(source, classified));
+      return classified;
+    },
+    [analytics],
+  );
 
   useEffect(() => {
     if (!notificationsEnabled) {
@@ -98,7 +132,11 @@ const AppShell = (): React.JSX.Element => {
         });
       } catch (error) {
         notificationsSetupForUidRef.current = null;
-        void analytics.recordError(error, 'notifications_bootstrap_failed');
+        recordClassifiedError(
+          error,
+          'app_notifications_bootstrap',
+          'Notification setup failed.',
+        );
       }
     };
 
@@ -107,7 +145,68 @@ const AppShell = (): React.JSX.Element => {
     return () => {
       cancelled = true;
     };
-  }, [analytics, notificationsEnabled, notificationsService, session]);
+  }, [analytics, notificationsEnabled, notificationsService, recordClassifiedError, session]);
+
+  useEffect(() => {
+    if (!session) {
+      autoTrackingSetupForUidRef.current = null;
+      return;
+    }
+    if (autoTrackingSetupForUidRef.current === session.uid) {
+      return;
+    }
+
+    autoTrackingSetupForUidRef.current = session.uid;
+    let cancelled = false;
+
+    const bootstrapAutoTracking = async (): Promise<void> => {
+      try {
+        const profileResult = await profileService.loadProfile(session);
+        if (cancelled || !profileResult.profile.settings.autoStartTracking) {
+          return;
+        }
+
+        if (!locationState.hasPermission) {
+          const granted = await requestLocationPermission();
+          if (cancelled || !granted) {
+            return;
+          }
+        }
+
+        if (!locationState.tracking) {
+          await startLocationTracking();
+          if (!cancelled) {
+            void analytics.track('tracking_started', {
+              from_screen: 'app_bootstrap',
+              auto_start: 'yes',
+            });
+          }
+        }
+      } catch (error) {
+        autoTrackingSetupForUidRef.current = null;
+        recordClassifiedError(
+          error,
+          'app_auto_tracking_bootstrap',
+          'Unable to auto-start tracking.',
+        );
+      }
+    };
+
+    void bootstrapAutoTracking();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    analytics,
+    locationState.hasPermission,
+    locationState.tracking,
+    profileService,
+    recordClassifiedError,
+    requestLocationPermission,
+    session,
+    startLocationTracking,
+  ]);
 
   useEffect(() => {
     jobsSubscriptionRef.current?.unsubscribe();
@@ -146,7 +245,11 @@ const AppShell = (): React.JSX.Element => {
           setJobsLoading(false);
           if (lastSyncErrorRef.current !== nextSyncState.message) {
             lastSyncErrorRef.current = nextSyncState.message;
-            void analytics.recordError(new Error(nextSyncState.message), 'jobs_sync_error');
+            recordClassifiedError(
+              new Error(nextSyncState.message),
+              'app_jobs_sync_state',
+              'Jobs sync error.',
+            );
           }
         }
         if (nextSyncState.status === 'live' || nextSyncState.status === 'stale') {
@@ -159,9 +262,13 @@ const AppShell = (): React.JSX.Element => {
     jobsSubscriptionRef.current = subscription;
 
     void subscription.refresh().catch(error => {
-      setJobsError(error instanceof Error ? error.message : 'Unable to load jobs.');
+      const classified = recordClassifiedError(
+        error,
+        'app_jobs_initial_refresh',
+        'Unable to load jobs.',
+      );
+      setJobsError(classified.userMessage);
       setJobsLoading(false);
-      void analytics.recordError(error, 'jobs_initial_refresh_failed');
     });
 
     return () => {
@@ -170,7 +277,7 @@ const AppShell = (): React.JSX.Element => {
         jobsSubscriptionRef.current = null;
       }
     };
-  }, [analytics, jobsService, session]);
+  }, [analytics, jobsService, recordClassifiedError, session]);
 
   useEffect(() => {
     if (!session || !isFirebaseReady() || !notificationsEnabled) {
@@ -210,8 +317,13 @@ const AppShell = (): React.JSX.Element => {
           );
           return;
         }
-      } catch {
+      } catch (error) {
         // Token upload failures should not block app usage.
+        recordClassifiedError(
+          error,
+          'app_push_token_sync',
+          'Unable to sync push token.',
+        );
       }
     };
 
@@ -220,7 +332,7 @@ const AppShell = (): React.JSX.Element => {
     return () => {
       cancelled = true;
     };
-  }, [notificationsEnabled, notificationsService, session]);
+  }, [notificationsEnabled, notificationsService, recordClassifiedError, session]);
 
   const refreshJobs = useCallback(async (): Promise<Job[]> => {
     if (!session) {
@@ -236,20 +348,23 @@ const AppShell = (): React.JSX.Element => {
       setJobs(nextJobs);
       return nextJobs;
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unable to refresh jobs.';
-      setJobsError(message);
-      void analytics.recordError(error, 'jobs_manual_refresh_failed');
+      const classified = recordClassifiedError(
+        error,
+        'app_jobs_manual_refresh',
+        'Unable to refresh jobs.',
+      );
+      setJobsError(classified.userMessage);
       throw error;
     } finally {
       setJobsLoading(false);
     }
-  }, [analytics, jobsService, session]);
+  }, [jobsService, recordClassifiedError, session]);
 
   const selectedJob = useMemo(
     () => (selectedJobId ? jobs.find(job => job.id === selectedJobId) ?? null : null),
     [jobs, selectedJobId],
   );
-  const activeJobs = useMemo(() => jobs.filter(job => job.status !== 'delivered' && job.status !== 'cancelled'), [jobs]);
+  const activeJobs = useMemo(() => jobs.filter(job => job.status !== 'completed' && job.status !== 'cancelled'), [jobs]);
   const activeJobsCount = activeJobs.length;
   const activeJob = activeJobs[0] ?? null;
   const mapShellEnabled = featureFlagsState.state.flags.mapShell;
@@ -265,6 +380,10 @@ const AppShell = (): React.JSX.Element => {
 
   if (!session) {
     return <LoginScreen />;
+  }
+
+  if (onboardingRequired) {
+    return <OnboardingScreen onComplete={completeOnboarding} />;
   }
 
   if (selectedJob) {
@@ -315,6 +434,7 @@ const AppShell = (): React.JSX.Element => {
           });
         }}
         onOpenSettings={() => setMapShellView('settings')}
+        onOpenJobs={() => setActiveTab('jobs')}
       />
     );
   }

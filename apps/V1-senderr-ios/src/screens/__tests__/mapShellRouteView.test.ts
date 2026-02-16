@@ -13,7 +13,7 @@ const baseJob: Job = {
   pickupLocation: {latitude: 37.7901, longitude: -122.4002},
   dropoffLocation: {latitude: 37.7911, longitude: -122.4012},
   etaMinutes: 18,
-  status: 'accepted',
+  status: 'assigned',
   updatedAt: new Date().toISOString(),
 };
 
@@ -34,9 +34,9 @@ describe('mapShellRouteView', () => {
     expect(summary.legLabel).toBe('Waiting for active job');
   });
 
-  it('builds pickup leg route for accepted jobs', () => {
+  it('builds pickup leg route for assigned jobs', () => {
     const summary = buildMapShellRouteSummary(
-      {...baseJob, status: 'accepted'},
+      {...baseJob, status: 'assigned'},
       courierLocation,
     );
 
@@ -57,9 +57,9 @@ describe('mapShellRouteView', () => {
     expect(summary.distanceMeters).toBeGreaterThan(0);
   });
 
-  it('deduplicates consecutive points when courier equals pickup', () => {
+  it('deduplicates consecutive points when courier equals pickup for assigned jobs', () => {
     const summary = buildMapShellRouteSummary(
-      {...baseJob, status: 'accepted'},
+      {...baseJob, status: 'assigned'},
       {
         ...courierLocation,
         latitude: baseJob.pickupLocation!.latitude,

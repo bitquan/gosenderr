@@ -1,0 +1,24 @@
+<svg width="1080" height="780" viewBox="0 0 1080 780" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100%" height="100%" fill="#0b1220"/>
+  <g transform="translate(40,36)">
+    <rect width="1000" height="640" rx="12" fill="#071026"/>
+    <text x="20" y="34" fill="#f8fafc" font-size="20" font-weight="800">Job Detail — Dropoff</text>
+    <text x="20" y="60" fill="#cbd5e1" font-size="12">Dropoff proof required</text>
+
+    <!-- Proof area -->
+    <g transform="translate(20,100)">
+      <rect x="0" y="0" width="420" height="240" rx="10" fill="#0f172a"/>
+      <text x="16" y="28" fill="#cbd5e1" font-size="12">Proof photo</text>
+      <rect x="16" y="44" width="120" height="96" rx="8" fill="#082033"/>
+      <text x="148" y="84" fill="#cbd5e1" font-size="12">Attach photo to continue</text>
+    </g>
+
+    <!-- CTA area -->
+    <g transform="translate(20,380)">
+      <rect x="0" y="0" width="360" height="64" rx="12" fill="#0f172a"/>
+      <text x="16" y="36" fill="#cbd5e1" font-size="12">Complete Delivery (disabled — dropoff proof required)</text>
+      <rect x="400" y="0" width="220" height="64" rx="12" fill="#edf2ff"/>
+      <text x="460" y="42" fill="#1453ff" font-size="16" font-weight="700">Attach dropoff proof</text>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,20 @@
+<svg width="1080" height="780" viewBox="0 0 1080 780" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100%" height="100%" fill="#0b1220"/>
+  <!-- Route-only map -->
+  <g transform="translate(40,36)">
+    <rect width="1000" height="520" rx="12" fill="#021427"/>
+    <text x="20" y="34" fill="#f8fafc" font-size="20" font-weight="800">Map (Route Only)</text>
+    <text x="20" y="60" fill="#cbd5e1" font-size="12">Map-only view — job browsing available</text>
+  </g>
+
+  <!-- Bottom card (browsable) -->
+  <g transform="translate(40,580)">
+    <rect width="1000" height="140" rx="14" fill="rgba(15,23,42,0.86)"/>
+    <g transform="translate(20,12)">
+      <text x="0" y="26" fill="#f8fafc" font-size="17" font-weight="800">Route Preview</text>
+      <text x="0" y="50" fill="#cbd5e1" font-size="12">You can still swipe through jobs while in route-only</text>
+      <rect x="0" y="70" width="180" height="44" rx="10" fill="#1453ff"/>
+      <text x="58" y="100" fill="#ffffff" font-size="15" font-weight="700">Cycle Jobs</text>
+    </g>
+  </g>
+</svg>

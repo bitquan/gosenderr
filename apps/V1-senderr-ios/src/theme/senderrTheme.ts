@@ -1,0 +1,37 @@
+export const senderrTheme = {
+  colors: {
+    background: '#F8F9FF',
+    surface: '#FFFFFF',
+    surfaceMuted: '#F1F3FF',
+    border: '#DCE2F8',
+    borderStrong: '#C7D0F5',
+    textPrimary: '#1F2937',
+    textSecondary: '#4B5563',
+    textMuted: '#6B7280',
+    brandPrimary: '#6B4EFF',
+    brandSecondary: '#9D7FFF',
+    brandSoft: '#EEF0FF',
+    info: '#4F46E5',
+    success: '#16A34A',
+    warning: '#D97706',
+    danger: '#DC2626',
+    darkSurface: '#1F2338',
+    darkSurfaceSoft: 'rgba(31, 35, 56, 0.88)',
+    darkSurfaceStrong: 'rgba(31, 35, 56, 0.96)',
+  },
+} as const;
+
+export const senderrStatusColors = {
+  open: '#808080',
+  assigned: '#2563EB',
+  enroute_pickup: '#7C3AED',
+  arrived_pickup: '#A855F7',
+  picked_up: '#EA580C',
+  enroute_dropoff: '#DC2626',
+  arrived_dropoff: '#EF4444',
+  completed: '#16A34A',
+  cancelled: '#52525B',
+  disputed: '#F97316',
+  expired: '#9CA3AF',
+  failed: '#DC2626',
+} as const;

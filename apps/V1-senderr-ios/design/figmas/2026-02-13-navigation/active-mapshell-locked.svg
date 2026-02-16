@@ -1,0 +1,28 @@
+<svg width="1080" height="780" viewBox="0 0 1080 780" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100%" height="100%" fill="#0b1220"/>
+  <!-- Map surface -->
+  <g transform="translate(40,36)">
+    <rect width="1000" height="460" rx="12" fill="#071026"/>
+    <text x="20" y="34" fill="#f8fafc" font-size="20" font-weight="800">Map — Active job</text>
+  </g>
+  <!-- Bottom card (locked to active job) -->
+  <g transform="translate(40,520)">
+    <rect width="1000" height="220" rx="14" fill="rgba(15,23,42,0.86)"/>
+    <g transform="translate(20,14)">
+      <text x="0" y="26" fill="#f8fafc" font-size="17" font-weight="800">Pickup — Courier Customer</text>
+      <text x="0" y="48" fill="#cbd5e1" font-size="12">En route to pickup · ETA 6 min</text>
+      <!-- Back to Jobs button -->
+      <rect x="860" y="4" width="120" height="34" rx="9" fill="#0f172a" stroke="#29405a"/>
+      <text x="892" y="28" fill="#cbd5e1" font-size="12">Back to Jobs</text>
+
+      <!-- Dev: Mock Move Forward -->
+      <rect x="860" y="48" width="120" height="34" rx="9" fill="#edf2ff"/>
+      <text x="890" y="72" fill="#1453ff" font-size="12">Mock Move</text>
+
+      <!-- CTA -->
+      <rect x="0" y="84" width="220" height="44" rx="10" fill="#1453ff"/>
+      <text x="70" y="114" fill="#ffffff" font-size="15" font-weight="700">Mark Arrived</text>
+      <text x="0" y="160" fill="#cbd5e1" font-size="12">Swipe disabled while viewing active job</text>
+    </g>
+  </g>
+</svg>

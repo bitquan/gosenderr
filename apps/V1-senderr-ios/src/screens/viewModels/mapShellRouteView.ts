@@ -20,6 +20,10 @@ export type MapShellRoutePlan = {
   legLabel: string;
 };
 
+type MapShellRoutePlanOptions = {
+  deliveryOnly?: boolean;
+};
+
 const toRadians = (value: number): number => (value * Math.PI) / 180;
 
 export const distanceMeters = (
@@ -101,19 +105,48 @@ export const estimateEtaMinutes = (distance: number): number | null => {
 export const buildMapShellRoutePlan = (
   activeJob: Job | null,
   courierLocation: LocationSnapshot | null,
+  options?: MapShellRoutePlanOptions,
 ): MapShellRoutePlan => {
+  const deliveryOnly = options?.deliveryOnly ?? false;
   const courier = toCoordinate(courierLocation);
   const pickup = toCoordinate(activeJob?.pickupLocation ?? null);
   const dropoff = toCoordinate(activeJob?.dropoffLocation ?? null);
 
-  if (!activeJob || activeJob.status === 'cancelled' || activeJob.status === 'delivered') {
+  if (
+    !activeJob ||
+    activeJob.status === 'cancelled' ||
+    activeJob.status === 'completed' ||
+    activeJob.status === 'disputed' ||
+    activeJob.status === 'expired' ||
+    activeJob.status === 'failed'
+  ) {
     return {points: courier ? [courier] : [], legLabel: 'Waiting for active job'};
+  }
+
+  if (deliveryOnly) {
+    const deliveryPoints: RouteCoordinate[] = [];
+    if (pickup) {
+      deliveryPoints.push(pickup);
+    }
+    if (dropoff) {
+      deliveryPoints.push(dropoff);
+    }
+
+    return {
+      points: uniqueCoordinates(deliveryPoints),
+      legLabel: 'Delivery route',
+    };
   }
 
   const points: RouteCoordinate[] = [];
   let legLabel = 'Active route';
 
-  if (activeJob.status === 'pending' || activeJob.status === 'accepted') {
+  if (
+    activeJob.status === 'open' ||
+    activeJob.status === 'assigned' ||
+    activeJob.status === 'enroute_pickup' ||
+    activeJob.status === 'arrived_pickup'
+  ) {
     if (courier) {
       points.push(courier);
     }
@@ -124,7 +157,11 @@ export const buildMapShellRoutePlan = (
       points.push(dropoff);
     }
     legLabel = 'To pickup';
-  } else if (activeJob.status === 'picked_up') {
+  } else if (
+    activeJob.status === 'picked_up' ||
+    activeJob.status === 'enroute_dropoff' ||
+    activeJob.status === 'arrived_dropoff'
+  ) {
     if (courier) {
       points.push(courier);
     }
@@ -153,8 +190,9 @@ export const buildMapShellRoutePlan = (
 export const buildMapShellRouteSummary = (
   activeJob: Job | null,
   courierLocation: LocationSnapshot | null,
+  options?: MapShellRoutePlanOptions,
 ): MapShellRouteSummary => {
-  const plan = buildMapShellRoutePlan(activeJob, courierLocation);
+  const plan = buildMapShellRoutePlan(activeJob, courierLocation, options);
   const totalDistance = calculateRouteDistance(plan.points);
   return {
     coordinates: plan.points,

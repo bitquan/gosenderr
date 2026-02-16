@@ -1,6 +1,8 @@
 import React from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 
+import {senderrTheme} from '../../theme/senderrTheme';
+
 import {PrimaryButton} from '../PrimaryButton';
 
 type EmptyStateProps = {
@@ -35,24 +37,24 @@ export const EmptyState = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#ffffff',
+    backgroundColor: senderrTheme.colors.surface,
     borderRadius: 12,
     padding: 14,
     gap: 8,
     borderWidth: 1,
-    borderColor: '#dbe3f0',
+    borderColor: senderrTheme.colors.border,
   },
   compactCard: {
     paddingVertical: 10,
     paddingHorizontal: 12,
   },
   title: {
-    color: '#111827',
+    color: senderrTheme.colors.textPrimary,
     fontWeight: '700',
     fontSize: 14,
   },
   message: {
-    color: '#4b5563',
+    color: senderrTheme.colors.textSecondary,
     fontSize: 13,
   },
 });

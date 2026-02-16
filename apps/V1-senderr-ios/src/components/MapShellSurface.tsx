@@ -6,6 +6,7 @@ import {validateMapsConfig} from '../config/maps';
 import {useServiceRegistry} from '../services/serviceRegistry';
 import type {LocationSnapshot} from '../services/ports/locationPort';
 import type {MapShellCameraMode, RouteCoordinate} from '../screens/viewModels/mapShellRouteView';
+import {senderrTheme} from '../theme/senderrTheme';
 import type {Job} from '../types/jobs';
 
 type MapShellSurfaceProps = {
@@ -14,6 +15,7 @@ type MapShellSurfaceProps = {
   routeCoordinates: RouteCoordinate[];
   cameraMode: MapShellCameraMode;
   onCameraModeChange: (mode: MapShellCameraMode) => void;
+  viewMode: 'full' | 'route_only';
 };
 
 type MapPoint = {
@@ -50,6 +52,7 @@ export const MapShellSurface = ({
   routeCoordinates,
   cameraMode,
   onCameraModeChange,
+  viewMode,
 }: MapShellSurfaceProps): React.JSX.Element => {
   const {featureFlags} = useServiceRegistry();
   const {state: flagsState} = featureFlags.useFeatureFlags();
@@ -65,7 +68,7 @@ export const MapShellSurface = ({
       next.push({
         id: 'courier',
         title: 'You',
-        color: '#1453ff',
+        color: senderrTheme.colors.brandPrimary,
         latitude: courierLocation.latitude,
         longitude: courierLocation.longitude,
       });
@@ -101,6 +104,11 @@ export const MapShellSurface = ({
         longitude: point.longitude,
       })),
     [points],
+  );
+  const routeOnlyActive = viewMode === 'route_only' && routeCoordinates.length >= 2;
+  const visiblePoints = useMemo(
+    () => (routeOnlyActive ? points.filter(point => point.id !== 'courier') : points),
+    [points, routeOnlyActive],
   );
 
   useEffect(() => {
@@ -184,13 +192,25 @@ export const MapShellSurface = ({
   }
 
   return (
-    <View style={styles.surface}>
+    <View testID="map-surface" style={styles.surface}>
       <MapView
         ref={mapRef}
+        // allow MapView to receive touch events even when not in `manual` so
+        // an initial thumb drag both switches to manual and moves the map.
+        pointerEvents={'auto'}
         style={StyleSheet.absoluteFill}
         initialRegion={buildRegion(points[0])}
-        rotateEnabled
-        pitchEnabled
+        // Keep gestures enabled at all times so the user can always take control.
+        // Camera mode effects still auto-position when in Follow/Fit.
+        rotateEnabled={true}
+        pitchEnabled={true}
+        zoomEnabled={true}
+        scrollEnabled={true}
+        onTouchStart={() => {
+          if (cameraMode !== 'manual') {
+            onCameraModeChange('manual');
+          }
+        }}
         onPanDrag={() => {
           if (cameraMode !== 'manual') {
             onCameraModeChange('manual');
@@ -198,7 +218,7 @@ export const MapShellSurface = ({
         }}
         toolbarEnabled={false}
         onMapReady={() => setMapReady(true)}>
-        {points.map(point => (
+        {visiblePoints.map(point => (
           <Marker
             key={point.id}
             coordinate={{
@@ -223,8 +243,9 @@ export const MapShellSurface = ({
       <View pointerEvents="none" style={styles.mapStatus}>
         <Text style={styles.mapStatusText}>
           {mapsValidation.status === 'ok' ? 'Map ready' : 'Map config warning'}{' '}
-          · {points.length} marker
-          {points.length === 1 ? '' : 's'}
+          · {visiblePoints.length} marker
+          {visiblePoints.length === 1 ? '' : 's'}
+          {routeOnlyActive ? ' · route only' : ''}
         </Text>
       </View>
     </View>
@@ -234,38 +255,38 @@ export const MapShellSurface = ({
 const styles = StyleSheet.create({
   surface: {
     flex: 1,
-    backgroundColor: '#0b1220',
+    backgroundColor: senderrTheme.colors.darkSurface,
   },
   mapStatus: {
     position: 'absolute',
     left: 12,
     bottom: 12,
-    backgroundColor: 'rgba(15, 23, 42, 0.75)',
+    backgroundColor: senderrTheme.colors.darkSurfaceSoft,
     borderRadius: 999,
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
   mapStatusText: {
-    color: '#e2e8f0',
+    color: '#E8ECFF',
     fontSize: 12,
     fontWeight: '600',
   },
   disabledSurface: {
     flex: 1,
-    backgroundColor: '#0f172a',
+    backgroundColor: senderrTheme.colors.darkSurface,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
     paddingHorizontal: 28,
   },
   disabledTitle: {
-    color: '#f8fafc',
+    color: '#F6F7FF',
     fontSize: 18,
     fontWeight: '700',
     textAlign: 'center',
   },
   disabledSubtitle: {
-    color: '#cbd5e1',
+    color: '#CBD2EC',
     textAlign: 'center',
   },
 });

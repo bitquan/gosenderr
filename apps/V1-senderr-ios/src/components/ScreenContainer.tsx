@@ -1,6 +1,8 @@
 import React from 'react';
 import {SafeAreaView, ScrollView, StyleSheet, View, type ViewStyle} from 'react-native';
 
+import {senderrTheme} from '../theme/senderrTheme';
+
 export const ScreenContainer = ({
   children,
   contentStyle,
@@ -26,7 +28,7 @@ export const ScreenContainer = ({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f4f7fb',
+    backgroundColor: senderrTheme.colors.background,
   },
   content: {
     flexGrow: 1,

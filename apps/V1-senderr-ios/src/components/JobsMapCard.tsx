@@ -5,6 +5,7 @@ import MapView, {Marker, type Region} from 'react-native-maps';
 import {validateMapsConfig} from '../config/maps';
 import {useServiceRegistry} from '../services/serviceRegistry';
 import type {LocationSnapshot} from '../services/ports/locationPort';
+import {senderrTheme} from '../theme/senderrTheme';
 import type {Job} from '../types/jobs';
 
 type JobsMapCardProps = {
@@ -56,7 +57,7 @@ export const JobsMapCard = ({activeJob, courierLocation}: JobsMapCardProps): Rea
       next.push({
         id: 'courier',
         title: 'You',
-        color: '#1453ff',
+        color: senderrTheme.colors.brandPrimary,
         latitude: courierLocation.latitude,
         longitude: courierLocation.longitude,
       });
@@ -171,18 +172,20 @@ export const JobsMapCard = ({activeJob, courierLocation}: JobsMapCardProps): Rea
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
+    backgroundColor: senderrTheme.colors.surface,
+    borderRadius: 16,
     padding: 16,
     gap: 8,
+    borderWidth: 1,
+    borderColor: senderrTheme.colors.border,
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#1f2937',
+    color: senderrTheme.colors.textPrimary,
   },
   message: {
-    color: '#4b5563',
+    color: senderrTheme.colors.textSecondary,
   },
   config: {
     color: '#0f766e',
@@ -198,7 +201,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   helper: {
-    color: '#6b7280',
+    color: senderrTheme.colors.textMuted,
     fontSize: 12,
   },
 });

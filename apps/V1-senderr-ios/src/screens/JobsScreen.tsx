@@ -10,6 +10,7 @@ import {StatusBadge} from '../components/StatusBadge';
 import type {JobsSyncState} from '../services/ports/jobsPort';
 import {deriveJobsScreenState, deriveSyncHealth, formatSyncTime} from './viewModels/jobsViewState';
 import type {Job} from '../types/jobs';
+import {senderrTheme} from '../theme/senderrTheme';
 
 type JobsScreenProps = {
   jobs: Job[];
@@ -165,46 +166,50 @@ export const JobsScreen = ({
 
 const styles = StyleSheet.create({
   header: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
+    backgroundColor: senderrTheme.colors.surface,
+    borderRadius: 16,
     padding: 16,
+    borderWidth: 1,
+    borderColor: senderrTheme.colors.border,
   },
   title: {
     fontSize: 22,
     fontWeight: '800',
-    color: '#111827',
+    color: senderrTheme.colors.textPrimary,
   },
   subtitle: {
-    color: '#4b5563',
+    color: senderrTheme.colors.textSecondary,
     marginTop: 2,
   },
   syncCard: {
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 12,
     gap: 6,
+    borderWidth: 1,
+    borderColor: senderrTheme.colors.border,
   },
   syncCardLive: {
-    backgroundColor: '#e8f5e9',
+    backgroundColor: '#ECFDF5',
   },
   syncCardDegraded: {
-    backgroundColor: '#fff7ed',
+    backgroundColor: '#FFF7ED',
   },
   syncCardError: {
-    backgroundColor: '#fee2e2',
+    backgroundColor: '#FEF2F2',
   },
   syncCardIdle: {
-    backgroundColor: '#eef2ff',
+    backgroundColor: senderrTheme.colors.brandSoft,
   },
   syncTitle: {
     fontWeight: '800',
-    color: '#111827',
+    color: senderrTheme.colors.textPrimary,
   },
   syncText: {
-    color: '#374151',
+    color: senderrTheme.colors.textSecondary,
     fontSize: 13,
   },
   syncMeta: {
-    color: '#4b5563',
+    color: senderrTheme.colors.textSecondary,
     fontSize: 12,
   },
   listContent: {
@@ -213,10 +218,12 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   card: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
+    backgroundColor: senderrTheme.colors.surface,
+    borderRadius: 16,
     padding: 14,
     gap: 4,
+    borderWidth: 1,
+    borderColor: senderrTheme.colors.border,
   },
   row: {
     flexDirection: 'row',
@@ -227,22 +234,22 @@ const styles = StyleSheet.create({
   customer: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#111827',
+    color: senderrTheme.colors.textPrimary,
   },
   addressLabel: {
-    color: '#6b7280',
+    color: senderrTheme.colors.textMuted,
     fontSize: 12,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginTop: 4,
   },
   address: {
-    color: '#1f2937',
+    color: senderrTheme.colors.textPrimary,
     fontSize: 14,
   },
   meta: {
     marginTop: 6,
-    color: '#1453ff',
+    color: senderrTheme.colors.brandPrimary,
     fontWeight: '700',
   },
 });

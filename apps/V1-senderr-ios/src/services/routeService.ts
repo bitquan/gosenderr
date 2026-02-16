@@ -42,6 +42,21 @@ type DirectionsPayload = {
   }>;
 };
 
+const ROUTE_FETCH_TIMEOUT_MS = 8_000;
+
+const fetchWithTimeout = async (url: string): Promise<Response | null> => {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), ROUTE_FETCH_TIMEOUT_MS);
+  try {
+    const response = await fetch(url, {signal: controller.signal});
+    return response;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+};
+
 const parseRoadRoute = (payload: DirectionsPayload): RoadRoute | null => {
   const firstRoute = payload.routes?.[0];
   if (!firstRoute) {
@@ -77,8 +92,8 @@ const fetchMapboxRoute = async (points: RouteCoordinate[]): Promise<RoadRoute | 
     `https://api.mapbox.com/directions/v5/mapbox/driving/${path}` +
     `?alternatives=false&geometries=geojson&overview=full&access_token=${encodeURIComponent(token)}`;
 
-  const response = await fetch(url);
-  if (!response.ok) {
+  const response = await fetchWithTimeout(url);
+  if (!response || !response.ok) {
     return null;
   }
 
@@ -92,8 +107,8 @@ const fetchOsrmRoute = async (points: RouteCoordinate[]): Promise<RoadRoute | nu
     `https://router.project-osrm.org/route/v1/driving/${path}` +
     `?alternatives=false&geometries=geojson&overview=full`;
 
-  const response = await fetch(url);
-  if (!response.ok) {
+  const response = await fetchWithTimeout(url);
+  if (!response || !response.ok) {
     return null;
   }
 

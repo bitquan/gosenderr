@@ -35,24 +35,24 @@ export const ErrorState = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#FEF2F2',
     borderRadius: 12,
     padding: 14,
     gap: 8,
     borderWidth: 1,
-    borderColor: '#fecaca',
+    borderColor: '#FECACA',
   },
   compactCard: {
     paddingVertical: 10,
     paddingHorizontal: 12,
   },
   title: {
-    color: '#b91c1c',
+    color: '#B91C1C',
     fontWeight: '700',
     fontSize: 14,
   },
   message: {
-    color: '#7f1d1d',
+    color: '#7F1D1D',
     fontSize: 13,
   },
 });

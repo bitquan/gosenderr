@@ -1,5 +1,5 @@
 import React, {useEffect, useMemo, useRef} from 'react';
-import {StyleSheet, Text, View} from 'react-native';
+import {Linking, StyleSheet, Text, View} from 'react-native';
 
 import {EmptyState} from '../components/states/EmptyState';
 import {ErrorState} from '../components/states/ErrorState';
@@ -8,10 +8,17 @@ import {PrimaryButton} from '../components/PrimaryButton';
 import {ScreenContainer} from '../components/ScreenContainer';
 import {useAuth} from '../context/AuthContext';
 import {useServiceRegistry} from '../services/serviceRegistry';
+import {
+  classifyUnknownError,
+  formatErrorContext,
+  getErrorResolution,
+  type AppError,
+} from '../services/errorSystem';
 import type {JobsSyncState} from '../services/ports/jobsPort';
 import type {LocationSnapshot} from '../services/ports/locationPort';
 import {deriveSyncHealth, formatLocationSampleTime, formatSyncTime} from './viewModels/jobsViewState';
 import type {Job} from '../types/jobs';
+import {senderrTheme} from '../theme/senderrTheme';
 
 type DashboardScreenProps = {
   onOpenJobs: () => void;
@@ -51,10 +58,10 @@ const loadJobsMapCard = (): React.ComponentType<JobsMapCardProps> => {
   try {
     // Metro can serve stale module state after path/branch changes.
     // Resolve lazily so dashboard stays alive with a clear fallback.
-    // eslint-disable-next-line @typescript-eslint/no-require-imports,global-require
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const mapModule = require('../components/JobsMapCard');
     return mapModule?.JobsMapCard ?? JobsMapCardFallback;
-  } catch (_error) {
+  } catch {
     return JobsMapCardFallback;
   }
 };
@@ -73,6 +80,7 @@ export const DashboardScreen = ({
   const {location: locationService, analytics} = useServiceRegistry();
   const {state: locationState, requestPermission, startTracking, stopTracking} = locationService.useLocationTracking();
   const lastTrackingError = useRef<string | null>(null);
+  const [trackingActionError, setTrackingActionError] = React.useState<AppError | null>(null);
 
   const syncHealth = deriveSyncHealth(jobsSyncState);
 
@@ -136,10 +144,14 @@ export const DashboardScreen = ({
   useEffect(() => {
     if (locationState.error && locationState.error !== lastTrackingError.current) {
       lastTrackingError.current = locationState.error;
+      const classified = classifyUnknownError(new Error(locationState.error), {
+        source: 'dashboard_tracking_state',
+        fallbackMessage: 'Location tracking issue detected.',
+      });
       void analytics.track('tracking_error', {
         message: locationState.error.slice(0, 100),
       });
-      void analytics.recordError(new Error(locationState.error), 'tracking_state_error');
+      void analytics.recordError(new Error(locationState.error), formatErrorContext('dashboard_tracking_state', classified));
     }
 
     if (!locationState.error) {
@@ -151,16 +163,22 @@ export const DashboardScreen = ({
     void (async () => {
       try {
         await startTracking();
+        setTrackingActionError(null);
         void analytics.track('tracking_started', {
           has_permission: locationState.hasPermission,
           from_screen: 'dashboard',
         });
       } catch (error) {
+        const classified = classifyUnknownError(error, {
+          source: 'dashboard_start_tracking',
+          fallbackMessage: 'Unable to start tracking.',
+        });
+        setTrackingActionError(classified);
         void analytics.track('tracking_error', {
           from_screen: 'dashboard',
           action: 'start',
         });
-        void analytics.recordError(error, 'tracking_start_failed');
+        void analytics.recordError(error, formatErrorContext('dashboard_start_tracking', classified));
       }
     })();
   };
@@ -177,12 +195,30 @@ export const DashboardScreen = ({
       if (!locationState.hasPermission) {
         const granted = await requestPermission();
         if (!granted) {
+          setTrackingActionError(
+            classifyUnknownError(new Error('Location permission denied.'), {
+              source: 'dashboard_retry_tracking',
+              fallbackMessage: 'Location permission denied.',
+            }),
+          );
           return;
         }
       }
-      await startTracking();
+      try {
+        await startTracking();
+        setTrackingActionError(null);
+      } catch (error) {
+        const classified = classifyUnknownError(error, {
+          source: 'dashboard_retry_tracking',
+          fallbackMessage: 'Unable to retry tracking.',
+        });
+        setTrackingActionError(classified);
+        void analytics.recordError(error, formatErrorContext('dashboard_retry_tracking', classified));
+      }
     })();
   };
+
+  const trackingResolution = trackingActionError ? getErrorResolution(trackingActionError) : null;
 
   return (
     <ScreenContainer>
@@ -267,6 +303,35 @@ export const DashboardScreen = ({
             />
           ) : null}
         </View>
+        {trackingActionError ? (
+          <Text style={styles.error}>{trackingActionError.userMessage}</Text>
+        ) : null}
+        {trackingResolution?.action === 'open_settings' ? (
+          <PrimaryButton
+            label="Open Settings"
+            variant="secondary"
+            onPress={() => {
+              void Linking.openSettings();
+            }}
+          />
+        ) : null}
+        {trackingResolution?.action === 'retry' ? (
+          <PrimaryButton
+            label={trackingResolution.label ?? 'Retry'}
+            variant="secondary"
+            onPress={handleRetryTracking}
+          />
+        ) : null}
+        {trackingResolution?.action === 'refresh' ? (
+          <PrimaryButton
+            label="Refresh jobs"
+            variant="secondary"
+            onPress={onRetryJobs}
+          />
+        ) : null}
+        {trackingResolution?.escalationMessage ? (
+          <Text style={styles.subtitle}>{trackingResolution.escalationMessage}</Text>
+        ) : null}
       </View>
 
       <JobsMapCard activeJob={activeJob} courierLocation={locationState.lastLocation} />
@@ -276,28 +341,34 @@ export const DashboardScreen = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
+    backgroundColor: senderrTheme.colors.surface,
+    borderRadius: 16,
     padding: 16,
     gap: 8,
+    borderWidth: 1,
+    borderColor: senderrTheme.colors.border,
   },
   title: {
     fontSize: 22,
     fontWeight: '800',
-    color: '#111827',
+    color: senderrTheme.colors.textPrimary,
   },
   subtitle: {
-    color: '#4b5563',
+    color: senderrTheme.colors.textSecondary,
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#1f2937',
+    color: senderrTheme.colors.textPrimary,
   },
   metric: {
     fontSize: 24,
     fontWeight: '800',
-    color: '#1453ff',
+    color: senderrTheme.colors.brandPrimary,
+  },
+  error: {
+    color: senderrTheme.colors.danger,
+    fontWeight: '600',
   },
   row: {
     flexDirection: 'row',

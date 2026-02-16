@@ -2,7 +2,9 @@ import type {AuthSession} from '../../types/auth';
 
 export type AnalyticsEventName =
   | 'auth_signed_in'
+  | 'auth_signed_up'
   | 'auth_signed_out'
+  | 'onboarding_completed'
   | 'jobs_loaded'
   | 'job_status_updated'
   | 'notification_foreground_received'

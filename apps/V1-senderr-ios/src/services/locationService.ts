@@ -4,12 +4,14 @@ import Geolocation, {
   type GeolocationError,
   type GeolocationResponse,
 } from '@react-native-community/geolocation';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import type {
   LocationSnapshot,
   LocationTrackingController,
   LocationTrackingState,
 } from './ports/locationPort';
 import {featureFlagsService} from './featureFlagsService';
+import {runtimeConfig} from '../config/runtime';
 
 export type {LocationSnapshot, LocationTrackingController, LocationTrackingState} from './ports/locationPort';
 
@@ -46,12 +48,26 @@ type Listener = (state: LocationTrackingState) => void;
 const listeners = new Set<Listener>();
 let watchId: number | null = null;
 let permissionPromise: Promise<boolean> | null = null;
+let hydrationPromise: Promise<void> | null = null;
+let hasHydratedState = false;
+let lastPermissionRequestAt = 0;
+
+const LOCATION_STATE_STORAGE_KEY = '@senderr/location_state_v1';
+const LOCATION_PERMISSION_REQUEST_COOLDOWN_MS = 15_000;
 
 let sharedState: LocationTrackingState = {
   hasPermission: false,
   tracking: false,
   lastLocation: null,
   error: null,
+};
+
+const persistLocationState = (): void => {
+  const payload = {
+    hasPermission: sharedState.hasPermission,
+    lastLocation: sharedState.lastLocation,
+  };
+  void AsyncStorage.setItem(LOCATION_STATE_STORAGE_KEY, JSON.stringify(payload)).catch(() => undefined);
 };
 
 const publishState = (): void => {
@@ -62,12 +78,66 @@ const publishState = (): void => {
 
 const updateSharedState = (updater: (prev: LocationTrackingState) => LocationTrackingState): void => {
   sharedState = updater(sharedState);
+  persistLocationState();
   publishState();
+};
+
+const hydrateSharedState = async (): Promise<void> => {
+  if (hasHydratedState) {
+    return;
+  }
+  if (hydrationPromise) {
+    return hydrationPromise;
+  }
+
+  hydrationPromise = (async () => {
+    try {
+      const raw = await AsyncStorage.getItem(LOCATION_STATE_STORAGE_KEY);
+      if (!raw) {
+        return;
+      }
+      const parsed = JSON.parse(raw) as Partial<LocationTrackingState> | null;
+      if (!parsed) {
+        return;
+      }
+
+      const nextHasPermission =
+        typeof parsed.hasPermission === 'boolean' ? parsed.hasPermission : sharedState.hasPermission;
+      const parsedLocation = parsed.lastLocation as Partial<LocationSnapshot> | null | undefined;
+      const nextLastLocation =
+        parsedLocation &&
+        typeof parsedLocation.latitude === 'number' &&
+        typeof parsedLocation.longitude === 'number' &&
+        typeof parsedLocation.timestamp === 'number'
+          ? {
+              latitude: parsedLocation.latitude,
+              longitude: parsedLocation.longitude,
+              accuracy: typeof parsedLocation.accuracy === 'number' ? parsedLocation.accuracy : 0,
+              timestamp: parsedLocation.timestamp,
+            }
+          : sharedState.lastLocation;
+
+      sharedState = {
+        ...sharedState,
+        hasPermission: nextHasPermission,
+        lastLocation: nextLastLocation,
+      };
+      publishState();
+    } catch {
+      // Keep defaults when cache is unavailable or malformed.
+    } finally {
+      hasHydratedState = true;
+      hydrationPromise = null;
+    }
+  })();
+
+  return hydrationPromise;
 };
 
 const setTrackingError = (error: GeolocationError): void => {
   updateSharedState(prev => ({
     ...prev,
+    hasPermission: error.code === 1 ? false : prev.hasPermission,
     error: error.message,
     tracking: false,
   }));
@@ -79,6 +149,8 @@ const setTrackingError = (error: GeolocationError): void => {
 };
 
 const requestPermissionInternal = async (): Promise<boolean> => {
+  await hydrateSharedState();
+
   if (permissionPromise) {
     return permissionPromise;
   }
@@ -122,6 +194,8 @@ const stopTrackingInternal = (): void => {
 };
 
 const startTrackingInternal = async (): Promise<void> => {
+  await hydrateSharedState();
+
   if (!featureFlagsService.isEnabled('trackingUpload')) {
     updateSharedState(prev => ({
       ...prev,
@@ -135,6 +209,20 @@ const startTrackingInternal = async (): Promise<void> => {
     return;
   }
 
+  const now = Date.now();
+  const canRequestPermission = now - lastPermissionRequestAt >= LOCATION_PERMISSION_REQUEST_COOLDOWN_MS;
+  if (!sharedState.hasPermission && !canRequestPermission) {
+    updateSharedState(prev => ({
+      ...prev,
+      tracking: false,
+      error: prev.error ?? 'Location permission still pending. Open iOS Settings if blocked.',
+    }));
+    return;
+  }
+  if (!sharedState.hasPermission) {
+    lastPermissionRequestAt = now;
+  }
+
   const hasPermission = sharedState.hasPermission || (await requestPermissionInternal());
   if (!hasPermission) {
     return;
@@ -146,6 +234,21 @@ const startTrackingInternal = async (): Promise<void> => {
     error: null,
   }));
 
+  const devMode = runtimeConfig.envName !== 'prod';
+  const watchOptions = devMode
+    ? {
+        enableHighAccuracy: false,
+        distanceFilter: 30,
+        interval: 10_000,
+        fastestInterval: 7_000,
+      }
+    : {
+        enableHighAccuracy: true,
+        distanceFilter: 15,
+        interval: 5000,
+        fastestInterval: 3000,
+      };
+
   watchId = Geolocation.watchPosition(
     position => {
       updateSharedState(prev => ({
@@ -156,12 +259,7 @@ const startTrackingInternal = async (): Promise<void> => {
       }));
     },
     setTrackingError,
-    {
-      enableHighAccuracy: true,
-      distanceFilter: 15,
-      interval: 5000,
-      fastestInterval: 3000,
-    },
+    watchOptions,
   );
 };
 
@@ -182,10 +280,18 @@ export const useLocationTracking = (): {
 } => {
   const [state, setState] = useState<LocationTrackingState>(sharedState);
 
-  useEffect(() => subscribe(setState), []);
+  useEffect(() => {
+    const unsubscribe = subscribe(setState);
+    void hydrateSharedState();
+    return unsubscribe;
+  }, []);
 
-  const requestPermission = useCallback(async (): Promise<boolean> => requestPermissionInternal(), []);
-  const startTracking = useCallback(async (): Promise<void> => startTrackingInternal(), []);
+  const requestPermission = useCallback(async (): Promise<boolean> => {
+    return requestPermissionInternal();
+  }, []);
+  const startTracking = useCallback(async (): Promise<void> => {
+    return startTrackingInternal();
+  }, []);
   const stopTracking = useCallback((): void => {
     stopTrackingInternal();
   }, []);
@@ -198,4 +304,95 @@ export const useLocationTracking = (): {
   };
 
   return controller;
+};
+
+// Dev helper: nudge the shared location forward for testing flows that depend on GPS.
+export const devMockAdvance = (deltaMeters = 25): void => {
+  if (!__DEV__) return;
+  const last = sharedState.lastLocation;
+  if (!last) return;
+  // very small lat/lon delta approximation
+  const delta = (deltaMeters / 111_320) || 0.0002;
+  updateSharedState(prev => ({
+    ...prev,
+    lastLocation: last
+      ? {
+          latitude: last.latitude + delta,
+          longitude: last.longitude + delta,
+          accuracy: last.accuracy,
+          timestamp: Date.now(),
+        }
+      : null,
+  }));
+};
+
+// Dev route-following simulator ------------------------------------------------
+// The simulator emits synthetic location updates along a provided polyline so
+// UI and job flows can be exercised in a deterministic way during development.
+let _simCoords: Array<{latitude: number; longitude: number}> = [];
+let _simIndex = 0;
+let _simTimer: ReturnType<typeof setInterval> | null = null;
+let _simIntervalMs = 1000;
+let _simRunning = false;
+
+export const devMockSimulationState = (): {running: boolean; index: number; total: number} => {
+  return {running: _simRunning, index: _simIndex, total: _simCoords.length};
+};
+
+export const devMockStartRouteSimulation = (
+  coordinates: Array<{latitude: number; longitude: number}>,
+  options?: {intervalMs?: number},
+): void => {
+  if (!__DEV__) return;
+  if (!coordinates || coordinates.length === 0) return;
+  devMockStopRouteSimulation();
+  _simCoords = coordinates.map(c => ({latitude: c.latitude, longitude: c.longitude}));
+  _simIndex = 0;
+  _simIntervalMs = options?.intervalMs ?? 1000;
+  _simRunning = true;
+
+  // immediately emit first coordinate
+  updateSharedState(prev => ({
+    ...prev,
+    lastLocation: _simCoords[0]
+      ? {
+          latitude: _simCoords[0].latitude,
+          longitude: _simCoords[0].longitude,
+          accuracy: prev.lastLocation?.accuracy ?? 5,
+          timestamp: Date.now(),
+        }
+      : prev.lastLocation,
+  }));
+
+  _simTimer = setInterval(() => {
+    _simIndex = Math.min(_simIndex + 1, _simCoords.length - 1);
+    const coord = _simCoords[_simIndex];
+    updateSharedState(prev => ({
+      ...prev,
+      lastLocation: coord
+        ? {
+            latitude: coord.latitude,
+            longitude: coord.longitude,
+            accuracy: prev.lastLocation?.accuracy ?? 5,
+            timestamp: Date.now(),
+          }
+        : prev.lastLocation,
+    }));
+
+    if (_simIndex >= _simCoords.length - 1) {
+      // stop automatically at end
+      devMockStopRouteSimulation();
+    }
+  }, _simIntervalMs);
+};
+
+export const devMockStopRouteSimulation = (): void => {
+  if (!__DEV__) return;
+  if (_simTimer) {
+    clearInterval(_simTimer);
+    _simTimer = null;
+  }
+  _simRunning = false;
+  _simCoords = [];
+  _simIndex = 0;
 };

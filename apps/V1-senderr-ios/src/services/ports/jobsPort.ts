@@ -1,5 +1,7 @@
 import type {AuthSession} from '../../types/auth';
-import type {Job, JobStatus} from '../../types/jobs';
+import type {Job} from '../../types/jobs';
+import type {JobStatus, JobStatusCommandResult} from '@gosenderr/contracts';
+export type {JobStatusCommandResult} from '@gosenderr/contracts';
 
 export type JobsSyncStatus = 'idle' | 'connecting' | 'live' | 'reconnecting' | 'stale' | 'error';
 
@@ -22,36 +24,22 @@ export type JobsSubscriptionHandlers = {
   onSyncState: (state: JobsSyncState) => void;
 };
 
-export type JobStatusCommandResult =
-  | {
-      kind: 'success';
-      job: Job;
-      requestedStatus: JobStatus;
-      idempotent: boolean;
-      message: string | null;
-    }
-  | {
-      kind: 'conflict';
-      job: Job;
-      requestedStatus: JobStatus;
-      message: string;
-    }
-  | {
-      kind: 'retryable_error';
-      job: Job;
-      requestedStatus: JobStatus;
-      message: string;
-    }
-  | {
-      kind: 'fatal_error';
-      job: Job | null;
-      requestedStatus: JobStatus;
-      message: string;
-    };
-
 export interface JobsServicePort {
   fetchJobs: (session: AuthSession) => Promise<Job[]>;
   getJobById: (session: AuthSession, id: string) => Promise<Job | null>;
   updateJobStatus: (session: AuthSession, id: string, nextStatus: JobStatus) => Promise<JobStatusCommandResult>;
+  commandAcceptJob?: (session: AuthSession, id: string) => Promise<JobStatusCommandResult>;
+  commandStartPickup?: (session: AuthSession, id: string) => Promise<JobStatusCommandResult>;
+  commandMarkArrivedPickup?: (session: AuthSession, id: string) => Promise<JobStatusCommandResult>;
+  commandConfirmPickup?: (session: AuthSession, id: string) => Promise<JobStatusCommandResult>;
+  commandStartDropoff?: (session: AuthSession, id: string) => Promise<JobStatusCommandResult>;
+  commandCompleteDelivery?: (session: AuthSession, id: string) => Promise<JobStatusCommandResult>;
   subscribeJobs: (session: AuthSession, handlers: JobsSubscriptionHandlers) => JobsSubscription;
+  // Attach proof (photo) for pickup or dropoff. Returns the updated Job document.
+  attachProof: (
+    session: AuthSession,
+    id: string,
+    type: 'pickup' | 'dropoff',
+    proof: {url: string; location?: {latitude: number; longitude: number}; accuracy?: number; timestamp?: string},
+  ) => Promise<Job>;
 }

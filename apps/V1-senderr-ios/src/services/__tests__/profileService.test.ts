@@ -32,6 +32,7 @@ jest.mock('firebase/firestore', () => ({
 }));
 
 import {loadCourierProfile, saveCourierProfile, validateCourierProfileDraft} from '../profileService';
+import {buildDefaultCourierEquipment, buildDefaultCourierDocuments} from '../../types/profile';
 
 const session: AuthSession = {
   uid: 'courier_123',
@@ -139,15 +140,44 @@ describe('profileService', () => {
     const result = await saveCourierProfile(session, {
       fullName: 'New Name',
       phoneNumber: '+1 555 222 3333',
+      profilePhotoUrl: '',
+      status: 'approved',
+      rejectionReason: '',
       availability: 'available',
+      isOnline: true,
+      serviceRadiusMiles: '20',
+      taxState: 'VA',
       vehicle: {
         makeModel: 'Transit',
         plateNumber: 'DEF456',
         color: 'White',
       },
+      workModes: {
+        packagesEnabled: true,
+        foodEnabled: true,
+      },
+      notificationPrefs: {
+        jobOffers: true,
+        payoutUpdates: true,
+        reminders: true,
+      },
       settings: {
         acceptsNewJobs: true,
         autoStartTracking: false,
+      },
+      documents: buildDefaultCourierDocuments(),
+      equipment: buildDefaultCourierEquipment(),
+      stripe: {
+        connectAccountId: '',
+        accountStatus: '',
+        chargesEnabled: false,
+        payoutsEnabled: false,
+        requirementsDue: [],
+        requirementsPastDue: [],
+      },
+      stats: {
+        todayJobs: 0,
+        completedJobs: 0,
       },
       rateCards: {
         packages: {
@@ -175,19 +205,122 @@ describe('profileService', () => {
     );
   });
 
+  it('moves rejected profile back to pending_review when documents are resubmitted', async () => {
+    const documents = buildDefaultCourierDocuments().map(document =>
+      document.type === 'government_id'
+        ? {
+            ...document,
+            status: 'pending_review' as const,
+            url: 'https://example.com/id-front.jpg',
+            uploadedAt: '2026-02-14T10:00:00.000Z',
+          }
+        : document,
+    );
+
+    const result = await saveCourierProfile(session, {
+      fullName: 'Recovered Courier',
+      phoneNumber: '+1 555 222 3333',
+      profilePhotoUrl: '',
+      status: 'rejected',
+      rejectionReason: 'Upload clearer ID image.',
+      availability: 'available',
+      isOnline: false,
+      serviceRadiusMiles: '15',
+      taxState: 'VA',
+      vehicle: {
+        makeModel: 'Transit',
+        plateNumber: 'DEF456',
+        color: 'White',
+      },
+      workModes: {
+        packagesEnabled: true,
+        foodEnabled: true,
+      },
+      notificationPrefs: {
+        jobOffers: true,
+        payoutUpdates: true,
+        reminders: true,
+      },
+      settings: {
+        acceptsNewJobs: true,
+        autoStartTracking: false,
+      },
+      documents,
+      equipment: buildDefaultCourierEquipment(),
+      stripe: {
+        connectAccountId: '',
+        accountStatus: '',
+        chargesEnabled: false,
+        payoutsEnabled: false,
+        requirementsDue: [],
+        requirementsPastDue: [],
+      },
+      stats: {
+        todayJobs: 0,
+        completedJobs: 0,
+      },
+      rateCards: {
+        packages: {
+          baseFare: '4.00',
+          perMile: '1.50',
+          perMinute: '0.30',
+          optionalFees: [],
+        },
+        food: {
+          baseFare: '3.00',
+          perMile: '1.80',
+          restaurantWaitPay: '0.20',
+          optionalFees: [],
+        },
+      },
+    });
+
+    expect(result.profile.status).toBe('pending_review');
+    expect(result.profile.rejectionReason).toBeUndefined();
+  });
+
   it('validates unsafe profile and rate-card input', () => {
     const errors = validateCourierProfileDraft({
       fullName: 'A',
       phoneNumber: 'abc',
+      profilePhotoUrl: '',
+      status: 'approved',
+      rejectionReason: '',
       availability: 'available',
+      isOnline: true,
+      serviceRadiusMiles: '0',
+      taxState: 'V1',
       vehicle: {
         makeModel: 'x'.repeat(41),
         plateNumber: 'y'.repeat(17),
         color: 'z'.repeat(25),
       },
+      workModes: {
+        packagesEnabled: true,
+        foodEnabled: true,
+      },
+      notificationPrefs: {
+        jobOffers: true,
+        payoutUpdates: true,
+        reminders: true,
+      },
       settings: {
         acceptsNewJobs: true,
         autoStartTracking: false,
+      },
+      documents: buildDefaultCourierDocuments(),
+      equipment: buildDefaultCourierEquipment(),
+      stripe: {
+        connectAccountId: '',
+        accountStatus: '',
+        chargesEnabled: false,
+        payoutsEnabled: false,
+        requirementsDue: [],
+        requirementsPastDue: [],
+      },
+      stats: {
+        todayJobs: 0,
+        completedJobs: 0,
       },
       rateCards: {
         packages: {
@@ -210,6 +343,8 @@ describe('profileService', () => {
     expect(errors.vehicleMakeModel).toBeDefined();
     expect(errors.vehiclePlateNumber).toBeDefined();
     expect(errors.vehicleColor).toBeDefined();
+    expect(errors.serviceRadiusMiles).toBeDefined();
+    expect(errors.taxState).toBeDefined();
     expect(errors.packagesBaseFare).toBeDefined();
     expect(errors.packagesPerMile).toBeDefined();
     expect(errors.packagesPerMinute).toBeDefined();

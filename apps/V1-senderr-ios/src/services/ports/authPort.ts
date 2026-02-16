@@ -6,6 +6,7 @@ export type AuthStateUnsubscribe = () => void;
 export interface AuthServicePort {
   restoreSession: () => Promise<AuthSession | null>;
   signIn: (email: string, password: string) => Promise<AuthSession>;
+  signUp: (email: string, password: string, displayName?: string) => Promise<AuthSession>;
   signOut: () => Promise<void>;
   onAuthStateChanged: (listener: AuthStateListener) => AuthStateUnsubscribe | null;
 }

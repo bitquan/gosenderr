@@ -1,4 +1,5 @@
-import type {Job, JobStatus} from '../types/jobs';
+import type {Job} from '../types/jobs';
+import type {JobStatus} from '@gosenderr/contracts';
 import type {JobsSyncState} from '../services/ports/jobsPort';
 import type {LocationSnapshot} from '../services/ports/locationPort';
 
@@ -7,7 +8,7 @@ const ARRIVAL_RADIUS_METERS = 120;
 export type MapShellState =
   | 'idle'
   | 'offer'
-  | 'accepted'
+  | 'assigned'
   | 'enroute_pickup'
   | 'arrived_pickup'
   | 'picked_up'
@@ -100,26 +101,43 @@ export const deriveMapShellState = ({
   }
 
   const job = activeJob ?? latestJob;
-  if (!job || job.status === 'cancelled') {
+  if (
+    !job ||
+    job.status === 'cancelled' ||
+    job.status === 'disputed' ||
+    job.status === 'expired' ||
+    job.status === 'failed'
+  ) {
     return 'idle';
   }
 
-  if (job.status === 'delivered') {
+  if (job.status === 'completed') {
     return 'completed';
   }
 
-  if (job.status === 'pending') {
+  if (job.status === 'open') {
     return 'offer';
   }
 
-  if (job.status === 'accepted') {
+  if (job.status === 'assigned') {
     if (hasArrived(courierLocation, job.pickupLocation)) {
       return 'arrived_pickup';
     }
     if (tracking && courierLocation) {
       return 'enroute_pickup';
     }
-    return 'accepted';
+    return 'assigned';
+  }
+
+  if (job.status === 'enroute_pickup') {
+    if (hasArrived(courierLocation, job.pickupLocation)) {
+      return 'arrived_pickup';
+    }
+    return 'enroute_pickup';
+  }
+
+  if (job.status === 'arrived_pickup') {
+    return 'arrived_pickup';
   }
 
   if (job.status === 'picked_up') {
@@ -129,10 +147,24 @@ export const deriveMapShellState = ({
       }
       return 'arrived_dropoff';
     }
-    if (tracking && courierLocation) {
-      return 'enroute_dropoff';
-    }
     return 'picked_up';
+  }
+
+  if (job.status === 'enroute_dropoff') {
+    if (hasArrived(courierLocation, job.dropoffLocation)) {
+      if (requiresProof(job)) {
+        return 'proof_required';
+      }
+      return 'arrived_dropoff';
+    }
+    return 'enroute_dropoff';
+  }
+
+  if (job.status === 'arrived_dropoff') {
+    if (requiresProof(job)) {
+      return 'proof_required';
+    }
+    return 'arrived_dropoff';
   }
 
   return 'idle';
@@ -171,33 +203,29 @@ export const buildMapShellOverlayModel = (
         description: 'Accept this job to start pickup workflow.',
         primaryLabel: 'Accept Job',
         primaryAction: 'update_status',
-        nextStatus: 'accepted',
+        nextStatus: 'assigned',
         tone: 'warning',
       };
-    case 'accepted':
+    case 'assigned':
       return {
         state,
-        title: 'Job accepted',
+        title: 'Job assigned',
         description: input.hasPermission
-          ? 'Start live tracking before heading to pickup.'
-          : 'Enable location permission to begin pickup route.',
-        primaryLabel: input.hasPermission
-          ? 'Start Tracking'
-          : 'Enable Location',
-        primaryAction: input.hasPermission
-          ? 'start_tracking'
-          : 'request_location_permission',
-        nextStatus: null,
+          ? 'Start pickup workflow. Tracking is optional for map guidance.'
+          : 'Start pickup workflow now. You can enable location any time.',
+        primaryLabel: 'Start Pickup',
+        primaryAction: 'update_status',
+        nextStatus: 'enroute_pickup',
         tone: 'neutral',
       };
     case 'enroute_pickup':
       return {
         state,
         title: 'En route to pickup',
-        description: 'Review pickup details while you are on the way.',
-        primaryLabel: 'Open Pickup Details',
-        primaryAction: 'open_job_detail',
-        nextStatus: null,
+        description: 'Mark arrived when you reach the pickup location.',
+        primaryLabel: 'Mark Arrived at Pickup',
+        primaryAction: 'update_status',
+        nextStatus: 'arrived_pickup',
         tone: 'neutral',
       };
     case 'arrived_pickup':
@@ -215,25 +243,21 @@ export const buildMapShellOverlayModel = (
         state,
         title: 'Package picked up',
         description: input.hasPermission
-          ? 'Start tracking to unlock en-route dropoff states.'
-          : 'Enable location permission to continue dropoff flow.',
-        primaryLabel: input.hasPermission
-          ? 'Start Tracking'
-          : 'Enable Location',
-        primaryAction: input.hasPermission
-          ? 'start_tracking'
-          : 'request_location_permission',
-        nextStatus: null,
+          ? 'Start dropoff workflow. Tracking remains optional.'
+          : 'Start dropoff workflow now. You can enable location any time.',
+        primaryLabel: 'Start Dropoff',
+        primaryAction: 'update_status',
+        nextStatus: 'enroute_dropoff',
         tone: 'neutral',
       };
     case 'enroute_dropoff':
       return {
         state,
         title: 'En route to dropoff',
-        description: 'Review dropoff details before delivery completion.',
-        primaryLabel: 'Open Dropoff Details',
-        primaryAction: 'open_job_detail',
-        nextStatus: null,
+        description: 'Mark arrived when you reach the dropoff location.',
+        primaryLabel: 'Mark Arrived at Dropoff',
+        primaryAction: 'update_status',
+        nextStatus: 'arrived_dropoff',
         tone: 'neutral',
       };
     case 'arrived_dropoff':
@@ -243,7 +267,7 @@ export const buildMapShellOverlayModel = (
         description: 'Complete delivery to close this job.',
         primaryLabel: 'Complete Delivery',
         primaryAction: 'update_status',
-        nextStatus: 'delivered',
+        nextStatus: 'completed',
         tone: 'success',
       };
     case 'proof_required':
@@ -253,7 +277,7 @@ export const buildMapShellOverlayModel = (
         description: 'Capture required proof, then complete the delivery.',
         primaryLabel: 'Complete Delivery',
         primaryAction: 'update_status',
-        nextStatus: 'delivered',
+        nextStatus: 'completed',
         tone: 'warning',
       };
     case 'completed':

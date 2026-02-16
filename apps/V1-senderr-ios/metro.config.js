@@ -18,10 +18,21 @@ const extraNodeModules = {
     'node_modules',
     'react-native',
   ),
+  '@gosenderr/contracts': path.resolve(
+    __dirname,
+    '../..',
+    'packages',
+    'contracts',
+    'src',
+    'index.ts',
+  ),
 };
 
 const config = {
-  watchFolders: [path.resolve(__dirname, '../..', 'node_modules')],
+  watchFolders: [
+    path.resolve(__dirname, '../..', 'node_modules'),
+    path.resolve(__dirname, '../..', 'packages', 'contracts'),
+  ],
   resolver: {
     nodeModulesPaths: [
       path.resolve(__dirname, 'node_modules'),

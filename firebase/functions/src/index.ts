@@ -1,29 +1,13 @@
 import * as admin from "firebase-admin";
 
-admin.initializeApp();
+if (!admin.apps.length) {
+  admin.initializeApp();
+}
 
-// Export all functions
-export { autoCancel } from "./triggers/autoCancel";
-export { sendNotifications } from "./triggers/notifications";
-export { capturePayment } from "./triggers/capturePayment";
-export { refundPayment } from "./triggers/refundPayment";
-export { enforceRatings } from "./triggers/enforceRatings";
-export { buildRoutes } from "./triggers/buildRoutes";
-export { buildLongRoutes } from "./triggers/buildLongRoutes";
-export { seedHubs } from "./triggers/seedHubs";
-export { buildLongHaulRoutes } from "./triggers/buildLongHaulRoutes";
-export { onAdminActionLog } from "./triggers/onAdminActionLog";
-export { onUserCreate } from "./triggers/onUserCreate";
-
-// HTTP Callable Functions
-export { setPackageRunnerClaim } from "./http/setPackageRunnerClaim";
-export { setAdminClaim } from "./http/setAdminClaim";
-export { banUser } from "./http/banUser";
-export { createUserForAdmin } from "./http/createUserForAdmin";
-export { runTestFlow } from "./http/runTestFlow";
-export { getPublicConfig } from "./http/getPublicConfig";
-export { getPublicConfigHttp } from "./http/getPublicConfigHttp";
-export { createPaymentIntentHttp } from "./http/createPaymentIntentHttp";
-
-// Stripe Functions
-export * from "./stripe";
+export { commandAcceptJob } from "./senderr/commandAcceptJob";
+export { commandStartPickup } from "./senderr/commandStartPickup";
+export { commandMarkArrivedPickup } from "./senderr/commandMarkArrivedPickup";
+export { commandConfirmPickup } from "./senderr/commandConfirmPickup";
+export { commandStartDropoff } from "./senderr/commandStartDropoff";
+export { commandCompleteDelivery } from "./senderr/commandCompleteDelivery";
+export { uploadCourierAsset } from "./senderr/uploadCourierAsset";
