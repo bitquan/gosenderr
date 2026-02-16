@@ -51,31 +51,35 @@ export function Header() {
   }
 
   return (
-    <header className="bg-white shadow-sm sticky top-0 z-50">
+    <header className="bg-gradient-to-r from-blue-700 via-blue-600 to-blue-500 text-white shadow-lg border-b border-blue-300/30 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
             <div className="text-2xl">📦</div>
-            <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-              GoSenderR
+            <span className="text-xl font-bold text-white">
+              Senderrplace
             </span>
+            <span className="text-xs uppercase tracking-[0.6em] text-blue-100/70">by GoSenderr</span>
           </Link>
 
           {/* Navigation */}
           <nav className="hidden md:flex items-center space-x-6">
-            <Link to="/marketplace" className="text-gray-700 hover:text-purple-600 transition-colors">
+            <Link to="/marketplace" className="text-white/85 hover:text-white transition-colors">
               Browse
+            </Link>
+            <Link to="/food-pickups" className="text-white/85 hover:text-white transition-colors">
+              Food pickup
             </Link>
             {user && (
               <>
-                <Link to="/marketplace/sell" className="text-gray-700 hover:text-purple-600 transition-colors">
+                <Link to="/marketplace/sell" className="text-white/85 hover:text-white transition-colors">
                   Sell
                 </Link>
-                <Link to="/orders" className="text-gray-700 hover:text-purple-600 transition-colors">
+                <Link to="/orders" className="text-white/85 hover:text-white transition-colors">
                   Orders
                 </Link>
-                <Link to="/request-delivery" className="text-gray-700 hover:text-purple-600 transition-colors">
+                <Link to="/request-delivery" className="text-white/85 hover:text-white transition-colors">
                   Ship
                 </Link>
               </>
@@ -88,7 +92,7 @@ export function Header() {
             {user && (
               <button
                 onClick={() => setMobileMenuOpen((prev) => !prev)}
-                className="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 text-gray-700"
+                className="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/15 text-white"
                 aria-label="Open navigation"
               >
                 ☰
@@ -97,7 +101,7 @@ export function Header() {
             {/* Shopping Cart */}
             <button
               onClick={openCart}
-              className="relative p-2 text-gray-700 hover:text-purple-600 transition-colors"
+              className="relative p-2 text-white/90 hover:text-white transition-colors"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
@@ -115,17 +119,17 @@ export function Header() {
             </button>
 
             {loading ? (
-              <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />
+              <div className="w-8 h-8 rounded-full bg-white/30 animate-pulse" />
             ) : user ? (
               <>
                 {/* User menu */}
                 <div className="flex items-center space-x-3">
-                  <div className="hidden sm:block text-sm text-gray-700">
+                  <div className="hidden sm:block text-sm text-white/90">
                     {user.email}
                   </div>
                   <button
                     onClick={handleSignOut}
-                    className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all"
+                    className="px-4 py-2 text-sm font-medium text-white rounded-lg bg-blue-900/45 border border-white/25 hover:bg-blue-900/65 transition-all"
                   >
                     Sign Out
                   </button>
@@ -135,13 +139,13 @@ export function Header() {
               <div className="flex items-center space-x-3">
                 <Link
                   to="/login"
-                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-purple-600 transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-white/90 hover:text-white transition-colors"
                 >
                   Login
                 </Link>
                 <Link
                   to="/signup"
-                  className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all"
+                  className="px-4 py-2 text-sm font-medium text-blue-900 bg-white rounded-lg hover:bg-blue-50 transition-all"
                 >
                   Sign Up
                 </Link>
@@ -152,27 +156,34 @@ export function Header() {
       </div>
       {user && (
         <div className={`md:hidden px-4 pb-3 ${mobileMenuOpen ? 'block' : 'hidden'}`}>
-          <div className="rounded-2xl bg-white shadow-lg border border-gray-100 p-3 space-y-2">
+          <div className="rounded-2xl bg-blue-900/95 border border-white/20 p-3 space-y-2 text-white">
             <Link
               to="/marketplace"
               onClick={() => setMobileMenuOpen(false)}
-              className="block w-full rounded-xl px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+              className="block w-full rounded-xl px-4 py-3 text-sm font-semibold text-white/85 hover:bg-white/10"
             >
-              Marketplace Items
+              Senderrplace Items
             </Link>
             <Link
               to="/jobs/new"
               onClick={() => setMobileMenuOpen(false)}
-              className="block w-full rounded-xl px-4 py-3 text-sm font-semibold text-green-700 hover:bg-green-50"
+              className="block w-full rounded-xl px-4 py-3 text-sm font-semibold text-white/85 hover:bg-white/10"
             >
               Custom Send
             </Link>
             <Link
               to="/request-delivery"
               onClick={() => setMobileMenuOpen(false)}
-              className="block w-full rounded-xl px-4 py-3 text-sm font-semibold text-purple-700 hover:bg-purple-50"
+              className="block w-full rounded-xl px-4 py-3 text-sm font-semibold text-white/85 hover:bg-white/10"
             >
               Delivery Options
+            </Link>
+            <Link
+              to="/food-pickups"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block w-full rounded-xl px-4 py-3 text-sm font-semibold text-white/85 hover:bg-white/10"
+            >
+              Food pickups
             </Link>
           </div>
         </div>
