@@ -50,6 +50,7 @@ This quick-start helps contributors get the Senderr iOS app running locally and 
 ## Docs & audits
 - Keep code and docs in sync: update docs in the same PR when behavior changes.
 - See `docs/senderr_app/AUDIT.md` for the flow audit checklist and cadence.
+- Use `docs/senderr_app/BAT-038-RELEASE-GATE.md` for release gate automation, manual smoke matrix, rollback runbook, and deploy checklist.
 
 ---
 

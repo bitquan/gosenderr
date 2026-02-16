@@ -370,6 +370,11 @@ npx cap open android
 
 ## Post-Deployment Checklist
 
+For Senderr web MVP release gating, run and complete:
+
+- `pnpm run test:bat038`
+- `docs/senderr_app/BAT-038-RELEASE-GATE.md`
+
 ### Security
 
 - [ ] Firestore security rules deployed
