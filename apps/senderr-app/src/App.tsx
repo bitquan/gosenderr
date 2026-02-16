@@ -1,10 +1,10 @@
-import { Routes, Route, Navigate, useLocation, Outlet } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { NavigationProvider } from './contexts/NavigationContext'
-import { useAuth } from './hooks/useAuth'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { useEffect } from 'react'
 import { debugLogger } from './utils/debugLogger'
+import { ProtectedRoute, PublicOnlyRoute } from './routes/ProtectedRoute'
 
 // Layouts
 import CourierLayout from './layouts/CourierLayout'
@@ -28,35 +28,6 @@ import SetupPage from './pages/setup/page'
 import EarningsPage from './pages/earnings/page'
 import ProfilePage from './pages/Profile'
 import { StripeModeBanner } from './components/StripeModeBanner'
-
-function ProtectedRoute() {
-  const { user, loading } = useAuth()
-  const location = useLocation()
-  
-  useEffect(() => {
-    debugLogger.log('route', `ProtectedRoute - Path: ${location.pathname}`, {
-      hasUser: !!user,
-      loading,
-      pathname: location.pathname,
-      search: location.search
-    })
-  }, [location.pathname, user, loading])
-  
-  if (loading) {
-    debugLogger.log('render', 'ProtectedRoute showing loading spinner')
-    return <div className="flex items-center justify-center min-h-screen">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-    </div>
-  }
-  
-  if (!user) {
-    debugLogger.log('route', 'ProtectedRoute redirecting to login - no user')
-    return <Navigate to="/login" replace />
-  }
-  
-  debugLogger.log('render', 'ProtectedRoute rendering Outlet')
-  return <Outlet />
-}
 
 function App() {
   useEffect(() => {
@@ -82,8 +53,8 @@ function App() {
         <NavigationProvider>
         <StripeModeBanner />
           <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/signup" element={<SignupPage />} />
+            <Route path="/login" element={<PublicOnlyRoute><LoginPage /></PublicOnlyRoute>} />
+            <Route path="/signup" element={<PublicOnlyRoute><SignupPage /></PublicOnlyRoute>} />
             
             <Route element={<ProtectedRoute />}>
             <Route element={<CourierLayout />}>
