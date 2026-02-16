@@ -61,7 +61,8 @@ const featureFlagsData = {
   ui: {
     modernStyling: true,
     darkMode: false,
-    animations: true
+    animations: true,
+    senderrWebMvp: false
   }
 };
 
