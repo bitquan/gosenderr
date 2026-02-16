@@ -125,6 +125,14 @@ export interface CourierDocuments {
   reviewedBy?: string; // admin uid
 }
 
+export type CourierPayoutMode = "stripe_auto" | "manual_review";
+
+export interface TokenWalletSummary {
+  balance: number;
+  currency?: string;
+  updatedAt?: Timestamp;
+}
+
 export interface CourierProfile {
   status: CourierStatus;
   isOnline?: boolean;
@@ -139,6 +147,9 @@ export interface CourierProfile {
   serviceRadius: number; // miles
   currentLocation?: { lat: number; lng: number };
   stripeConnectAccountId?: string;
+  payoutMode?: CourierPayoutMode;
+  showTokenWallet?: boolean;
+  tokenWallet?: TokenWalletSummary;
   // Runtime stats (optional)
   todayJobs?: number;
   completedJobs?: number;
