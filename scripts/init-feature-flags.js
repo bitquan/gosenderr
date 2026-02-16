@@ -21,7 +21,7 @@ async function initializeFeatureFlags() {
       },
       courier: {
        featureFlagsControl: true,
-       webPortalEnabled: false,
+       webPortalEnabled: true,
         equipmentBadges: true,
         workModes: true,
       },

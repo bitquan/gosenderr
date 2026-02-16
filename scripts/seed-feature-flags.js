@@ -50,7 +50,8 @@ const featureFlagsData = {
     equipmentReview: true,
     disputeManagement: true,
     analytics: true,
-    featureFlagsControl: true
+    featureFlagsControl: true,
+    webPortalEnabled: true
   },
   advanced: {
     pushNotifications: false,

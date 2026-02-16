@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleDisplayName</key>
+	<string>Senderr</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<false/>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>MBXAccessToken</key>
+	<string>$(SENDERR_MAPBOX_ACCESS_TOKEN)</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<false/>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Senderr needs camera access to take delivery proof photos.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Senderr needs background location access to track deliveries in progress and update your location for customers.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Senderr needs your location to show nearby delivery jobs and navigate to pickup/dropoff locations.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Senderr needs photo library access to save delivery proof photos.</string>
+	<key>RCTNewArchEnabled</key>
+	<false/>
+	<key>SenderrApiBaseUrl</key>
+	<string>$(SENDERR_API_BASE_URL)</string>
+	<key>SenderrEnvName</key>
+	<string>$(SENDERR_ENV_NAME)</string>
+	<key>SenderrFirebaseApiKey</key>
+	<string>$(SENDERR_FIREBASE_API_KEY)</string>
+	<key>SenderrFirebaseAppId</key>
+	<string>$(SENDERR_FIREBASE_APP_ID)</string>
+	<key>SenderrFirebaseAuthDomain</key>
+	<string>$(SENDERR_FIREBASE_AUTH_DOMAIN)</string>
+	<key>SenderrFirebaseMessagingSenderId</key>
+	<string>$(SENDERR_FIREBASE_MESSAGING_SENDER_ID)</string>
+	<key>SenderrFirebaseProjectId</key>
+	<string>$(SENDERR_FIREBASE_PROJECT_ID)</string>
+	<key>SenderrFirebaseStorageBucket</key>
+	<string>$(SENDERR_FIREBASE_STORAGE_BUCKET)</string>
+	<key>SenderrMapProvider</key>
+	<string>$(SENDERR_MAP_PROVIDER)</string>
+	<key>SenderrMapboxAccessToken</key>
+	<string>$(SENDERR_MAPBOX_ACCESS_TOKEN)</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+		<string>fetch</string>
+		<string>remote-notification</string>
+	</array>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>arm64</string>
+	</array>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<false/>
+</dict>
+</plist>
