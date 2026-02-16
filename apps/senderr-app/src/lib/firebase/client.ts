@@ -2,6 +2,7 @@ import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
 import { getFirestore, Firestore } from "firebase/firestore";
 import { getFunctions, Functions } from "firebase/functions";
 import { getStorage, FirebaseStorage } from "firebase/storage";
+import { isLiveWebRuntime } from "@/lib/runtimeEnv";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "",
@@ -14,8 +15,27 @@ const firebaseConfig = {
 
 // Only initialize on client side (not during build/SSR)
 const isBrowser = typeof window !== "undefined";
+const hasUnsafeLiveFirebaseConfig =
+  isBrowser &&
+  isLiveWebRuntime() &&
+  (!firebaseConfig.projectId ||
+    !firebaseConfig.authDomain ||
+    /localhost|127\.0\.0\.1|::1/i.test(firebaseConfig.authDomain));
+
+if (hasUnsafeLiveFirebaseConfig) {
+  console.error(
+    "Unsafe live Firebase configuration detected; initialization is blocked.",
+    {
+      projectId: firebaseConfig.projectId,
+      authDomain: firebaseConfig.authDomain,
+    },
+  );
+}
+
 const isValidConfig =
-  firebaseConfig.apiKey && firebaseConfig.apiKey.startsWith("AIza");
+  firebaseConfig.apiKey &&
+  firebaseConfig.apiKey.startsWith("AIza") &&
+  !hasUnsafeLiveFirebaseConfig;
 
 let app: FirebaseApp | undefined;
 let dbInstance: Firestore | undefined;

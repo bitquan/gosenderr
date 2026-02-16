@@ -21,6 +21,8 @@ export { setAdminClaim } from "./http/setAdminClaim";
 export { banUser } from "./http/banUser";
 export { createUserForAdmin } from "./http/createUserForAdmin";
 export { runTestFlow } from "./http/runTestFlow";
+export { sendTestPush } from "./http/sendTestPush";
+export { logCommandFailure } from "./http/logCommandFailure";
 export { getPublicConfig } from "./http/getPublicConfig";
 export { getPublicConfigHttp } from "./http/getPublicConfigHttp";
 export { createPaymentIntentHttp } from "./http/createPaymentIntentHttp";

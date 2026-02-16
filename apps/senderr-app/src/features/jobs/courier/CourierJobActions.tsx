@@ -4,6 +4,7 @@ import { claimJob, updateJobStatus } from '@/lib/v2/jobs';
 import { captureGPSPhoto } from '@/lib/gpsPhoto';
 import { calcMiles } from '@/lib/v2/pricing';
 import { db } from '@/lib/firebase';
+import { logCommandFailure } from '@/lib/commandFailureTelemetry';
 import { doc, updateDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import type { JobStatus } from '../shared/types';
 
@@ -89,6 +90,13 @@ export function CourierJobActions({ job, courierUid, estimatedFee, onJobUpdated 
     } catch (error) {
       console.error('Failed to accept job:', error);
       const message = error instanceof Error ? error.message : 'Failed to accept job. It may have been claimed by another courier.';
+      void logCommandFailure({
+        command: 'accept',
+        jobId: job.id,
+        message,
+        code: (error as any)?.code,
+        isOffline,
+      });
       setActionError(message);
     } finally {
       setActionLoading(false);
@@ -125,6 +133,13 @@ export function CourierJobActions({ job, courierUid, estimatedFee, onJobUpdated 
     } catch (error) {
       console.error('Failed to update job status:', error);
       const message = error instanceof Error ? error.message : 'Failed to update job status. Please try again.';
+      void logCommandFailure({
+        command: 'status',
+        jobId: job.id,
+        message,
+        code: (error as any)?.code,
+        isOffline,
+      });
       setActionError(message);
     } finally {
       setActionLoading(false);
