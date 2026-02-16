@@ -1,82 +1,12 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-
-interface NavItem {
-  label: string
-  path: string
-  icon: string
-  badge?: number
-}
-
-interface NavGroup {
-  title: string
-  items: NavItem[]
-}
+import { ADMIN_NAV_GROUPS, isAdminNavItemActive } from '../lib/navigation/adminNav'
 
 export default function AdminSidebar() {
   const location = useLocation()
   const { user } = useAuth()
   const [isMobileOpen, setIsMobileOpen] = useState(false)
-
-  const navGroups: NavGroup[] = [
-    {
-      title: 'Overview',
-      items: [
-        { label: 'Dashboard', path: '/dashboard', icon: '🏠' }
-      ]
-    },
-    {
-      title: 'User Management',
-      items: [
-        { label: 'Users', path: '/users', icon: '👥' },
-        { label: 'Courier Approval', path: '/courier-approval', icon: '⚡' },
-        { label: 'Seller Approval', path: '/seller-approval', icon: '🏪' }
-      ]
-    },
-    {
-      title: 'Communications',
-      items: [
-        { label: 'Messaging', path: '/messaging', icon: '💬' },
-        { label: 'Disputes', path: '/disputes', icon: '⚖️' }
-      ]
-    },
-    {
-      title: 'Operations',
-      items: [
-        { label: 'Jobs', path: '/jobs', icon: '📦' },
-        { label: 'Courier Rates', path: '/rate-cards-comparison', icon: '💲' }
-      ]
-    },
-    {
-      title: 'Marketplace',
-      items: [
-        { label: 'Items', path: '/marketplace', icon: '🛍️' },
-        { label: 'Flagged Content', path: '/flagged-content', icon: '🚩' },
-        { label: 'Orders', path: '/marketplace-orders', icon: '📦' },
-        { label: 'Categories', path: '/categories', icon: '📁' }
-      ]
-    },
-    {
-      title: 'Finance',
-      items: [
-        { label: 'Revenue', path: '/revenue', icon: '💰' }
-      ]
-    },
-    {
-      title: 'System',
-      items: [
-        { label: 'System Check', path: '/system-check', icon: '🔧' },
-        { label: 'Audit Logs', path: '/audit-logs', icon: '📋' },
-        { label: 'Feature Flags', path: '/feature-flags', icon: '🎚️' },
-        { label: 'Secrets', path: '/settings/secrets', icon: '🔑' },
-        { label: 'Admin Flow Logs', path: '/admin-flow-logs', icon: '🧪' },
-        { label: 'Settings', path: '/settings', icon: '⚙️' }
-      ]
-    }
-  ]
-
-  const isActive = (path: string) => location.pathname === path
 
   return (
     <>
@@ -130,7 +60,7 @@ export default function AdminSidebar() {
 
         {/* Navigation Groups */}
         <nav className="p-4 space-y-6 flex-1 overflow-y-auto">
-          {navGroups.map((group) => (
+          {ADMIN_NAV_GROUPS.map((group) => (
             <div key={group.title}>
               <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-3">
                 {group.title}
@@ -142,7 +72,7 @@ export default function AdminSidebar() {
                     to={item.path}
                     onClick={() => setIsMobileOpen(false)}
                     className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                      isActive(item.path)
+                      isAdminNavItemActive(location.pathname, item)
                         ? 'bg-gradient-to-br from-purple-600 to-indigo-600 text-white shadow-md'
                         : 'text-gray-700 hover:bg-gray-100'
                     }`}

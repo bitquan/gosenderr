@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
-import { doc, onSnapshot } from 'firebase/firestore'
-import { db } from '@/lib/firebase/client'
+import { getPublicConfig } from '@/lib/publicConfig'
 
 export interface PlatformPaymentSettings {
   platformCommissionRate: number
@@ -17,6 +16,12 @@ export interface PlatformPaymentSettings {
   collectTax: boolean
   platformFeePackage: number
   platformFeeFood: number
+  deliveryBaseFee: number
+  deliveryPerMileFee: number
+  deliveryPerStopFee: number
+  deliveryMinimumFee: number
+  orderAdFeeEnabled: boolean
+  orderAdFeeFlat: number
 }
 
 const DEFAULTS: PlatformPaymentSettings = {
@@ -30,6 +35,12 @@ const DEFAULTS: PlatformPaymentSettings = {
   collectTax: false,
   platformFeePackage: 2.5,
   platformFeeFood: 1.5,
+  deliveryBaseFee: 3.99,
+  deliveryPerMileFee: 0.85,
+  deliveryPerStopFee: 0.65,
+  deliveryMinimumFee: 4.99,
+  orderAdFeeEnabled: false,
+  orderAdFeeFlat: 0,
 }
 
 export function usePlatformSettings() {
@@ -38,25 +49,66 @@ export function usePlatformSettings() {
   const [error, setError] = useState<Error | null>(null)
 
   useEffect(() => {
-    const unsubscribe = onSnapshot(
-      doc(db, 'platformSettings', 'payment'),
-      (snapshot) => {
-        if (snapshot.exists()) {
-          const data = snapshot.data() as Partial<PlatformPaymentSettings>
-          setSettings({ ...DEFAULTS, ...data })
+    let cancelled = false
+
+    const load = async () => {
+      try {
+        const config = await getPublicConfig()
+        if (cancelled) return
+
+        const overrides: Partial<PlatformPaymentSettings> = {}
+        if (typeof config.platformFeePackage === 'number') {
+          overrides.platformFeePackage = config.platformFeePackage
+        }
+        if (typeof config.platformFeeFood === 'number') {
+          overrides.platformFeeFood = config.platformFeeFood
+        }
+        if (typeof config.deliveryBaseFee === 'number') {
+          overrides.deliveryBaseFee = config.deliveryBaseFee
+        }
+        if (typeof config.deliveryPerMileFee === 'number') {
+          overrides.deliveryPerMileFee = config.deliveryPerMileFee
+        }
+        if (typeof config.deliveryPerStopFee === 'number') {
+          overrides.deliveryPerStopFee = config.deliveryPerStopFee
+        }
+        if (typeof config.deliveryMinimumFee === 'number') {
+          overrides.deliveryMinimumFee = config.deliveryMinimumFee
+        }
+        if (typeof config.orderAdFeeEnabled === 'boolean') {
+          overrides.orderAdFeeEnabled = config.orderAdFeeEnabled
+        }
+        if (typeof config.orderAdFeeFlat === 'number') {
+          overrides.orderAdFeeFlat = config.orderAdFeeFlat
+        }
+        if (typeof config.collectTax === 'boolean') {
+          overrides.collectTax = config.collectTax
+        }
+        if (typeof config.taxRate === 'number') {
+          overrides.taxRate = config.taxRate
+        }
+
+        if (Object.keys(overrides).length > 0) {
+          setSettings((current) => ({ ...current, ...overrides }))
         } else {
           setSettings(DEFAULTS)
         }
-        setLoading(false)
-      },
-      (err) => {
-        console.error('Error loading platform settings:', err)
+      } catch (err) {
+        if (cancelled) return
+        setSettings(DEFAULTS)
         setError(err as Error)
-        setLoading(false)
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
       }
-    )
+    }
 
-    return () => unsubscribe()
+    load()
+
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   return { settings, loading, error }

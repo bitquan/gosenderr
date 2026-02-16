@@ -89,6 +89,8 @@ export interface CourierDocuments {
 export interface CourierProfile {
     status: CourierStatus;
     isOnline?: boolean;
+    payoutMode?: "stripe_connect" | "external_provider" | "manual_settlement";
+    courierPayoutMode?: "stripe_connect" | "external_provider" | "manual_settlement";
     vehicleType: VehicleType;
     vehicleDetails?: VehicleDetails;
     workModes: WorkModes;
@@ -429,6 +431,8 @@ export interface FeatureFlags {
         analytics: boolean;
         featureFlagsControl: boolean;
         webPortalEnabled: boolean;
+        systemLogs: boolean;
+        firebaseExplorer: boolean;
     };
     advanced: {
         pushNotifications: boolean;

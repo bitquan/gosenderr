@@ -42,16 +42,16 @@ export default function SellerApplicationPage() {
       try {
         const userSnap = await getDoc(doc(db, `users/${uid}`));
         const userData = userSnap.exists() ? userSnap.data() : {};
-        const roles = Array.isArray(userData?.roles) ? userData.roles : [];
-        const hasSellerRole = userData?.role === "seller" || roles.includes("seller");
+        const sellerApplicationStatus = userData?.sellerApplication?.status;
+        const sellerProfileStatus = userData?.sellerProfile?.status;
 
-        if (hasSellerRole || userData?.sellerApplication?.status === "approved") {
+        if (sellerApplicationStatus === "approved" || sellerProfileStatus === "approved") {
           setSellerStatus("approved");
           setRejectionReason(null);
-        } else if (userData?.sellerApplication?.status === "pending") {
+        } else if (sellerApplicationStatus === "pending") {
           setSellerStatus("pending");
           setRejectionReason(null);
-        } else if (userData?.sellerApplication?.status === "rejected") {
+        } else if (sellerApplicationStatus === "rejected") {
           setSellerStatus("rejected");
           setRejectionReason(userData?.sellerApplication?.rejectionReason || null);
         } else {

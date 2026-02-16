@@ -91,10 +91,10 @@ export function FilterSidebar({ filters, onFilterChange, onClose }: FilterSideba
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6 sticky top-24">
+    <div className="bg-gradient-to-br from-slate-900 via-purple-900 to-purple-950/90 text-white rounded-2xl shadow-2xl p-6 sticky top-24 border border-white/10">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
+        <h2 className="text-lg font-semibold text-white">Filters</h2>
         {onClose && (
           <button
             onClick={onClose}
@@ -110,7 +110,7 @@ export function FilterSidebar({ filters, onFilterChange, onClose }: FilterSideba
       <div className="space-y-6">
         {/* Sort By */}
         <div>
-          <h3 className="font-medium text-gray-900 mb-3">Sort By</h3>
+          <h3 className="font-medium text-white/80 mb-3">Sort By</h3>
           <div className="space-y-2">
             {sortOptions.map((option) => (
               <label key={option.value} className="flex items-center cursor-pointer">
@@ -120,9 +120,9 @@ export function FilterSidebar({ filters, onFilterChange, onClose }: FilterSideba
                   value={option.value}
                   checked={localFilters.sortBy === option.value}
                   onChange={() => handleSortChange(option.value as FilterOptions['sortBy'])}
-                  className="w-4 h-4 text-purple-600 focus:ring-purple-500"
+                  className="w-4 h-4 text-purple-300 focus:ring-purple-300"
                 />
-                <span className="ml-2 text-sm text-gray-700">{option.label}</span>
+                <span className="ml-2 text-sm text-white/70">{option.label}</span>
               </label>
             ))}
           </div>
@@ -130,7 +130,7 @@ export function FilterSidebar({ filters, onFilterChange, onClose }: FilterSideba
 
         {/* Price Range */}
         <div>
-          <h3 className="font-medium text-gray-900 mb-3">Price Range</h3>
+          <h3 className="font-medium text-white/80 mb-3">Price Range</h3>
           <div className="space-y-3">
             <div className="flex items-center space-x-2">
               <input
@@ -138,20 +138,20 @@ export function FilterSidebar({ filters, onFilterChange, onClose }: FilterSideba
                 value={localFilters.priceRange[0]}
                 onChange={(e) => handlePriceChange(0, Number(e.target.value))}
                 placeholder="Min"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-white/30 rounded-xl bg-white/10 text-white placeholder-white/60 focus:ring-2 focus:ring-purple-400 focus:border-transparent"
               />
-              <span className="text-gray-500">-</span>
+              <span className="text-white/60">-</span>
               <input
                 type="number"
                 value={localFilters.priceRange[1]}
                 onChange={(e) => handlePriceChange(1, Number(e.target.value))}
                 placeholder="Max"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-white/30 rounded-xl bg-white/10 text-white placeholder-white/60 focus:ring-2 focus:ring-purple-400 focus:border-transparent"
               />
             </div>
             <button
               onClick={handlePriceApply}
-              className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
+              className="w-full px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-600 text-white rounded-2xl hover:opacity-90 transition-all text-sm font-semibold"
             >
               Apply
             </button>
@@ -160,7 +160,7 @@ export function FilterSidebar({ filters, onFilterChange, onClose }: FilterSideba
 
         {/* Condition */}
         <div>
-          <h3 className="font-medium text-gray-900 mb-3">Condition</h3>
+          <h3 className="font-medium text-white/80 mb-3">Condition</h3>
           <div className="space-y-2">
             {conditions.map((condition) => (
               <label key={condition.value} className="flex items-center cursor-pointer">
@@ -168,9 +168,9 @@ export function FilterSidebar({ filters, onFilterChange, onClose }: FilterSideba
                   type="checkbox"
                   checked={localFilters.conditions.includes(condition.value)}
                   onChange={() => handleConditionToggle(condition.value)}
-                  className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
+                  className="w-4 h-4 text-purple-300 rounded focus:ring-purple-300"
                 />
-                <span className="ml-2 text-sm text-gray-700">{condition.label}</span>
+                <span className="ml-2 text-sm text-white/70">{condition.label}</span>
               </label>
             ))}
           </div>
@@ -178,34 +178,34 @@ export function FilterSidebar({ filters, onFilterChange, onClose }: FilterSideba
 
         {/* Trust Badges */}
         <div>
-          <h3 className="font-medium text-gray-900 mb-3">Seller Trust</h3>
+          <h3 className="font-medium text-white/80 mb-3">Seller Trust</h3>
           <div className="space-y-2">
             <label className="flex items-center cursor-pointer">
               <input
                 type="checkbox"
                 checked={localFilters.badgeFilters?.buyerProtectionOnly || false}
                 onChange={() => handleBadgeFilterToggle('buyerProtectionOnly')}
-                className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
+                className="w-4 h-4 text-green-400 rounded focus:ring-green-400"
               />
-              <span className="ml-2 text-sm text-gray-700">🛡️ Buyer Protection</span>
+              <span className="ml-2 text-sm text-white/80">🛡️ Buyer Protection</span>
             </label>
             <label className="flex items-center cursor-pointer">
               <input
                 type="checkbox"
                 checked={localFilters.badgeFilters?.topRatedOnly || false}
                 onChange={() => handleBadgeFilterToggle('topRatedOnly')}
-                className="w-4 h-4 text-yellow-600 rounded focus:ring-yellow-500"
+                className="w-4 h-4 text-yellow-400 rounded focus:ring-yellow-400"
               />
-              <span className="ml-2 text-sm text-gray-700">⭐ Top Rated</span>
+              <span className="ml-2 text-sm text-white/80">⭐ Top Rated</span>
             </label>
             <label className="flex items-center cursor-pointer">
               <input
                 type="checkbox"
                 checked={localFilters.badgeFilters?.verifiedOnly || false}
                 onChange={() => handleBadgeFilterToggle('verifiedOnly')}
-                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                className="w-4 h-4 text-cyan-400 rounded focus:ring-cyan-400"
               />
-              <span className="ml-2 text-sm text-gray-700">✓ Verified</span>
+              <span className="ml-2 text-sm text-white/80">✓ Verified</span>
             </label>
           </div>
         </div>
@@ -213,7 +213,7 @@ export function FilterSidebar({ filters, onFilterChange, onClose }: FilterSideba
         {/* Reset */}
         <button
           onClick={handleReset}
-          className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+          className="w-full px-4 py-2 border border-white/30 text-white/80 rounded-2xl hover:border-white hover:text-white transition-colors text-sm font-medium"
         >
           Reset Filters
         </button>

@@ -2,6 +2,16 @@ export interface PublicConfig {
   stripePublishableKey?: string
   stripeMode?: 'test' | 'live'
   mapboxPublicToken?: string
+  platformFeePackage?: number
+  platformFeeFood?: number
+  deliveryBaseFee?: number
+  deliveryPerMileFee?: number
+  deliveryPerStopFee?: number
+  deliveryMinimumFee?: number
+  orderAdFeeEnabled?: boolean
+  orderAdFeeFlat?: number
+  collectTax?: boolean
+  taxRate?: number
 }
 
 let cachedConfig: PublicConfig | null = null

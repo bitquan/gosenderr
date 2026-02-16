@@ -1,8 +1,15 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useStripe, useElements, CardElement } from '@stripe/react-stripe-js'
 import { functions } from '../../lib/firebase'
 import { httpsCallable } from 'firebase/functions'
 import type { CartItem } from '../../contexts/CartContext'
+import {
+  commitTokenAction,
+  getTokenWallet,
+  makeIdempotencyKey,
+  releaseTokenAction,
+  reserveTokenAction,
+} from '../../lib/tokens'
 
 interface PaymentFormProps {
   amount: number
@@ -15,6 +22,8 @@ interface PaymentFormProps {
     state: string
     zipCode: string
     country: string
+    lat?: number
+    lng?: number
   }
   items: CartItem[]
   onSuccess: (orderId: string) => void
@@ -23,30 +32,128 @@ interface PaymentFormProps {
 export function PaymentForm({ amount, shippingInfo, items, onSuccess }: PaymentFormProps) {
   const stripe = useStripe()
   const elements = useElements()
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'cash'>('card')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [processingPayment, setProcessingPayment] = useState(false)
+  const [tokenCost, setTokenCost] = useState(1)
+  const [walletTokens, setWalletTokens] = useState<number | null>(null)
+  const [walletLoading, setWalletLoading] = useState(true)
+
+  useEffect(() => {
+    let active = true
+    const loadWallet = async () => {
+      try {
+        const { wallet, policy } = await getTokenWallet()
+        if (!active) return
+        setWalletTokens(wallet.available)
+        setTokenCost(Number(policy.costs?.cashFee || 1))
+      } catch (walletError) {
+        console.error('Failed to load token wallet for checkout:', walletError)
+      } finally {
+        if (active) setWalletLoading(false)
+      }
+    }
+    loadWallet()
+    return () => {
+      active = false
+    }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    if (!stripe || !elements) {
-      return
-    }
 
     setLoading(true)
     setError(null)
     setProcessingPayment(true)
 
     try {
-      // Get the card element
+      const createMarketplaceOrder = httpsCallable(functions, 'createMarketplaceOrder')
+
+      if (paymentMethod === 'cash') {
+        const tokenIdempotencyKey = makeIdempotencyKey('customer_cash_checkout')
+        let tokenReservationId: string | null = null
+
+        try {
+          const reserveResult = await reserveTokenAction({
+            actorType: 'customer',
+            action: 'cash_fee',
+            referenceId: `cash_checkout:${Date.now()}`,
+            idempotencyKey: tokenIdempotencyKey,
+            metadata: {
+              source: 'checkout_cart',
+              amountUsd: amount,
+              itemCount: items.length,
+            },
+          })
+
+          if (reserveResult.status === 'reserved' && reserveResult.reservationId) {
+            tokenReservationId = reserveResult.reservationId
+          }
+
+          const { data } = await createMarketplaceOrder({
+            amount: Math.round(amount * 100),
+            currency: 'usd',
+            paymentMode: 'cash',
+            shippingInfo,
+            items: items.map(cartItem => ({
+              itemId: cartItem.item.id!,
+              title: cartItem.item.title,
+              quantity: cartItem.quantity,
+              price: cartItem.item.price,
+              sellerId: cartItem.item.sellerId,
+              sellerName: cartItem.item.sellerName,
+              vendorId: cartItem.item.sellerId,
+            })),
+          }) as {
+            data: {
+              orderId?: string;
+              orderIds?: string[];
+              status: string;
+            };
+          };
+
+          if (tokenReservationId) {
+            const commitResult = await commitTokenAction({
+              reservationId: tokenReservationId,
+              idempotencyKey: tokenIdempotencyKey,
+            })
+            setWalletTokens(commitResult.wallet.available)
+          }
+
+          const resolvedOrderId = data.orderId || data.orderIds?.[0]
+          if (!resolvedOrderId) {
+            throw new Error('Order created but no order ID was returned')
+          }
+
+          onSuccess(resolvedOrderId)
+          return
+        } catch (cashError) {
+          if (tokenReservationId) {
+            try {
+              const releaseResult = await releaseTokenAction({
+                reservationId: tokenReservationId,
+                idempotencyKey: tokenIdempotencyKey,
+              })
+              setWalletTokens(releaseResult.wallet.available)
+            } catch (releaseError) {
+              console.error('Failed to release cash checkout token reservation:', releaseError)
+            }
+          }
+          throw cashError
+        }
+      }
+
+      if (!stripe || !elements) {
+        throw new Error('Stripe is not ready yet')
+      }
+
       const cardElement = elements.getElement(CardElement)
       if (!cardElement) {
         throw new Error('Card element not found')
       }
 
-      // Create payment method
-      const { error: pmError, paymentMethod } = await stripe.createPaymentMethod({
+      const { error: pmError, paymentMethod: createdPaymentMethod } = await stripe.createPaymentMethod({
         type: 'card',
         card: cardElement,
         billing_details: {
@@ -67,12 +174,11 @@ export function PaymentForm({ amount, shippingInfo, items, onSuccess }: PaymentF
         throw new Error(pmError.message)
       }
 
-      // Create order and process payment via Cloud Function
-      const createMarketplaceOrder = httpsCallable(functions, 'createMarketplaceOrder')
       const { data } = await createMarketplaceOrder({
-        amount: Math.round(amount * 100), // Convert to cents
+        amount: Math.round(amount * 100),
         currency: 'usd',
-        paymentMethodId: paymentMethod.id,
+        paymentMode: 'card',
+        paymentMethodId: createdPaymentMethod.id,
         shippingInfo,
         items: items.map(cartItem => ({
           itemId: cartItem.item.id!,
@@ -80,19 +186,32 @@ export function PaymentForm({ amount, shippingInfo, items, onSuccess }: PaymentF
           quantity: cartItem.quantity,
           price: cartItem.item.price,
           sellerId: cartItem.item.sellerId,
+          sellerName: cartItem.item.sellerName,
+          vendorId: cartItem.item.sellerId,
         })),
-      }) as { data: { clientSecret: string; orderId: string; status: string } }
+      }) as {
+        data: {
+          clientSecret: string;
+          orderId?: string;
+          orderIds?: string[];
+          orderGroupId?: string;
+          status: string;
+        };
+      };
 
-      // Check payment status
+      const resolvedOrderId = data.orderId || data.orderIds?.[0];
+      if (!resolvedOrderId) {
+        throw new Error('Order creation succeeded but no order ID was returned');
+      }
+
       if (data.status === 'succeeded') {
-        onSuccess(data.orderId)
+        onSuccess(resolvedOrderId)
       } else if (data.status === 'requires_action') {
-        // Handle 3D Secure or other authentication
         const { error: confirmError } = await stripe.confirmCardPayment(data.clientSecret)
         if (confirmError) {
           throw new Error(confirmError.message)
         }
-        onSuccess(data.orderId)
+        onSuccess(resolvedOrderId)
       } else {
         throw new Error('Payment failed')
       }
@@ -123,14 +242,68 @@ export function PaymentForm({ amount, shippingInfo, items, onSuccess }: PaymentF
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Card Information
+      <div className="space-y-3">
+        <label className="block text-sm font-medium text-gray-700">
+          Payment Method
         </label>
-        <div className="p-4 border border-gray-300 rounded-lg">
-          <CardElement options={cardElementOptions} />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => setPaymentMethod('card')}
+            className={`rounded-lg border px-4 py-3 text-left transition ${
+              paymentMethod === 'card'
+                ? 'border-blue-600 bg-blue-50 text-blue-900'
+                : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+            }`}
+          >
+            <div className="font-semibold">Card (Stripe)</div>
+            <div className="text-xs mt-1">Pay now with card</div>
+          </button>
+          <button
+            type="button"
+            onClick={() => setPaymentMethod('cash')}
+            className={`rounded-lg border px-4 py-3 text-left transition ${
+              paymentMethod === 'cash'
+                ? 'border-emerald-600 bg-emerald-50 text-emerald-900'
+                : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+            }`}
+          >
+            <div className="font-semibold">Cash on Delivery</div>
+            <div className="text-xs mt-1">
+              Uses {tokenCost} Senderr token{tokenCost === 1 ? '' : 's'} fee
+            </div>
+          </button>
         </div>
       </div>
+
+      {paymentMethod === 'card' && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Card Information
+          </label>
+          <div className="p-4 border border-gray-300 rounded-lg">
+            <CardElement options={cardElementOptions} />
+          </div>
+        </div>
+      )}
+
+      {paymentMethod === 'cash' && (
+        <div className="p-4 rounded-lg border border-emerald-200 bg-emerald-50 text-sm text-emerald-900">
+          <p className="font-semibold">Cash checkout token fee</p>
+          <p className="mt-1">
+            Required now: {tokenCost} token{tokenCost === 1 ? '' : 's'}
+          </p>
+          <p className="mt-1">
+            Wallet balance:{' '}
+            {walletLoading ? 'Loading...' : walletTokens == null ? 'Unavailable' : `${walletTokens} tokens`}
+          </p>
+          {walletTokens != null && walletTokens < tokenCost && (
+            <p className="mt-2 text-red-700">
+              Insufficient tokens. Top up in Settings before using cash checkout.
+            </p>
+          )}
+        </div>
+      )}
 
       {error && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -151,7 +324,7 @@ export function PaymentForm({ amount, shippingInfo, items, onSuccess }: PaymentF
 
       <button
         type="submit"
-        disabled={!stripe || loading || processingPayment}
+        disabled={(paymentMethod === 'card' && !stripe) || loading || processingPayment}
         className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
         {processingPayment ? (
@@ -163,7 +336,9 @@ export function PaymentForm({ amount, shippingInfo, items, onSuccess }: PaymentF
             Processing Payment...
           </>
         ) : (
-          `Pay $${amount.toFixed(2)}`
+          paymentMethod === 'cash'
+            ? `Place Cash Order ($${amount.toFixed(2)})`
+            : `Pay $${amount.toFixed(2)}`
         )}
       </button>
 

@@ -7,6 +7,8 @@ export interface GeocodedAddress {
   place_name: string;
 }
 
+let geocodingDisabled = false;
+
 /**
  * Geocode an address query using Mapbox Geocoding API
  * Returns an array of possible matches
@@ -18,10 +20,13 @@ export async function geocodeAddress(
     return [];
   }
 
+  if (geocodingDisabled) {
+    return [];
+  }
+
   const token = await getMapboxToken();
 
   if (!token) {
-    console.error("Mapbox token not configured");
     return [];
   }
 
@@ -32,6 +37,13 @@ export async function geocodeAddress(
     const response = await fetch(url);
 
     if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        geocodingDisabled = true;
+        console.warn(
+          "Mapbox geocoding disabled due auth failure. Use manual address entry until token is fixed.",
+        );
+        return [];
+      }
       const errorBody = await response
         .text()
         .catch(() => "Unable to read response");

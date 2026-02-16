@@ -10,6 +10,7 @@ import { useOpenJobs } from "@/hooks/v2/useOpenJobs";
 import { claimJob } from "@/lib/v2/jobs";
 import { CourierJobPreview } from "@/components/v2/CourierJobPreview";
 import type { Job } from "@/lib/v2/types";
+import { openExternalNavigation } from "@/lib/navigation/external";
 
 export default function CourierDashboardMobile() {
   const navigate = useNavigate();
@@ -159,12 +160,12 @@ export default function CourierDashboardMobile() {
     }
   };
 
-  const handleToggleOnline = async () => {
+  const setOnlineStatus = async (nextOnline: boolean) => {
     if (!uid || !userDoc || togglingOnline || !isApproved) return;
     setTogglingOnline(true);
     try {
       await updateDoc(doc(db, "users", uid), {
-        "courierProfile.isOnline": !isOnline,
+        "courierProfile.isOnline": nextOnline,
       });
     } catch (error) {
       console.error("Failed to toggle online status:", error);
@@ -172,6 +173,33 @@ export default function CourierDashboardMobile() {
     } finally {
       setTogglingOnline(false);
     }
+  };
+
+  const handleToggleOnline = async () => {
+    await setOnlineStatus(!isOnline);
+  };
+
+  const navigationTarget = useMemo(() => {
+    const activeJob = activeJobs[0];
+    if (!activeJob) return null;
+
+    const usePickupTarget = ["assigned", "enroute_pickup", "arrived_pickup"].includes(
+      activeJob.status,
+    );
+
+    return {
+      point: usePickupTarget ? activeJob.pickup : activeJob.dropoff,
+      jobId: activeJob.id,
+      stepLabel: usePickupTarget ? "pickup" : "dropoff",
+    };
+  }, [activeJobs]);
+
+  const handleOpenNavigation = () => {
+    if (!navigationTarget) {
+      navigate("/jobs");
+      return;
+    }
+    openExternalNavigation(navigationTarget.point, courierLocation || undefined);
   };
 
   if (authLoading || userLoading || jobsLoading) {
@@ -290,14 +318,38 @@ export default function CourierDashboardMobile() {
           <div className="bg-white border border-gray-200 rounded-2xl p-4 lg:col-span-2">
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div>
-                <p className="text-sm text-gray-600">Current Job</p>
-                <p className="text-lg font-semibold text-gray-900">No active job</p>
+                <p className="text-sm text-gray-600">Navigation</p>
+                {navigationTarget ? (
+                  <>
+                    <p className="text-lg font-semibold text-gray-900">
+                      Active job ready
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Open external maps for {navigationTarget.stepLabel}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-lg font-semibold text-gray-900">
+                      No active job
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Browse jobs to start a route
+                    </p>
+                  </>
+                )}
               </div>
               <div className="flex gap-2">
-                <button className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold">
-                  Open Navigation
+                <button
+                  onClick={handleOpenNavigation}
+                  className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold"
+                >
+                  {navigationTarget ? "Open in Maps" : "Browse Jobs"}
                 </button>
-                <button className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-semibold">
+                <button
+                  onClick={() => navigate("/support")}
+                  className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-semibold"
+                >
                   Contact Support
                 </button>
               </div>
@@ -305,98 +357,48 @@ export default function CourierDashboardMobile() {
           </div>
           <div className="bg-white border border-gray-200 rounded-2xl p-4">
             <p className="text-sm text-gray-600">Online Time</p>
-            <p className="text-3xl font-bold text-gray-900">0h 00m</p>
-            <p className="text-xs text-gray-400">Current shift</p>
+            <p className="text-3xl font-bold text-gray-900">{isOnline ? "Online" : "Offline"}</p>
+            <p className="text-xs text-gray-400">Shift controls</p>
             <div className="mt-3 flex gap-2">
-              <button className="flex-1 px-3 py-2 rounded-lg bg-gray-100 text-sm font-semibold">Pause</button>
-              <button className="flex-1 px-3 py-2 rounded-lg bg-gray-100 text-sm font-semibold">End</button>
+              <button
+                onClick={() => void setOnlineStatus(false)}
+                disabled={!isOnline || togglingOnline || !isApproved}
+                className="flex-1 px-3 py-2 rounded-lg bg-gray-100 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Pause
+              </button>
+              <button
+                onClick={() => navigate("/earnings")}
+                className="flex-1 px-3 py-2 rounded-lg bg-gray-100 text-sm font-semibold"
+              >
+                Earnings
+              </button>
             </div>
           </div>
         </div>
 
-        {/* Earnings & Payouts */}
-        <div className="grid lg:grid-cols-3 gap-4">
-          <div className="bg-white border border-gray-200 rounded-2xl p-4 lg:col-span-2">
-            <p className="text-sm text-gray-600 mb-2">Earnings Trend</p>
-            <div className="h-36 rounded-xl bg-gradient-to-br from-purple-50 to-white border border-purple-100 flex items-center justify-center text-sm text-gray-500">
-              Earnings chart (7/30 days)
-            </div>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-2xl p-4">
-            <p className="text-sm text-gray-600">Next payout</p>
-            <p className="text-2xl font-bold text-emerald-600">
-              {formatMoney(timeWindowStats.weekEarnings)}
-            </p>
-            <p className="text-xs text-gray-500">Scheduled: —</p>
-            <div className="mt-3 text-xs text-gray-500">Pending tips: $0.00</div>
-          </div>
-        </div>
-
-        {/* Performance + Quality */}
-        <div className="grid md:grid-cols-2 gap-4">
-          <div className="bg-white border border-gray-200 rounded-2xl p-4">
-            <p className="text-sm text-gray-600">Ratings</p>
-            <div className="flex items-center justify-between mt-2">
-              <p className="text-3xl font-bold">4.9</p>
-              <p className="text-xs text-gray-400">Last 30 days</p>
-            </div>
-            <p className="text-sm text-gray-600 mt-3">“Great service!” — Recent feedback</p>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-2xl p-4">
-            <p className="text-sm text-gray-600">Reliability</p>
-            <div className="grid grid-cols-2 gap-3 mt-3">
-              <div className="p-3 rounded-lg bg-emerald-50">
-                <p className="text-xs text-gray-500">Completion</p>
-                <p className="text-xl font-bold text-emerald-600">100%</p>
-              </div>
-              <div className="p-3 rounded-lg bg-orange-50">
-                <p className="text-xs text-gray-500">Cancellations</p>
-                <p className="text-xl font-bold text-orange-600">0%</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Opportunities */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-4">
-          <p className="text-sm text-gray-600 mb-3">Opportunities</p>
-          <div className="grid md:grid-cols-3 gap-3">
-            <div className="p-4 rounded-xl bg-red-50 border border-red-100">
-              <p className="text-sm font-semibold">Hot Zone</p>
-              <p className="text-xs text-gray-500">Downtown • +$2.00</p>
-            </div>
-            <div className="p-4 rounded-xl bg-blue-50 border border-blue-100">
-              <p className="text-sm font-semibold">Peak Hours</p>
-              <p className="text-xs text-gray-500">5:00–8:00 PM</p>
-            </div>
-            <div className="p-4 rounded-xl bg-purple-50 border border-purple-100">
-              <p className="text-sm font-semibold">Suggested Shift</p>
-              <p className="text-xs text-gray-500">Sat 11:00 AM–2:00 PM</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Schedule + Compliance + Inbox */}
-        <div className="grid lg:grid-cols-3 gap-4">
-          <div className="bg-white border border-gray-200 rounded-2xl p-4">
-            <p className="text-sm text-gray-600">Availability</p>
-            <p className="text-sm text-gray-500 mt-2">No schedule set</p>
-            <button className="mt-3 px-4 py-2 rounded-lg bg-gray-100 text-sm font-semibold">
-              Set Availability
-            </button>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-2xl p-4">
-            <p className="text-sm text-gray-600">Compliance</p>
-            <p className="text-sm text-gray-500 mt-2">All documents up to date</p>
-            <p className="text-xs text-gray-400 mt-1">No actions required</p>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-2xl p-4">
-            <p className="text-sm text-gray-600">Inbox</p>
-            <p className="text-sm text-gray-500 mt-2">No new messages</p>
-            <button className="mt-3 px-4 py-2 rounded-lg bg-gray-100 text-sm font-semibold">
-              Open Messages
-            </button>
-          </div>
+        <div className="grid md:grid-cols-3 gap-3">
+          <button
+            onClick={() => navigate("/jobs")}
+            className="rounded-2xl border border-gray-200 bg-white px-4 py-4 text-left hover:bg-gray-50"
+          >
+            <p className="text-sm font-semibold text-gray-900">My Jobs</p>
+            <p className="text-xs text-gray-500">Track accepted and completed jobs</p>
+          </button>
+          <button
+            onClick={() => navigate("/routes")}
+            className="rounded-2xl border border-gray-200 bg-white px-4 py-4 text-left hover:bg-gray-50"
+          >
+            <p className="text-sm font-semibold text-gray-900">Route Batches</p>
+            <p className="text-xs text-gray-500">Claim grouped delivery routes</p>
+          </button>
+          <button
+            onClick={() => navigate("/settings")}
+            className="rounded-2xl border border-gray-200 bg-white px-4 py-4 text-left hover:bg-gray-50"
+          >
+            <p className="text-sm font-semibold text-gray-900">Account + Payouts</p>
+            <p className="text-xs text-gray-500">Update profile and payout setup</p>
+          </button>
         </div>
 
         {activeJobs.length > 0 && (

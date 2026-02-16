@@ -343,9 +343,12 @@ export default function ItemDetailPage() {
               
               {/* Seller Info */}
               <div className="flex-1">
-                <div className="font-medium text-gray-900 text-lg mb-1">
+                <Link
+                  to={`/store/${item.sellerId}`}
+                  className="inline-flex font-medium text-gray-900 text-lg mb-1 hover:text-blue-700"
+                >
                   {item.sellerName || 'Seller'}
-                </div>
+                </Link>
                 
                 <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
                   <div className="flex items-center gap-1">
@@ -371,12 +374,20 @@ export default function ItemDetailPage() {
                   </div>
                 )}
 
-                <button
-                  onClick={handleContactSeller}
-                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                >
-                  Contact Seller
-                </button>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Link
+                    to={`/store/${item.sellerId}`}
+                    className="w-full px-4 py-2 border border-blue-600 text-blue-700 text-center rounded-lg hover:bg-blue-50 transition-colors font-medium"
+                  >
+                    View Storefront
+                  </Link>
+                  <button
+                    onClick={handleContactSeller}
+                    className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  >
+                    Contact Seller
+                  </button>
+                </div>
               </div>
             </div>
           </div>

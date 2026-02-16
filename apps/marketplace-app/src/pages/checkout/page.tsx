@@ -3,7 +3,7 @@
  * Complete checkout flow with Stripe payment
  */
 
-import { useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { getStripePromise } from '@/lib/stripeConfig';
@@ -21,6 +21,9 @@ import { AddressAutocomplete } from '@/components/v2/AddressAutocomplete';
 import { CourierSelector, CourierWithRate } from '@/components/v2/CourierSelector';
 import { UserDoc } from '@gosenderr/shared';
 import { usePlatformSettings } from '@/hooks/usePlatformSettings';
+import { useCart, type CartItem } from '@/contexts/CartContext';
+import { PaymentForm as CartCheckoutPaymentForm } from '@/components/checkout/PaymentForm';
+import { canUsePaymentMocks } from '@/lib/runtime/paymentSafety';
 
 const stripePromise = getStripePromise();
 
@@ -36,6 +39,117 @@ interface CheckoutSummary {
   selectedCourier: CourierWithRate | null;
   courierEtaMinutes: number | null;
   courierDistance: number | null;
+}
+
+interface ShippingFormData {
+  fullName: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+  lat?: number;
+  lng?: number;
+}
+
+interface CartRoutePoint {
+  lat: number;
+  lng: number;
+}
+
+interface CartDeliveryPolicy {
+  baseFee: number;
+  perMileFee: number;
+  perStopFee: number;
+  minimumFee: number;
+}
+
+const DEFAULT_CART_DELIVERY_POLICY: CartDeliveryPolicy = {
+  baseFee: 3.99,
+  perMileFee: 0.85,
+  perStopFee: 0.65,
+  minimumFee: 4.99,
+};
+
+function roundCurrency(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+function extractPickupPoint(cartItem: CartItem): CartRoutePoint | null {
+  const pickupLocation = (cartItem.item as any)?.pickupLocation;
+  const rawPoint = pickupLocation?.location ?? pickupLocation;
+  if (!rawPoint || typeof rawPoint !== 'object') return null;
+
+  const candidate = rawPoint as Record<string, unknown>;
+  const latRaw = candidate.lat ?? candidate.latitude ?? candidate._latitude;
+  const lngRaw = candidate.lng ?? candidate.longitude ?? candidate._longitude;
+  const lat = typeof latRaw === 'number' ? latRaw : Number(latRaw);
+  const lng = typeof lngRaw === 'number' ? lngRaw : Number(lngRaw);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+
+  return { lat, lng };
+}
+
+function estimateCartDeliveryFee(
+  items: CartItem[],
+  dropoff: CartRoutePoint | null,
+  policy: CartDeliveryPolicy
+): number {
+  if (!items.length) return 0;
+
+  const sellerStopIds = new Set<string>();
+  const uniqueStops = new Map<string, CartRoutePoint>();
+  items.forEach((cartItem) => {
+    const sellerId = cartItem.item.sellerId || cartItem.item.id;
+    if (!sellerId) return;
+    sellerStopIds.add(sellerId);
+    if (uniqueStops.has(sellerId)) return;
+    const pickup = extractPickupPoint(cartItem);
+    if (pickup) {
+      uniqueStops.set(sellerId, pickup);
+    }
+  });
+
+  const stopCount = Math.max(1, sellerStopIds.size);
+  if (!dropoff || uniqueStops.size === 0) {
+    return roundCurrency(
+      Math.max(policy.minimumFee, policy.baseFee + Math.max(0, stopCount - 1) * policy.perStopFee)
+    );
+  }
+
+  const remaining = [...uniqueStops.values()];
+  const reverseOrdered: CartRoutePoint[] = [];
+  let anchor = dropoff;
+
+  while (remaining.length > 0) {
+    let nearestIndex = 0;
+    let nearestDistance = Number.POSITIVE_INFINITY;
+    for (let i = 0; i < remaining.length; i += 1) {
+      const distance = calcMiles(anchor, remaining[i]);
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearestIndex = i;
+      }
+    }
+    const [next] = remaining.splice(nearestIndex, 1);
+    reverseOrdered.push(next);
+    anchor = next;
+  }
+
+  const orderedStops = reverseOrdered.reverse();
+  let routeMiles = 0;
+  for (let index = 1; index < orderedStops.length; index += 1) {
+    routeMiles += calcMiles(orderedStops[index - 1], orderedStops[index]);
+  }
+  if (orderedStops.length > 0) {
+    routeMiles += calcMiles(orderedStops[orderedStops.length - 1], dropoff);
+  }
+
+  const extraStops = Math.max(0, stopCount - 1);
+  const variableFee = policy.baseFee + routeMiles * policy.perMileFee + extraStops * policy.perStopFee;
+  return roundCurrency(Math.max(policy.minimumFee, variableFee));
 }
 
 
@@ -56,6 +170,8 @@ function parseAddressParts(address: string) {
 
 export default function CheckoutPage() {
   const [searchParams] = useSearchParams();
+  const checkoutMode = searchParams.get('mode');
+  const isCartCheckout = checkoutMode === 'cart';
   const itemId = searchParams.get('itemId');
   const [item, setItem] = useState<MarketplaceItem | null>(null);
   const [loading, setLoading] = useState(true);
@@ -67,6 +183,10 @@ export default function CheckoutPage() {
     courierEtaMinutes: null,
     courierDistance: null,
   });
+
+  if (isCartCheckout) {
+    return <UnifiedCartCheckoutPage />;
+  }
 
   useEffect(() => {
     if (itemId) {
@@ -246,6 +366,376 @@ function OrderSummary({
   );
 }
 
+function UnifiedCartCheckoutPage() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { items, subtotal, clearCart } = useCart();
+  const { settings: platformSettings } = usePlatformSettings();
+  const [step, setStep] = useState<'shipping' | 'payment'>('shipping');
+  const [shippingInfo, setShippingInfo] = useState<ShippingFormData>({
+    fullName: '',
+    email: user?.email || '',
+    phone: '',
+    address: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    country: 'United States',
+  });
+
+  const deliveryPolicy = useMemo<CartDeliveryPolicy>(() => ({
+    baseFee:
+      typeof (platformSettings as any).deliveryBaseFee === 'number'
+        ? (platformSettings as any).deliveryBaseFee
+        : DEFAULT_CART_DELIVERY_POLICY.baseFee,
+    perMileFee:
+      typeof (platformSettings as any).deliveryPerMileFee === 'number'
+        ? (platformSettings as any).deliveryPerMileFee
+        : DEFAULT_CART_DELIVERY_POLICY.perMileFee,
+    perStopFee:
+      typeof (platformSettings as any).deliveryPerStopFee === 'number'
+        ? (platformSettings as any).deliveryPerStopFee
+        : DEFAULT_CART_DELIVERY_POLICY.perStopFee,
+    minimumFee:
+      typeof (platformSettings as any).deliveryMinimumFee === 'number'
+        ? (platformSettings as any).deliveryMinimumFee
+        : DEFAULT_CART_DELIVERY_POLICY.minimumFee,
+  }), [platformSettings]);
+
+  const dropoffPoint = shippingInfo.lat != null && shippingInfo.lng != null
+    ? { lat: shippingInfo.lat, lng: shippingInfo.lng }
+    : null;
+  const shippingCost = useMemo(
+    () => estimateCartDeliveryFee(items as CartItem[], dropoffPoint, deliveryPolicy),
+    [items, dropoffPoint, deliveryPolicy]
+  );
+
+  const platformFee = roundCurrency(platformSettings.platformFeePackage || 0);
+  const adFeeEnabled = Boolean((platformSettings as any).orderAdFeeEnabled || (platformSettings as any).adFeeEnabled);
+  const adFee = adFeeEnabled ? roundCurrency((platformSettings as any).orderAdFeeFlat || 0) : 0;
+  const taxRate = platformSettings.collectTax ? (platformSettings.taxRate || 0) / 100 : 0;
+  const tax = roundCurrency(subtotal * taxRate);
+  const total = roundCurrency(subtotal + shippingCost + platformFee + adFee + tax);
+
+  useEffect(() => {
+    if (items.length === 0) {
+      navigate('/marketplace');
+    }
+  }, [items.length, navigate]);
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
+    const field = e.target.name;
+    const value = e.target.value;
+    setShippingInfo((prev) => ({
+      ...prev,
+      [field]: value,
+      ...(field === 'address' || field === 'city' || field === 'state' || field === 'zipCode'
+        ? { lat: undefined, lng: undefined }
+        : {}),
+    }))
+  };
+
+  const handleShippingSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const requiredFields: Array<
+      'fullName' | 'email' | 'phone' | 'address' | 'city' | 'state' | 'zipCode'
+    > = [
+      'fullName',
+      'email',
+      'phone',
+      'address',
+      'city',
+      'state',
+      'zipCode',
+    ];
+    const valid = requiredFields.every((field) => shippingInfo[field].trim() !== '');
+    if (!valid) {
+      alert('Please fill in all required fields');
+      return;
+    }
+    setStep('payment');
+  };
+
+  const handlePaymentSuccess = async (orderId: string) => {
+    clearCart();
+    navigate(`/orders/${orderId}`);
+  };
+
+  if (items.length === 0) return null;
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mb-8">
+          <div className="flex items-center justify-center space-x-4">
+            <div
+              className={`flex items-center ${
+                step === 'shipping' ? 'text-blue-600' : 'text-green-600'
+              }`}
+            >
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                  step === 'shipping'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-green-600 text-white'
+                }`}
+              >
+                {step === 'payment' ? '✓' : '1'}
+              </div>
+              <span className="ml-2 font-medium">Shipping</span>
+            </div>
+            <div className="w-16 h-0.5 bg-gray-300" />
+            <div
+              className={`flex items-center ${
+                step === 'payment' ? 'text-blue-600' : 'text-gray-400'
+              }`}
+            >
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                  step === 'payment' ? 'bg-blue-600 text-white' : 'bg-gray-300'
+                }`}
+              >
+                2
+              </div>
+              <span className="ml-2 font-medium">Payment</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              {step === 'shipping' ? (
+                <>
+                  <h2 className="text-2xl font-bold mb-6">Shipping Information</h2>
+                  <form onSubmit={handleShippingSubmit} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Full Name *
+                      </label>
+                      <input
+                        type="text"
+                        name="fullName"
+                        value={shippingInfo.fullName}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        required
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Email *
+                        </label>
+                        <input
+                          type="email"
+                          name="email"
+                          value={shippingInfo.email}
+                          onChange={handleInputChange}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Phone *
+                        </label>
+                        <input
+                          type="tel"
+                          name="phone"
+                          value={shippingInfo.phone}
+                          onChange={handleInputChange}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <AddressAutocomplete
+                        label="Address"
+                        placeholder="Search dropoff address..."
+                        required
+                        onSelect={(result) => {
+                          const parsed = parseAddressParts(result.address);
+                          setShippingInfo((prev) => ({
+                            ...prev,
+                            address: parsed.street || result.address,
+                            city: parsed.city || prev.city,
+                            state: parsed.state || prev.state,
+                            zipCode: parsed.zipCode || prev.zipCode,
+                            lat: result.lat,
+                            lng: result.lng,
+                          }));
+                        }}
+                      />
+                      <input
+                        type="text"
+                        name="address"
+                        value={shippingInfo.address}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Street address"
+                        required
+                      />
+                      {shippingInfo.lat != null && shippingInfo.lng != null && (
+                        <p className="text-xs text-green-700 mt-2">
+                          Route geocode ready: {shippingInfo.lat.toFixed(5)}, {shippingInfo.lng.toFixed(5)}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          City *
+                        </label>
+                        <input
+                          type="text"
+                          name="city"
+                          value={shippingInfo.city}
+                          onChange={handleInputChange}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          State *
+                        </label>
+                        <input
+                          type="text"
+                          name="state"
+                          value={shippingInfo.state}
+                          onChange={handleInputChange}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          ZIP Code *
+                        </label>
+                        <input
+                          type="text"
+                          name="zipCode"
+                          value={shippingInfo.zipCode}
+                          onChange={handleInputChange}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex gap-4 pt-4">
+                      <button
+                        type="button"
+                        onClick={() => navigate('/marketplace')}
+                        className="flex-1 px-6 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+                      >
+                        Back to Shopping
+                      </button>
+                      <button
+                        type="submit"
+                        className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                      >
+                        Continue to Payment
+                      </button>
+                    </div>
+                  </form>
+                </>
+              ) : (
+                <>
+                  <div className="mb-6">
+                    <h2 className="text-2xl font-bold mb-2">Payment</h2>
+                    <button
+                      onClick={() => setStep('shipping')}
+                      className="text-blue-600 hover:text-blue-700 text-sm"
+                    >
+                      ← Edit shipping information
+                    </button>
+                  </div>
+                  <Elements stripe={stripePromise}>
+                    <CartCheckoutPaymentForm
+                      amount={total}
+                      shippingInfo={shippingInfo}
+                      items={items as CartItem[]}
+                      onSuccess={handlePaymentSuccess}
+                    />
+                  </Elements>
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-lg shadow-sm p-6 sticky top-4">
+              <h3 className="text-lg font-bold mb-4">Order Summary</h3>
+
+              <div className="space-y-4 mb-6">
+                {items.map((cartItem) => (
+                  <div key={cartItem.item.id} className="flex gap-4">
+                    <img
+                      src={cartItem.item.images?.[0]}
+                      alt={cartItem.item.title}
+                      className="w-16 h-16 object-cover rounded"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">{cartItem.item.title}</p>
+                      <p className="text-sm text-gray-600">Qty: {cartItem.quantity}</p>
+                      <p className="text-sm font-medium">
+                        ${(cartItem.item.price * cartItem.quantity).toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="border-t pt-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Subtotal</span>
+                  <span className="font-medium">${subtotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">
+                    Delivery {dropoffPoint ? '' : '(estimate)'}
+                  </span>
+                  <span className="font-medium">${shippingCost.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Platform fee</span>
+                  <span className="font-medium">${platformFee.toFixed(2)}</span>
+                </div>
+                {adFee > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Ad fee</span>
+                    <span className="font-medium">${adFee.toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-xs text-gray-500">
+                  <span>Pricing rail</span>
+                  <span>Delivery + platform</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Tax</span>
+                  <span className="font-medium">${tax.toFixed(2)}</span>
+                </div>
+                <div className="border-t pt-2 flex justify-between">
+                  <span className="font-bold">Total</span>
+                  <span className="font-bold text-lg">${total.toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function CheckoutForm({
   item,
   onSummaryChange,
@@ -278,6 +768,7 @@ function CheckoutForm({
   const [selectedCourier, setSelectedCourier] = useState<CourierWithRate | null>(null);
   const [searchingCouriers, setSearchingCouriers] = useState(false);
   const [courierError, setCourierError] = useState<string | null>(null);
+  const paymentMocksEnabled = canUsePaymentMocks();
   const isMockClientSecret = clientSecret.startsWith('pi_mock_');
   const courierOffersEnabled = !!flags?.marketplace?.courierOffers;
   const pickupLocation = (item.pickupLocation as any)?.location || (item.pickupLocation as any);
@@ -517,7 +1008,7 @@ function CheckoutForm({
         <h2 className="text-2xl font-bold text-gray-900 mb-6">Delivery Information</h2>
         
         {/* Development Mode Warning */}
-        {import.meta.env.DEV && !import.meta.env.VITE_USE_REAL_FUNCTIONS && (
+        {paymentMocksEnabled && (
           <div className="mb-6 bg-yellow-50 border border-yellow-300 rounded-lg p-4">
             <div className="flex items-start gap-3">
               <svg className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -526,8 +1017,7 @@ function CheckoutForm({
               <div className="flex-1">
                 <h3 className="font-semibold text-yellow-900">Development Mode</h3>
                 <p className="text-sm text-yellow-800 mt-1">
-                  Payment processing is currently unavailable. Deploy Cloud Functions to enable real checkout.
-                  See <code className="bg-yellow-100 px-1 rounded">CHECKOUT_IMPLEMENTATION.md</code> for setup instructions.
+                  Payment mocks are enabled in this environment. No real Stripe charge will be processed.
                 </p>
               </div>
             </div>
@@ -773,13 +1263,20 @@ function CheckoutForm({
         </button>
       </div>
 
-      {isMockClientSecret ? (
+      {isMockClientSecret && paymentMocksEnabled ? (
         <MockPaymentForm
           item={item}
           deliveryOption={deliveryOption}
           deliveryAddress={deliveryAddress}
           deliveryFee={resolvedDeliveryFee}
         />
+      ) : isMockClientSecret ? (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+          <p className="text-sm font-semibold text-red-800">Mock payment is blocked on this environment.</p>
+          <p className="mt-1 text-sm text-red-700">
+            Refresh checkout after payment configuration is corrected.
+          </p>
+        </div>
       ) : (
         <Elements stripe={stripePromise} options={{ clientSecret }}>
           <PaymentForm
@@ -809,8 +1306,12 @@ function MockPaymentForm({
   const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const paymentMocksEnabled = canUsePaymentMocks();
 
   const handleMockPay = async () => {
+    if (!paymentMocksEnabled) {
+      return;
+    }
     if (!user) return;
     setLoading(true);
     await new Promise(resolve => setTimeout(resolve, 500));

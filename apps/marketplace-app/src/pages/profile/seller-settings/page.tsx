@@ -4,7 +4,9 @@ import { useAuth } from '../../../hooks/useAuth'
 import { doc, getDoc, updateDoc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '../../../lib/firebase/client'
 import { SellerBadge, SellerBadgeList } from '../../../components/marketplace/SellerBadge'
-import { SellerBadge as BadgeType } from '../../../types/marketplace'
+import { SellerBadge as BadgeType, type SellerPayoutMode } from '../../../types/marketplace'
+import { createTokenCheckoutSession, getTokenWallet, makeIdempotencyKey } from '../../../lib/tokens'
+import { canUsePaymentMocks } from '../../../lib/runtime/paymentSafety'
 
 export default function SellerSettingsPage() {
   const { user } = useAuth()
@@ -23,19 +25,41 @@ export default function SellerSettingsPage() {
   const [sellerScore, setSellerScore] = useState(0)
   const [sellerStripeComplete, setSellerStripeComplete] = useState(false)
   const [sellerStripeAccountId, setSellerStripeAccountId] = useState<string | null>(null)
+  const [sellerPayoutMode, setSellerPayoutMode] = useState<SellerPayoutMode>('stripe_connect')
+  const [sellerExternalPayoutProvider, setSellerExternalPayoutProvider] = useState('')
+  const [sellerExternalPayoutHandle, setSellerExternalPayoutHandle] = useState('')
+  const [tokenWallet, setTokenWallet] = useState<{
+    available: number;
+    reserved: number;
+    lifetimePurchased: number;
+    lifetimeSpent: number;
+  } | null>(null)
+  const [tokenPolicy, setTokenPolicy] = useState<{
+    packs: Array<{ id: string; name: string; tokens: number; priceUsd: number; active: boolean }>;
+    costs: Record<string, number>;
+  } | null>(null)
+  const [tokenBusyPackId, setTokenBusyPackId] = useState<string | null>(null)
+  const paymentMocksEnabled = canUsePaymentMocks()
 
   useEffect(() => {
     loadSettings()
   }, [user])
 
   useEffect(() => {
+    if (!user) return
+    loadTokenData()
+  }, [user])
+
+  useEffect(() => {
     const params = new URLSearchParams(location.search)
-    if (params.get('mock_onboarding') === 'complete' && user) {
+    if (params.get('mock_onboarding') === 'complete' && user && paymentMocksEnabled) {
       const userId = (user as any).uid ?? (user as any).id
       if (!userId) return
+      const accountId =
+        sellerStripeAccountId || (user as any)?.sellerProfile?.stripeAccountId || 'acct_mock_dev'
       const payload = {
         'sellerProfile.stripeOnboardingComplete': true,
-        'sellerProfile.stripeAccountId': sellerStripeAccountId || (user as any)?.sellerProfile?.stripeAccountId || 'acct_mock_dev',
+        'sellerProfile.stripeAccountId': accountId,
         updatedAt: serverTimestamp()
       }
       updateDoc(doc(db, 'users', userId), payload)
@@ -46,7 +70,7 @@ export default function SellerSettingsPage() {
         })
         .catch((error) => console.error('Error completing mock onboarding:', error))
     }
-  }, [location.search, user, sellerStripeAccountId])
+  }, [paymentMocksEnabled, location.search, user, sellerStripeAccountId])
 
   const loadSettings = async () => {
     if (!user) return
@@ -70,12 +94,57 @@ export default function SellerSettingsPage() {
           setSellerScore(sellerProfile.sellerScore || 0)
           setSellerStripeComplete(Boolean(sellerProfile.stripeOnboardingComplete))
           setSellerStripeAccountId(sellerProfile.stripeAccountId || null)
+          setSellerPayoutMode(
+            (sellerProfile.payoutMode || sellerProfile.sellerPayoutMode || 'stripe_connect') as SellerPayoutMode,
+          )
+          setSellerExternalPayoutProvider(sellerProfile.externalPayoutProvider || '')
+          setSellerExternalPayoutHandle(sellerProfile.externalPayoutHandle || '')
         }
       }
     } catch (error) {
       console.error('Error loading settings:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadTokenData = async () => {
+    try {
+      const snapshot = await getTokenWallet()
+      setTokenWallet({
+        available: snapshot.wallet.available,
+        reserved: snapshot.wallet.reserved,
+        lifetimePurchased: snapshot.wallet.lifetimePurchased,
+        lifetimeSpent: snapshot.wallet.lifetimeSpent,
+      })
+      setTokenPolicy({
+        packs: snapshot.policy.packs || [],
+        costs: snapshot.policy.costs || {},
+      })
+    } catch (error) {
+      console.error('Error loading token wallet:', error)
+    }
+  }
+
+  const handleBuyTokens = async (packId: string) => {
+    try {
+      setTokenBusyPackId(packId)
+      const response = await createTokenCheckoutSession({
+        actorType: 'seller',
+        packId,
+        idempotencyKey: makeIdempotencyKey('seller_buy_tokens'),
+        successUrl: `${window.location.origin}/profile/seller-settings?token_purchase=success`,
+        cancelUrl: `${window.location.origin}/profile/seller-settings?token_purchase=cancelled`,
+      })
+      if (!response.checkoutUrl) {
+        throw new Error('Checkout URL missing')
+      }
+      window.location.href = response.checkoutUrl
+    } catch (error) {
+      console.error('Error starting token checkout:', error)
+      alert('Could not start token checkout. Please try again.')
+    } finally {
+      setTokenBusyPackId(null)
     }
   }
 
@@ -101,11 +170,18 @@ export default function SellerSettingsPage() {
       
       await updateDoc(doc(db, 'users', user.uid), {
         'sellerProfile.buyerProtectionEnabled': settings.buyerProtectionEnabled,
-        'sellerProfile.instantPayoutEnabled': settings.instantPayoutEnabled,
+        'sellerProfile.instantPayoutEnabled':
+          sellerPayoutMode === 'stripe_connect' ? settings.instantPayoutEnabled : false,
         'sellerProfile.returnsAccepted': settings.returnsAccepted,
         'sellerProfile.returnWindowDays': settings.returnWindowDays,
         'sellerProfile.shippingGuarantee': settings.shippingGuarantee || null,
-        'sellerProfile.badges': earnedBadges // Save the calculated badges array
+        'sellerProfile.badges': earnedBadges, // Save the calculated badges array
+        'sellerProfile.payoutMode': sellerPayoutMode,
+        'sellerProfile.sellerPayoutMode': sellerPayoutMode,
+        'sellerProfile.externalPayoutProvider':
+          sellerPayoutMode === 'stripe_connect' ? null : sellerExternalPayoutProvider.trim() || null,
+        'sellerProfile.externalPayoutHandle':
+          sellerPayoutMode === 'stripe_connect' ? null : sellerExternalPayoutHandle.trim() || null,
       })
       
       alert('Settings saved successfully!')
@@ -144,8 +220,118 @@ export default function SellerSettingsPage() {
           <p className="text-gray-600 mt-1">Configure your trust badges and payment options</p>
         </div>
 
+        {/* Payout Method */}
+        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200 mb-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">💸 Seller payout method</h3>
+          <p className="text-sm text-gray-600 mb-4">
+            Choose how your seller earnings are settled.
+          </p>
+          <select
+            value={sellerPayoutMode}
+            onChange={(e) => setSellerPayoutMode(e.target.value as SellerPayoutMode)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+          >
+            <option value="stripe_connect">Stripe Connect</option>
+            <option value="external_provider">External provider</option>
+            <option value="manual_settlement">Manual settlement</option>
+          </select>
+
+          {sellerPayoutMode === 'stripe_connect' ? (
+            <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+              Marketplace checkout and automatic transfers run through Stripe Connect.
+            </div>
+          ) : null}
+
+          {sellerPayoutMode === 'external_provider' ? (
+            <div className="mt-3 space-y-2">
+              <input
+                type="text"
+                value={sellerExternalPayoutProvider}
+                onChange={(e) => setSellerExternalPayoutProvider(e.target.value)}
+                placeholder="Provider (PayPal, Cash App, Zelle...)"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              />
+              <input
+                type="text"
+                value={sellerExternalPayoutHandle}
+                onChange={(e) => setSellerExternalPayoutHandle(e.target.value)}
+                placeholder="Payout handle / account ID"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              />
+              <p className="text-xs text-gray-500">
+                Platform fee tracking stays in Senderrplace; payout transfer happens in your external provider.
+              </p>
+            </div>
+          ) : null}
+
+          {sellerPayoutMode === 'manual_settlement' ? (
+            <div className="mt-3 space-y-2">
+              <input
+                type="text"
+                value={sellerExternalPayoutProvider}
+                onChange={(e) => setSellerExternalPayoutProvider(e.target.value)}
+                placeholder="Settlement channel (bank transfer, cash, internal ledger)"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              />
+              <input
+                type="text"
+                value={sellerExternalPayoutHandle}
+                onChange={(e) => setSellerExternalPayoutHandle(e.target.value)}
+                placeholder="Settlement reference / account note"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              />
+              <p className="text-xs text-gray-500">
+                Use manual mode only if your settlement process is off-platform.
+              </p>
+            </div>
+          ) : null}
+        </div>
+
+        {/* Token Wallet */}
+        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200 mb-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">🪙 Senderr Token Wallet</h3>
+          <p className="text-sm text-gray-600 mb-4">
+            Sellers using external/manual payouts spend tokens to publish listings.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+            <div className="rounded-lg border border-purple-200 bg-purple-50 p-3">
+              <p className="text-xs text-purple-700">Available</p>
+              <p className="text-xl font-bold text-purple-900">{tokenWallet?.available ?? 0}</p>
+            </div>
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+              <p className="text-xs text-amber-700">Reserved</p>
+              <p className="text-xl font-bold text-amber-900">{tokenWallet?.reserved ?? 0}</p>
+            </div>
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3">
+              <p className="text-xs text-emerald-700">Spent</p>
+              <p className="text-xl font-bold text-emerald-900">{tokenWallet?.lifetimeSpent ?? 0}</p>
+            </div>
+          </div>
+          <p className="text-xs text-gray-500 mb-3">
+            Listing publish cost: {tokenPolicy?.costs?.listingPublish ?? 2} token(s). Token purchases are final sale.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            {(tokenPolicy?.packs || [])
+              .filter((pack) => pack.active)
+              .map((pack) => (
+                <button
+                  key={pack.id}
+                  type="button"
+                  onClick={() => handleBuyTokens(pack.id)}
+                  disabled={tokenBusyPackId === pack.id}
+                  className="rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-left hover:bg-gray-100 disabled:opacity-60"
+                >
+                  <p className="text-sm font-semibold text-gray-900">{pack.name}</p>
+                  <p className="text-xs text-gray-600">
+                    {pack.tokens} tokens • ${pack.priceUsd.toFixed(2)}
+                  </p>
+                </button>
+              ))}
+          </div>
+        </div>
+
         {/* Stripe Connect Setup Card */}
-        {!sellerStripeComplete && (
+        {sellerPayoutMode === 'stripe_connect' && !sellerStripeComplete && (
           <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl shadow-lg p-6 mb-6 text-white">
             <div className="flex items-start gap-4">
               <div className="p-3 bg-white/20 rounded-lg">
@@ -154,9 +340,9 @@ export default function SellerSettingsPage() {
                 </svg>
               </div>
               <div className="flex-1">
-                <h3 className="text-xl font-bold mb-2">💳 Set Up Payments</h3>
+                <h3 className="text-xl font-bold mb-2">💳 Set Up Stripe Connect</h3>
                 <p className="text-white/90 mb-4">
-                  Connect your bank account to receive payments from buyers. Quick setup through Stripe (takes 5 minutes).
+                  Connect your bank account to receive automatic payouts from marketplace checkout.
                 </p>
                 <button
                   onClick={() => navigate('/profile/stripe-onboarding')}
@@ -164,6 +350,11 @@ export default function SellerSettingsPage() {
                 >
                   Connect Bank Account →
                 </button>
+                {paymentMocksEnabled ? (
+                  <p className="text-[11px] text-white/80 mt-3">
+                    Payment mock onboarding links are enabled in this environment.
+                  </p>
+                ) : null}
               </div>
             </div>
           </div>
@@ -256,18 +447,23 @@ export default function SellerSettingsPage() {
                     type="checkbox"
                     checked={settings.instantPayoutEnabled}
                     onChange={(e) => setSettings({...settings, instantPayoutEnabled: e.target.checked})}
-                    disabled={settings.buyerProtectionEnabled}
+                    disabled={settings.buyerProtectionEnabled || sellerPayoutMode !== 'stripe_connect'}
                     className="sr-only peer disabled:opacity-50"
                   />
                   <div className="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-blue-600"></div>
                 </label>
               </div>
             </div>
-            {settings.buyerProtectionEnabled && (
+            {settings.buyerProtectionEnabled ? (
               <p className="text-xs text-gray-500 mt-2">
                 ℹ️ Disabled when Buyer Protection is enabled (incompatible)
               </p>
-            )}
+            ) : null}
+            {sellerPayoutMode !== 'stripe_connect' ? (
+              <p className="text-xs text-gray-500 mt-2">
+                ℹ️ Instant payout requires Stripe Connect payout mode.
+              </p>
+            ) : null}
           </div>
 
           {/* Returns */}

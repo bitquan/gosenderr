@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db, storage } from "@/lib/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { createTokenCheckoutSession, getTokenWallet, makeIdempotencyKey } from "@/lib/tokens";
 
 const STATE_OPTIONS = [
   { code: "AL", name: "Alabama" },
@@ -63,6 +64,8 @@ const STATE_OPTIONS = [
   { code: "DC", name: "District of Columbia" },
 ];
 
+type CourierPayoutMode = "stripe_connect" | "external_provider" | "manual_settlement";
+
 export default function CourierSettingsPage() {
   const navigate = useNavigate();
   const { user, loading } = useAuthUser();
@@ -72,6 +75,21 @@ export default function CourierSettingsPage() {
   const [availability, setAvailability] = useState(false);
   const [serviceRadius, setServiceRadius] = useState(10);
   const [taxState, setTaxState] = useState('');
+  const [courierPayoutMode, setCourierPayoutMode] =
+    useState<CourierPayoutMode>("stripe_connect");
+  const [externalPayoutProvider, setExternalPayoutProvider] = useState("");
+  const [externalPayoutHandle, setExternalPayoutHandle] = useState("");
+  const [tokenWallet, setTokenWallet] = useState<{
+    available: number;
+    reserved: number;
+    lifetimePurchased: number;
+    lifetimeSpent: number;
+  } | null>(null);
+  const [tokenPolicy, setTokenPolicy] = useState<{
+    packs: Array<{ id: string; name: string; tokens: number; priceUsd: number; active: boolean }>;
+    costs: Record<string, number>;
+  } | null>(null);
+  const [tokenBusyPackId, setTokenBusyPackId] = useState<string | null>(null);
   const [notificationPrefs, setNotificationPrefs] = useState({
     jobOffers: true,
     payoutUpdates: true,
@@ -101,6 +119,11 @@ export default function CourierSettingsPage() {
               setAvailability(Boolean(profile.isOnline));
               setServiceRadius(Number(profile.serviceRadius || 10));
               setTaxState(profile.taxState || userDoc.data().taxState || '');
+              setCourierPayoutMode(
+                (profile.payoutMode || profile.courierPayoutMode || "stripe_connect") as CourierPayoutMode,
+              );
+              setExternalPayoutProvider(profile.externalPayoutProvider || "");
+              setExternalPayoutHandle(profile.externalPayoutHandle || "");
               setNotificationPrefs({
                 jobOffers: profile.notificationPrefs?.jobOffers ?? true,
                 payoutUpdates: profile.notificationPrefs?.payoutUpdates ?? true,
@@ -118,6 +141,51 @@ export default function CourierSettingsPage() {
       setDataLoading(false);
     }
   }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    loadTokenData();
+  }, [user]);
+
+  const loadTokenData = async () => {
+    try {
+      const snapshot = await getTokenWallet();
+      setTokenWallet({
+        available: snapshot.wallet.available,
+        reserved: snapshot.wallet.reserved,
+        lifetimePurchased: snapshot.wallet.lifetimePurchased,
+        lifetimeSpent: snapshot.wallet.lifetimeSpent,
+      });
+      setTokenPolicy({
+        packs: snapshot.policy.packs || [],
+        costs: snapshot.policy.costs || {},
+      });
+    } catch (error) {
+      console.error("Error loading token wallet:", error);
+    }
+  };
+
+  const handleBuyTokens = async (packId: string) => {
+    try {
+      setTokenBusyPackId(packId);
+      const response = await createTokenCheckoutSession({
+        actorType: "courier",
+        packId,
+        idempotencyKey: makeIdempotencyKey("courier_buy_tokens"),
+        successUrl: `${window.location.origin}/settings?token_purchase=success`,
+        cancelUrl: `${window.location.origin}/settings?token_purchase=cancelled`,
+      });
+      if (!response.checkoutUrl) {
+        throw new Error("Checkout URL missing");
+      }
+      window.location.href = response.checkoutUrl;
+    } catch (error) {
+      console.error("Error starting token checkout:", error);
+      alert("Could not start token checkout. Please try again.");
+    } finally {
+      setTokenBusyPackId(null);
+    }
+  };
 
   const handleSignOut = async () => {
     setSigningOut(true);
@@ -142,6 +210,16 @@ export default function CourierSettingsPage() {
         'courierProfile.isOnline': availability,
         'courierProfile.serviceRadius': serviceRadius,
         'courierProfile.taxState': taxState,
+        "courierProfile.payoutMode": courierPayoutMode,
+        "courierProfile.courierPayoutMode": courierPayoutMode,
+        "courierProfile.externalPayoutProvider":
+          courierPayoutMode === "stripe_connect"
+            ? null
+            : externalPayoutProvider.trim() || null,
+        "courierProfile.externalPayoutHandle":
+          courierPayoutMode === "stripe_connect"
+            ? null
+            : externalPayoutHandle.trim() || null,
         'courierProfile.notificationPrefs': notificationPrefs,
         updatedAt: serverTimestamp(),
       });
@@ -433,16 +511,92 @@ export default function CourierSettingsPage() {
               </div>
               <div className="bg-gray-50 rounded-xl p-4">
                 <p className="text-xs text-gray-600 font-medium mb-1">Payouts</p>
+                <select
+                  value={courierPayoutMode}
+                  onChange={(e) => setCourierPayoutMode(e.target.value as CourierPayoutMode)}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm mt-1"
+                >
+                  <option value="stripe_connect">Stripe Connect (recommended)</option>
+                  <option value="external_provider">External provider</option>
+                  <option value="manual_settlement">Manual settlement</option>
+                </select>
+                {courierPayoutMode !== "stripe_connect" && (
+                  <div className="mt-3 space-y-2">
+                    <input
+                      type="text"
+                      value={externalPayoutProvider}
+                      onChange={(e) => setExternalPayoutProvider(e.target.value)}
+                      placeholder="Provider (PayPal, Cash App, Zelle...)"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                    />
+                    <input
+                      type="text"
+                      value={externalPayoutHandle}
+                      onChange={(e) => setExternalPayoutHandle(e.target.value)}
+                      placeholder="Payout handle / account ID"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                    />
+                  </div>
+                )}
                 <Link
                   to="/earnings"
-                  className="inline-flex items-center gap-2 mt-1 text-sm font-semibold text-indigo-600"
+                  className="inline-flex items-center gap-2 mt-3 text-sm font-semibold text-indigo-600"
                 >
                   View earnings & payouts →
                 </Link>
                 <p className="text-xs text-gray-500 mt-2">
-                  Update your Stripe Connect details in Earnings.
+                  Platform fee still comes out of each completed job, even with external payout modes.
                 </p>
+                {(courierPayoutMode === "external_provider" ||
+                  courierPayoutMode === "manual_settlement") && (
+                  <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                    <p className="text-xs font-semibold text-amber-800">
+                      External payout mode: job unlock uses tokens.
+                    </p>
+                    <p className="text-xs text-amber-700 mt-1">
+                      Job unlock cost: {tokenPolicy?.costs?.jobUnlockStandard ?? 1} token(s).
+                    </p>
+                  </div>
+                )}
               </div>
+            </div>
+            <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-4">
+              <h3 className="text-sm font-bold text-gray-900 mb-2">🪙 Senderr Token Wallet</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
+                <div className="rounded-lg border border-purple-200 bg-purple-50 px-3 py-2">
+                  <p className="text-[11px] text-purple-700">Available</p>
+                  <p className="text-lg font-bold text-purple-900">{tokenWallet?.available ?? 0}</p>
+                </div>
+                <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
+                  <p className="text-[11px] text-amber-700">Reserved</p>
+                  <p className="text-lg font-bold text-amber-900">{tokenWallet?.reserved ?? 0}</p>
+                </div>
+                <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
+                  <p className="text-[11px] text-emerald-700">Spent</p>
+                  <p className="text-lg font-bold text-emerald-900">{tokenWallet?.lifetimeSpent ?? 0}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {(tokenPolicy?.packs || [])
+                  .filter((pack) => pack.active)
+                  .map((pack) => (
+                    <button
+                      key={pack.id}
+                      type="button"
+                      disabled={tokenBusyPackId === pack.id}
+                      onClick={() => handleBuyTokens(pack.id)}
+                      className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-left hover:bg-gray-100 disabled:opacity-60"
+                    >
+                      <p className="text-xs font-semibold text-gray-900">{pack.name}</p>
+                      <p className="text-[11px] text-gray-600">
+                        {pack.tokens} tokens • ${pack.priceUsd.toFixed(2)}
+                      </p>
+                    </button>
+                  ))}
+              </div>
+              <p className="mt-2 text-[11px] text-gray-500">
+                Token purchases are final sale.
+              </p>
             </div>
           </div>
         </div>

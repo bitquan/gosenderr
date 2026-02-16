@@ -33,6 +33,7 @@ import AdminFlowLogsPage from './pages/AdminFlowLogs'
 import SecretsPage from './pages/Secrets'
 import { useFeatureFlags } from './hooks/useFeatureFlags'
 import { StripeModeBanner } from './components/StripeModeBanner'
+import { ADMIN_PATHS } from './lib/navigation/adminNav'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
@@ -51,28 +52,12 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 function AdminWebAccessGate({ children }: { children: React.ReactNode }) {
-  const { flags, loading } = useFeatureFlags()
+  const { loading } = useFeatureFlags()
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#F8F9FF]">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
-    )
-  }
-
-  const webPortalEnabled = flags?.admin?.webPortalEnabled ?? false
-
-  if (!webPortalEnabled) {
-    return (
-      <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center px-6">
-        <div className="max-w-lg text-center bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-          <div className="text-5xl mb-4">🔒</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Admin Web Portal Disabled</h1>
-          <p className="text-gray-600">
-            Access is currently restricted. Please use the Admin Desktop app to enable web access.
-          </p>
-        </div>
       </div>
     )
   }
@@ -87,7 +72,7 @@ function App() {
         <AdminWebAccessGate>
           <StripeModeBanner />
           <Routes>
-          <Route path="/login" element={<LoginPage />} />
+          <Route path={ADMIN_PATHS.login} element={<LoginPage />} />
           
           <Route
             path="/*"
@@ -97,32 +82,32 @@ function App() {
                   <AdminSidebar />
                   <main className="flex-1 lg:ml-64">
                     <Routes>
-                      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                      <Route path="/dashboard" element={<DashboardPage />} />
-                      <Route path="/users" element={<UsersPage />} />
-                      <Route path="/users/:userId" element={<UserDetailPage />} />
-                      <Route path="/jobs" element={<JobsPage />} />
-                      <Route path="/rate-cards-comparison" element={<RateCardsComparison />} />
-                      <Route path="/disputes" element={<DisputesPage />} />
-                      <Route path="/courier-approval" element={<CourierApprovalPage />} />
-                      <Route path="/seller-approval" element={<SellerApprovalPage />} />
-                      <Route path="/revenue" element={<RevenuePage />} />
-                      <Route path="/messaging" element={<MessagingPage />} />
-                      <Route path="/marketplace" element={<MarketplacePage />} />
-                      <Route path="/marketplace/:itemId" element={<ItemDetailPage />} />
-                      <Route path="/flagged-content" element={<FlaggedContentPage />} />
-                      <Route path="/marketplace-orders" element={<MarketplaceOrdersPage />} />
-                      <Route path="/marketplace-orders/:orderId" element={<OrderDetailPage />} />
-                      <Route path="/categories" element={<CategoriesPage />} />
-                      <Route path="/system-check" element={<SystemCheckPage />} />
-                      <Route path="/audit-logs" element={<AuditLogsPage />} />
-                      <Route path="/feature-flags" element={<FeatureFlagsPage />} />
-                      <Route path="/admin-flow-logs" element={<AdminFlowLogsPage />} />
-                      <Route path="/settings" element={<SettingsPage />} />
-                      <Route path="/settings/payment" element={<PaymentSettingsPage />} />
-                      <Route path="/settings/secrets" element={<SecretsPage />} />
-                      <Route path="/settings/email" element={<EmailSettingsPage />} />
-                      <Route path="/settings/security" element={<SecuritySettingsPage />} />
+                      <Route path={ADMIN_PATHS.root} element={<Navigate to={ADMIN_PATHS.dashboard} replace />} />
+                      <Route path={ADMIN_PATHS.dashboard} element={<DashboardPage />} />
+                      <Route path={ADMIN_PATHS.users} element={<UsersPage />} />
+                      <Route path={ADMIN_PATHS.userDetail} element={<UserDetailPage />} />
+                      <Route path={ADMIN_PATHS.jobs} element={<JobsPage />} />
+                      <Route path={ADMIN_PATHS.rateCardsComparison} element={<RateCardsComparison />} />
+                      <Route path={ADMIN_PATHS.disputes} element={<DisputesPage />} />
+                      <Route path={ADMIN_PATHS.courierApproval} element={<CourierApprovalPage />} />
+                      <Route path={ADMIN_PATHS.sellerApproval} element={<SellerApprovalPage />} />
+                      <Route path={ADMIN_PATHS.revenue} element={<RevenuePage />} />
+                      <Route path={ADMIN_PATHS.messaging} element={<MessagingPage />} />
+                      <Route path={ADMIN_PATHS.marketplace} element={<MarketplacePage />} />
+                      <Route path={ADMIN_PATHS.marketplaceItemDetail} element={<ItemDetailPage />} />
+                      <Route path={ADMIN_PATHS.flaggedContent} element={<FlaggedContentPage />} />
+                      <Route path={ADMIN_PATHS.marketplaceOrders} element={<MarketplaceOrdersPage />} />
+                      <Route path={ADMIN_PATHS.marketplaceOrderDetail} element={<OrderDetailPage />} />
+                      <Route path={ADMIN_PATHS.categories} element={<CategoriesPage />} />
+                      <Route path={ADMIN_PATHS.systemCheck} element={<SystemCheckPage />} />
+                      <Route path={ADMIN_PATHS.auditLogs} element={<AuditLogsPage />} />
+                      <Route path={ADMIN_PATHS.featureFlags} element={<FeatureFlagsPage />} />
+                      <Route path={ADMIN_PATHS.adminFlowLogs} element={<AdminFlowLogsPage />} />
+                      <Route path={ADMIN_PATHS.settings} element={<SettingsPage />} />
+                      <Route path={ADMIN_PATHS.paymentSettings} element={<PaymentSettingsPage />} />
+                      <Route path={ADMIN_PATHS.secrets} element={<SecretsPage />} />
+                      <Route path={ADMIN_PATHS.emailSettings} element={<EmailSettingsPage />} />
+                      <Route path={ADMIN_PATHS.securitySettings} element={<SecuritySettingsPage />} />
                     </Routes>
                   </main>
                 </div>

@@ -44,16 +44,16 @@ export default function SellPage() {
       try {
         const userSnap = await getDoc(doc(db, 'users', user.uid))
         const userData = userSnap.data()
-        const roles = Array.isArray(userData?.roles) ? userData.roles : []
-        const hasSellerRole = userData?.role === 'seller' || roles.includes('seller')
+        const sellerApplicationStatus = userData?.sellerApplication?.status
+        const sellerProfileStatus = userData?.sellerProfile?.status
 
-        if (hasSellerRole || userData?.sellerApplication?.status === 'approved') {
+        if (sellerApplicationStatus === 'approved' || sellerProfileStatus === 'approved') {
           setSellerStatus('approved')
           setSellerRejectionReason(null)
-        } else if (userData?.sellerApplication?.status === 'pending') {
+        } else if (sellerApplicationStatus === 'pending') {
           setSellerStatus('pending')
           setSellerRejectionReason(null)
-        } else if (userData?.sellerApplication?.status === 'rejected') {
+        } else if (sellerApplicationStatus === 'rejected') {
           setSellerStatus('rejected')
           setSellerRejectionReason(userData?.sellerApplication?.rejectionReason || null)
         } else {
@@ -73,6 +73,7 @@ export default function SellPage() {
   const categories: ItemCategory[] = [
     ItemCategory.ELECTRONICS,
     ItemCategory.CLOTHING,
+    ItemCategory.FOOD,
     ItemCategory.HOME,
     ItemCategory.BOOKS,
     ItemCategory.TOYS,
@@ -265,7 +266,7 @@ export default function SellPage() {
     <div className="max-w-3xl mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-2">Create Listing</h1>
       <p className="text-gray-600 mb-8">
-        List an item for sale and become a seller on GoSenderr Marketplace
+        List an item for sale and become a seller on Senderrplace
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-6">

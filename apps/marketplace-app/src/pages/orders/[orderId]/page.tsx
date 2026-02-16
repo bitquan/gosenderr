@@ -32,7 +32,8 @@ interface Order {
   shipping: number
   tax: number
   total: number
-  paymentIntentId: string
+  paymentIntentId?: string | null
+  paymentMode?: 'card' | 'cash'
   paymentStatus: string
   status: string
   createdAt: any
@@ -199,6 +200,11 @@ export default function OrderDetailPage() {
           <div className="text-sm text-gray-600">
             <p>Placed on {formatDate(order.createdAt)}</p>
             <p className="mt-1">Payment Status: <span className="font-semibold capitalize">{order.paymentStatus}</span></p>
+            {order.paymentMode === 'cash' && (
+              <p className="mt-1 text-amber-700">
+                Cash checkout selected. Pay courier/seller at handoff based on order instructions.
+              </p>
+            )}
           </div>
         </div>
 

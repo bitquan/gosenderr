@@ -25,113 +25,91 @@ export default function LoginPage() {
   }
 
   return (
-    <div 
-      className="min-h-screen overflow-y-auto py-8 px-4 sm:px-6 lg:px-8"
-      style={{
-        background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)'
-      }}
-    >
-      <div className="max-w-md w-full mx-auto">
-        <div 
-          className="bg-white rounded-3xl shadow-2xl overflow-hidden"
-          style={{
-            boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
-          }}
-        >
-          {/* Header */}
-          <div 
-            className="px-6 py-8 text-center text-white"
-            style={{
-              background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)'
-            }}
-          >
-            <div className="text-5xl mb-2">⚡</div>
-            <h1 className="text-2xl font-bold mb-1">Senderr Portal</h1>
-            <p className="text-emerald-100 text-sm">Send it. Earn it. Your way.</p>
-          </div>
-
-          {/* Form */}
-          <div className="px-6 py-6">
-            {/* Back Button */}
-            <a 
-              href="https://gosenderr-6773f.web.app"
-              className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 transition-colors"
-            >
-              <span className="text-lg">←</span>
-              <span className="text-xs font-medium">Back to role selection</span>
-            </a>
-            
-            <h2 className="text-xl font-bold text-gray-900 mb-1">Local Deliveries</h2>
-            <p className="text-gray-600 mb-4 text-sm">Sign in to your courier account</p>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4">
-                  <p className="text-sm text-red-800 flex items-center gap-2">
-                    <span>⚠️</span>
-                    {error}
-                  </p>
-                </div>
-              )}
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  required
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-emerald-500 transition text-sm"
-                  placeholder="courier@example.com"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  required
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-emerald-500 transition text-sm"
-                  placeholder="••••••••"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-2.5 px-4 text-white font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{
-                  background: loading ? '#9ca3af' : 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-                }}
-              >
-                {loading ? '🔄 Signing in...' : '⚡ Sign In as Senderr'}
-              </button>
-            </form>
-
-            <div className="mt-4 text-center text-sm text-gray-600">
-              <p>
-                New courier?{' '}
-                <Link to="/signup" className="text-emerald-600 hover:text-emerald-700 font-semibold">
-                  Create an account
-                </Link>
-              </p>
+    <div className="min-h-screen bg-gradient-to-br from-[#050A2F] via-[#2B0F68] to-[#4C1D95] px-4 py-8">
+      <div className="mx-auto grid w-full max-w-5xl gap-6 rounded-3xl border border-white/20 bg-slate-950/35 p-4 shadow-2xl backdrop-blur sm:p-6 lg:grid-cols-[1.2fr,1fr] lg:p-8">
+        <div className="rounded-2xl border border-white/15 bg-gradient-to-br from-blue-700/55 to-indigo-800/65 p-6 text-white">
+          <p className="text-xs uppercase tracking-[0.25em] text-blue-100/75">Senderr Courier</p>
+          <h1 className="mt-3 text-3xl font-bold leading-tight sm:text-4xl">
+            Drive local deliveries with one control center.
+          </h1>
+          <p className="mt-4 max-w-md text-sm text-blue-100/85 sm:text-base">
+            Sign in to claim jobs, open route navigation in Maps, and manage payout settings.
+          </p>
+          <div className="mt-6 space-y-3 text-sm">
+            <div className="rounded-xl border border-white/20 bg-white/10 px-4 py-3">
+              Real-time jobs and route batches
+            </div>
+            <div className="rounded-xl border border-white/20 bg-white/10 px-4 py-3">
+              Courier-controlled package and food rate cards
+            </div>
+            <div className="rounded-xl border border-white/20 bg-white/10 px-4 py-3">
+              Direct support access from web and app
             </div>
           </div>
+          <a
+            href="https://gosenderr-6773f.web.app"
+            className="mt-6 inline-flex items-center rounded-lg border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/20"
+          >
+            Back to role selection
+          </a>
         </div>
 
-        {/* Footer */}
-        <div className="text-center mt-4 mb-4 text-white text-xs opacity-90">
-          <p>© 2026 GoSenderr • Senderr Portal</p>
+        <div className="rounded-2xl border border-white/15 bg-white p-6 shadow-xl">
+          <h2 className="text-2xl font-bold text-slate-900">Sign in</h2>
+          <p className="mt-1 text-sm text-slate-600">Use your courier account credentials.</p>
+
+          <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+            {error && (
+              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {error}
+              </div>
+            )}
+
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-slate-700">Email</label>
+              <input
+                type="email"
+                required
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                placeholder="courier@example.com"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-slate-700">Password</label>
+              <input
+                type="password"
+                required
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                placeholder="••••••••"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-lg bg-gradient-to-r from-[#2E68F8] to-[#5A35CF] px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {loading ? 'Signing in...' : 'Sign In'}
+            </button>
+          </form>
+
+          <p className="mt-4 text-sm text-slate-600">
+            New courier?{" "}
+            <Link to="/signup" className="font-semibold text-indigo-600 hover:text-indigo-700">
+              Create an account
+            </Link>
+          </p>
         </div>
       </div>
+
+      <p className="mt-4 text-center text-xs text-white/70">© 2026 GoSenderr</p>
     </div>
   )
 }

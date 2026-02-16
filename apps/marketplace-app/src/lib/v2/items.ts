@@ -117,6 +117,22 @@ export interface CreateItemInput {
 }
 
 export async function createItem(input: CreateItemInput): Promise<string> {
+  const sellerRef = doc(db, "users", input.sellerId);
+  const sellerSnap = await getDoc(sellerRef);
+  if (!sellerSnap.exists()) {
+    throw new Error("Seller profile not found");
+  }
+
+  const sellerData = sellerSnap.data() as Record<string, any>;
+  const sellerApplicationStatus = sellerData?.sellerApplication?.status;
+  const sellerProfileStatus = sellerData?.sellerProfile?.status;
+  const sellerApproved =
+    sellerApplicationStatus === "approved" || sellerProfileStatus === "approved";
+
+  if (!sellerApproved) {
+    throw new Error("Seller application must be approved before creating listings");
+  }
+
   const itemsRef = collection(db, "marketplaceItems");
 
   const itemData = {

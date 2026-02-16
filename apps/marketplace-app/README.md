@@ -1,22 +1,38 @@
-# Marketplace App — Quick Start
+# Marketplace App (Senderrplace) — Baseline README
 
-This README helps developers run the marketplace (customer-facing) app locally.
+Customer + seller web surface for listings, checkout, food pickup, and seller tools.
 
-Prerequisites
+## Run
 
-- Node 18+, pnpm 8+, corepack enabled
+1. From repo root:
+   - `pnpm install --frozen-lockfile`
+2. Start app:
+   - `pnpm --filter @gosenderr/marketplace-app dev`
+3. Build check:
+   - `pnpm --filter @gosenderr/marketplace-app build`
 
-Local setup
+## Baseline Rules
 
-1. `corepack enable && corepack prepare pnpm@8.0.0 --activate`
-2. `pnpm install --frozen-lockfile`
-3. `pnpm --filter @gosenderr/marketplace-app dev`
+1. Use shared contracts first (`packages/shared`) before app-local type changes.
+2. Route pages compose behavior; data logic belongs in `src/lib` or `src/services`.
+3. Keep naming aligned with other active surfaces:
+   - checkout/payment rails
+   - token actions
+   - food pickup terminology
 
-Tests
+## Critical Flows
 
-- E2E: `pnpm --filter @gosenderr/marketplace-app test:e2e` (starts emulators)
-- Add unit tests with Vitest: `pnpm --filter @gosenderr/marketplace-app test`
+1. Cart checkout
+   - card mode (Stripe)
+   - cash mode (token fee gate)
+2. Seller listing publish (token-gated for external/manual payout mode)
+3. Seller ad boost (token reserve/commit)
+4. Food pickup
+   - feed displays city+zip
+   - exact address retained for fulfillment operations
 
-Notes
+## Environment Notes
 
-- Uses Mapbox and Stripe — ensure VITE_MAPBOX_TOKEN and VITE_STRIPE_PUBLISHABLE_KEY are set in env for local testing.
+1. Mapbox token required for address autocomplete.
+2. Stripe publishable key required for card checkout.
+3. Emulator recommended for local smoke on payment/token flows.

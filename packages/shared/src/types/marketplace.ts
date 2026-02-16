@@ -111,6 +111,81 @@ export interface OrderItem {
   sellerId?: string;
 }
 
+export interface OrderGroupSuborder {
+  id: string;
+  index: number;
+  orderId: string;
+  sellerId: string;
+  sellerName?: string | null;
+  itemCount: number;
+  subtotal: number;
+  shipping: number;
+  platformFee?: number;
+  adFee?: number;
+  tax: number;
+  total: number;
+  sellerPayoutMode?: SellerPayoutMode;
+  sellerPayoutExecution?: SellerPayoutExecution;
+  sellerPaymentStatus?: PaymentRailStatus;
+  deliveryFeeStatus?: PaymentRailStatus;
+  status: string;
+}
+
+export interface OrderGroupRoutePoint {
+  lat: number;
+  lng: number;
+}
+
+export interface OrderGroupRouteStop {
+  sellerId: string;
+  sellerName?: string;
+  orderId: string;
+  suborderId: string;
+  pickupAddress: string;
+  pickup: OrderGroupRoutePoint | null;
+  itemIds: string[];
+  itemCount: number;
+  sequence: number;
+  legMilesFromPrevious: number | null;
+  legMinutesFromPrevious: number | null;
+}
+
+export interface OrderGroupRoutePlan {
+  routeId: string;
+  routeType: "multi_pickup_single_dropoff";
+  hasCompleteCoordinates: boolean;
+  pickupStopCount: number;
+  missingPickupStops: number;
+  totalPickupMiles: number;
+  totalEstimatedMinutes: number;
+  dropoffAddress: string;
+  dropoff: OrderGroupRoutePoint | null;
+  issues: string[];
+  stops: OrderGroupRouteStop[];
+}
+
+export interface OrderGroupSnapshot {
+  id: string;
+  suborderCount: number;
+  sellerIds: string[];
+  subtotal: number;
+  shipping: number;
+  tax: number;
+  total: number;
+  paymentStatus: string;
+  seller_payment_status?: PaymentRailStatus;
+  delivery_fee_status?: PaymentRailStatus;
+  paymentRails?: {
+    sellerTotal: number;
+    platformTotal: number;
+    deliveryFee: number;
+    platformFee: number;
+    adFee: number;
+  };
+  routePlan?: OrderGroupRoutePlan;
+  suborders: OrderGroupSuborder[];
+}
+
 // Payment status
 export type PaymentStatus =
   | "pending"
@@ -118,6 +193,23 @@ export type PaymentStatus =
   | "refunded"
   | "failed"
   | "cancelled";
+
+export type PaymentRailStatus =
+  | "pending"
+  | "authorized"
+  | "captured"
+  | "failed"
+  | "refunded";
+
+export type SellerPayoutMode =
+  | "stripe_connect"
+  | "external_provider"
+  | "manual_settlement";
+
+export type SellerPayoutExecution =
+  | "stripe_connect"
+  | "stripe_connect_fallback"
+  | "deferred_non_stripe";
 
 // Order status
 export type OrderStatus =
@@ -148,6 +240,13 @@ export interface Order {
   // Seller Info (for marketplace orders)
   sellerId?: string;
   sellerName?: string;
+  orderGroupId?: string;
+  orderGroup?: OrderGroupSnapshot;
+  suborder?: {
+    id: string;
+    index: number;
+    sellerId: string;
+  };
 
   // Order Items
   items: OrderItem[];
@@ -164,6 +263,10 @@ export interface Order {
   // Payment
   paymentIntentId: string; // Stripe payment intent ID
   paymentStatus: PaymentStatus;
+  seller_payment_status?: PaymentRailStatus;
+  delivery_fee_status?: PaymentRailStatus;
+  sellerPayoutMode?: SellerPayoutMode;
+  sellerPayoutExecution?: SellerPayoutExecution;
   paidAt?: Timestamp;
   refundedAt?: Timestamp;
   refundAmount?: number;

@@ -66,7 +66,80 @@ export interface OrderItem {
     sku?: string;
     sellerId?: string;
 }
+export interface OrderGroupSuborder {
+    id: string;
+    index: number;
+    orderId: string;
+    sellerId: string;
+    sellerName?: string | null;
+    itemCount: number;
+    subtotal: number;
+    shipping: number;
+    platformFee?: number;
+    adFee?: number;
+    tax: number;
+    total: number;
+    sellerPayoutMode?: SellerPayoutMode;
+    sellerPayoutExecution?: SellerPayoutExecution;
+    sellerPaymentStatus?: PaymentRailStatus;
+    deliveryFeeStatus?: PaymentRailStatus;
+    status: string;
+}
+export interface OrderGroupRoutePoint {
+    lat: number;
+    lng: number;
+}
+export interface OrderGroupRouteStop {
+    sellerId: string;
+    sellerName?: string;
+    orderId: string;
+    suborderId: string;
+    pickupAddress: string;
+    pickup: OrderGroupRoutePoint | null;
+    itemIds: string[];
+    itemCount: number;
+    sequence: number;
+    legMilesFromPrevious: number | null;
+    legMinutesFromPrevious: number | null;
+}
+export interface OrderGroupRoutePlan {
+    routeId: string;
+    routeType: "multi_pickup_single_dropoff";
+    hasCompleteCoordinates: boolean;
+    pickupStopCount: number;
+    missingPickupStops: number;
+    totalPickupMiles: number;
+    totalEstimatedMinutes: number;
+    dropoffAddress: string;
+    dropoff: OrderGroupRoutePoint | null;
+    issues: string[];
+    stops: OrderGroupRouteStop[];
+}
+export interface OrderGroupSnapshot {
+    id: string;
+    suborderCount: number;
+    sellerIds: string[];
+    subtotal: number;
+    shipping: number;
+    tax: number;
+    total: number;
+    paymentStatus: string;
+    seller_payment_status?: PaymentRailStatus;
+    delivery_fee_status?: PaymentRailStatus;
+    paymentRails?: {
+        sellerTotal: number;
+        platformTotal: number;
+        deliveryFee: number;
+        platformFee: number;
+        adFee: number;
+    };
+    routePlan?: OrderGroupRoutePlan;
+    suborders: OrderGroupSuborder[];
+}
 export type PaymentStatus = "pending" | "paid" | "refunded" | "failed" | "cancelled";
+export type PaymentRailStatus = "pending" | "authorized" | "captured" | "failed" | "refunded";
+export type SellerPayoutMode = "stripe_connect" | "external_provider" | "manual_settlement";
+export type SellerPayoutExecution = "stripe_connect" | "stripe_connect_fallback" | "deferred_non_stripe";
 export type OrderStatus = "pending" | "confirmed" | "preparing" | "ready" | "out_for_delivery" | "delivered" | "cancelled";
 export type FulfillmentMethod = "pickup" | "shipping" | "courier_delivery";
 export interface Order {
@@ -79,6 +152,13 @@ export interface Order {
     customerPhone?: string;
     sellerId?: string;
     sellerName?: string;
+    orderGroupId?: string;
+    orderGroup?: OrderGroupSnapshot;
+    suborder?: {
+        id: string;
+        index: number;
+        sellerId: string;
+    };
     items: OrderItem[];
     subtotal: number;
     tax: number;
@@ -89,6 +169,10 @@ export interface Order {
     currency: string;
     paymentIntentId: string;
     paymentStatus: PaymentStatus;
+    seller_payment_status?: PaymentRailStatus;
+    delivery_fee_status?: PaymentRailStatus;
+    sellerPayoutMode?: SellerPayoutMode;
+    sellerPayoutExecution?: SellerPayoutExecution;
     paidAt?: Timestamp;
     refundedAt?: Timestamp;
     refundAmount?: number;

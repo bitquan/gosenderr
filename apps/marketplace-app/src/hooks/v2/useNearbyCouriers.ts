@@ -23,15 +23,29 @@ export interface NearbyCourier {
   >;
 }
 
+type NearbyJobType = "package" | "food";
+
+interface NearbyCourierOptions {
+  jobType?: NearbyJobType;
+  requiresCooler?: boolean;
+  requiresHotBag?: boolean;
+  requiresDrinkCarrier?: boolean;
+}
+
 export function useNearbyCouriers(
   pickup: GeoPoint | null,
   dropoff: GeoPoint | null,
+  options: NearbyCourierOptions = {},
 ) {
   const [couriers, setCouriers] = useState<NearbyCourier[]>([]);
   const [loading, setLoading] = useState(false);
   const hashDocsRef = useRef<Map<string, Map<string, UserDoc & { email?: string }>>>(
     new Map(),
   );
+  const jobType: NearbyJobType = options.jobType ?? "package";
+  const requiresCooler = options.requiresCooler ?? false;
+  const requiresHotBag = options.requiresHotBag ?? false;
+  const requiresDrinkCarrier = options.requiresDrinkCarrier ?? false;
 
   useEffect(() => {
     if (!pickup || !dropoff) {
@@ -75,7 +89,7 @@ export function useNearbyCouriers(
           const results: NearbyCourier[] = [];
 
           merged.forEach((data, id) => {
-            if (!data.courierProfile?.currentLocation || !data.courierProfile?.packageRateCard) return;
+            if (!data.courierProfile?.currentLocation) return;
 
             const courierStatus = data.courierProfile.status as string | undefined;
             if (
@@ -85,6 +99,15 @@ export function useNearbyCouriers(
             ) {
               return;
             }
+
+            const workModes = data.courierProfile.workModes;
+            if (jobType === "food" && workModes?.foodEnabled === false) return;
+            if (jobType === "package" && workModes?.packagesEnabled === false) return;
+
+            const rateCard = jobType === "food"
+              ? data.courierProfile.foodRateCard
+              : data.courierProfile.packageRateCard;
+            if (!rateCard) return;
 
             const equipmentBadges: Array<
               "dolly" | "blankets" | "straps" | "cooler" | "insulated_bag"
@@ -98,13 +121,18 @@ export function useNearbyCouriers(
               equipmentBadges.push("insulated_bag");
             }
 
+            if (jobType === "food") {
+              if (requiresCooler && !equipment?.cooler?.approved) return;
+              if (requiresHotBag && !equipment?.hot_bag?.approved && !equipment?.insulated_bag?.approved) return;
+              if (requiresDrinkCarrier && !equipment?.drink_carrier?.approved) return;
+            }
+
             const courierLocation: GeoPoint = {
               lat: data.courierProfile.currentLocation.lat,
               lng: data.courierProfile.currentLocation.lng,
             };
 
             const pickupMiles = calcMiles(courierLocation, pickup);
-            const rateCard = data.courierProfile.packageRateCard;
             const eligibilityResult = getEligibilityReason(
               rateCard,
               jobMiles,
@@ -161,7 +189,7 @@ export function useNearbyCouriers(
       unsubscribes.forEach((unsubscribe) => unsubscribe());
       hashDocsRef.current.clear();
     };
-  }, [pickup, dropoff]);
+  }, [pickup, dropoff, jobType, requiresCooler, requiresHotBag, requiresDrinkCarrier]);
 
   return { couriers, loading };
 }

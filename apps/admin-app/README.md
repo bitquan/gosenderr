@@ -1,22 +1,27 @@
-# Admin App — Quick Start
+# Admin App — Baseline README
 
-This README shows how to run the Admin web app locally.
+Operations/control-plane web app for policy, approvals, payouts, and launch safety checks.
 
-Prerequisites
+## Run
 
-- Node 18+, pnpm 8+, corepack enabled
+1. From repo root:
+   - `pnpm install --frozen-lockfile`
+2. Start app:
+   - `pnpm --filter @gosenderr/admin-app dev`
+3. Build check:
+   - `pnpm --filter @gosenderr/admin-app build`
 
-Local setup
+## Baseline Responsibilities
 
-1. From repo root: `corepack enable && corepack prepare pnpm@8.0.0 --activate && pnpm install --frozen-lockfile`
-2. Start dev server: `pnpm --filter @gosenderr/admin-app dev`
+1. Payment policy and fee controls.
+2. Token policy controls (packs, costs, gating toggles).
+3. Approval and lifecycle intervention actions.
+4. Production safety gates (disable dev-only paths on live).
 
-Tests & lint
+## Rules
 
-- Lint: `pnpm --filter @gosenderr/admin-app lint`
-- Tests: `pnpm --filter @gosenderr/admin-app test`
-
-Notes
-
-- See `docs/DEPLOYMENT.md` for deployment steps
-- If you need to debug API access, set local Firebase emulator env vars as described in repo `README.md`.
+1. Admin labels and status vocabulary must match shared contracts.
+2. Admin controls should update canonical docs:
+   - `platformSettings/payment`
+   - `platformSettings/tokenPolicy`
+3. Avoid creating admin-only behavior names that do not exist in runtime surfaces.

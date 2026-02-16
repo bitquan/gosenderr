@@ -115,16 +115,16 @@ export default function NewSellerItem() {
       try {
         const userSnap = await getDoc(doc(db, "users", uid));
         const userData = userSnap.data();
-        const roles = Array.isArray(userData?.roles) ? userData.roles : [];
-        const hasSellerRole = userData?.role === "seller" || roles.includes("seller");
+        const sellerApplicationStatus = userData?.sellerApplication?.status;
+        const sellerProfileStatus = userData?.sellerProfile?.status;
 
-        if (hasSellerRole || userData?.sellerApplication?.status === "approved") {
+        if (sellerApplicationStatus === "approved" || sellerProfileStatus === "approved") {
           setSellerStatus("approved");
           setSellerRejectionReason(null);
-        } else if (userData?.sellerApplication?.status === "pending") {
+        } else if (sellerApplicationStatus === "pending") {
           setSellerStatus("pending");
           setSellerRejectionReason(null);
-        } else if (userData?.sellerApplication?.status === "rejected") {
+        } else if (sellerApplicationStatus === "rejected") {
           setSellerStatus("rejected");
           setSellerRejectionReason(userData?.sellerApplication?.rejectionReason || null);
         } else {

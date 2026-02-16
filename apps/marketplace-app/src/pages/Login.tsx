@@ -49,8 +49,8 @@ export default function LoginPage() {
             className="px-8 py-10 text-center text-white bg-gradient-to-r from-purple-600 to-blue-600"
           >
             <div className="text-6xl mb-3">🛍️</div>
-            <h1 className="text-3xl font-bold mb-2">Marketplace Portal</h1>
-            <p className="text-purple-100 text-sm">Buy, sell, and ship anything locally</p>
+            <h1 className="text-3xl font-bold mb-2">Senderrplace Portal</h1>
+            <p className="text-purple-100 text-sm">Buy and sell curated goods with Senderr delivery</p>
           </div>
 
           {/* Form */}
@@ -114,7 +114,7 @@ export default function LoginPage() {
                 disabled={loading}
                 className="w-full py-3 px-4 text-white font-semibold rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
               >
-                {loading ? '🔄 Signing in...' : '🛍️ Sign In'}
+                {loading ? '🔄 Signing in...' : '🛍️ Sign In to Senderrplace'}
               </button>
             </form>
           </div>
@@ -126,9 +126,9 @@ export default function LoginPage() {
             href="/marketplace"
             className="text-sm text-white hover:text-purple-100 font-medium transition-colors block mb-4"
           >
-            ← Browse marketplace without signing in
+            ← Browse Senderrplace without signing in
           </a>
-          <p className="text-white text-sm opacity-90">© 2026 GoSenderR Marketplace</p>
+          <p className="text-white text-sm opacity-90">© 2026 Senderrplace by GoSenderr</p>
         </div>
       </div>
     </div>

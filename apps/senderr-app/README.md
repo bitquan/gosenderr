@@ -1,90 +1,34 @@
-# Senderr App - Local Development
+# Senderr App (Courier Web) — Baseline README
 
-## 🚚 Access Senderr Portal
+Courier-facing web app for job feed, lifecycle transitions, and payout/settings.
 
-**Local Development Server:** http://localhost:5174
+## Run
 
-Already running in your terminal!
+1. From repo root:
+   - `pnpm install --frozen-lockfile`
+2. Start app:
+   - `pnpm --filter @gosenderr/senderr-app dev`
+3. Build check:
+   - `pnpm --filter @gosenderr/senderr-app build`
 
----
+## Baseline Rules
 
-## 🔐 Login Options
+1. Keep job lifecycle names aligned with shared contracts and admin controls.
+2. Payout mode + token gating must match marketplace/admin behavior.
+3. Do not fork route/status vocabulary in app-local enums.
 
-### Option 1: Create New Senderr Account
-1. Open http://localhost:3001
-2. You'll see the login page
-3. Use the same email/password you used for marketplace app
-4. The system will use your existing account
+## Critical Flows
 
-### Option 2: Use Existing Account
-- Use the same credentials from marketplace app
-- The auth is shared across both portals
+1. Open job feed and claim.
+2. Lifecycle transitions (accept -> pickup -> dropoff -> complete).
+3. Settings payout modes:
+   - `stripe_connect`
+   - `external_provider`
+   - `manual_settlement`
+4. Token wallet visibility and top-up entry points.
 
----
+## Structure
 
-## 🎯 Features Available
-
-### Dashboard (Current Page)
-- **Online/Offline Toggle** - Green button in header
-- **Available Jobs** - List of open delivery jobs
-- **My Active Deliveries** - Jobs you've accepted
-- **Stats**: Available, Active, Vehicle Type
-
-### How to Use
-1. Click "Go Online" button (turns green)
-2. Browse available jobs below
-3. Click "Accept Job" to claim a delivery
-4. View your active deliveries at the top
-
----
-
-## 🚀 Development
-
-### Start Dev Server
-\`\`\`bash
-cd apps/senderr-app
-pnpm dev
-\`\`\`
-
-### Build for Production
-\`\`\`bash
-pnpm build
-\`\`\`
-
-### Port
-- Default: 5174
-- Hot reload enabled ⚡
-
----
-
-## 📂 Project Structure
-
-\`\`\`
-apps/senderr-app/
-├── src/
-│   ├── pages/
-│   │   ├── Login.tsx        # Auth page
-│   │   └── Dashboard.tsx    # Main senderr dashboard
-│   ├── components/         # Shared UI components
-│   ├── lib/                # Firebase, utils
-│   ├── contexts/           # Auth context
-│   └── hooks/              # Custom hooks
-└── dist/                   # Build output
-\`\`\`
-
----
-
-## 🔧 Next Steps
-
-- [ ] Job Detail page (accept/update status)
-- [ ] Active Route page (navigation)
-- [ ] Jobs history
-- [ ] Profile/Settings
-- [ ] Deploy to Firebase Hosting
-
----
-
-## 📱 Related Apps
-
-- **Marketplace App (Deployed)**: https://gosenderr-marketplace.web.app
-- **Marketplace App (Local)**: Run \`pnpm dev\` in \`apps/marketplace-app\`
+1. `src/pages/*`: route composition.
+2. `src/lib/*`: firebase/functions, jobs, tokens, external navigation.
+3. `src/components/*`: reusable UI only.

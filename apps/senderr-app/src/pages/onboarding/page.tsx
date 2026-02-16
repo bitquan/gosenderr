@@ -249,6 +249,8 @@ export default function CourierOnboarding() {
         },
         documents: uploadedDocs,
         status: "pending",
+        payoutMode: "stripe_connect",
+        courierPayoutMode: "stripe_connect",
         appliedAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         rejectionReason: null,

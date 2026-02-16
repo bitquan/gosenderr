@@ -61,8 +61,79 @@ service cloud.firestore {
       return (data is map && data.participants is list) ? data.participants : [];
     }
 
+    function hasSellerApproval(uid) {
+      return (
+        get(/databases/$(database)/documents/users/$(uid)).data
+          .get('sellerApplication', {})
+          .get('status', '') == 'approved'
+      )
+      || (
+        get(/databases/$(database)/documents/users/$(uid)).data
+          .get('sellerProfile', {})
+          .get('status', '') == 'approved'
+      )
+      || (
+        exists(/databases/$(database)/documents/sellerApplications/$(uid))
+        && get(/databases/$(database)/documents/sellerApplications/$(uid)).data
+          .get('status', '') == 'approved'
+      );
+    }
+
     // ========== USERS ==========
     match /users/{uid} {
+      function selfRoleLocked() {
+        let nextRole = request.resource.data.get('role', null);
+        let prevRole = resource.data.get('role', null);
+        return nextRole == prevRole
+          || (
+            prevRole == null
+            && nextRole in ['buyer', 'customer', 'courier', 'runner', 'package_runner']
+          );
+      }
+
+      function selfRolesLocked() {
+        return request.resource.data.get('roles', []) == resource.data.get('roles', []);
+      }
+
+      function selfCourierStatusAllowed() {
+        let nextStatus = request.resource.data.get('courierProfile', {}).get('status', null);
+        let prevStatus = resource.data.get('courierProfile', {}).get('status', null);
+        return nextStatus == prevStatus
+          || (
+            nextStatus == 'pending'
+            && (prevStatus == null || prevStatus == 'pending' || prevStatus == 'rejected')
+          );
+      }
+
+      function selfSellerStatusesAllowed() {
+        let nextApplicationStatus = request.resource.data.get('sellerApplication', {}).get('status', null);
+        let prevApplicationStatus = resource.data.get('sellerApplication', {}).get('status', null);
+
+        let nextSellerProfileStatus = request.resource.data.get('sellerProfile', {}).get('status', null);
+        let prevSellerProfileStatus = resource.data.get('sellerProfile', {}).get('status', null);
+
+        let applicationStatusAllowed = (
+          nextApplicationStatus == prevApplicationStatus
+          || (
+            nextApplicationStatus == 'pending'
+            && (
+              prevApplicationStatus == null
+              || prevApplicationStatus == 'pending'
+              || prevApplicationStatus == 'rejected'
+            )
+          )
+        );
+
+        return applicationStatusAllowed
+          && nextSellerProfileStatus == prevSellerProfileStatus;
+      }
+
+      function selfCanSetOnline() {
+        let nextOnline = request.resource.data.get('courierProfile', {}).get('isOnline', false) == true;
+        return !nextOnline
+          || request.resource.data.get('courierProfile', {}).get('status', '') == 'approved';
+      }
+
       // Anyone can read user documents (for marketplace, tracking, etc)
       allow read: if true;
       
@@ -70,7 +141,12 @@ service cloud.firestore {
       allow create: if isSelf(uid) && validNonAdminRole(request.resource.data.role);
       
       // Users can update their own document (but cannot change role to admin)
-      allow update: if isSelf(uid) && (!('role' in request.resource.data) || validNonAdminRole(request.resource.data.role));
+      allow update: if isSelf(uid)
+        && selfRoleLocked()
+        && selfRolesLocked()
+        && selfCourierStatusAllowed()
+        && selfSellerStatusesAllowed()
+        && selfCanSetOnline();
 
       // Allow rating writers to update seller rating stats only
       allow update: if signedIn()
@@ -126,6 +202,7 @@ service cloud.firestore {
       // Any user can create items (they become the seller)
       allow create: if signedIn()
         && ('sellerId' in request.resource.data && request.resource.data.sellerId == request.auth.uid)
+        && hasSellerApproval(request.auth.uid)
         && validItemCategory(request.resource.data.category)
         && validItemCondition(request.resource.data.condition)
         && validItemStatus(request.resource.data.status)
@@ -262,6 +339,9 @@ service cloud.firestore {
           && request.resource.data.courierId == request.auth.uid
           && request.resource.data.status == 'assigned'
           && isCourier()
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data
+            .get('courierProfile', {})
+            .get('status', '') == 'approved'
           && courierHasRequiredEquipment()
         )
         ||
@@ -353,6 +433,9 @@ service cloud.firestore {
           && (!('courierUid' in resource.data) || resource.data.courierUid == null)
           && request.resource.data.courierUid == request.auth.uid
           && request.resource.data.status == 'assigned'
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data
+            .get('courierProfile', {})
+            .get('status', '') == 'approved'
         )
         ||
         // 3) Assigned courier can update job progress
@@ -493,6 +576,9 @@ service cloud.firestore {
       
       // Couriers can claim routes (update status to 'claimed')
       allow update: if signedIn()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data
+          .get('courierProfile', {})
+          .get('status', '') == 'approved'
         && (request.resource.data.status == 'claimed' || isCourier());
       
       // Admins have full access
@@ -617,6 +703,26 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // ========== SAVED ADDRESSES ==========
+    match /savedAddresses/{addressId} {
+      function isOwner() {
+        return signedIn() && resource.data.userId == request.auth.uid;
+      }
+
+      // Users can read/manage their own saved addresses; admins can read/manage all.
+      allow read: if isOwner() || isAdmin();
+
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.address is string
+        && request.resource.data.address.size() > 0;
+
+      allow update: if isOwner()
+        && request.resource.data.userId == resource.data.userId;
+
+      allow delete: if isOwner() || isAdmin();
+    }
+
     // ========== FEATURE FLAGS ==========
     match /featureFlags/{doc} {
       // Anyone can read feature flags (needed for UI feature control)
@@ -658,9 +764,55 @@ service cloud.firestore {
       allow read: if signedIn();
       allow write: if isAdmin();
     }
+    match /platformSettings/tokenPolicy {
+      // Signed-in clients need read access to enforce token gates consistently in UI.
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
     match /platformSettings/{settingId} {
       // Only admins can read and write platform settings
       allow read, write: if isAdmin();
+    }
+
+    // ========== TOKEN WALLETS ==========
+    match /tokenWallets/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ========== TOKEN TRANSACTIONS (Immutable Ledger) ==========
+    match /tokenTransactions/{txId} {
+      allow read: if signedIn() && (
+        isAdmin() ||
+        (resource.data.actorUid is string && resource.data.actorUid == request.auth.uid)
+      );
+      allow create, update, delete: if false;
+    }
+
+    // ========== TOKEN RESERVATIONS ==========
+    match /tokenReservations/{reservationId} {
+      allow read: if signedIn() && (
+        isAdmin() ||
+        (resource.data.actorUid is string && resource.data.actorUid == request.auth.uid)
+      );
+      allow create, update, delete: if false;
+    }
+
+    // ========== TOKEN PURCHASE SESSION TRACKING ==========
+    match /tokenPurchaseRequests/{requestId} {
+      allow read: if signedIn() && (
+        isAdmin() ||
+        (resource.data.actorUid is string && resource.data.actorUid == request.auth.uid)
+      );
+      allow create, update, delete: if false;
+    }
+
+    match /tokenPurchaseSessions/{sessionId} {
+      allow read: if signedIn() && (
+        isAdmin() ||
+        (resource.data.actorUid is string && resource.data.actorUid == request.auth.uid)
+      );
+      allow create, update, delete: if false;
     }
 
     // ========== MARKETPLACE ITEMS ==========
@@ -677,6 +829,7 @@ service cloud.firestore {
       // Authenticated users can create listings (first listing allowed)
       allow create: if signedIn()
         && request.resource.data.sellerId == request.auth.uid
+        && hasSellerApproval(request.auth.uid)
         && request.resource.data.title is string
         && request.resource.data.title.size() > 0
         && request.resource.data.price > 0
@@ -726,6 +879,17 @@ service cloud.firestore {
       );
 
       allow delete: if false;
+    }
+
+    // ========== LISTING AD BOOSTS ==========
+    match /listingAdBoosts/{boostId} {
+      allow read: if signedIn() && (
+        isAdmin() ||
+        (resource.data.sellerId is string && resource.data.sellerId == request.auth.uid)
+      );
+      allow create: if signedIn() && request.resource.data.sellerId == request.auth.uid;
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
     }
 
     // ========== SELLER APPLICATIONS ==========
@@ -852,6 +1016,29 @@ service cloud.firestore {
     match /favorites/{userId}/items/{itemId} {
       // Users can read/write their own favorites
       allow read, write: if signedIn() && request.auth.uid == userId;
+    }
+
+    // ========== FOOD PICKUP RESTAURANTS ==========
+    match /foodPickupRestaurants/{restaurantId} {
+      // Public read keeps the food pickup map visible for all customers.
+      allow read: if true;
+
+      // Authenticated users can contribute a public pickup spot under their own uid.
+      allow create: if signedIn()
+        && request.resource.data.courierId == request.auth.uid
+        && request.resource.data.restaurantName is string
+        && request.resource.data.restaurantName.size() > 0
+        && request.resource.data.location is map
+        && request.resource.data.location.address is string
+        && request.resource.data.location.address.size() > 0
+        && request.resource.data.location.lat is number
+        && request.resource.data.location.lng is number
+        && request.resource.data.isPublic == true;
+
+      // Owners can edit/remove their own contribution; admins can manage all.
+      allow update, delete: if isAdmin() || (
+        signedIn() && resource.data.courierId == request.auth.uid
+      );
     }
   }
 }

@@ -88,8 +88,8 @@ export default function SignupPage() {
             className="px-8 py-10 text-center text-white bg-gradient-to-r from-purple-600 to-blue-600"
           >
             <div className="text-6xl mb-3">🛍️</div>
-            <h1 className="text-3xl font-bold mb-2">Join GoSenderR Marketplace</h1>
-            <p className="text-purple-100 text-sm">Buy, sell, and ship anything locally</p>
+            <h1 className="text-3xl font-bold mb-2">Join Senderrplace</h1>
+            <p className="text-purple-100 text-sm">Buy and sell curated goods with Senderr delivery</p>
           </div>
 
           {/* Form */}
@@ -175,7 +175,7 @@ export default function SignupPage() {
                 disabled={loading}
                 className="w-full py-3 px-4 text-white font-semibold rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
               >
-                {loading ? '🔄 Creating account...' : '🛍️ Create Account'}
+                {loading ? '🔄 Creating account...' : '🛍️ Create Senderrplace Account'}
               </button>
 
               <p className="text-xs text-gray-500 text-center">
@@ -191,7 +191,7 @@ export default function SignupPage() {
             href="/marketplace"
             className="text-sm text-white hover:text-purple-100 font-medium transition-colors"
           >
-            ← Browse marketplace without signing up
+            ← Browse Senderrplace without signing up
           </a>
         </div>
       </div>

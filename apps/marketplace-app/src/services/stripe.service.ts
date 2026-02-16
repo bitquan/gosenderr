@@ -1,25 +1,13 @@
 /**
  * Stripe Service
  * Handles Stripe Connect onboarding and payment processing
- * 
- * Development Mode:
- * - Uses mock responses when Cloud Functions aren't deployed
- * - Set VITE_USE_REAL_FUNCTIONS=true to force real function calls
- * 
- * Production Mode:
- * - Always uses real Cloud Functions
  */
 
 import { httpsCallable } from 'firebase/functions';
 import { functions, auth } from '@/lib/firebase';
+import { canUsePaymentMocks } from '@/lib/runtime/paymentSafety';
 
-// Development mode flag
-const USE_MOCK_FUNCTIONS = import.meta.env.DEV && !import.meta.env.VITE_USE_REAL_FUNCTIONS;
-const USING_EMULATORS = Boolean(
-  import.meta.env.VITE_FIREBASE_AUTH_EMULATOR_HOST ||
-  import.meta.env.VITE_FIRESTORE_EMULATOR_HOST ||
-  import.meta.env.VITE_FUNCTIONS_EMULATOR_HOST
-);
+const ALLOW_PAYMENT_MOCKS = canUsePaymentMocks();
 
 const buildMockPaymentIntent = (request: CreatePaymentIntentRequest): CreatePaymentIntentResponse => {
   const mockItemPrice = 29.99;
@@ -86,7 +74,7 @@ export class StripeService {
       throw new Error('Must be logged in');
     }
     
-    if (USE_MOCK_FUNCTIONS) {
+    if (ALLOW_PAYMENT_MOCKS) {
       console.log('🧪 DEV MODE: Using mock Stripe Connect account creation');
       await new Promise(resolve => setTimeout(resolve, 500));
       return buildMockConnectAccount();
@@ -101,7 +89,7 @@ export class StripeService {
       return result.data;
     } catch (error: any) {
       console.error('Error creating Connect account:', error);
-      if (import.meta.env.DEV) {
+      if (ALLOW_PAYMENT_MOCKS) {
         console.warn('🧪 Falling back to mock connect account in dev');
         await new Promise(resolve => setTimeout(resolve, 300));
         return buildMockConnectAccount();
@@ -119,7 +107,7 @@ export class StripeService {
       throw new Error('Must be logged in');
     }
     
-    if (USE_MOCK_FUNCTIONS) {
+    if (ALLOW_PAYMENT_MOCKS) {
       console.log('🧪 DEV MODE: Using mock onboarding link');
       await new Promise(resolve => setTimeout(resolve, 300));
       return {
@@ -136,7 +124,7 @@ export class StripeService {
       return result.data;
     } catch (error: any) {
       console.error('Error getting onboarding link:', error);
-      if (import.meta.env.DEV) {
+      if (ALLOW_PAYMENT_MOCKS) {
         console.warn('🧪 Falling back to mock onboarding link in dev');
         await new Promise(resolve => setTimeout(resolve, 200));
         return {
@@ -156,7 +144,7 @@ export class StripeService {
       throw new Error('Must be logged in');
     }
     
-    if (USE_MOCK_FUNCTIONS) {
+    if (ALLOW_PAYMENT_MOCKS) {
       console.log('🧪 DEV MODE: Mock account status (complete)');
       await new Promise(resolve => setTimeout(resolve, 300));
       return {
@@ -181,7 +169,7 @@ export class StripeService {
       return result.data;
     } catch (error: any) {
       console.error('Error getting Connect status:', error);
-      if (import.meta.env.DEV) {
+      if (ALLOW_PAYMENT_MOCKS) {
         console.warn('🧪 Falling back to mock connect status in dev');
         return {
           accountId: 'acct_mock_dev',
@@ -211,9 +199,9 @@ export class StripeService {
       throw new Error('Must be logged in');
     }
     
-    if (USE_MOCK_FUNCTIONS || USING_EMULATORS) {
+    if (ALLOW_PAYMENT_MOCKS) {
       console.log('🧪 DEV MODE: Mock payment intent (checkout will not process real payment)');
-      console.warn('⚠️ To enable real Stripe checkout, deploy Cloud Functions and set VITE_USE_REAL_FUNCTIONS=true');
+      console.warn('⚠️ To enable real Stripe checkout, disable payment mocks in this environment.');
       await new Promise(resolve => setTimeout(resolve, 800));
       return buildMockPaymentIntent(request);
     }
@@ -230,7 +218,7 @@ export class StripeService {
       return result.data;
     } catch (error: any) {
       console.error('Error creating payment intent:', error);
-      if (import.meta.env.DEV && String(error?.message || '').includes('No such destination')) {
+      if (ALLOW_PAYMENT_MOCKS && String(error?.message || '').includes('No such destination')) {
         console.warn('🧪 Falling back to mock payment intent in dev');
         await new Promise(resolve => setTimeout(resolve, 400));
         return buildMockPaymentIntent(request);

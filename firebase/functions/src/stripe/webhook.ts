@@ -2,6 +2,7 @@ import * as functions from 'firebase-functions/v2';
 import Stripe from 'stripe';
 import * as admin from 'firebase-admin';
 import { getStripeClient } from './stripeSecrets';
+import { creditTokensFromCheckoutSession } from './tokenWallet';
 
 const db = admin.firestore();
 
@@ -81,6 +82,12 @@ export const stripeWebhook = functions.https.onRequest(
 
 async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
   console.log('Processing checkout.session.completed:', session.id);
+
+  if (session.metadata?.kind === 'token_purchase') {
+    await creditTokensFromCheckoutSession(session);
+    console.log('Token purchase processed from checkout session:', session.id);
+    return;
+  }
 
   // Find the marketplace order by checkoutSessionId
   const ordersSnapshot = await db

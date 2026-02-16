@@ -188,6 +188,12 @@ export default function SellerDashboard() {
             </div>
             <div className="flex space-x-3">
               <Link
+                to="/seller/ads"
+                className="px-6 py-3 bg-white/20 text-white rounded-xl font-semibold hover:bg-white/30 transition-all"
+              >
+                Boost Ads
+              </Link>
+              <Link
                 to="/seller/orders"
                 className="px-6 py-3 bg-white/20 text-white rounded-xl font-semibold hover:bg-white/30 transition-all"
               >

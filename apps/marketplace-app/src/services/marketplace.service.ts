@@ -20,6 +20,7 @@ import {
   QueryConstraint
 } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
+import { commitTokenAction, makeIdempotencyKey, releaseTokenAction, reserveTokenAction } from '@/lib/tokens';
 import type {
   MarketplaceItem,
   CreateListingInput,
@@ -29,6 +30,43 @@ import type {
 } from '@/types/marketplace';
 
 export class MarketplaceService {
+  private toMillis(value: unknown): number {
+    if (!value) return 0;
+    if (value instanceof Timestamp) return value.toMillis();
+    if (typeof (value as any)?.toMillis === 'function') return (value as any).toMillis();
+    if (typeof value === 'string') {
+      const parsed = Date.parse(value);
+      return Number.isNaN(parsed) ? 0 : parsed;
+    }
+    return 0;
+  }
+
+  private getBoostPriority(item: MarketplaceItem): number {
+    const now = Date.now();
+    const anyItem = item as MarketplaceItem & {
+      boostedUntil?: unknown;
+      adBoost?: { endAt?: unknown; placement?: string; active?: boolean };
+    };
+    const boostedUntilMs = this.toMillis(anyItem.boostedUntil || anyItem.adBoost?.endAt);
+    if (boostedUntilMs <= now) return 0;
+
+    const placement = anyItem.adBoost?.placement;
+    if (placement === 'featured') return 2;
+    return 1;
+  }
+
+  private sortFeedItems(items: MarketplaceItem[]): MarketplaceItem[] {
+    return [...items].sort((a, b) => {
+      const boostDelta = this.getBoostPriority(b) - this.getBoostPriority(a);
+      if (boostDelta !== 0) return boostDelta;
+
+      const bPublished = this.toMillis(b.publishedAt || b.createdAt);
+      const aPublished = this.toMillis(a.publishedAt || a.createdAt);
+      if (bPublished !== aPublished) return bPublished - aPublished;
+
+      return (b.views || 0) - (a.views || 0);
+    });
+  }
   
   /**
    * Browse marketplace items with filters
@@ -75,10 +113,11 @@ export class MarketplaceService {
     const q = query(collection(db, 'marketplaceItems'), ...constraints);
     const snapshot = await getDocs(q);
     
-    return snapshot.docs.map(doc => ({
+    const items = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     } as MarketplaceItem));
+    return this.sortFeedItems(items);
   }
   
   /**
@@ -102,10 +141,11 @@ export class MarketplaceService {
     
     // Client-side search (not ideal for large datasets)
     const searchLower = searchTerm.toLowerCase();
-    return items.filter(item =>
+    const filtered = items.filter(item =>
       item.title.toLowerCase().includes(searchLower) ||
       item.description.toLowerCase().includes(searchLower)
     );
+    return this.sortFeedItems(filtered);
   }
   
   /**
@@ -148,15 +188,38 @@ export class MarketplaceService {
     
     const userData = userSnap.data();
 
-    const roles = Array.isArray(userData?.roles) ? userData.roles : [];
-    const hasSellerRole = userData?.role === 'seller' || roles.includes('seller');
-    const sellerApprovalStatus = userData?.sellerApplication?.status || userData?.sellerProfile?.status;
-    const sellerApproved = hasSellerRole || sellerApprovalStatus === 'approved' || userData?.sellerProfile?.isActive === true;
+    const sellerApplicationStatus = userData?.sellerApplication?.status;
+    const sellerProfileStatus = userData?.sellerProfile?.status;
+    const sellerApproved =
+      sellerApplicationStatus === 'approved' || sellerProfileStatus === 'approved';
 
     if (!sellerApproved) {
       throw new Error('Seller application must be approved before creating listings');
     }
     
+    const sellerPayoutMode = (
+      userData?.sellerProfile?.payoutMode ||
+      userData?.sellerProfile?.sellerPayoutMode ||
+      'stripe_connect'
+    ) as 'stripe_connect' | 'external_provider' | 'manual_settlement';
+    const requiresTokenGate =
+      sellerPayoutMode === 'external_provider' || sellerPayoutMode === 'manual_settlement';
+    const tokenIdempotencyKey = makeIdempotencyKey('seller_listing_publish');
+    let tokenReservationId: string | null = null;
+
+    if (requiresTokenGate) {
+      const reserveResult = await reserveTokenAction({
+        actorType: 'seller',
+        action: 'listing_publish',
+        referenceId: `listing:${currentUser.uid}:${input.title.slice(0, 48)}`,
+        idempotencyKey: tokenIdempotencyKey,
+      });
+
+      if (reserveResult.status === 'reserved') {
+        tokenReservationId = reserveResult.reservationId;
+      }
+    }
+
     // Create listing
     const normalizeUrl = (url: string) => {
       if (!url) return url;
@@ -189,12 +252,33 @@ export class MarketplaceService {
       publishedAt: Timestamp.now()
     };
     
-    const docRef = await addDoc(collection(db, 'marketplaceItems'), listing);
-    
-    // Activate seller profile if needed
-    await this.activateSellerProfile(currentUser.uid, userData);
-    
-    return docRef.id;
+    try {
+      const docRef = await addDoc(collection(db, 'marketplaceItems'), listing);
+      
+      // Activate seller profile if needed
+      await this.activateSellerProfile(currentUser.uid, userData);
+
+      if (tokenReservationId) {
+        await commitTokenAction({
+          reservationId: tokenReservationId,
+          idempotencyKey: tokenIdempotencyKey,
+        });
+      }
+      
+      return docRef.id;
+    } catch (error) {
+      if (tokenReservationId) {
+        try {
+          await releaseTokenAction({
+            reservationId: tokenReservationId,
+            idempotencyKey: tokenIdempotencyKey,
+          });
+        } catch (releaseError) {
+          console.error('Failed to release token reservation after listing failure:', releaseError);
+        }
+      }
+      throw error;
+    }
   }
   
   /**

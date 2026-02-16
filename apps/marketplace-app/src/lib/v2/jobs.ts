@@ -24,8 +24,23 @@ import { getNextStatus } from "./status";
 interface CreateJobPayload {
   pickup: GeoPoint;
   dropoff: GeoPoint;
-  package: PackageInfo;
+  package?: PackageInfo;
   photos: JobPhoto[];
+  jobType?: "package" | "food";
+  foodDetails?: {
+    restaurantId: string;
+    restaurantName: string;
+    temperature?: string;
+    customerNotes?: string | null;
+    confirmationName?: string;
+    orderNumber?: string | null;
+    pickupCode?: string | null;
+    pickupInstructions?: string | null;
+    confirmationPhotoUrls?: string[];
+    requiresCooler?: boolean;
+    requiresHotBag?: boolean;
+    requiresDrinkCarrier?: boolean;
+  };
   preferredCourierUid?: string | null;
   offerCourierUid?: string | null;
   offerQueue?: string[];
@@ -44,13 +59,22 @@ export async function createJob(
   userUid: string,
   payload: CreateJobPayload,
 ): Promise<string> {
+  const jobType = payload.jobType ?? "package";
+  const jobPackage: PackageInfo = payload.package ?? {
+    size: "small",
+    notes: jobType === "food" ? "Food pickup order" : undefined,
+  };
+
   const jobsRef = collection(db, "jobs");
   const docRef = await addDoc(jobsRef, {
     createdByUid: userUid,
     status: "open" as JobStatus,
+    jobType,
+    isFoodItem: jobType === "food",
+    foodDetails: payload.foodDetails ?? null,
     pickup: payload.pickup,
     dropoff: payload.dropoff,
-    package: payload.package,
+    package: jobPackage,
     photos: payload.photos,
     preferredCourierUid: payload.preferredCourierUid ?? null,
     offerCourierUid: payload.offerCourierUid ?? null,

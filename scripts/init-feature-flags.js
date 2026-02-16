@@ -21,7 +21,7 @@ async function initializeFeatureFlags() {
       },
       courier: {
        featureFlagsControl: true,
-       webPortalEnabled: false,
+       webPortalEnabled: true,
         equipmentBadges: true,
         workModes: true,
       },
@@ -29,6 +29,10 @@ async function initializeFeatureFlags() {
         stripeConnect: true, // Already in production
         multiplePhotos: true,
         foodListings: true,
+      },
+      payments: {
+        senderrplaceNonStripeSellerPayouts: true,
+        senderrplaceNonStripeCourierPayouts: true,
       },
       customer: {
         liveTracking: true, // Already in production

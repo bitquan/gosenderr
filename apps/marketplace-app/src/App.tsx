@@ -38,8 +38,8 @@ import SupportPage from './pages/support/page'
 import UnauthorizedPage from './pages/unauthorized'
 import MarketplaceHome from './pages/marketplace/MarketplaceHome'
 import MarketplaceItemPage from './pages/marketplace/[itemId]/page'
-import MarketplaceCheckoutPage from './pages/marketplace/checkout/page'
 import MarketplaceSellPage from './pages/marketplace/sell/page'
+import SellerStorefrontPage from './pages/store/[sellerId]/page'
 import MyListingsPage from './pages/profile/listings/page'
 import SellerSettingsPage from './pages/profile/seller-settings/page'
 import StripeOnboardingPage from './pages/profile/stripe-onboarding/page'
@@ -48,10 +48,13 @@ import MessagesPage from './pages/messages/page'
 import ConversationPage from './pages/messages/[conversationId]/page'
 import { useFeatureFlags } from './hooks/useFeatureFlags'
 import { StripeModeBanner } from './components/StripeModeBanner'
+import FoodPickupsPage from './pages/food-pickups/page'
+import FoodPickupOrderPage from './pages/food-pickups/[restaurantId]/order'
 
 // Seller pages
 import SellerApplicationPage from './pages/seller/apply/page'
 import SellerDashboard from './pages/seller/dashboard/page'
+import SellerAdsPage from './pages/seller/ads/page'
 import NewSellerItem from './pages/seller/items/new/page'
 import EditSellerItem from './pages/seller/items/[itemId]/edit/page'
 import SellerOrders from './pages/seller/orders/page'
@@ -71,7 +74,7 @@ function App() {
   const MarketplaceDisabled = () => (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
       <div className="text-center">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Marketplace Disabled</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Senderrplace Disabled</h1>
         <p className="text-gray-600">This feature is temporarily unavailable.</p>
       </div>
     </div>
@@ -106,6 +109,7 @@ function App() {
             <Route index element={marketplaceEnabled ? <MarketplaceHome /> : <MarketplaceDisabled />} />
             <Route path="/marketplace" element={marketplaceEnabled ? <MarketplaceHome /> : <MarketplaceDisabled />} />
             <Route path="/marketplace/:itemId" element={marketplaceEnabled ? <MarketplaceItemPage /> : <MarketplaceDisabled />} />
+            <Route path="/store/:sellerId" element={marketplaceEnabled ? <SellerStorefrontPage /> : <MarketplaceDisabled />} />
             <Route path="/unauthorized" element={<UnauthorizedPage />} />
           </Route>
           
@@ -128,6 +132,7 @@ function App() {
               </RoleGuard>
             } />
 
+            <Route path="/marketplace/checkout" element={<Navigate to="/checkout?mode=cart" replace />} />
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/orders" element={<OrdersPage />} />
             <Route path="/orders/:orderId" element={<OrderDetailPage />} />
@@ -169,6 +174,16 @@ function App() {
             <Route path="/favorite-couriers" element={
               <RoleGuard allowedRoles={['customer', 'buyer']}>
                 <FavoriteCouriersPage />
+              </RoleGuard>
+            } />
+            <Route path="/food-pickups" element={
+              <RoleGuard allowedRoles={['customer', 'buyer', 'seller']}>
+                <FoodPickupsPage />
+              </RoleGuard>
+            } />
+            <Route path="/food-pickups/:restaurantId/order" element={
+              <RoleGuard allowedRoles={['customer', 'buyer', 'seller']}>
+                <FoodPickupOrderPage />
               </RoleGuard>
             } />
             <Route path="/promo-codes" element={
@@ -221,6 +236,11 @@ function App() {
             <Route path="/seller/dashboard" element={
               <RoleGuard allowedRoles={['admin', 'seller']}>
                 <SellerDashboard />
+              </RoleGuard>
+            } />
+            <Route path="/seller/ads" element={
+              <RoleGuard allowedRoles={['admin', 'seller']}>
+                <SellerAdsPage />
               </RoleGuard>
             } />
             <Route path="/seller/items/new" element={

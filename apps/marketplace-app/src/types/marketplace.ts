@@ -12,6 +12,7 @@ import { Timestamp, GeoPoint } from 'firebase/firestore';
 export enum ItemCategory {
   ELECTRONICS = 'electronics',
   CLOTHING = 'clothing',
+  FOOD = 'food',
   HOME = 'home',
   BOOKS = 'books',
   TOYS = 'toys',
@@ -62,6 +63,23 @@ export enum PaymentStatus {
   FAILED = 'failed'
 }
 
+export type PaymentRailStatus =
+  | 'pending'
+  | 'authorized'
+  | 'captured'
+  | 'failed'
+  | 'refunded';
+
+export type SellerPayoutMode =
+  | 'stripe_connect'
+  | 'external_provider'
+  | 'manual_settlement';
+
+export type SellerPayoutExecution =
+  | 'stripe_connect'
+  | 'stripe_connect_fallback'
+  | 'deferred_non_stripe';
+
 export enum UserRole {
   BUYER = 'buyer',
   SELLER = 'seller',
@@ -100,7 +118,7 @@ export interface MarketplaceItem {
   
   // Seller info
   sellerId: string;
-  sellerName: string;
+  sellerName?: string;
   sellerPhotoURL?: string;
   
   // Item details
@@ -133,6 +151,17 @@ export interface MarketplaceItem {
   views: number;
   favorites: number;
   soldCount: number;
+  boostScore?: number;
+  boostedUntil?: Timestamp;
+  adBoost?: {
+    boostId?: string;
+    placement?: "boost" | "featured";
+    durationDays?: number;
+    active?: boolean;
+    startAt?: Timestamp;
+    endAt?: Timestamp;
+    requiredTokens?: number;
+  };
   
   // Timestamps
   createdAt: Timestamp;
@@ -153,9 +182,78 @@ export interface Order {
   buyerName: string;
   buyerPhotoURL?: string;
   
-  sellerId: string;
+  sellerId?: string;
   sellerName: string;
   sellerPhotoURL?: string;
+  orderGroupId?: string;
+  orderGroup?: {
+    id: string;
+    suborderCount: number;
+    sellerIds: string[];
+    subtotal: number;
+    shipping: number;
+    tax: number;
+    total: number;
+    paymentStatus: string;
+    seller_payment_status?: PaymentRailStatus;
+    delivery_fee_status?: PaymentRailStatus;
+    paymentRails?: {
+      sellerTotal: number;
+      platformTotal: number;
+      deliveryFee: number;
+      platformFee: number;
+      adFee: number;
+    };
+    routePlan?: {
+      routeId: string;
+      routeType: "multi_pickup_single_dropoff";
+      hasCompleteCoordinates: boolean;
+      pickupStopCount: number;
+      missingPickupStops: number;
+      totalPickupMiles: number;
+      totalEstimatedMinutes: number;
+      dropoffAddress: string;
+      dropoff: { lat: number; lng: number } | null;
+      issues: string[];
+      stops: Array<{
+        sellerId: string;
+        sellerName?: string;
+        orderId: string;
+        suborderId: string;
+        pickupAddress: string;
+        pickup: { lat: number; lng: number } | null;
+        itemIds: string[];
+        itemCount: number;
+        sequence: number;
+        legMilesFromPrevious: number | null;
+        legMinutesFromPrevious: number | null;
+      }>;
+    };
+    suborders: Array<{
+      id: string;
+      index: number;
+      orderId: string;
+      sellerId: string;
+      sellerName?: string | null;
+      itemCount: number;
+      subtotal: number;
+      shipping: number;
+      platformFee?: number;
+      adFee?: number;
+      tax: number;
+      total: number;
+      sellerPayoutMode?: SellerPayoutMode;
+      sellerPayoutExecution?: SellerPayoutExecution;
+      sellerPaymentStatus?: PaymentRailStatus;
+      deliveryFeeStatus?: PaymentRailStatus;
+      status: string;
+    }>;
+  };
+  suborder?: {
+    id: string;
+    index: number;
+    sellerId: string;
+  };
   
   courierId?: string;
   courierName?: string;
@@ -187,6 +285,10 @@ export interface Order {
   // Payment
   paymentIntentId?: string;
   paymentStatus: PaymentStatus;
+  seller_payment_status?: PaymentRailStatus;
+  delivery_fee_status?: PaymentRailStatus;
+  sellerPayoutMode?: SellerPayoutMode;
+  sellerPayoutExecution?: SellerPayoutExecution;
   
   // Job (if courier delivery)
   jobId?: string;
@@ -273,6 +375,10 @@ export interface SellerProfile {
   // Trust & Protection Settings
   stripeAccountId?: string;
   stripeOnboardingComplete: boolean;
+  payoutMode?: SellerPayoutMode;
+  sellerPayoutMode?: SellerPayoutMode; // legacy alias
+  externalPayoutProvider?: string;
+  externalPayoutHandle?: string;
   buyerProtectionEnabled: boolean;      // 3-day fund hold
   instantPayoutEnabled: boolean;        // 30-min payout (+1% fee)
   returnsAccepted: boolean;             // Free returns

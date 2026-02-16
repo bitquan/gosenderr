@@ -9,6 +9,7 @@ import {
   getDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { commitTokenAction, makeIdempotencyKey, releaseTokenAction, reserveTokenAction } from "@/lib/tokens";
 import {
   GeoPoint,
   JobStatus,
@@ -81,70 +82,118 @@ export async function claimJob(
 ): Promise<void> {
   const jobRef = doc(db, "jobs", jobId);
   const courierRef = doc(db, "users", courierUid);
+  const idempotencyKey = makeIdempotencyKey("courier_job_unlock");
+  let tokenReservationId: string | null = null;
 
-  await runTransaction(db, async (transaction) => {
-    const jobDoc = await transaction.get(jobRef);
-    const courierDoc = await transaction.get(courierRef);
+  const courierSnap = await getDoc(courierRef);
+  if (!courierSnap.exists()) {
+    throw new Error("Courier not found");
+  }
 
-    if (!jobDoc.exists()) {
-      throw new Error("Job not found");
-    }
+  const courierProfile = (courierSnap.data() as UserDoc)?.courierProfile;
+  const payoutMode = (courierProfile?.payoutMode ||
+    (courierProfile as any)?.courierPayoutMode ||
+    "stripe_connect") as "stripe_connect" | "external_provider" | "manual_settlement";
+  const requiresTokenGate =
+    payoutMode === "external_provider" || payoutMode === "manual_settlement";
 
-    if (!courierDoc.exists()) {
-      throw new Error("Courier not found");
-    }
-
-    const jobData = jobDoc.data();
-    const courierData = courierDoc.data() as UserDoc;
-
-    if (jobData.status !== "open" || jobData.courierUid !== null) {
-      throw new Error("Job already claimed or not available");
-    }
-
-    // Server-side eligibility check - use courierProfile
-    if (!courierData.courierProfile?.currentLocation) {
-      throw new Error("Senderr location not available");
-    }
-
-    // Determine appropriate rate card based on job type
-    const isFoodJob = jobData.isFoodItem || false;
-    const rateCard = isFoodJob
-      ? courierData.courierProfile.foodRateCard
-      : courierData.courierProfile.packageRateCard;
-
-    if (!rateCard) {
-      throw new Error(
-        `Senderr ${isFoodJob ? "food" : "package"} rate card not configured`,
-      );
-    }
-
-    const courierLocation = courierData.courierProfile.currentLocation;
-    const pickup = jobData.pickup as GeoPoint;
-    const dropoff = jobData.dropoff as GeoPoint;
-
-    const pickupMiles = calcMiles(courierLocation, pickup);
-    const jobMiles = calcMiles(pickup, dropoff);
-
-    const eligibilityResult = getEligibilityReason(
-      rateCard,
-      jobMiles,
-      pickupMiles,
-    );
-
-    if (!eligibilityResult.eligible) {
-      throw new Error(
-        `not-eligible: ${eligibilityResult.reason || "Job exceeds distance limits"}`,
-      );
-    }
-
-    // All checks passed - claim the job
-    transaction.update(jobRef, {
-      courierUid,
-      agreedFee,
-      status: "assigned" as JobStatus,
-      updatedAt: serverTimestamp(),
+  if (requiresTokenGate) {
+    const reserveResult = await reserveTokenAction({
+      actorType: "courier",
+      action: "job_unlock",
+      referenceId: `job:${jobId}`,
+      idempotencyKey,
+      metadata: { tier: "standard" },
     });
-  });
+    if (reserveResult.status === "reserved") {
+      tokenReservationId = reserveResult.reservationId;
+    }
+  }
+
+  try {
+    await runTransaction(db, async (transaction) => {
+      const jobDoc = await transaction.get(jobRef);
+      const courierDoc = await transaction.get(courierRef);
+
+      if (!jobDoc.exists()) {
+        throw new Error("Job not found");
+      }
+
+      if (!courierDoc.exists()) {
+        throw new Error("Courier not found");
+      }
+
+      const jobData = jobDoc.data();
+      const courierData = courierDoc.data() as UserDoc;
+
+      if (jobData.status !== "open" || jobData.courierUid !== null) {
+        throw new Error("Job already claimed or not available");
+      }
+
+      // Server-side eligibility check - use courierProfile
+      if (!courierData.courierProfile?.currentLocation) {
+        throw new Error("Senderr location not available");
+      }
+
+      // Determine appropriate rate card based on job type
+      const isFoodJob = jobData.isFoodItem || false;
+      const rateCard = isFoodJob
+        ? courierData.courierProfile.foodRateCard
+        : courierData.courierProfile.packageRateCard;
+
+      if (!rateCard) {
+        throw new Error(
+          `Senderr ${isFoodJob ? "food" : "package"} rate card not configured`,
+        );
+      }
+
+      const courierLocation = courierData.courierProfile.currentLocation;
+      const pickup = jobData.pickup as GeoPoint;
+      const dropoff = jobData.dropoff as GeoPoint;
+
+      const pickupMiles = calcMiles(courierLocation, pickup);
+      const jobMiles = calcMiles(pickup, dropoff);
+
+      const eligibilityResult = getEligibilityReason(
+        rateCard,
+        jobMiles,
+        pickupMiles,
+      );
+
+      if (!eligibilityResult.eligible) {
+        throw new Error(
+          `not-eligible: ${eligibilityResult.reason || "Job exceeds distance limits"}`,
+        );
+      }
+
+      // All checks passed - claim the job
+      transaction.update(jobRef, {
+        courierUid,
+        agreedFee,
+        status: "assigned" as JobStatus,
+        updatedAt: serverTimestamp(),
+      });
+    });
+
+    if (tokenReservationId) {
+      await commitTokenAction({
+        reservationId: tokenReservationId,
+        idempotencyKey,
+      });
+    }
+  } catch (error) {
+    if (tokenReservationId) {
+      try {
+        await releaseTokenAction({
+          reservationId: tokenReservationId,
+          idempotencyKey,
+        });
+      } catch (releaseError) {
+        console.error("Failed to release token reservation after claim failure:", releaseError);
+      }
+    }
+    throw error;
+  }
 }
 
 export async function updateJobStatus(

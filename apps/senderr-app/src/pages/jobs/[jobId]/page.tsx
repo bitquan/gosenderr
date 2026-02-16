@@ -12,7 +12,7 @@ import { Job as FeatureJob } from "@/features/jobs/shared/types";
 import { JobDoc } from "@/lib/v2/types";
 import { Link } from "react-router-dom";
 import { NotFoundPage } from "@/components/ui/NotFoundPage";
-import { useNavigation } from "@/hooks/useNavigation";
+import { openExternalNavigation } from "@/lib/navigation/external";
 
 // Convert JobDoc to features Job
 function convertJobDocToJob(jobDoc: JobDoc, id: string): FeatureJob {
@@ -26,7 +26,6 @@ export default function CourierJobDetail() {
   const { uid } = useAuthUser();
   const { job: jobDoc, loading: jobLoading } = useJob(jobId);
   const { userDoc } = useUserDoc();
-  const { startNavigation, isNavigating } = useNavigation();
 
   if (jobLoading) {
     return (
@@ -73,14 +72,9 @@ export default function CourierJobDetail() {
     "arrived_dropoff",
   ].includes(job.status);
   
-  const handleStartNavigation = async (destination: 'pickup' | 'dropoff') => {
-    if (!userDoc?.location) {
-      alert('Unable to get your current location. Please enable location services.');
-      return;
-    }
-
-    const targetLocation = destination === 'pickup' ? job.pickup : job.dropoff;
-    await startNavigation(job, userDoc.location, targetLocation);
+  const handleStartNavigation = (destination: "pickup" | "dropoff") => {
+    const targetLocation = destination === "pickup" ? job.pickup : job.dropoff;
+    openExternalNavigation(targetLocation, userDoc?.location || undefined);
   };
 
   return (
@@ -152,14 +146,10 @@ export default function CourierJobDetail() {
           <button
             onClick={() => handleStartNavigation('pickup')}
             disabled={
-              isNavigating ||
-              !userDoc?.location ||
               isPaymentLocked ||
               !canNavigateToPickup
             }
             className={`py-4 px-4 rounded-xl font-semibold text-white shadow-lg transition-all ${
-              isNavigating ||
-              !userDoc?.location ||
               isPaymentLocked ||
               !canNavigateToPickup
                 ? "bg-gray-400 cursor-not-allowed"
@@ -169,21 +159,17 @@ export default function CourierJobDetail() {
             <div className="text-center">
               <div className="text-2xl mb-1">📍</div>
               <div className="text-sm">
-                {isNavigating ? "Navigating..." : "Navigate to Pickup"}
+                Open Pickup in Maps
               </div>
             </div>
           </button>
           <button
             onClick={() => handleStartNavigation('dropoff')}
             disabled={
-              isNavigating ||
-              !userDoc?.location ||
               isPaymentLocked ||
               !canNavigateToDropoff
             }
             className={`py-4 px-4 rounded-xl font-semibold text-white shadow-lg transition-all ${
-              isNavigating ||
-              !userDoc?.location ||
               isPaymentLocked ||
               !canNavigateToDropoff
                 ? "bg-gray-400 cursor-not-allowed"
@@ -193,7 +179,7 @@ export default function CourierJobDetail() {
             <div className="text-center">
               <div className="text-2xl mb-1">🎯</div>
               <div className="text-sm">
-                {isNavigating ? "Navigating..." : "Navigate to Dropoff"}
+                Open Dropoff in Maps
               </div>
             </div>
           </button>

@@ -67,6 +67,10 @@ async function initFeatureFlags() {
       multiplePhotos: true,
       foodListings: true,
     },
+    payments: {
+      senderrplaceNonStripeSellerPayouts: true,
+      senderrplaceNonStripeCourierPayouts: true,
+    },
     customer: {
       liveTracking: true,
       proofPhotos: true,
@@ -84,7 +88,7 @@ async function initFeatureFlags() {
       disputeManagement: true,
       analytics: true,
       featureFlagsControl: true,
-      webPortalEnabled: false,
+      webPortalEnabled: true,
     },
     advanced: {
       pushNotifications: true,

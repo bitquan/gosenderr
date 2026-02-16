@@ -16,11 +16,23 @@ const firebaseConfig = {
 // Only initialize on client side (not during build/SSR)
 const isBrowser = typeof window !== "undefined";
 // Consider config valid in emulator/CI environments even if apiKey is a dummy value.
-const isValidConfig =
+const hasExplicitConfig =
   (firebaseConfig.apiKey && firebaseConfig.apiKey.startsWith("AIza")) ||
   Boolean(import.meta.env.VITE_FIREBASE_AUTH_EMULATOR_HOST) ||
   Boolean(import.meta.env.VITE_FIRESTORE_EMULATOR_HOST) ||
   Boolean(import.meta.env.VITE_FIREBASE_PROJECT_ID);
+const shouldUseDevFallback = import.meta.env.DEV && !hasExplicitConfig;
+
+const resolvedProjectId =
+  firebaseConfig.projectId || import.meta.env.VITE_FIREBASE_PROJECT_ID || "gosenderr-local";
+const resolvedFirebaseConfig = {
+  apiKey: firebaseConfig.apiKey || "AIzaSyLocalDevFallbackOnly0000000000000000",
+  authDomain: firebaseConfig.authDomain || `${resolvedProjectId}.firebaseapp.com`,
+  projectId: resolvedProjectId,
+  storageBucket: firebaseConfig.storageBucket || `${resolvedProjectId}.appspot.com`,
+  messagingSenderId: firebaseConfig.messagingSenderId || "000000000000",
+  appId: firebaseConfig.appId || "1:000000000000:web:local-dev-fallback",
+};
 
 const shouldUseEmulators =
   import.meta.env.DEV && import.meta.env.VITE_USE_FIREBASE_EMULATORS === "true";
@@ -31,14 +43,20 @@ let storageInstance: FirebaseStorage | undefined;
 let functionsInstance: Functions | undefined;
 let authInstance: ReturnType<typeof getAuth> | undefined;
 
-if (isBrowser && isValidConfig) {
+if (isBrowser && (hasExplicitConfig || shouldUseDevFallback)) {
   try {
-    app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+    app = getApps().length ? getApp() : initializeApp(resolvedFirebaseConfig);
     dbInstance = getFirestore(app);
     storageInstance = getStorage(app);
     functionsInstance = getFunctions(app, "us-central1");
     authInstance = getAuth(app);
-    console.log("Firebase initialized successfully");
+    if (shouldUseDevFallback) {
+      console.warn(
+        "Firebase env vars missing. Running in local fallback mode; set apps/marketplace-app/.env.local to connect real services.",
+      );
+    } else {
+      console.log("Firebase initialized successfully");
+    }
     // If CI or local E2E sets emulator env vars, connect SDK to the emulators so tests operate against them.
     if (shouldUseEmulators) {
       try {

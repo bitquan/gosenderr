@@ -28,6 +28,8 @@ interface PhotoUploaderProps {
   maxPhotos?: number;
   onPhotosChange: (photos: PhotoFile[]) => void;
   photos: PhotoFile[];
+  label?: string;
+  helperText?: string;
 }
 
 export function PhotoUploader({
@@ -36,6 +38,8 @@ export function PhotoUploader({
   maxPhotos = 5,
   onPhotosChange,
   photos,
+  label = 'Package Photos (Optional)',
+  helperText,
 }: PhotoUploaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const photosRef = useRef<PhotoFile[]>(photos);
@@ -183,10 +187,10 @@ export function PhotoUploader({
     <div>
       <div style={{ marginBottom: '12px' }}>
         <label style={{ display: 'block', fontWeight: '600', fontSize: '14px', marginBottom: '8px' }}>
-          Package Photos (Optional)
+          {label}
         </label>
         <p style={{ fontSize: '12px', color: '#666', marginBottom: '12px' }}>
-          Upload up to {maxPhotos} photos. JPG, PNG, or WEBP. Max 10MB each.
+          {helperText ?? `Upload up to ${maxPhotos} photos. JPG, PNG, or WEBP. Max 10MB each.`}
         </p>
       </div>
 
