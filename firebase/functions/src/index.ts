@@ -25,6 +25,11 @@ export { getPublicConfig } from "./http/getPublicConfig";
 export { getPublicConfigHttp } from "./http/getPublicConfigHttp";
 export { createPaymentIntentHttp } from "./http/createPaymentIntentHttp";
 export {
+	getTokenPolicy,
+	getTokenWalletSummary,
+	adjustTokenWalletBalance,
+} from "./http/tokenWalletCommands";
+export {
 	claimCourierJob,
 	advanceCourierJobStatus,
 	submitCourierJobProof,

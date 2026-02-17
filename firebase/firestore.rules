@@ -643,9 +643,33 @@ service cloud.firestore {
       allow read: if signedIn();
       allow write: if isAdmin();
     }
+    match /platformSettings/tokenPolicy {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
     match /platformSettings/{settingId} {
       // Only admins can read and write platform settings
       allow read, write: if isAdmin();
+    }
+
+    // ========== TOKEN WALLETS ==========
+    match /tokenWallets/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow create, update, delete: if false;
+    }
+
+    match /tokenTransactions/{txId} {
+      allow read: if signedIn() && (
+        (resource.data.uid == request.auth.uid) || isAdmin()
+      );
+      allow create, update, delete: if false;
+    }
+
+    match /tokenReservations/{reservationId} {
+      allow read: if signedIn() && (
+        (resource.data.uid == request.auth.uid) || isAdmin()
+      );
+      allow create, update, delete: if false;
     }
 
     // ========== MARKETPLACE ITEMS ==========
