@@ -44,6 +44,7 @@ export default function CourierDashboardMapShell() {
   const [acceptingJobId, setAcceptingJobId] = useState<string | null>(null);
   const [decliningJobId, setDecliningJobId] = useState<string | null>(null);
   const [togglingOnline, setTogglingOnline] = useState(false);
+  const [showOnboardingModal, setShowOnboardingModal] = useState(false);
   const [tokenClaimReadiness, setTokenClaimReadiness] =
     useState<TokenClaimReadiness | null>(null);
 
@@ -132,7 +133,9 @@ export default function CourierDashboardMapShell() {
     };
   }, [uid]);
 
-  const isApproved = (userDoc?.courierProfile as any)?.status === "approved";
+  const courierStatus = (userDoc?.courierProfile as any)?.status || "none";
+  const rejectionReason = (userDoc?.courierProfile as any)?.rejectionReason || null;
+  const isApproved = courierStatus === "approved";
   const isOnline = Boolean(userDoc?.courierProfile?.isOnline);
 
   const getRateCardForJob = (job: Job): RateCard | PackageRateCard | FoodRateCard | null => {
@@ -148,7 +151,12 @@ export default function CourierDashboardMapShell() {
   };
 
   const handleToggleOnline = async () => {
-    if (!uid || togglingOnline || !isApproved) return;
+    if (!uid || togglingOnline) return;
+
+    if (!isApproved) {
+      setShowOnboardingModal(true);
+      return;
+    }
 
     setTogglingOnline(true);
     try {
@@ -393,6 +401,49 @@ export default function CourierDashboardMapShell() {
             })}
           </div>
         </div>
+
+        {showOnboardingModal && (
+          <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-center justify-center px-4">
+            <div className="w-full max-w-md rounded-2xl border border-white/20 bg-gradient-to-br from-slate-900 via-purple-900 to-purple-950/95 p-5 shadow-2xl text-white pointer-events-auto">
+              <h3 className="text-lg font-bold">Complete onboarding to go Online</h3>
+              <p className="text-sm text-blue-100 mt-2">
+                Your current status is <span className="font-semibold text-white">{courierStatus}</span>. You must complete onboarding before enabling Online mode.
+              </p>
+              {rejectionReason && (
+                <p className="text-xs text-amber-200 mt-2">
+                  Review note: {rejectionReason}
+                </p>
+              )}
+
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button
+                  onClick={() => {
+                    setShowOnboardingModal(false);
+                    navigate("/onboarding");
+                  }}
+                  className="rounded-lg bg-gradient-to-r from-blue-700 via-blue-600 to-purple-600 px-4 py-2 text-sm font-semibold text-white"
+                >
+                  Start onboarding
+                </button>
+                <button
+                  onClick={() => {
+                    setShowOnboardingModal(false);
+                    navigate("/onboarding/stripe");
+                  }}
+                  className="rounded-lg border border-white/25 bg-white/10 px-4 py-2 text-sm font-semibold text-blue-100"
+                >
+                  Stripe step
+                </button>
+                <button
+                  onClick={() => setShowOnboardingModal(false)}
+                  className="sm:col-span-2 rounded-lg border border-white/20 bg-transparent px-4 py-2 text-sm font-semibold text-white/80"
+                >
+                  Not now
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

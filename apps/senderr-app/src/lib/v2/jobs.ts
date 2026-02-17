@@ -217,6 +217,14 @@ export type TokenCheckoutSessionResponse = {
   emulated?: boolean;
 };
 
+export type TokenClaimReadiness = {
+  useTokenMode: boolean;
+  canClaim: boolean;
+  requiredTokens: number;
+  availableTokens: number;
+  reason?: string;
+};
+
 type TokenCheckoutSessionRequest = {
   packId: string;
   successUrl: string;
@@ -273,4 +281,41 @@ export async function tokenCreateCheckoutSession(
   });
 
   return result.data;
+}
+
+export async function getTokenClaimReadiness(
+  _uid: string,
+): Promise<TokenClaimReadiness> {
+  const [policy, wallet] = await Promise.all([
+    getTokenPolicy(),
+    getTokenWalletSummary(),
+  ]);
+
+  const requiredTokens = Math.max(policy?.costs?.claimJob ?? 0, 0);
+  const availableTokens = Math.max(wallet?.available ?? 0, 0);
+  const useTokenMode = Boolean(policy?.enabled) && requiredTokens > 0;
+  const canClaim = !useTokenMode || availableTokens >= requiredTokens;
+
+  return {
+    useTokenMode,
+    canClaim,
+    requiredTokens,
+    availableTokens,
+    reason: canClaim
+      ? undefined
+      : `Insufficient tokens. Requires ${requiredTokens}, available ${availableTokens}.`,
+  };
+}
+
+export async function declineCourierJobOffer(jobId: string): Promise<void> {
+  if (!functions) {
+    throw new Error("Firebase Functions not initialized");
+  }
+
+  const callable = httpsCallable<{ jobId: string }, { success: boolean }>(
+    functions,
+    "declineCourierJobOffer",
+  );
+
+  await callable({ jobId });
 }

@@ -112,9 +112,13 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(
             ? [pickup!.lng, pickup!.lat]
             : [-77.4182, 38.9493]; // Default to DC area
 
+          const mapStyle =
+            import.meta.env.VITE_MAPBOX_STYLE_URL ||
+            "mapbox://styles/mapbox/dark-v11";
+
           const map = new mapboxgl.Map({
             container: mapContainer.current,
-            style: "mapbox://styles/mapbox/streets-v12",
+            style: mapStyle,
             center: initialCenter as [number, number],
             zoom: 12,
           });
@@ -550,6 +554,8 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(
           height,
           borderRadius: "8px",
           pointerEvents: interactive ? "auto" : "none",
+          touchAction: interactive ? "none" : "auto",
+          cursor: interactive ? "grab" : "default",
         }}
       />
     );

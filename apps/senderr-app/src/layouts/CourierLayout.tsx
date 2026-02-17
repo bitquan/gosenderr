@@ -1,6 +1,6 @@
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { debugLogger } from "../utils/debugLogger";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useCourierLocationWriter } from "../hooks/v2/useCourierLocationWriter";
 
 const courierOverlayItems = [
@@ -16,6 +16,13 @@ export default function CourierLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const [overlayOpen, setOverlayOpen] = useState(false);
+  const [overlayTop, setOverlayTop] = useState(128);
+  const dragRef = useRef({
+    active: false,
+    moved: false,
+    startY: 0,
+    startTop: 128,
+  });
 
   useCourierLocationWriter();
 
@@ -26,6 +33,8 @@ export default function CourierLayout() {
     [activePath],
   );
 
+  const baseTop = isMapShellRoute ? 128 : 112;
+
   useEffect(() => {
     debugLogger.log("render", "CourierLayout mounted with floating overlay navigation");
   }, []);
@@ -34,6 +43,38 @@ export default function CourierLayout() {
     setOverlayOpen(false);
   }, [activePath]);
 
+  useEffect(() => {
+    setOverlayTop(baseTop);
+  }, [baseTop]);
+
+  useEffect(() => {
+    const handleMove = (event: PointerEvent) => {
+      if (!dragRef.current.active) return;
+
+      const deltaY = event.clientY - dragRef.current.startY;
+      if (Math.abs(deltaY) > 3) {
+        dragRef.current.moved = true;
+      }
+
+      const nextTop = dragRef.current.startTop + deltaY;
+      const minTop = 16;
+      const maxTop = window.innerHeight - 120;
+      setOverlayTop(Math.max(minTop, Math.min(maxTop, nextTop)));
+    };
+
+    const handleUp = () => {
+      dragRef.current.active = false;
+    };
+
+    window.addEventListener("pointermove", handleMove);
+    window.addEventListener("pointerup", handleUp);
+
+    return () => {
+      window.removeEventListener("pointermove", handleMove);
+      window.removeEventListener("pointerup", handleUp);
+    };
+  }, []);
+
   return (
     <div className={`min-h-screen relative ${isMapShellRoute ? "bg-black" : "bg-[#F8F9FF]"}`}>
       <main className="min-w-0">
@@ -41,9 +82,8 @@ export default function CourierLayout() {
       </main>
 
       <div
-        className={`fixed left-0 z-50 pointer-events-auto flex items-start ${
-          isMapShellRoute ? "top-32" : "top-28"
-        }`}
+        className="fixed left-0 z-50 pointer-events-auto flex items-start"
+        style={{ top: `${overlayTop}px` }}
       >
         {overlayOpen && (
           <div className="ml-2 w-64 rounded-2xl border border-white/10 bg-slate-950/90 backdrop-blur shadow-2xl overflow-hidden text-white">
@@ -77,10 +117,20 @@ export default function CourierLayout() {
         )}
 
         <button
-          onClick={() => setOverlayOpen((prev) => !prev)}
+          onPointerDown={(event) => {
+            dragRef.current.active = true;
+            dragRef.current.moved = false;
+            dragRef.current.startY = event.clientY;
+            dragRef.current.startTop = overlayTop;
+          }}
+          onClick={() => {
+            if (dragRef.current.moved) return;
+            setOverlayOpen((prev) => !prev);
+          }}
           className="h-11 w-10 rounded-r-xl rounded-l-none bg-gradient-to-r from-blue-700 via-blue-600 to-purple-600 text-white shadow-lg border border-white/20 border-l-0"
           aria-label={overlayOpen ? "Close navigation overlay" : "Open navigation overlay"}
           title={overlayOpen ? "Close navigation" : "Open navigation"}
+          style={{ touchAction: "none", cursor: "grab" }}
         >
           {overlayOpen ? "✕" : "☰"}
         </button>
