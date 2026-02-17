@@ -23,7 +23,11 @@ const isValidConfig =
   Boolean(import.meta.env.VITE_FIREBASE_PROJECT_ID);
 
 const shouldUseEmulators =
-  import.meta.env.DEV && import.meta.env.VITE_USE_FIREBASE_EMULATORS === "true";
+  import.meta.env.DEV && (
+    import.meta.env.VITE_USE_FIREBASE_EMULATORS === "true"
+    || Boolean(import.meta.env.VITE_FIREBASE_AUTH_EMULATOR_HOST)
+    || Boolean(import.meta.env.VITE_FIRESTORE_EMULATOR_HOST)
+  );
 
 let app: FirebaseApp | undefined;
 let dbInstance: Firestore | undefined;
