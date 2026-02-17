@@ -1,5 +1,6 @@
 import { assert } from 'chai'
 import * as admin from 'firebase-admin'
+import { makeMockUser, makeMockJob } from '@gosenderr/shared'
 
 // Import handler directly from source
 import { transferPayoutHandler } from '../src/stripe/transferPayout'
@@ -17,14 +18,15 @@ describe('transferPayout trigger', function () {
   it('should create a payout and update job when courier has stripe account', async function () {
     // create courier user
     const courier = await admin.auth().createUser({ email: `courier+${Date.now()}@example.com`, password: 'password' })
-    await admin.firestore().doc(`users/${courier.uid}`).set({ courierProfile: { stripeAccountId: 'acct_test' } })
+    await admin.firestore().doc(`users/${courier.uid}`).set(makeMockUser({ courierProfile: { stripeConnectAccountId: 'acct_test' } as any, email: courier.email }))
 
     // create job doc before state (not confirmed)
     const jobRef = admin.firestore().collection('deliveryJobs').doc()
+    const baseJob = makeMockJob({ createdByUid: 'buyer_1', courierUid: courier.uid })
     const before = {
+      ...baseJob,
       paymentStatus: 'captured',
       customerConfirmation: { received: false },
-      courierUid: courier.uid,
       pricing: { courierEarnings: 25.0, platformFees: 0.75 }
     }
     await jobRef.set(before)
@@ -70,10 +72,10 @@ describe('transferPayout trigger', function () {
 
   it('should mark payout pending_setup when courier missing stripe account', async function () {
     const courier = await admin.auth().createUser({ email: `nocourier+${Date.now()}@example.com`, password: 'password' })
-    await admin.firestore().doc(`users/${courier.uid}`).set({})
+    await admin.firestore().doc(`users/${courier.uid}`).set(makeMockUser({ email: courier.email }))
 
     const jobRef = admin.firestore().collection('deliveryJobs').doc()
-    const before = { paymentStatus: 'captured', customerConfirmation: { received: false }, courierUid: courier.uid }
+    const before = { ...makeMockJob({ courierUid: courier.uid }), paymentStatus: 'captured', customerConfirmation: { received: false } }
     await jobRef.set(before)
 
     const after = Object.assign({}, before, { customerConfirmation: { received: true } })
@@ -102,10 +104,10 @@ describe('transferPayout trigger', function () {
 
   it('should mark payout failed when transfer throws an error', async function () {
     const courier = await admin.auth().createUser({ email: `failcourier+${Date.now()}@example.com`, password: 'password' })
-    await admin.firestore().doc(`users/${courier.uid}`).set({ courierProfile: { stripeAccountId: 'acct_fail' } })
+    await admin.firestore().doc(`users/${courier.uid}`).set(makeMockUser({ courierProfile: { stripeConnectAccountId: 'acct_fail' } as any, email: courier.email }))
 
     const jobRef = admin.firestore().collection('deliveryJobs').doc()
-    const before = { paymentStatus: 'captured', customerConfirmation: { received: false }, courierUid: courier.uid, pricing: { courierEarnings: 30.0 } }
+    const before = { ...makeMockJob({ courierUid: courier.uid }), paymentStatus: 'captured', customerConfirmation: { received: false }, pricing: { courierEarnings: 30.0 } }
     await jobRef.set(before)
 
     const after = Object.assign({}, before, { customerConfirmation: { received: true } })
@@ -139,10 +141,10 @@ describe('transferPayout trigger', function () {
 
   it('should be idempotent and do nothing if payout already completed', async function () {
     const courier = await admin.auth().createUser({ email: `idemp+${Date.now()}@example.com`, password: 'password' })
-    await admin.firestore().doc(`users/${courier.uid}`).set({ courierProfile: { stripeAccountId: 'acct_test' } })
+    await admin.firestore().doc(`users/${courier.uid}`).set(makeMockUser({ courierProfile: { stripeConnectAccountId: 'acct_test' } as any, email: courier.email }))
 
     const jobRef = admin.firestore().collection('deliveryJobs').doc()
-    const before = { paymentStatus: 'captured', customerConfirmation: { received: false }, courierUid: courier.uid }
+    const before = { ...makeMockJob({ courierUid: courier.uid }), paymentStatus: 'captured', customerConfirmation: { received: false } }
     // Simulate already completed payout
     const after = Object.assign({}, before, { customerConfirmation: { received: true }, payout: { status: 'completed', transferId: 'tr_existing' } })
     await jobRef.set(after)

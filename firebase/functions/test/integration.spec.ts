@@ -1,6 +1,7 @@
 const assert = require('assert').strict
 const fetch = require('node-fetch')
 const admin = require('firebase-admin')
+const { makeMockUser } = require('@gosenderr/shared')
 
 // Helper to exchange custom token for ID token from the Auth emulator
 async function getIdToken(customToken: string) {
@@ -49,7 +50,7 @@ describe('Cloud Functions integration tests (emulator)', function () {
   it('createUserForAdmin should create an auth user and firestore user', async function () {
     // Create an admin caller
     const adminUser = await admin.auth().createUser({ email: `test-admin+${Date.now()}@example.com`, password: 'password123' })
-    await admin.firestore().doc(`users/${adminUser.uid}`).set({ role: 'admin' })
+    await admin.firestore().doc(`users/${adminUser.uid}`).set(makeMockUser({ role: 'admin', email: adminUser.email }))
 
     // For better visibility in tests, call the handler directly to get a stack trace when it errors
     const context: any = { auth: { uid: adminUser.uid } }
@@ -108,10 +109,10 @@ describe('Cloud Functions integration tests (emulator)', function () {
   it('runTestFlow should create a run log and entries', async function () {
     // Create an admin caller
     const adminUser = await admin.auth().createUser({ email: `test-admin2+${Date.now()}@example.com`, password: 'password123' })
-    await admin.firestore().doc(`users/${adminUser.uid}`).set({ role: 'admin' })
+    await admin.firestore().doc(`users/${adminUser.uid}`).set(makeMockUser({ role: 'admin', email: adminUser.email }))
 
     const targetUser = await admin.auth().createUser({ email: `target-user+${Date.now()}@example.com`, password: 'password123' })
-    await admin.firestore().doc(`users/${targetUser.uid}`).set({ role: 'customer' })
+    await admin.firestore().doc(`users/${targetUser.uid}`).set(makeMockUser({ role: 'customer', email: targetUser.email }))
 
     const customToken = await admin.auth().createCustomToken(adminUser.uid)
     const idToken = await getIdToken(customToken)
@@ -153,7 +154,7 @@ describe('Cloud Functions integration tests (emulator)', function () {
   it('simulateRule callable should exercise Firestore emulator with simulated auth', async function () {
     // Create an admin caller
     const adminUser = await admin.auth().createUser({ email: `rs-admin+${Date.now()}@example.com`, password: 'password123' })
-    await admin.firestore().doc(`users/${adminUser.uid}`).set({ role: 'admin' })
+    await admin.firestore().doc(`users/${adminUser.uid}`).set(makeMockUser({ role: 'admin', email: adminUser.email }))
 
     // create a test run log specifically for this test
     const runDocRef = admin.firestore().collection('adminFlowLogs').doc(`test-${Date.now()}-${Math.random().toString(36).slice(2,6)}`)
@@ -189,7 +190,7 @@ describe('Cloud Functions integration tests (emulator)', function () {
   it('runSystemSimulation should orchestrate a multi-step system run and cleanup', async function () {
     // create admin caller
     const adminUser = await admin.auth().createUser({ email: `sim-admin+${Date.now()}@example.com`, password: 'password123' })
-    await admin.firestore().doc(`users/${adminUser.uid}`).set({ role: 'admin' })
+    await admin.firestore().doc(`users/${adminUser.uid}`).set(makeMockUser({ role: 'admin', email: adminUser.email }))
 
     const context: any = { auth: { uid: adminUser.uid } }
 
