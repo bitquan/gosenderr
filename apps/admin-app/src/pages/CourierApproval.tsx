@@ -171,11 +171,19 @@ export default function CourierApprovalPage() {
 
   const openDocument = async (docItem: NonNullable<Courier['courierProfile']>['documents'][number]) => {
     try {
-      let resolvedUrl =
+      const candidateUrl =
         docItem.url?.trim() ||
         docItem.downloadUrl?.trim() ||
         docItem.fileUrl?.trim() ||
         ''
+
+      const isPlaceholderUrl =
+        candidateUrl.includes('example.test') || candidateUrl.includes('example.com')
+
+      let resolvedUrl =
+        candidateUrl && !isPlaceholderUrl
+          ? candidateUrl
+          : ''
 
       if (!resolvedUrl) {
         const storagePath = docItem.storagePath?.trim() || docItem.path?.trim() || ''
