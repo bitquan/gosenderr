@@ -1,6 +1,7 @@
 import { Timestamp, addDoc, collection, doc, onSnapshot, query, serverTimestamp, where } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { db, isFirebaseReady } from "@/lib/firebase/client";
+import { getAuthSafe } from "@/lib/firebase/auth";
 import { reverseGeocodeLocation } from "@/lib/mapbox/geocode";
 
 export interface FoodPickupRestaurantLocation {
@@ -182,6 +183,13 @@ export async function createFoodPickupRestaurant(input: FoodPickupRestaurantInpu
     throw new Error("Firebase is not ready.");
   }
 
+  const auth = getAuthSafe();
+  const currentUser = auth?.currentUser;
+  if (!currentUser) {
+    throw new Error("You must be signed in to add a restaurant.");
+  }
+  await currentUser.getIdToken(true);
+
   const restaurantName = input.restaurantName.trim();
   const address = input.location.address.trim();
   const cuisineTags = (input.cuisineTags ?? [])
@@ -213,7 +221,7 @@ export async function createFoodPickupRestaurant(input: FoodPickupRestaurantInpu
     null;
 
   const docRef = await addDoc(collection(db, "foodPickupRestaurants"), {
-    courierId: input.courierId,
+    courierId: currentUser.uid,
     courierName: input.courierName?.trim() || null,
     restaurantName,
     location: {
