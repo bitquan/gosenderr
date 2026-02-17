@@ -11,7 +11,7 @@ import { ProtectedRoute, PublicOnlyRoute } from './routes/ProtectedRoute'
 import CourierLayout from './layouts/CourierLayout'
 
 // Pages
-import DashboardPage from './pages/Dashboard'
+import DashboardPage from './pages/dashboard/page'
 import LoginPage from './pages/Login'
 import SignupPage from './pages/Signup'
 import JobsPage from './pages/Jobs'
