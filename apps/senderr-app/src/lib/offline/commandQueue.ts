@@ -20,53 +20,8 @@ function storageKey(uid: string) {
   return `${STORAGE_PREFIX}${uid}`
 }
 
-function supportsIndexedDB() {
-  return typeof indexedDB !== 'undefined'
-}
+import { supportsIndexedDB, idbGet, idbSet } from '@/lib/idb'
 
-function openDb(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    if (!supportsIndexedDB()) return reject(new Error('IndexedDB not available'))
-    const req = indexedDB.open(DB_NAME, 1)
-    req.onupgradeneeded = () => {
-      const db = req.result
-      if (!db.objectStoreNames.contains(DB_STORE)) db.createObjectStore(DB_STORE)
-    }
-    req.onsuccess = () => resolve(req.result)
-    req.onerror = () => reject(req.error)
-  })
-}
-
-async function idbGet(uid: string): Promise<QueuedCommand[]> {
-  try {
-    const db = await openDb()
-    return await new Promise((resolve, reject) => {
-      const tx = db.transaction(DB_STORE, 'readonly')
-      const store = tx.objectStore(DB_STORE)
-      const r = store.get(uid)
-      r.onsuccess = () => resolve(r.result || [])
-      r.onerror = () => reject(r.error)
-    })
-  } catch (err) {
-    console.warn('commandQueue.idbGet fallback', err)
-    return []
-  }
-}
-
-async function idbSet(uid: string, items: QueuedCommand[]) {
-  try {
-    const db = await openDb()
-    await new Promise((resolve, reject) => {
-      const tx = db.transaction(DB_STORE, 'readwrite')
-      const store = tx.objectStore(DB_STORE)
-      const r = store.put(items.slice(0, MAX_QUEUE), uid)
-      r.onsuccess = () => resolve(true)
-      r.onerror = () => reject(r.error)
-    })
-  } catch (err) {
-    console.warn('commandQueue.idbSet fallback', err)
-  }
-}
 
 export async function loadQueue(uid: string): Promise<QueuedCommand[]> {
   try {

@@ -164,17 +164,19 @@ export function Navbar({ children }: NavbarProps) {
                             : role}
                 </span>
 
-                {/* queued commands badge */}
+                {/* queued commands badge (clickable inspector) */}
                 {queuedCount > 0 && (
-                  <span style={{
-                    background: '#ef4444',
-                    color: 'white',
-                    borderRadius: 9999,
-                    padding: '2px 8px',
-                    fontSize: 12,
-                    fontWeight: 700,
-                    boxShadow: '0 1px 2px rgba(0,0,0,0.12)'
-                  }} title={`${queuedCount} queued commands`}>{queuedCount}</span>
+                  <Link to="/queued-commands" title={`${queuedCount} queued commands`} style={{ textDecoration: 'none' }}>
+                    <span style={{
+                      background: '#ef4444',
+                      color: 'white',
+                      borderRadius: 9999,
+                      padding: '2px 8px',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.12)'
+                    }}>{queuedCount}</span>
+                  </Link>
                 )}
               </span>
                     pathname === "/marketplace/create" ? "#6E56CF" : "#666",

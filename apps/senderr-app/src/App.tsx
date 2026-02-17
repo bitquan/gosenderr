@@ -20,6 +20,7 @@ import RoutesPage from './pages/routes/page'
 import ActiveRoutePage from './pages/active-route/page'
 import SettingsPage from './pages/settings/page'
 import SupportPage from './pages/support/page'
+import QueuedCommandsPage from './pages/queued-commands/page'
 import OnboardingPage from './pages/onboarding/page'
 import StripeOnboardingPage from './pages/onboarding/stripe/page'
 import RateCardsPage from './pages/rate-cards/page'
@@ -71,6 +72,7 @@ function App() {
               <Route path="/setup" element={<SetupPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/queued-commands" element={<QueuedCommandsPage />} />
               <Route path="/support" element={<SupportPage />} />
               <Route path="/onboarding" element={<OnboardingPage />} />
               <Route path="/onboarding/stripe" element={<StripeOnboardingPage />} />
