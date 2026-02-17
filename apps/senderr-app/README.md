@@ -65,6 +65,11 @@ From repo root:
 Target:
 - Firebase Hosting site `gosenderr-courier`
 
+## Onboarding & Payouts
+
+- Couriers can complete onboarding, connect Stripe, or add external payout methods (Cash App, Zelle).
+- External methods support a link/identifier and optional QR upload; when external payment rails are used by buyers, the platform charges tokens according to `platformSettings/tokenPolicy`.
+
 ## Troubleshooting
 
 - Wrong port:

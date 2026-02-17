@@ -327,7 +327,10 @@ export default function ItemDetailPage() {
             {/* Seller Payment Links (external) */}
             {sellerPaymentLinks && (
               <div className="mt-6 border-t pt-6">
-                <h3 className="text-sm font-semibold text-gray-700 mb-3">Payment options from seller</h3>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-gray-700">Payment options from seller</h3>
+                  <Link to={`/payment-methods?userId=${item.sellerId}`} className="text-sm text-blue-600 hover:underline">View all payment methods</Link>
+                </div>
                 <div className="flex items-center gap-4 flex-wrap">
                   {sellerPaymentLinks.cashApp && (
                     <a href={sellerPaymentLinks.cashApp.startsWith('http') ? sellerPaymentLinks.cashApp : `https://cash.app/${sellerPaymentLinks.cashApp.replace(/^\$/,'')}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-3 py-2 border rounded-lg text-sm bg-white/80">

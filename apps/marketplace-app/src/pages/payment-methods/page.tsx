@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   collection,
   query,
@@ -9,6 +9,7 @@ import {
   addDoc,
   deleteDoc,
   doc,
+  getDoc,
   serverTimestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
@@ -142,12 +143,31 @@ function AddPaymentMethodForm({ onSuccess }: { onSuccess: () => void }) {
 
 export default function PaymentMethodsPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [loading, setLoading] = useState(true);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [readOnlyView, setReadOnlyView] = useState(false);
+  const [viewingUserName, setViewingUserName] = useState<string | null>(null);
 
   useEffect(() => {
+    // Allow ?userId=<uid> to view another user's payment methods (read-only).
+    const params = new URLSearchParams(location.search);
+    const viewedUserId = params.get('userId');
+
+    if (viewedUserId) {
+      // Read-only view for buyers looking at a seller/courier
+      setUserId(viewedUserId);
+      setReadOnlyView(true);
+      (async () => {
+        await fetchPaymentMethods(viewedUserId);
+      })();
+      return;
+    }
+    setReadOnlyView(false);
+
+    // Otherwise require auth for managing your own payment methods
     const auth = getAuthSafe();
     if (!auth) {
       navigate("/login");
@@ -167,6 +187,25 @@ export default function PaymentMethodsPage() {
     return () => unsubscribe();
   }, [navigate]);
 
+  // If viewing another user's payment methods, try to resolve their display name
+  useEffect(() => {
+    (async () => {
+      if (!readOnlyView || !userId) {
+        setViewingUserName(null);
+        return;
+      }
+      try {
+        const u = await getDoc(doc(db, 'users', userId));
+        if (u.exists()) {
+          const d = u.data();
+          setViewingUserName(d.displayName || d.sellerProfile?.displayName || d.name || null);
+        }
+      } catch (err) {
+        console.debug('Failed to fetch viewing user name', err);
+      }
+    })();
+  }, [readOnlyView, userId]);
+
   const fetchPaymentMethods = async (uid: string) => {
     setLoading(true);
     const q = query(
@@ -177,8 +216,8 @@ export default function PaymentMethodsPage() {
     const methods = snapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
-    })) as PaymentMethod[];
-    setPaymentMethods(methods);
+    }));
+    setPaymentMethods(methods as any[]);
     setLoading(false);
   };
 
@@ -214,13 +253,21 @@ export default function PaymentMethodsPage() {
       <div className="max-w-3xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold text-gray-900">Payment Methods</h1>
-          <button
-            onClick={() => setShowAddForm(!showAddForm)}
-            className="px-4 py-2 rounded-xl bg-purple-600 text-white font-semibold hover:bg-purple-700 transition"
-          >
-            {showAddForm ? "Cancel" : "+ Add Card"}
-          </button>
+          {!readOnlyView && (
+            <button
+              onClick={() => setShowAddForm(!showAddForm)}
+              className="px-4 py-2 rounded-xl bg-purple-600 text-white font-semibold hover:bg-purple-700 transition"
+            >
+              {showAddForm ? "Cancel" : "+ Add Card"}
+            </button>
+          )}
         </div>
+
+        {readOnlyView && (
+          <div className="p-3 rounded-md bg-yellow-50 border border-yellow-100 text-sm text-yellow-800">
+            Viewing payment methods for <strong>{viewingUserName || userId}</strong> (read-only)
+          </div>
+        )}
 
         {showAddForm && (
           <Card variant="elevated">
@@ -255,42 +302,80 @@ export default function PaymentMethodsPage() {
           </Card>
         ) : (
           <div className="space-y-4">
-            {paymentMethods.map((method) => (
-              <Card key={method.id} variant="elevated">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white text-xl font-bold">
-                        {method.brand === "visa"
-                          ? "V"
-                          : method.brand === "mastercard"
-                            ? "M"
-                            : "💳"}
-                      </div>
-                      <div>
-                        <p className="font-semibold text-gray-900 capitalize">
-                          {method.brand} •••• {method.last4}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          Expires {method.expiryMonth}/{method.expiryYear}
-                        </p>
-                        {method.isDefault && (
-                          <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded">
-                            Default
-                          </span>
+            {paymentMethods.map((method) => {
+              // Distinguish between Stripe card docs and external payout docs by shape
+              const isStripeCard = !!method.stripePaymentMethodId || !!method.brand || !!method.last4;
+              if (isStripeCard) {
+                return (
+                  <Card key={method.id} variant="elevated">
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white text-xl font-bold">
+                            {method.brand === "visa"
+                              ? "V"
+                              : method.brand === "mastercard"
+                                ? "M"
+                                : "💳"}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-gray-900 capitalize">
+                              {method.brand} •••• {method.last4}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              Expires {method.expiryMonth}/{method.expiryYear}
+                            </p>
+                            {method.isDefault && (
+                              <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded">
+                                Default
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        {!readOnlyView && (
+                          <button
+                            onClick={() => handleDelete(method.id)}
+                            className="px-4 py-2 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition"
+                          >
+                            Remove
+                          </button>
                         )}
                       </div>
+                    </CardContent>
+                  </Card>
+                )
+              }
+
+              // External / manual payout method (created by seller/courier apps)
+              return (
+                <Card key={method.id} variant="elevated">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-xl">
+                          {method.type === 'cash_app' ? '💸' : method.type === 'zelle' ? '🏦' : '🔗'}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-900">{method.label || method.type}</p>
+                          <p className="text-sm text-gray-500">{method.identifier}</p>
+                          {method.enabled === false && (
+                            <div className="text-xs text-yellow-700 mt-1">Disabled</div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        {method.qrUrl && (
+                          <img src={method.qrUrl} alt="qr" className="w-20 h-20 object-contain rounded-md border" />
+                        )}
+                        {/* Read-only in the marketplace app — management happens in seller/courier settings */}
+                        <div className="text-sm text-gray-500">Read-only</div>
+                      </div>
                     </div>
-                    <button
-                      onClick={() => handleDelete(method.id)}
-                      className="px-4 py-2 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              )
+            })}
           </div>
         )}
 

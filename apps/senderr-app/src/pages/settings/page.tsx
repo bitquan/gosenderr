@@ -117,6 +117,33 @@ export default function CourierSettingsPage() {
     insurance: null,
   });
 
+  // --- External / manual payout methods (Cash App, Zelle, QR uploads)
+  const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
+  const [pmLoading, setPmLoading] = useState(false);
+  const [pmSaving, setPmSaving] = useState(false);
+  const [newPmType, setNewPmType] = useState<'cash_app' | 'zelle' | 'other'>('cash_app');
+  const [newPmLabel, setNewPmLabel] = useState('');
+  const [newPmIdentifier, setNewPmIdentifier] = useState('');
+  const [newPmQrFile, setNewPmQrFile] = useState<File | null>(null);
+
+  const fetchPaymentMethods = async (uid?: string) => {
+    if (!uid) return;
+    setPmLoading(true);
+    try {
+      const q = await db.collection('paymentMethods').where('userId', '==', uid).get();
+      const methods = q.docs.map((d) => ({ id: d.id, ...d.data() }));
+      setPaymentMethods(methods as any[]);
+    } catch (err) {
+      console.error('Failed to load payment methods', err);
+    } finally {
+      setPmLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user) fetchPaymentMethods(user.uid);
+  }, [user]);
+
   useEffect(() => {
     if (user) {
       const loadCourierData = async () => {
@@ -748,6 +775,119 @@ export default function CourierSettingsPage() {
                 </div>
                 <span className="text-2xl group-hover:translate-x-1 transition-transform">→</span>
               </Link>
+
+              {/* External / manual payout methods (Cash App, Zelle) */}
+              <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="text-sm font-semibold text-white">External Payout Methods</p>
+                    <p className="text-xs text-blue-100">Add Cash App, Zelle, or upload a QR code — buyers will see accepted seller/courier payment options.</p>
+                  </div>
+                </div>
+
+                {/* Add new method form */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
+                  <select
+                    value={newPmType}
+                    onChange={(e) => setNewPmType(e.target.value as any)}
+                    className="px-3 py-2 rounded-lg bg-slate-900/30 border border-white/10 text-sm text-white"
+                  >
+                    <option value="cash_app">Cash App</option>
+                    <option value="zelle">Zelle</option>
+                    <option value="other">Other</option>
+                  </select>
+                  <input
+                    value={newPmLabel}
+                    onChange={(e) => setNewPmLabel(e.target.value)}
+                    placeholder="Label (e.g. Cash App $handle)"
+                    className="px-3 py-2 rounded-lg bg-slate-900/30 border border-white/10 text-sm text-white"
+                  />
+                  <input
+                    value={newPmIdentifier}
+                    onChange={(e) => setNewPmIdentifier(e.target.value)}
+                    placeholder="Identifier (username / phone / email / link)"
+                    className="px-3 py-2 rounded-lg bg-slate-900/30 border border-white/10 text-sm text-white"
+                  />
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <input
+                    id="pm-qr"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setNewPmQrFile(e.target.files?.[0] || null)}
+                    className="text-sm text-white"
+                  />
+                  <button
+                    onClick={async () => {
+                      if (!user) return alert('Sign in first');
+                      if (!newPmIdentifier && !newPmQrFile) return alert('Provide an identifier or QR code');
+                      setPmSaving(true);
+                      try {
+                        let qrUrl = '';
+                        if (newPmQrFile) {
+                          const storageRef = ref(storage, `payment-methods/${user.uid}/${Date.now()}_${newPmQrFile.name}`);
+                          await uploadBytes(storageRef, newPmQrFile);
+                          qrUrl = await getDownloadURL(storageRef);
+                        }
+                        await db.collection('paymentMethods').add({
+                          userId: user.uid,
+                          type: newPmType,
+                          label: newPmLabel || newPmType,
+                          identifier: newPmIdentifier || '',
+                          qrUrl: qrUrl || '',
+                          enabled: true,
+                          createdAt: serverTimestamp(),
+                        });
+                        setNewPmLabel('');
+                        setNewPmIdentifier('');
+                        setNewPmQrFile(null);
+                        await fetchPaymentMethods(user.uid);
+                      } catch (err) {
+                        console.error('Failed to save payment method', err);
+                        alert('Failed to add payment method');
+                      } finally {
+                        setPmSaving(false);
+                      }
+                    }}
+                    disabled={pmSaving}
+                    className="px-4 py-2 rounded-lg bg-purple-600 text-white text-sm font-semibold hover:bg-purple-700 disabled:opacity-60"
+                  >
+                    {pmSaving ? 'Saving...' : 'Add Method'}
+                  </button>
+                </div>
+
+                {/* List existing methods */}
+                <div className="mt-4 space-y-2">
+                  {pmLoading ? (
+                    <div className="text-sm text-blue-100">Loading...</div>
+                  ) : paymentMethods.length === 0 ? (
+                    <div className="text-sm text-blue-100">No external payout methods added.</div>
+                  ) : (
+                    paymentMethods.map((m) => (
+                      <div key={m.id} className="flex items-center justify-between gap-3 bg-slate-900/20 p-3 rounded-lg border border-white/10">
+                        <div className="flex items-center gap-3">
+                          <div className="text-sm font-semibold text-white">{m.label || m.type}</div>
+                          <div className="text-xs text-blue-100">{m.identifier}</div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {m.qrUrl && <img src={m.qrUrl} alt="qr" className="w-12 h-12 object-contain rounded-md" />}
+                          <label className="inline-flex items-center gap-2 text-sm">
+                            <input type="checkbox" checked={!!m.enabled} onChange={async () => { await db.collection('paymentMethods').doc(m.id).update({ enabled: !m.enabled }); await fetchPaymentMethods(user!.uid); }} />
+                            <span className="text-xs text-blue-100">Enabled</span>
+                          </label>
+                          <button
+                            onClick={async () => { if (!confirm('Remove this payment method?')) return; await db.collection('paymentMethods').doc(m.id).delete(); await fetchPaymentMethods(user!.uid); }}
+                            className="text-xs text-red-400 hover:underline"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>

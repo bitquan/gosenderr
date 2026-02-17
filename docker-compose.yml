@@ -31,6 +31,7 @@ services:
     ports:
       - "9099:9099" # Auth
       - "8080:8080" # Firestore
+      - "5001:5001" # Functions emulator (exposed for host test runner)
       - "9199:9199" # Storage
       - "4000:4000" # Emulator UI
     environment:
@@ -64,7 +65,7 @@ services:
       - HOST=0.0.0.0
       - PORT=3000
       - DEBUG=vite:server
-    command: sh -lc "pnpm install --frozen-lockfile && pnpm --filter @gosenderr/admin-app dev -- --host 0.0.0.0"
+    command: sh -lc "pnpm install --frozen-lockfile --force && pnpm --filter @gosenderr/admin-app dev -- --host 0.0.0.0"
     healthcheck:
       test: ["CMD", "sh", "-c", "curl -sSf http://localhost:3000/ || exit 1"]
       interval: 10s
@@ -89,7 +90,7 @@ services:
       - HOST=0.0.0.0
       - PORT=5173
       - DEBUG=vite:server
-    command: sh -lc "pnpm install --frozen-lockfile && pnpm --filter @gosenderr/marketplace-app dev -- --host 0.0.0.0 --logLevel debug"
+    command: sh -lc "pnpm install --frozen-lockfile --force && pnpm --filter @gosenderr/marketplace-app dev -- --host 0.0.0.0 --logLevel debug"
     healthcheck:
       test: ["CMD", "sh", "-c", "curl -sSf http://localhost:5173/ || exit 1"]
       interval: 10s
@@ -114,7 +115,7 @@ services:
       - HOST=0.0.0.0
       - PORT=5174
       - DEBUG=vite:server
-    command: sh -lc "pnpm install --frozen-lockfile && pnpm --filter @gosenderr/senderr-app dev -- --host 0.0.0.0"
+    command: sh -lc "pnpm install --frozen-lockfile --force && pnpm --filter @gosenderr/senderr-app dev -- --host 0.0.0.0"
     healthcheck:
       test: ["CMD", "sh", "-c", "curl -sSf http://localhost:5174/ || exit 1"]
       interval: 10s
@@ -139,7 +140,7 @@ services:
       - HOST=0.0.0.0
       - PORT=5176
       - DEBUG=vite:server
-    command: sh -lc "pnpm install --frozen-lockfile && pnpm --filter @gosenderr/admin-desktop dev -- --host 0.0.0.0"
+    command: sh -lc "pnpm install --frozen-lockfile --force && pnpm --filter @gosenderr/admin-desktop dev -- --host 0.0.0.0"
     healthcheck:
       test: ["CMD", "sh", "-c", "curl -sSf http://localhost:5176/ || exit 1"]
       interval: 10s
@@ -164,7 +165,7 @@ services:
       - HOST=0.0.0.0
       - PORT=3003
       - DEBUG=vite:server
-    command: sh -lc "pnpm install --frozen-lockfile && pnpm --filter @gosenderr/web dev -- --host 0.0.0.0"
+    command: sh -lc "pnpm install --frozen-lockfile --force && if pnpm --filter @gosenderr/web dev -- --host 0.0.0.0; then exit 0; fi; npx --yes http-server apps/landing -p 3003 -a 0.0.0.0"
     healthcheck:
       test: ["CMD", "sh", "-c", "curl -sSf http://localhost:3003/ || exit 1"]
       interval: 10s
