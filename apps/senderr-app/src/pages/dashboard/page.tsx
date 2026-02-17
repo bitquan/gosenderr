@@ -464,19 +464,36 @@ export default function CourierDashboardMapShell() {
         {!isApproved && (
           <div className="fixed inset-0 z-[70] flex items-center justify-center px-4 pointer-events-none">
             <div className="w-full max-w-md rounded-2xl border border-white/20 bg-gradient-to-br from-slate-900/95 via-purple-900/95 to-purple-950/95 p-5 shadow-2xl text-white pointer-events-auto">
-              <h3 className="text-lg font-bold">Onboarding required</h3>
-              <p className="text-sm text-blue-100 mt-2">
-                Status: <span className="font-semibold text-white">{courierStatus}</span>. Complete onboarding before going Online.
-              </p>
-              {rejectionReason && (
-                <p className="text-xs text-amber-200 mt-2">Review note: {rejectionReason}</p>
+              {courierStatus === "pending" ? (
+                <>
+                  <h3 className="text-lg font-bold">Admin is reviewing</h3>
+                  <p className="text-sm text-blue-100 mt-2">
+                    Your onboarding has been submitted and is under review. Tap refresh to check your latest approval status.
+                  </p>
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="mt-4 w-full rounded-lg bg-gradient-to-r from-blue-700 via-blue-600 to-purple-600 px-4 py-2 text-sm font-semibold text-white"
+                  >
+                    Refresh status
+                  </button>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-lg font-bold">Onboarding required</h3>
+                  <p className="text-sm text-blue-100 mt-2">
+                    Status: <span className="font-semibold text-white">{courierStatus}</span>. Complete onboarding before going Online.
+                  </p>
+                  {rejectionReason && (
+                    <p className="text-xs text-amber-200 mt-2">Review note: {rejectionReason}</p>
+                  )}
+                  <button
+                    onClick={() => navigate("/onboarding")}
+                    className="mt-4 w-full rounded-lg bg-gradient-to-r from-blue-700 via-blue-600 to-purple-600 px-4 py-2 text-sm font-semibold text-white"
+                  >
+                    Go to onboarding
+                  </button>
+                </>
               )}
-              <button
-                onClick={() => navigate("/onboarding")}
-                className="mt-4 w-full rounded-lg bg-gradient-to-r from-blue-700 via-blue-600 to-purple-600 px-4 py-2 text-sm font-semibold text-white"
-              >
-                Go to onboarding
-              </button>
             </div>
           </div>
         )}
