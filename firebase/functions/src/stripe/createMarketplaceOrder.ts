@@ -19,7 +19,7 @@ interface MarketplaceItem {
 interface CreateMarketplaceOrderData {
   amount: number;
   currency: string;
-  paymentMethodId: string;
+  paymentMethodId: string; // 'external' = buyer will pay seller externally (cash/venmo/etc)
   shippingInfo: {
     fullName: string;
     email: string;
@@ -59,6 +59,158 @@ export const createMarketplaceOrder = functions.https.onCall<CreateMarketplaceOr
 
     try {
       const db = admin.firestore();
+
+      const isExternal = String(paymentMethodId).toLowerCase() === 'external';
+
+      // Handle external (non-Stripe) payments: charge tokenPolicy.costs.cashFee from buyer's token wallet
+      if (isExternal) {
+        const timestamp = FieldValue.serverTimestamp();
+
+        // Read tokenPolicy.cashFee (fallback to 1)
+        const policySnap = await db.doc('platformSettings/tokenPolicy').get();
+        const cashFee = policySnap.exists
+          ? Number((policySnap.data() || {}).costs?.cashFee) || 1
+          : 1;
+
+        // Create order record (no Stripe intent)
+        const orderData = {
+          customerId: request.auth.uid,
+          customerEmail: shippingInfo.email,
+          items: items.map(item => ({
+            itemId: item.itemId,
+            title: item.title,
+            quantity: item.quantity,
+            price: item.price,
+            vendorId: item.vendorId,
+          })),
+          shippingInfo: {
+            fullName: shippingInfo.fullName,
+            email: shippingInfo.email,
+            phone: shippingInfo.phone,
+            address: shippingInfo.address,
+            city: shippingInfo.city,
+            state: shippingInfo.state,
+            zipCode: shippingInfo.zipCode,
+            country: shippingInfo.country,
+          },
+          subtotal: items.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+          shipping: 0,
+          tax: amount / 100 - items.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+          total: amount / 100,
+          paymentIntentId: 'external',
+          paymentStatus: 'pending',
+          status: 'pending',
+          createdAt: timestamp,
+          updatedAt: timestamp,
+        } as any;
+
+        const orderRef = await db.collection('orders').add(orderData);
+
+        // Atomically deduct tokens (reserve + commit in one transaction) and write ledger/reservation
+        const reservationId = `cashFee_order_${orderRef.id}`;
+        const reserveTxId = `reserve_${reservationId}`;
+        const commitTxId = `commit_${reservationId}`;
+
+        await db.runTransaction(async (tx) => {
+          const walletRef = db.doc(`tokenWallets/${request.auth!.uid}`);
+          const walletSnap = await tx.get(walletRef);
+
+          const current = walletSnap.exists ? (walletSnap.data() as any) : { available: 0, reserved: 0, lifetimePurchased: 0, lifetimeSpent: 0, lifetimeAdjusted: 0 };
+          const available = Number(current.available || 0);
+          if (available < cashFee) {
+            throw new functions.https.HttpsError('failed-precondition', 'Insufficient tokens for external payment');
+          }
+
+          // Update wallet: available decreases, lifetimeSpent increases (reserved remains unchanged overall)
+          const nextWallet = {
+            available: available - cashFee,
+            reserved: Number(current.reserved || 0),
+            lifetimePurchased: Number(current.lifetimePurchased || 0),
+            lifetimeSpent: Number(current.lifetimeSpent || 0) + cashFee,
+            lifetimeAdjusted: Number(current.lifetimeAdjusted || 0),
+            updatedAt: FieldValue.serverTimestamp(),
+          };
+
+          tx.set(walletRef, nextWallet, { merge: true });
+
+          // Write reservation (mark as committed)
+          const reservationRef = db.doc(`tokenReservations/${reservationId}`);
+          tx.set(reservationRef, {
+            uid: request.auth!.uid,
+            action: 'cash_fee',
+            amount: cashFee,
+            status: 'committed',
+            idempotencyKey: reservationId,
+            metadata: { orderId: orderRef.id },
+            actorUid: request.auth!.uid,
+            createdAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
+            committedAt: FieldValue.serverTimestamp(),
+          }, { merge: true });
+
+          // Write reserve + commit transactions for ledger parity
+          tx.set(db.doc(`tokenTransactions/${reserveTxId}`), {
+            uid: request.auth!.uid,
+            type: 'reserve',
+            actorType: 'customer',
+            action: 'cash_fee',
+            amount: cashFee,
+            idempotencyKey: reservationId,
+            reservationId,
+            metadata: { orderId: orderRef.id },
+            createdAt: FieldValue.serverTimestamp(),
+          }, { merge: true });
+
+          tx.set(db.doc(`tokenTransactions/${commitTxId}`), {
+            uid: request.auth!.uid,
+            type: 'commit',
+            actorType: 'customer',
+            action: 'cash_fee',
+            amount: cashFee,
+            idempotencyKey: `commit_${reservationId}`,
+            reservationId,
+            metadata: { orderId: orderRef.id },
+            createdAt: FieldValue.serverTimestamp(),
+          }, { merge: true });
+
+          // Annotate order with token charge info
+          tx.update(orderRef, {
+            tokensCharged: cashFee,
+            tokenReservationId: reservationId,
+            tokenChargedAt: FieldValue.serverTimestamp(),
+          });
+        });
+
+        // debug: read reservation after transaction commit
+        const reservationCheck = await db.doc(`tokenReservations/${reservationId}`).get();
+        console.log('DEBUG: reservation after commit visible:', reservationCheck.exists, reservationId);
+
+        // Update inventory for each item (same as Stripe flow)
+        for (const item of items) {
+          const itemRef = db.collection('marketplaceItems').doc(item.itemId);
+          await db.runTransaction(async (transaction) => {
+            const itemDoc = await transaction.get(itemRef);
+            if (itemDoc.exists) {
+              const currentStock = itemDoc.data()?.stock || 0;
+              const newStock = Math.max(0, currentStock - item.quantity);
+              transaction.update(itemRef, {
+                stock: newStock,
+                updatedAt: FieldValue.serverTimestamp(),
+              });
+            }
+          });
+        }
+
+        console.log(`External order created: ${orderRef.id} (charged ${cashFee} tokens) for user ${request.auth.uid}`);
+
+        return {
+          orderId: orderRef.id,
+          status: 'external_pending',
+          tokensCharged: cashFee,
+        };
+      }
+
+      // Default: Stripe payment flow
       const stripe = await getStripeClient();
       
       // Create payment intent with Stripe

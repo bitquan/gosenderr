@@ -400,6 +400,7 @@ export interface FeatureFlags {
         routes: boolean;
         longRoutes: boolean;
         longHaul: boolean;
+        mapShell: boolean;
     };
     courier: {
         rateCards: boolean;
@@ -429,6 +430,8 @@ export interface FeatureFlags {
         analytics: boolean;
         featureFlagsControl: boolean;
         webPortalEnabled: boolean;
+        systemLogs: boolean;
+        firebaseExplorer: boolean;
     };
     advanced: {
         pushNotifications: boolean;
@@ -441,6 +444,51 @@ export interface FeatureFlags {
         darkMode: boolean;
         animations: boolean;
     };
+    senderrplaceV2: {
+        enabled: boolean;
+        ads: boolean;
+        badges: boolean;
+        bookingLinks: boolean;
+        adminControls: boolean;
+    };
+}
+export declare const DEFAULT_FEATURE_FLAGS: FeatureFlags;
+export type SenderrplaceAdStatus = "draft" | "pending_review" | "approved" | "active" | "paused" | "rejected" | "ended";
+export type SenderrplaceAdPlacement = "top_feed" | "category_spotlight" | "search_boost";
+export interface SenderrplaceAdDoc {
+    sellerId: string;
+    itemId: string;
+    placement: SenderrplaceAdPlacement;
+    status: SenderrplaceAdStatus;
+    disclosureLabel: string;
+    budgetCents: number;
+    dailyCapCents: number;
+    currency: "USD";
+    startAt: Timestamp;
+    endAt: Timestamp;
+    impressions: number;
+    clicks: number;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+    reviewedBy?: string;
+    reviewedAt?: Timestamp;
+    rejectReason?: string;
+}
+export type SenderrplaceBadgeVisibility = "public" | "private" | "admin_only";
+export interface SenderrplaceBadgeRecord {
+    key: string;
+    label: string;
+    source: "system" | "admin";
+    visibility: SenderrplaceBadgeVisibility;
+    awardedAt: Timestamp;
+    expiresAt?: Timestamp;
+    note?: string;
+}
+export interface SenderrplaceSellerBadgesDoc {
+    sellerId: string;
+    badges: SenderrplaceBadgeRecord[];
+    updatedAt: Timestamp;
+    updatedBy?: string;
 }
 export type RouteStatus = "building" | "available" | "claimed" | "in_progress" | "completed" | "cancelled";
 export type DeliveryType = "on_demand" | "route" | "long_route";

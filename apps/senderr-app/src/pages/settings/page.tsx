@@ -144,6 +144,7 @@ export default function CourierSettingsPage() {
               getTokenPolicy(),
               getTokenWalletSummary(),
             ]);
+            console.debug('getTokenPolicy ->', policy);
             setTokenPolicy({
               enabled: policy.enabled,
               packs: policy.packs.map((pack) => ({
@@ -240,6 +241,20 @@ export default function CourierSettingsPage() {
         'courierProfile.notificationPrefs': notificationPrefs,
         updatedAt: serverTimestamp(),
       });
+
+      // update local state so UI reflects the persisted values immediately
+      setCourierData((prev: any) => ({
+        ...prev,
+        courierProfile: {
+          ...prev?.courierProfile,
+          isOnline: availability,
+          serviceRadius,
+          taxState,
+          payoutMode,
+          notificationPrefs,
+          updatedAt: new Date(),
+        },
+      }));
     } catch (error) {
       console.error("Error saving courier preferences:", error);
     } finally {
@@ -682,6 +697,17 @@ export default function CourierSettingsPage() {
                     )}
                   </div>
                 )}
+
+                {/* Save button for payout preferences (persist payoutMode) */}
+                <div className="mt-4">
+                  <button
+                    onClick={handleSavePreferences}
+                    disabled={savingPreferences}
+                    className="w-full rounded-xl bg-gradient-to-r from-blue-700 via-blue-600 to-purple-600 px-4 py-3 text-sm font-semibold text-white hover:opacity-95 disabled:opacity-60"
+                  >
+                    {savingPreferences ? "Saving..." : "Save Payout Preferences"}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

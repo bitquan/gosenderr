@@ -128,6 +128,15 @@ export interface SellerProfile {
     contactEmail?: string;
     contactPhone?: string;
     businessAddress?: Address;
+    paymentLinks?: {
+        cashApp?: string;
+        venmo?: string;
+        zelle?: string;
+        paypal?: string;
+        cashAppQrUrl?: string;
+        venmoQrUrl?: string;
+        paypalQrUrl?: string;
+    };
     isActive?: boolean;
     categories?: string[];
 }

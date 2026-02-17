@@ -108,6 +108,16 @@ describe('Cloud Functions integration tests (emulator)', function () {
 
   } )
 
+  it('platformSettings/tokenPolicy should be seeded and include packs', async function () {
+    const snap = await admin.firestore().doc('platformSettings/tokenPolicy').get()
+    assert.equal(snap.exists, true, 'platformSettings/tokenPolicy should be present in emulator seed')
+    const data = snap.data() || {}
+    assert.equal(Boolean(data.enabled), true, 'tokenPolicy.enabled should be true')
+    assert.ok(Array.isArray(data.packs) && data.packs.length > 0, 'tokenPolicy.packs should be non-empty')
+    const ids = (data.packs || []).map((p: any) => p.id)
+    assert.ok(ids.includes('starter_10') || ids.includes('starter_100'), 'Expected starter pack to be seeded')
+  })
+
   it('runTestFlow should create a run log and entries', async function () {
     // Create an admin caller
     const adminUser = await admin.auth().createUser({ email: `test-admin2+${Date.now()}@example.com`, password: 'password123' })
@@ -365,7 +375,9 @@ describe('Cloud Functions integration tests (emulator)', function () {
     const reserveRes = await callCallable('tokenReserve', idToken, { action: 'job_unlock', amount: 5, idempotencyKey: reserveKey })
     const reserveJson = await reserveRes.json()
     assert.equal(reserveRes.status, 200)
-    assert.equal(reserveJson.reservationId, reserveKey)
+    // callable responses may be wrapped by emulator under `result`
+    const reservationId = reserveJson.reservationId || reserveJson.result?.reservationId
+    assert.equal(reservationId, reserveKey)
     const walletAfterReserve = reserveJson.wallet || reserveJson.result?.wallet
     assert.ok(walletAfterReserve)
     assert.equal(Number(walletAfterReserve.reserved || 0), 5)
@@ -413,6 +425,79 @@ describe('Cloud Functions integration tests (emulator)', function () {
     try { await admin.firestore().doc(`tokenWallets/${user.uid}`).delete() } catch (e) {}
     try { await admin.auth().deleteUser(user.uid) } catch (e) {}
     try { await admin.firestore().doc(`users/${user.uid}`).delete() } catch (e) {}
+  })
+
+  // --- new test inserted below ---
+  it('createMarketplaceOrder should deduct tokens for external payments (cashFee)', async function () {
+    // setup buyer with tokens
+    const buyer = await admin.auth().createUser({ email: `buyer-cash+${Date.now()}@example.com`, password: 'password' })
+    await admin.firestore().doc(`users/${buyer.uid}`).set({ role: 'customer' })
+    await admin.firestore().doc(`tokenWallets/${buyer.uid}`).set({ available: 5, reserved: 0, lifetimePurchased: 5, lifetimeSpent: 0, lifetimeAdjusted: 0, updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true })
+
+    // create a marketplace item to purchase
+    const itemRef = admin.firestore().collection('marketplaceItems').doc(`it_${Date.now()}`)
+    await itemRef.set({ title: 'External Item', price: 300, currency: 'USD', stock: 10, sellerId: 'seller_1', images: [] })
+
+    const customToken = await admin.auth().createCustomToken(buyer.uid)
+    const idToken = await getIdToken(customToken)
+
+    // Call createMarketplaceOrder with paymentMethodId: 'external'
+    const res = await callCallable('createMarketplaceOrder', idToken, {
+      amount: 300, // cents
+      currency: 'usd',
+      paymentMethodId: 'external',
+      shippingInfo: { fullName: 'Buyer', email: 'buyer@example.com', phone: '555-1212', address: '1 Main St', city: 'Test', state: 'CA', zipCode: '94107', country: 'US' },
+      items: [{ itemId: itemRef.id, title: 'External Item', quantity: 1, price: 300, vendorId: 'seller_1' }]
+    })
+
+    const json = await res.json()
+    assert.equal(res.status, 200)
+    const status = json.status || json.result?.status
+    const tokensCharged = Number(json.tokensCharged || json.result?.tokensCharged || 0)
+    assert.equal(status, 'external_pending')
+    assert.equal(tokensCharged, 1)
+
+    // verify wallet deducted
+    const walletDoc = await admin.firestore().doc(`tokenWallets/${buyer.uid}`).get()
+    const walletData = walletDoc.data() || {}
+    assert.equal(Number(walletData.available), 4)
+
+    // verify reservation and ledger (allow small delay for emulator commit)
+    const orderId = json.orderId || json.result?.orderId
+    const reservationId = `cashFee_order_${orderId}`
+
+    let reservationSnap = null
+    for (let i = 0; i < 5; i++) {
+      reservationSnap = await admin.firestore().doc(`tokenReservations/${reservationId}`).get()
+      if (reservationSnap.exists) break
+      await new Promise((r) => setTimeout(r, 100))
+    }
+    assert.ok(reservationSnap && reservationSnap.exists)
+
+    let commitTx = null
+    for (let i = 0; i < 5; i++) {
+      commitTx = await admin.firestore().doc(`tokenTransactions/commit_${reservationId}`).get()
+      if (commitTx.exists) break
+      await new Promise((r) => setTimeout(r, 100))
+    }
+    assert.ok(commitTx && commitTx.exists)
+
+    // verify order annotated
+    const orderSnap = await admin.firestore().doc(`orders/${orderId}`).get()
+    assert.ok(orderSnap.exists)
+    const orderData = orderSnap.data() || {}
+    assert.equal(Number(orderData.tokensCharged || 0), 1)
+    assert.equal(orderData.tokenReservationId, reservationId)
+
+    // cleanup
+    try { await admin.firestore().doc(`tokenTransactions/commit_${reservationId}`).delete() } catch (e) {}
+    try { await admin.firestore().doc(`tokenTransactions/reserve_${reservationId}`).delete() } catch (e) {}
+    try { await admin.firestore().doc(`tokenReservations/${reservationId}`).delete() } catch (e) {}
+    try { await admin.firestore().doc(`tokenWallets/${buyer.uid}`).delete() } catch (e) {}
+    try { await admin.firestore().doc(`orders/${orderId}`).delete() } catch (e) {}
+    try { await admin.firestore().doc(`marketplaceItems/${itemRef.id}`).delete() } catch (e) {}
+    try { await admin.auth().deleteUser(buyer.uid) } catch (e) {}
+    try { await admin.firestore().doc(`users/${buyer.uid}`).delete() } catch (e) {}
   })
 
   it('runSystemSimulation should orchestrate a multi-step system run and cleanup', async function () {
