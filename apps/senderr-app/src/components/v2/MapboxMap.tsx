@@ -54,6 +54,10 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(({
     courier?: MapboxMarker | null;
   }>({});
   const [mapReady, setMapReady] = useState(false);
+  const hasValidToken = (() => {
+    const token = import.meta.env.VITE_MAPBOX_TOKEN;
+    return typeof token === "string" && token.trim().length > 0 && token.trim() !== "your_mapbox_token";
+  })();
 
   useImperativeHandle(ref, () => ({
     getMap: () => mapRef.current,
@@ -61,7 +65,7 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(({
 
   useEffect(() => {
     const token = import.meta.env.VITE_MAPBOX_TOKEN;
-    if (!token) {
+    if (!hasValidToken || !token) {
       console.warn("Mapbox token not found");
       return;
     }
@@ -430,14 +434,12 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(({
     });
   }, [routeSegments, mapReady]);
 
-  const token = import.meta.env.VITE_MAPBOX_TOKEN;
-
-  if (!token) {
+  if (!hasValidToken) {
     return (
       <div style={{ height, background: "#f5f5f5", border: "1px solid #ddd", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", color: "#666" }}>
         <div style={{ textAlign: "center" }}>
           <p style={{ marginBottom: "8px" }}>Map unavailable</p>
-          <p style={{ fontSize: "12px" }}>Set VITE_MAPBOX_TOKEN in .env.local</p>
+          <p style={{ fontSize: "12px" }}>Set VITE_MAPBOX_TOKEN in .env.local (not 'your_mapbox_token')</p>
           <div style={{ marginTop: "16px", fontSize: "14px", textAlign: "left" }}>
               {pickup && (
                 <p>
