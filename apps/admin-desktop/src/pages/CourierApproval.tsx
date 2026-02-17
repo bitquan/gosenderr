@@ -152,11 +152,7 @@ export default function CourierApprovalPage() {
     .filter((courier) => {
       if (!searchQuery) return true
       const q = searchQuery.toLowerCase()
-      return (
-        courier.email?.toLowerCase().includes(q) ||
-        courier.displayName?.toLowerCase().includes(q) ||
-        courier.courierProfile?.phone?.includes(q)
-      )
+      return courier.email?.toLowerCase().includes(q) || courier.displayName?.toLowerCase().includes(q) || courier.courierProfile?.phone?.includes(q);
     })
 
   if (loading) {
@@ -182,7 +178,6 @@ export default function CourierApprovalPage() {
           <p className="text-purple-100">{filteredCouriers.length} applications</p>
         </div>
       </div>
-
       <div className="max-w-6xl mx-auto px-4 sm:px-6 -mt-6 space-y-4">
         {/* Search Bar */}
         <div className="bg-white rounded-2xl shadow-lg p-4">
@@ -394,12 +389,11 @@ export default function CourierApprovalPage() {
                     )}
                   </CardContent>
                 </Card>
-              )
+              );
             })}
           </div>
         )}
       </div>
-
       {/* Reject Modal */}
       {showRejectModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -452,5 +446,5 @@ export default function CourierApprovalPage() {
         </div>
       )}
     </div>
-  )
+  );
 }

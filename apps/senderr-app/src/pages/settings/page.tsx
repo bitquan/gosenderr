@@ -263,10 +263,7 @@ export default function CourierSettingsPage() {
   }
 
   const walletBalanceRaw =
-    courierData?.courierProfile?.tokenWallet?.balance ??
-    courierData?.tokenWallet?.balance ??
-    courierData?.wallet?.tokenBalance ??
-    null;
+    courierData?.courierProfile?.tokenWallet?.balance ?? courierData?.tokenWallet?.balance ?? courierData?.wallet?.tokenBalance ?? null;
   const hasWalletBalance = walletBalanceRaw !== null && walletBalanceRaw !== undefined;
   const walletBalance = Number(walletBalanceRaw || 0);
 

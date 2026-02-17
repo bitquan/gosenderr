@@ -258,7 +258,7 @@ export default function SellPage() {
           )}
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -267,7 +267,6 @@ export default function SellPage() {
       <p className="text-gray-600 mb-8">
         List an item for sale and become a seller on GoSenderr Marketplace
       </p>
-
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Photos */}
         <div>
@@ -459,5 +458,5 @@ export default function SellPage() {
         </div>
       </form>
     </div>
-  )
+  );
 }

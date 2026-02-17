@@ -235,7 +235,6 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-
       {/* Main Content */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 -mt-8 space-y-4">
         {/* Spending Breakdown */}
@@ -429,5 +428,5 @@ export default function DashboardPage() {
         </Card>
       </div>
     </div>
-  )
+  );
 }

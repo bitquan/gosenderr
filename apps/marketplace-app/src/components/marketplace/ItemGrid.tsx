@@ -52,6 +52,6 @@ export function ItemGrid({ items, loading, sellerBadgesMap = {}, sellerRatingsMa
         />
       ))}
     </div>
-  )
+  );
 }
 

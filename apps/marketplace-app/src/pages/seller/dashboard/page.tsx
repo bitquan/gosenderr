@@ -50,11 +50,9 @@ export default function SellerDashboard() {
   }, [uid]);
 
   const getSellerItemsTotal = (orderData: any) => {
-    return (
-      orderData.items
-        ?.filter((item: any) => item.sellerId === uid)
-        .reduce((itemSum: number, item: any) => itemSum + item.price * item.quantity, 0) || 0
-    );
+    return orderData.items
+      ?.filter((item: any) => item.sellerId === uid)
+      .reduce((itemSum: number, item: any) => itemSum + item.price * item.quantity, 0) || 0;
   };
 
   const loadSellerItems = async () => {

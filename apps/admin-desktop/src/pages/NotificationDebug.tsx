@@ -62,7 +62,7 @@ export default function NotificationDebugPage() {
 
   const effectiveToken = useMemo(() => {
     if (!userRecord) return null
-    return userRecord.courierProfile?.fcmToken || userRecord.fcmToken || null
+    return userRecord.courierProfile?.fcmToken || userRecord.fcmToken || null;
   }, [userRecord])
 
   const maskToken = (token?: string | null) => {
@@ -213,7 +213,6 @@ export default function NotificationDebugPage() {
         <h1 className="text-3xl font-bold text-gray-900">Notification Debug</h1>
         <p className="text-gray-600 mt-2">Inspect tokens, preferences, and validate push delivery.</p>
       </div>
-
       <Card>
         <CardHeader>
           <CardTitle>User Lookup</CardTitle>
@@ -277,7 +276,6 @@ export default function NotificationDebugPage() {
           )}
         </CardContent>
       </Card>
-
       <Card>
         <CardHeader>
           <CardTitle>Send Test Push</CardTitle>
@@ -339,7 +337,6 @@ export default function NotificationDebugPage() {
           </p>
         </CardContent>
       </Card>
-
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -392,5 +389,5 @@ export default function NotificationDebugPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

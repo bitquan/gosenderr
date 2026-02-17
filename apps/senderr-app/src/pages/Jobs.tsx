@@ -46,7 +46,7 @@ export default function CourierJobsPage() {
 
     const jobsRef = collection(db, 'jobs')
     const primaryQuery = query(jobsRef, where('courierUid', '==', user.uid))
-    const legacyQuery = query(jobsRef, where('courierId', '==', user.uid))
+    const legacyQuery = query(jobsRef, where('courierUid', '==', user.uid))
 
     const mergeJobs = (lists: Job[][]) => {
       const map = new Map<string, Job>()
@@ -165,7 +165,6 @@ export default function CourierJobsPage() {
           </div>
         </div>
       </div>
-
       {/* Filter Tabs */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 -mt-6">
         <div className="bg-white rounded-2xl shadow-lg p-2 flex gap-2">
@@ -201,7 +200,6 @@ export default function CourierJobsPage() {
           </button>
         </div>
       </div>
-
       {/* Jobs List */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 mt-6">
         {loading ? (
@@ -337,5 +335,5 @@ export default function CourierJobsPage() {
         )}
       </div>
     </div>
-  )
+  );
 }

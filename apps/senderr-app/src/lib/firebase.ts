@@ -25,9 +25,7 @@ const firebaseConfig = {
 
 const hasUnsafeLiveFirebaseConfig =
   isLiveWebRuntime() &&
-  (!firebaseConfig.projectId ||
-    !firebaseConfig.authDomain ||
-    /localhost|127\.0\.0\.1|::1/i.test(firebaseConfig.authDomain))
+  (!firebaseConfig.projectId || !firebaseConfig.authDomain || /localhost|127\.0\.0\.1|::1/i.test(firebaseConfig.authDomain))
 
 if (hasUnsafeLiveFirebaseConfig) {
   console.error('Unsafe live Firebase configuration detected; initialization is blocked.', {

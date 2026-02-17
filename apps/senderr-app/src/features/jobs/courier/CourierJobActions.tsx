@@ -65,11 +65,7 @@ export function CourierJobActions({ job, courierUid, estimatedFee, onJobUpdated 
 
   const handleAccept = async () => {
     const fee =
-      estimatedFee ??
-      job.agreedFee ??
-      (job as any)?.pricing?.courierRate ??
-      (job as any)?.pricing?.totalAmount ??
-      0;
+      estimatedFee ?? job.agreedFee ?? (job as any)?.pricing?.courierRate ?? (job as any)?.pricing?.totalAmount ?? 0;
 
     if (!fee || fee <= 0) {
       setActionError('Cannot accept job: no fee calculated for this offer.');

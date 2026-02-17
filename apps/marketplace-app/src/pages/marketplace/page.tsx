@@ -70,9 +70,7 @@ export default function MarketplacePage() {
       const matchesCategory =
         selectedCategory === "all" || item.category === selectedCategory;
       const matchesSearch =
-        !searchQuery ||
-        item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (item.description ?? "").toLowerCase().includes(searchQuery.toLowerCase());
+        !searchQuery || item.title.toLowerCase().includes(searchQuery.toLowerCase()) || (item.description ?? "").toLowerCase().includes(searchQuery.toLowerCase());
       return matchesCategory && matchesSearch;
     });
   }, [items, searchQuery, selectedCategory]);

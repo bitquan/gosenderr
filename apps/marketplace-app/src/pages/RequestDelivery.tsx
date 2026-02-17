@@ -102,13 +102,11 @@ export default function RequestDeliveryPage() {
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Request Delivery</h1>
         <p className="text-gray-600">Tell us where to pick up and deliver your item</p>
       </div>
-
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
           {error}
         </div>
       )}
-
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Pickup Information */}
         <Card>
@@ -280,6 +278,6 @@ export default function RequestDeliveryPage() {
         </div>
       </form>
     </div>
-  )
+  );
 }
 

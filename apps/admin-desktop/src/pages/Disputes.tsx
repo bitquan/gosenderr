@@ -112,7 +112,7 @@ export default function DisputesPage() {
       resolved: 'bg-green-100 text-green-800',
       closed: 'bg-gray-100 text-gray-800'
     }
-    return colors[status] || 'bg-gray-100 text-gray-800'
+    return colors[status] || 'bg-gray-100 text-gray-800';
   }
 
   const formatDate = (timestamp: any) => {
@@ -142,7 +142,6 @@ export default function DisputesPage() {
           <p className="text-purple-100">Manage and resolve customer disputes</p>
         </div>
       </div>
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 -mt-6 space-y-4">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -271,7 +270,6 @@ export default function DisputesPage() {
           </CardContent>
         </Card>
       </div>
-
       {/* Resolve Dispute Modal */}
       {showResolveModal && selectedDispute && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -415,5 +413,5 @@ export default function DisputesPage() {
         </div>
       )}
     </div>
-  )
+  );
 }

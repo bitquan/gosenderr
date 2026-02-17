@@ -244,7 +244,6 @@ export default function FeatureFlagsPage() {
           </div>
         </div>
       </div>
-
       <div className="max-w-6xl mx-auto px-4 sm:px-6 -mt-8 space-y-6">
         <Card variant="elevated">
           <CardHeader>
@@ -524,5 +523,5 @@ export default function FeatureFlagsPage() {
         </Card>
       </div>
     </div>
-  )
+  );
 }

@@ -233,7 +233,6 @@ export default function MessagingPage() {
           <p className="text-purple-100">Send notifications and messages to platform users</p>
         </div>
       </div>
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 -mt-6 space-y-4">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -361,7 +360,6 @@ export default function MessagingPage() {
           </CardContent>
         </Card>
       </div>
-
       {/* Message Detail Modal */}
       {selectedMessage && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -429,7 +427,6 @@ export default function MessagingPage() {
           </div>
         </div>
       )}
-
       {/* Compose Modal */}
       {showComposeModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -589,5 +586,5 @@ export default function MessagingPage() {
         </div>
       )}
     </div>
-  )
+  );
 }

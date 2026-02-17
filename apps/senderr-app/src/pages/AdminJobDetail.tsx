@@ -137,7 +137,6 @@ export default function AdminJobDetailPage() {
           </div>
         </div>
       </div>
-
       <div className="max-w-4xl mx-auto px-4 sm:px-6 -mt-6 space-y-4">
         {/* Admin Actions */}
         {job.status !== 'completed' && job.status !== 'cancelled' && (
@@ -348,5 +347,5 @@ export default function AdminJobDetailPage() {
         </Card>
       </div>
     </div>
-  )
+  );
 }

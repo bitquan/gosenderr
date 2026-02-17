@@ -75,10 +75,8 @@ export default function GlobalSearchModal({ open, onClose }: { open: boolean; on
     if (!queryText) return results.slice(0, 20)
     const q = queryText.toLowerCase()
     return results.filter((r: SearchResult) =>
-      r.id.toLowerCase().includes(q) ||
-      r.title.toLowerCase().includes(q) ||
-      r.subtitle?.toLowerCase().includes(q)
-    ).slice(0, 20)
+      r.id.toLowerCase().includes(q) || r.title.toLowerCase().includes(q) || r.subtitle?.toLowerCase().includes(q)
+    ).slice(0, 20);
   }, [queryText, results])
 
   if (!open) return null

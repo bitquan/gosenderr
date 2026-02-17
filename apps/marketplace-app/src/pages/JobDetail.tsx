@@ -224,7 +224,6 @@ export default function JobDetailPage() {
           </div>
         </div>
       </div>
-
       {/* Main Content */}
       <div className="max-w-4xl mx-auto px-6 -mt-8 space-y-4">
         {/* Map Card */}
@@ -485,7 +484,6 @@ export default function JobDetailPage() {
           </CardContent>
         </Card>
       </div>
-
       {/* Rating Modal */}
       {job && job.courierUid && user && (
         <RateDeliveryModal
@@ -497,7 +495,6 @@ export default function JobDetailPage() {
           customerUid={user.uid}
         />
       )}
-
       {/* Dispute Modal */}
       {job && user && (
         <DisputeModal
@@ -509,5 +506,5 @@ export default function JobDetailPage() {
         />
       )}
     </div>
-  )
+  );
 }

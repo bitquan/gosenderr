@@ -366,7 +366,6 @@ export default function ItemDetailPage() {
           <p className="text-purple-100">{item.title}</p>
         </div>
       </div>
-
       <div className="max-w-6xl mx-auto px-4 sm:px-6 -mt-8 space-y-6">
         {/* Item Info */}
         <Card variant="elevated">
@@ -579,7 +578,6 @@ export default function ItemDetailPage() {
           </Card>
         )}
       </div>
-
       {/* Flag Modal */}
       {showFlagModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
@@ -622,7 +620,6 @@ export default function ItemDetailPage() {
           </Card>
         </div>
       )}
-
       {/* Remove Modal */}
       {showRemoveModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
@@ -669,5 +666,5 @@ export default function ItemDetailPage() {
         </div>
       )}
     </div>
-  )
+  );
 }

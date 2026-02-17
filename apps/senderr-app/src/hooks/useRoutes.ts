@@ -13,7 +13,7 @@ import type { RouteDoc, RouteStatus } from "@gosenderr/shared";
 
 interface UseRoutesOptions {
   status?: RouteStatus;
-  courierId?: string;
+  courierUid?: string;
 }
 
 export function useRoutes(options: UseRoutesOptions = {}) {
@@ -44,10 +44,6 @@ export function useRoutes(options: UseRoutesOptions = {}) {
       constraints.push(where("status", "==", options.status));
     }
 
-    if (options.courierId) {
-      constraints.push(where("courierId", "==", options.courierId));
-    }
-
     const q = query(collection(db, "routes"), ...constraints);
 
     const unsubscribe = onSnapshot(
@@ -71,7 +67,7 @@ export function useRoutes(options: UseRoutesOptions = {}) {
     );
 
     return () => unsubscribe();
-  }, [options.status, options.courierId, uid, authLoading]);
+  }, [options.status, uid, authLoading]);
 
   return { routes, loading, error };
 }

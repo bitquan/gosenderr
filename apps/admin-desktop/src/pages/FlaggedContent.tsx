@@ -107,7 +107,6 @@ export default function FlaggedContentPage() {
           <p className="text-red-100">Review and moderate flagged marketplace items</p>
         </div>
       </div>
-
       <div className="max-w-6xl mx-auto px-4 sm:px-6 -mt-8 space-y-6">
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4">
@@ -222,7 +221,7 @@ export default function FlaggedContentPage() {
                         </div>
                       </div>
                     </Link>
-                  )
+                  );
                 })}
               </div>
             )}
@@ -230,5 +229,5 @@ export default function FlaggedContentPage() {
         </Card>
       </div>
     </div>
-  )
+  );
 }

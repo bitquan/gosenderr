@@ -99,7 +99,7 @@ export default function FirebaseExplorerPage() {
       })
       .filter(Boolean)
       .join(' • ')
-    return preview || 'No preview data'
+    return preview || 'No preview data';
   }
 
   return (

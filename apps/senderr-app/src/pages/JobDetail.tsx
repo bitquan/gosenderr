@@ -241,7 +241,6 @@ export default function CourierJobDetailPage() {
           </div>
         </div>
       </div>
-
       {/* Main Content */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 -mt-8 space-y-4">
         {/* Accept Job Card */}
@@ -486,5 +485,5 @@ export default function CourierJobDetailPage() {
         </Card>
       </div>
     </div>
-  )
+  );
 }

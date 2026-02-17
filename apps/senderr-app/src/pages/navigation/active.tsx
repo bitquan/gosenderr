@@ -175,9 +175,8 @@ export default function ActiveNavigationPage() {
     
     const handleOrientation = (event: DeviceOrientationEvent) => {
       // iOS provides compass heading directly
-      const heading = (event as any).webkitCompassHeading || 
-                     // Android: calculate from alpha (0-360, where 0 is north)
-                     (event.alpha !== null ? 360 - event.alpha : 0);
+      const heading = // Android: calculate from alpha (0-360, where 0 is north)
+      (event as any).webkitCompassHeading || (event.alpha !== null ? 360 - event.alpha : 0);
       
       setDeviceHeading(heading);
       
@@ -303,7 +302,6 @@ export default function ActiveNavigationPage() {
           />
         </div>
       </div>
-
       {/* Full-Screen Map */}
       <div className="absolute inset-0">
         <MapboxMap
@@ -315,7 +313,6 @@ export default function ActiveNavigationPage() {
           height="100%"
         />
       </div>
-
       {/* Camera Mode Toggle - pill segmented control */}
       <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-10">
         <div className="flex items-center gap-1 bg-white/95 backdrop-blur rounded-full shadow-lg p-1">
@@ -341,7 +338,6 @@ export default function ActiveNavigationPage() {
           </button>
         </div>
       </div>
-
       {/* Navigation Active Indicator */}
       <div className="absolute top-4 left-4 z-10 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium shadow-lg">
         <div className="flex items-center gap-2">
@@ -349,7 +345,6 @@ export default function ActiveNavigationPage() {
           Navigating
         </div>
       </div>
-
       {/* Orientation Permission Prompt */}
       {orientationPermission === 'prompt' && (
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-white rounded-2xl shadow-2xl p-6 max-w-sm mx-4">
@@ -374,7 +369,6 @@ export default function ActiveNavigationPage() {
           </div>
         </div>
       )}
-
       {/* Backdrop for permission prompt */}
       {orientationPermission === 'prompt' && (
         <div className="absolute inset-0 bg-black/50 z-40" />

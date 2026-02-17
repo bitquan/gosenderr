@@ -155,7 +155,6 @@ export default function AdminFeatureFlagsPage() {
           <p className="text-purple-100">Platform feature configuration</p>
         </div>
       </div>
-
       <div className="max-w-6xl mx-auto px-4 sm:px-6 -mt-6 space-y-4">
         {/* Save Banner */}
         {hasChanges && (
@@ -219,7 +218,7 @@ export default function AdminFeatureFlagsPage() {
                 </div>
               </CardContent>
             </Card>
-          )
+          );
         })}
 
         {/* Bottom Save Button */}
@@ -238,5 +237,5 @@ export default function AdminFeatureFlagsPage() {
         )}
       </div>
     </div>
-  )
+  );
 }

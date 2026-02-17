@@ -36,7 +36,6 @@ export function PackageDetailsForm({
   return (
     <div style={{ padding: '20px', background: 'white', borderRadius: '8px', border: '1px solid #ddd' }}>
       <h3 style={{ marginTop: 0, marginBottom: '20px' }}>Package Details</h3>
-
       {/* Package Size */}
       <div style={{ marginBottom: '24px' }}>
         <label style={{ display: 'block', fontWeight: '600', fontSize: '14px', marginBottom: '8px' }}>
@@ -73,7 +72,6 @@ export function PackageDetailsForm({
           ))}
         </div>
       </div>
-
       {/* Handling Flags */}
       <div style={{ marginBottom: '24px' }}>
         <label style={{ display: 'block', fontWeight: '600', fontSize: '14px', marginBottom: '8px' }}>
@@ -141,7 +139,6 @@ export function PackageDetailsForm({
           </label>
         </div>
       </div>
-
       {/* Notes */}
       <div>
         <label style={{ display: 'block', fontWeight: '600', fontSize: '14px', marginBottom: '8px' }}>

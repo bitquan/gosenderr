@@ -34,7 +34,7 @@ export default function CustomerLayout() {
       'enroute_dropoff',
       'arrived_dropoff',
     ])
-    return jobs.find((job) => activeStatuses.has(job.status)) || null
+    return jobs.find((job) => activeStatuses.has(job.status)) || null;
   }, [jobs, jobsLoading])
 
   const handleSendClick = () => {

@@ -109,15 +109,12 @@ export default function CourierDashboardMobile() {
   }, [jobs]);
 
   const hasRateCards = Boolean(
-    userDoc?.courierProfile?.packageRateCard ||
-      userDoc?.courierProfile?.foodRateCard,
+    userDoc?.courierProfile?.packageRateCard || userDoc?.courierProfile?.foodRateCard,
   );
 
   const getRateCardForJob = (job: Job) => {
     const isFoodJob = Boolean(
-      (job as any).isFoodItem ||
-        (job as any).foodDetails ||
-        (job as any).foodTemperature,
+      (job as any).isFoodItem || (job as any).foodDetails || (job as any).foodTemperature,
     );
     return isFoodJob
       ? userDoc?.courierProfile?.foodRateCard

@@ -148,5 +148,5 @@ export default function EditRoleModal({ user, isOpen, onClose, onSuccess }: Edit
         </div>
       </div>
     </div>
-  )
+  );
 }

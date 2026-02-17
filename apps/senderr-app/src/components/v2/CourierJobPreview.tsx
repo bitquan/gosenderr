@@ -107,7 +107,6 @@ export function CourierJobPreview({
           <p className="text-lg font-bold text-emerald-600">${displayFee.toFixed(2)}</p>
         </div>
       </div>
-
       <div className="p-3 space-y-3">
         <div className="rounded-xl overflow-hidden border border-gray-200">
           <MapboxMap
@@ -176,7 +175,6 @@ export function CourierJobPreview({
           <div className="text-xs text-red-600">Not eligible: {reason}</div>
         )}
       </div>
-
       {footer ? (
         <div className="p-3 border-t border-gray-100">{footer}</div>
       ) : (

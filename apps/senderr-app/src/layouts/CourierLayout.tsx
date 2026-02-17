@@ -21,8 +21,7 @@ export default function CourierLayout() {
           <div className="max-w-5xl mx-auto px-6 py-3 flex items-center gap-2">
             {courierNavItems.map((item) => {
               const isActive =
-                location.pathname === item.href ||
-                location.pathname.startsWith(item.href + '/')
+                location.pathname === item.href || location.pathname.startsWith(item.href + '/')
 
               return (
                 <Link
@@ -47,5 +46,5 @@ export default function CourierLayout() {
         <BottomNav items={courierNavItems} />
       </div>
     </>
-  )
+  );
 }

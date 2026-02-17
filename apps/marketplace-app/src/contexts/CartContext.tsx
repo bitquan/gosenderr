@@ -90,7 +90,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const getItemQuantity = (itemId: string): number => {
     const cartItem = items.find((ci) => ci.item.id === itemId)
-    return cartItem?.quantity || 0
+    return cartItem?.quantity || 0;
   }
 
   const subtotal = items.reduce(

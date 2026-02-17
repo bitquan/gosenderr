@@ -106,7 +106,6 @@ export function FilterSidebar({ filters, onFilterChange, onClose }: FilterSideba
           </button>
         )}
       </div>
-
       <div className="space-y-6">
         {/* Sort By */}
         <div>
@@ -219,5 +218,5 @@ export function FilterSidebar({ filters, onFilterChange, onClose }: FilterSideba
         </button>
       </div>
     </div>
-  )
+  );
 }

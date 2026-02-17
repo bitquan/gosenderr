@@ -17,10 +17,7 @@ const firebaseConfig = {
 const isBrowser = typeof window !== "undefined";
 // Consider config valid in emulator/CI environments even if apiKey is a dummy value.
 const isValidConfig =
-  (firebaseConfig.apiKey && firebaseConfig.apiKey.startsWith("AIza")) ||
-  Boolean(import.meta.env.VITE_FIREBASE_AUTH_EMULATOR_HOST) ||
-  Boolean(import.meta.env.VITE_FIRESTORE_EMULATOR_HOST) ||
-  Boolean(import.meta.env.VITE_FIREBASE_PROJECT_ID);
+  (firebaseConfig.apiKey && firebaseConfig.apiKey.startsWith("AIza")) || Boolean(import.meta.env.VITE_FIREBASE_AUTH_EMULATOR_HOST) || Boolean(import.meta.env.VITE_FIRESTORE_EMULATOR_HOST) || Boolean(import.meta.env.VITE_FIREBASE_PROJECT_ID);
 
 const shouldUseEmulators =
   import.meta.env.DEV && import.meta.env.VITE_USE_FIREBASE_EMULATORS === "true";
