@@ -4,7 +4,7 @@ import path from 'node:path';
 
 const root = process.cwd();
 const appsDir = path.join(root, 'apps');
-const maxChunkBytes = Number(process.env.MAX_BUNDLE_CHUNK_BYTES || 1600000);
+const maxChunkBytes = Number(process.env.MAX_BUNDLE_CHUNK_BYTES || 1550000);
 
 function getAllFiles(dir) {
   if (!fs.existsSync(dir)) return [];

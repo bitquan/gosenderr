@@ -18,11 +18,34 @@ export default defineConfig({
     sourcemap: true,
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor': ['react', 'react-dom', 'react-router-dom'],
-          'firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
-          'stripe': ['@stripe/stripe-js', '@stripe/react-stripe-js'],
-          'maps': ['mapbox-gl']
+        manualChunks(id) {
+          if (!id.includes('node_modules')) {
+            if (
+              id.includes('/src/pages/request-delivery/') ||
+              id.includes('/src/pages/checkout/') ||
+              id.includes('/src/pages/payment/') ||
+              id.includes('/src/lib/navigation/')
+            ) {
+              return 'map-features'
+            }
+            return undefined
+          }
+
+          if (id.includes('/node_modules/react') || id.includes('/node_modules/react-dom') || id.includes('/node_modules/react-router-dom')) {
+            return 'vendor'
+          }
+
+          if (id.includes('/node_modules/firebase/functions/')) return 'firebase-functions'
+          if (id.includes('/node_modules/firebase/')) return 'firebase-core'
+
+          if (id.includes('/node_modules/mapbox-gl/')) return 'mapbox-core'
+          if (id.includes('/node_modules/@mapbox/')) return 'mapbox-sdk'
+
+          if (id.includes('/node_modules/@stripe/stripe-js') || id.includes('/node_modules/@stripe/react-stripe-js')) {
+            return 'stripe'
+          }
+
+          return undefined
         }
       }
     }

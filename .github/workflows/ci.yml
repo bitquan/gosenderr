@@ -211,7 +211,7 @@ jobs:
 
       - name: Enforce bundle size limits
         env:
-          MAX_BUNDLE_CHUNK_BYTES: 1600000
+          MAX_BUNDLE_CHUNK_BYTES: 1550000
         run: pnpm check:bundle-size
 
   tests:
