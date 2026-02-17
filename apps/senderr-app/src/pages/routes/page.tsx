@@ -61,7 +61,7 @@ export default function CourierRoutesPage() {
       const routeRef = doc(db, "routes", route.routeId);
       await updateDoc(routeRef, {
         status: "claimed",
-        courierId: currentUser.uid,
+        courierUid: currentUser.uid,
         courierName: currentUser.displayName || "Unknown",
         claimedAt: serverTimestamp(),
       });
