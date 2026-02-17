@@ -7,9 +7,10 @@ import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { createFoodPickupRestaurant, toCityZipLabel, useFoodPickupRestaurants } from "@/lib/foodPickup";
 import type { FoodPickupRestaurantDoc } from "@/lib/foodPickup";
 
-function formatTags(tags: string[]) {
-  if (!tags.length) return "Everyday favorites";
-  return tags.map((tag) => tag.toUpperCase()).join(" · ");
+function formatTags(tags: string[] | null | undefined) {
+  const safeTags = Array.isArray(tags) ? tags : [];
+  if (!safeTags.length) return "Everyday favorites";
+  return safeTags.map((tag) => tag.toUpperCase()).join(" · ");
 }
 
 function formatUpdatedAt(restaurant: FoodPickupRestaurantDoc) {
@@ -62,7 +63,10 @@ export default function FoodPickupsPage() {
     const restaurantsReady = restaurants.length;
     const averageTags = restaurantsReady
       ? Math.round(
-          restaurants.reduce((count, restaurant) => count + restaurant.cuisineTags.length, 0) /
+          restaurants.reduce(
+            (count, restaurant) => count + (Array.isArray(restaurant.cuisineTags) ? restaurant.cuisineTags.length : 0),
+            0,
+          ) /
             restaurantsReady,
         )
       : 0;

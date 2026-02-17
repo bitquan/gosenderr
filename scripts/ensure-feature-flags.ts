@@ -44,7 +44,12 @@ async function main() {
     `✅ Feature flags ${actionLabel} (${snapshot.exists ? "existing" : "new"})`,
   );
   console.log(`  admin.webPortalEnabled: ${normalized.admin.webPortalEnabled}`);
-  console.log(`  senderrplace.marketplace_v2: ${normalized.senderrplace.marketplace_v2}`);
+  const senderrplaceV2Enabled =
+    normalized.senderrplaceV2?.enabled ??
+    (normalized as unknown as { senderrplace?: { marketplace_v2?: boolean } })
+      .senderrplace?.marketplace_v2 ??
+    false;
+  console.log(`  senderrplaceV2.enabled: ${senderrplaceV2Enabled}`);
 
   if (missingPaths.length > 0) {
     console.warn(`⚠️ Missing required paths: ${missingPaths.join(", ")}`);
