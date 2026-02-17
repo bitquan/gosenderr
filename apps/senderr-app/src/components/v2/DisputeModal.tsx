@@ -1,7 +1,6 @@
 
 import { useState } from "react";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase/firestore";
+import { submitCourierJobDispute } from "@/lib/v2/jobs";
 
 interface DisputeModalProps {
   isOpen: boolean;
@@ -25,8 +24,8 @@ export function DisputeModal({
   isOpen,
   onClose,
   jobId,
-  customerUid,
-  customerName,
+  customerUid: _customerUid,
+  customerName: _customerName,
 }: DisputeModalProps) {
   const [reason, setReason] = useState("");
   const [description, setDescription] = useState("");
@@ -49,18 +48,7 @@ export function DisputeModal({
 
     setIsSubmitting(true);
     try {
-      // Create dispute document
-      await addDoc(collection(db, "disputes"), {
-        jobId,
-        customerUid,
-        customerName,
-        reason,
-        description: description.trim(),
-        status: "open",
-        type: "delivery",
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
+      await submitCourierJobDispute(jobId, reason, description.trim());
 
       alert("Dispute submitted successfully. Our team will review it shortly.");
       handleClose();

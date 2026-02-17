@@ -42,6 +42,8 @@ export {
 	declineCourierJobOffer,
 	reassignCourierJobAdmin,
 	cancelCourierJobAdmin,
+	cancelCourierJob,
+	submitCourierJobDispute,
 	updateLegacyCourierJobStatus,
 	rejectRunnerJob,
 } from "./http/courierJobCommands";

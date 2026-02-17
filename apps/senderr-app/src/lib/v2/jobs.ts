@@ -76,29 +76,16 @@ export async function createJob(
 }
 
 export async function cancelJob(jobId: string, userUid: string): Promise<void> {
-  const jobRef = doc(db, "jobs", jobId);
-  const jobSnap = await getDoc(jobRef);
-
-  if (!jobSnap.exists()) {
-    throw new Error("Job not found");
+  if (!userUid) {
+    throw new Error("User is required");
   }
 
-  const jobData = jobSnap.data();
+  const cancelCourierJobCallable = httpsCallable<
+    { jobId: string },
+    { success: boolean; status: JobStatus }
+  >(functions, "cancelCourierJob");
 
-  // Only the creator can cancel
-  if (jobData.createdByUid !== userUid) {
-    throw new Error("Only the job creator can cancel this job");
-  }
-
-  // Can only cancel if status is 'open' or 'assigned'
-  if (jobData.status !== "open" && jobData.status !== "assigned") {
-    throw new Error("Job can only be cancelled if status is open or assigned");
-  }
-
-  await updateDoc(jobRef, {
-    status: "cancelled" as JobStatus,
-    updatedAt: serverTimestamp(),
-  });
+  await cancelCourierJobCallable({ jobId });
 }
 
 export async function claimJob(
@@ -267,6 +254,19 @@ export async function rejectRunnerJob(
   >(functions, "rejectRunnerJob");
 
   await rejectRunnerJobCallable({ jobId, reasonLabel, notes });
+}
+
+export async function submitCourierJobDispute(
+  jobId: string,
+  reason: string,
+  description: string,
+): Promise<void> {
+  const submitCourierJobDisputeCallable = httpsCallable<
+    { jobId: string; reason: string; description: string },
+    { success: boolean; status: JobStatus }
+  >(functions, "submitCourierJobDispute");
+
+  await submitCourierJobDisputeCallable({ jobId, reason, description });
 }
 
 export async function getTokenPolicy(): Promise<TokenPolicy> {

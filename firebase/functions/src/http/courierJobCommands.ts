@@ -58,6 +58,16 @@ interface CancelCourierJobAdminRequest {
   jobId: string;
 }
 
+interface CancelCourierJobRequest {
+  jobId: string;
+}
+
+interface SubmitCourierJobDisputeRequest {
+  jobId: string;
+  reason: string;
+  description: string;
+}
+
 interface UpdateLegacyCourierJobStatusRequest {
   jobId: string;
   status: "in_progress" | "completed";
@@ -120,6 +130,98 @@ async function isAdminCaller(uid: string, token: Record<string, unknown> = {}): 
   const userSnap = await admin.firestore().doc(`users/${uid}`).get();
   const userData = userSnap.data() as { role?: string } | undefined;
   return userData?.role === "admin";
+}
+
+async function refundTokenCommitForJob(
+  jobId: string,
+  reason: "job_cancelled" | "job_disputed",
+  actorUid: string,
+): Promise<void> {
+  const db = admin.firestore();
+  const commitSnap = await db
+    .collection("tokenTransactions")
+    .where("type", "==", "commit")
+    .where("metadata.jobId", "==", jobId)
+    .limit(1)
+    .get();
+
+  if (commitSnap.empty) {
+    return;
+  }
+
+  const commitDoc = commitSnap.docs[0];
+  const commitData = commitDoc.data() as {
+    uid?: string;
+    amount?: number;
+    reservationId?: string;
+    action?: string;
+  };
+
+  const uid = commitData.uid;
+  const amount = Number(commitData.amount || 0);
+  if (!uid || !Number.isFinite(amount) || amount <= 0) {
+    return;
+  }
+
+  const refundTxRef = db.doc(`tokenTransactions/auto_refund_${reason}_${jobId}`);
+  const walletRef = db.doc(`tokenWallets/${uid}`);
+  const reservationRef = commitData.reservationId
+    ? db.doc(`tokenReservations/${commitData.reservationId}`)
+    : null;
+
+  await db.runTransaction(async (tx) => {
+    const [existingRefundSnap, walletSnap, reservationSnap] = await Promise.all([
+      tx.get(refundTxRef),
+      tx.get(walletRef),
+      reservationRef ? tx.get(reservationRef) : Promise.resolve(null),
+    ]);
+
+    if (existingRefundSnap.exists) {
+      return;
+    }
+
+    const walletData = walletSnap.exists ? walletSnap.data() || {} : {};
+    const currentAvailable = Number(walletData.available || 0);
+    const currentReserved = Number(walletData.reserved || 0);
+    const currentPurchased = Number(walletData.lifetimePurchased || 0);
+    const currentSpent = Number(walletData.lifetimeSpent || 0);
+    const currentAdjusted = Number(walletData.lifetimeAdjusted || 0);
+
+    tx.set(walletRef, {
+      available: currentAvailable + amount,
+      reserved: currentReserved,
+      lifetimePurchased: currentPurchased,
+      lifetimeSpent: currentSpent,
+      lifetimeAdjusted: currentAdjusted,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+
+    if (reservationRef && reservationSnap?.exists) {
+      tx.set(reservationRef, {
+        status: "refunded",
+        refundedAt: admin.firestore.FieldValue.serverTimestamp(),
+        refundSource: reason,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      }, { merge: true });
+    }
+
+    tx.set(refundTxRef, {
+      uid,
+      type: "refund",
+      actorType: "system",
+      action: commitData.action || "jobUnlockStandard",
+      amount,
+      idempotencyKey: `auto_refund_${reason}_${jobId}`,
+      reservationId: commitData.reservationId || null,
+      reason,
+      metadata: {
+        sourceCommitTxId: commitDoc.id,
+        jobId,
+        actorUid,
+      },
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+  });
 }
 
 export const claimCourierJob = functions.https.onCall(
@@ -606,7 +708,142 @@ export const cancelCourierJobAdmin = functions.https.onCall(
       adminLastActionBy: adminUid,
     });
 
+    await refundTokenCommitForJob(jobId, "job_cancelled", adminUid);
+
     return { success: true, jobId, status: "cancelled" };
+  },
+);
+
+export const cancelCourierJob = functions.https.onCall(
+  async (data: CancelCourierJobRequest, context) => {
+    if (!context.auth?.uid) {
+      throw new functions.https.HttpsError("unauthenticated", "Authentication required");
+    }
+
+    const { jobId } = data || ({} as CancelCourierJobRequest);
+    if (!jobId || typeof jobId !== "string") {
+      throw new functions.https.HttpsError("invalid-argument", "jobId is required");
+    }
+
+    const callerUid = context.auth.uid;
+    const db = admin.firestore();
+    const jobRef = db.doc(`jobs/${jobId}`);
+
+    await db.runTransaction(async (tx) => {
+      const jobSnap = await tx.get(jobRef);
+      if (!jobSnap.exists) {
+        throw new functions.https.HttpsError("not-found", "Job not found");
+      }
+
+      const jobData = jobSnap.data() as {
+        status?: JobStatus;
+        createdByUid?: string;
+      };
+
+      if (!jobData.createdByUid || jobData.createdByUid !== callerUid) {
+        throw new functions.https.HttpsError(
+          "permission-denied",
+          "Only job creator can cancel this job",
+        );
+      }
+
+      if (!jobData.status || !["open", "pending", "assigned"].includes(jobData.status)) {
+        throw new functions.https.HttpsError(
+          "failed-precondition",
+          `Cannot cancel from status: ${jobData.status || "unknown"}`,
+        );
+      }
+
+      tx.update(jobRef, {
+        status: "cancelled",
+        cancelledBy: callerUid,
+        cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    });
+
+    await refundTokenCommitForJob(jobId, "job_cancelled", callerUid);
+
+    return { success: true, jobId, status: "cancelled" };
+  },
+);
+
+export const submitCourierJobDispute = functions.https.onCall(
+  async (data: SubmitCourierJobDisputeRequest, context) => {
+    if (!context.auth?.uid) {
+      throw new functions.https.HttpsError("unauthenticated", "Authentication required");
+    }
+
+    const { jobId, reason, description } = data || ({} as SubmitCourierJobDisputeRequest);
+    if (!jobId || typeof jobId !== "string") {
+      throw new functions.https.HttpsError("invalid-argument", "jobId is required");
+    }
+
+    if (!reason || typeof reason !== "string") {
+      throw new functions.https.HttpsError("invalid-argument", "reason is required");
+    }
+
+    if (!description || typeof description !== "string" || description.trim().length < 20) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "description must be at least 20 characters",
+      );
+    }
+
+    const callerUid = context.auth.uid;
+    const db = admin.firestore();
+    const jobRef = db.doc(`jobs/${jobId}`);
+
+    await db.runTransaction(async (tx) => {
+      const jobSnap = await tx.get(jobRef);
+      if (!jobSnap.exists) {
+        throw new functions.https.HttpsError("not-found", "Job not found");
+      }
+
+      const jobData = jobSnap.data() as {
+        status?: JobStatus;
+        createdByUid?: string;
+      };
+
+      if (!jobData.createdByUid || jobData.createdByUid !== callerUid) {
+        throw new functions.https.HttpsError(
+          "permission-denied",
+          "Only job creator can submit disputes",
+        );
+      }
+
+      if (!jobData.status || !["completed", "delivered"].includes(jobData.status)) {
+        throw new functions.https.HttpsError(
+          "failed-precondition",
+          `Cannot dispute from status: ${jobData.status || "unknown"}`,
+        );
+      }
+
+      tx.update(jobRef, {
+        status: "disputed",
+        disputedBy: callerUid,
+        disputedAt: admin.firestore.FieldValue.serverTimestamp(),
+        disputeReason: reason,
+        disputeDescription: description.trim(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      const disputeRef = db.collection("disputes").doc();
+      tx.set(disputeRef, {
+        jobId,
+        customerUid: callerUid,
+        reason,
+        description: description.trim(),
+        status: "open",
+        type: "delivery",
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    });
+
+    await refundTokenCommitForJob(jobId, "job_disputed", callerUid);
+
+    return { success: true, jobId, status: "disputed" };
   },
 );
 
