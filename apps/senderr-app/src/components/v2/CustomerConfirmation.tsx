@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { Timestamp } from 'firebase/firestore';
+import { DisputeModal } from './DisputeModal';
 
 interface CustomerConfirmationProps {
   deliveryJobId: string;
@@ -10,21 +11,24 @@ interface CustomerConfirmationProps {
   alreadyConfirmed?: boolean;
   confirmedAt?: Timestamp;
   autoConfirmed?: boolean;
+  customerUid?: string;
+  customerName?: string;
 }
 
 export function CustomerConfirmation({
-  deliveryJobId: _deliveryJobId,
+  deliveryJobId,
   deliveredAt: _deliveredAt,
   confirmationDeadline,
   onConfirm,
   alreadyConfirmed = false,
   confirmedAt,
   autoConfirmed = false,
+  customerUid,
+  customerName,
 }: CustomerConfirmationProps) {
   const [timeRemaining, setTimeRemaining] = useState<string>('');
   const [confirming, setConfirming] = useState(false);
-  const [showDisputeForm, setShowDisputeForm] = useState(false);
-  const [disputeReason, setDisputeReason] = useState('');
+  const [showDisputeModal, setShowDisputeModal] = useState(false);
 
   // Calculate time remaining
   useEffect(() => {
@@ -59,23 +63,6 @@ export function CustomerConfirmation({
       // Success - component will re-render with confirmed state
     } catch (error) {
       console.error('Failed to confirm delivery:', error);
-      setConfirming(false);
-      // Error message could be displayed via toast/inline here
-    }
-  };
-
-  const handleReportIssue = async () => {
-    if (!disputeReason.trim()) {
-      // Could show inline error message here instead
-      return;
-    }
-
-    setConfirming(true);
-    try {
-      await onConfirm(false, disputeReason);
-      // Success - component will re-render or navigate away
-    } catch (error) {
-      console.error('Failed to report issue:', error);
       setConfirming(false);
       // Error message could be displayed via toast/inline here
     }
@@ -159,7 +146,7 @@ export function CustomerConfirmation({
         </div>
       </div>
 
-      {!showDisputeForm && (
+      {
         <>
           <div
             style={{
@@ -198,7 +185,7 @@ export function CustomerConfirmation({
             </button>
 
             <button
-              onClick={() => setShowDisputeForm(true)}
+              onClick={() => setShowDisputeModal(true)}
               disabled={confirming}
               style={{
                 flex: 1,
@@ -216,79 +203,15 @@ export function CustomerConfirmation({
             </button>
           </div>
         </>
-      )}
+      }
 
-      {showDisputeForm && (
-        <div>
-          <div
-            style={{
-              background: '#fee2e2',
-              padding: '12px',
-              borderRadius: '8px',
-              fontSize: '14px',
-              color: '#991b1b',
-              marginBottom: '16px',
-            }}
-          >
-            ⚠️ Please provide details about the issue with your delivery.
-          </div>
-
-          <textarea
-            value={disputeReason}
-            onChange={(e) => setDisputeReason(e.target.value)}
-            placeholder="Describe the issue (e.g., item not delivered, item damaged, wrong item, etc.)"
-            rows={4}
-            style={{
-              width: '100%',
-              padding: '12px',
-              borderRadius: '8px',
-              border: '1px solid #d1d5db',
-              fontSize: '14px',
-              resize: 'vertical',
-              marginBottom: '12px',
-              boxSizing: 'border-box',
-            }}
-          />
-
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <button
-              onClick={() => setShowDisputeForm(false)}
-              disabled={confirming}
-              style={{
-                flex: 1,
-                padding: '12px',
-                background: '#f3f4f6',
-                color: '#374151',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
-                fontSize: '14px',
-                fontWeight: '600',
-                cursor: confirming ? 'not-allowed' : 'pointer',
-              }}
-            >
-              Cancel
-            </button>
-
-            <button
-              onClick={handleReportIssue}
-              disabled={confirming || !disputeReason.trim()}
-              style={{
-                flex: 1,
-                padding: '12px',
-                background: confirming || !disputeReason.trim() ? '#9ca3af' : '#dc2626',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                fontSize: '14px',
-                fontWeight: '600',
-                cursor: confirming || !disputeReason.trim() ? 'not-allowed' : 'pointer',
-              }}
-            >
-              {confirming ? 'Submitting...' : 'Submit Dispute'}
-            </button>
-          </div>
-        </div>
-      )}
+      <DisputeModal
+        isOpen={showDisputeModal}
+        onClose={() => setShowDisputeModal(false)}
+        jobId={deliveryJobId}
+        customerUid={customerUid || "unknown_customer"}
+        customerName={customerName || "Customer"}
+      />
     </div>
   );
 }

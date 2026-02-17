@@ -29,6 +29,9 @@ interface CourierJobPreviewProps {
   showAcceptButton?: boolean;
   footer?: React.ReactNode;
   enableRoute?: boolean;
+  tokenModeEnabled?: boolean;
+  tokenClaimCost?: number;
+  insufficientTokens?: boolean;
 }
 
 // Convert lib Job to features Job (they're compatible)
@@ -48,6 +51,9 @@ export function CourierJobPreview({
   showAcceptButton = true,
   footer,
   enableRoute = true,
+  tokenModeEnabled = false,
+  tokenClaimCost = 0,
+  insufficientTokens = false,
 }: CourierJobPreviewProps) {
   const job = convertJob(libJob);
   const jobMiles = calcMiles(job.pickup, job.dropoff);
@@ -105,6 +111,14 @@ export function CourierJobPreview({
             {isAssignedToViewer ? "Agreed Earnings" : "Est. Earnings"}
           </p>
           <p className="text-lg font-bold text-emerald-600">${displayFee.toFixed(2)}</p>
+          {tokenModeEnabled && (
+            <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5">
+              <span className="text-[10px] font-semibold text-amber-800">Token mode</span>
+              <span className="text-[10px] text-amber-700">
+                {tokenClaimCost} token{tokenClaimCost === 1 ? "" : "s"}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -175,6 +189,11 @@ export function CourierJobPreview({
         {!eligible && reason && (
           <div className="text-xs text-red-600">Not eligible: {reason}</div>
         )}
+        {tokenModeEnabled && insufficientTokens && (
+          <div className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg px-2 py-1.5">
+            Insufficient token balance for unlock cost.
+          </div>
+        )}
       </div>
 
       {footer ? (
@@ -187,16 +206,20 @@ export function CourierJobPreview({
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={() => onAccept(job.id, fee)}
-                  disabled={loading || !eligible || !hasRateCard}
+                  disabled={loading || !eligible || !hasRateCard || insufficientTokens}
                   title={!eligible ? "You are not eligible for this job" : ""}
                   className={`w-full py-2.5 rounded-xl text-white font-semibold transition-colors ${
-                    loading || !eligible || !hasRateCard
+                    loading || !eligible || !hasRateCard || insufficientTokens
                       ? "bg-gray-300 cursor-not-allowed"
                       : "bg-emerald-600 hover:bg-emerald-700"
                   }`}
                 >
                   {loading
                     ? "Accepting..."
+                    : insufficientTokens
+                      ? "Insufficient Tokens"
+                    : tokenModeEnabled
+                      ? `Accept (${tokenClaimCost} token${tokenClaimCost === 1 ? "" : "s"})`
                     : !hasRateCard
                       ? "Set Rate Card"
                       : !eligible
@@ -213,16 +236,18 @@ export function CourierJobPreview({
             ) : (
               <button
                 onClick={() => onAccept(job.id, fee)}
-                disabled={loading || !eligible || !hasRateCard}
+                disabled={loading || !eligible || !hasRateCard || insufficientTokens}
                 title={!eligible ? "You are not eligible for this job" : ""}
                 className={`w-full py-2.5 rounded-xl text-white font-semibold transition-colors ${
-                  loading || !eligible || !hasRateCard
+                  loading || !eligible || !hasRateCard || insufficientTokens
                     ? "bg-gray-300 cursor-not-allowed"
                     : "bg-emerald-600 hover:bg-emerald-700"
                 }`}
               >
                 {loading
                   ? "Accepting..."
+                  : insufficientTokens
+                    ? "Insufficient Tokens"
                   : !hasRateCard
                     ? "Set Rate Card to Accept"
                     : !eligible
