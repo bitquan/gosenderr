@@ -310,8 +310,13 @@ service cloud.firestore {
         return signedIn() && resource.data.createdByUid == request.auth.uid;
       }
 
+      // Support both current `courierUid` and legacy `courierId` fields so
+      // older job documents remain readable to the assigned courier.
       function isAssignedCourier() {
-        return signedIn() && resource.data.courierUid == request.auth.uid;
+        return signedIn() && (
+          resource.data.courierUid == request.auth.uid
+          || (('courierId' in resource.data) && resource.data.courierId == request.auth.uid)
+        );
       }
 
       // create job: must be signed in and set createdByUid to yourself
