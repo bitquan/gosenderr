@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { addDoc, collection, query, onSnapshot, doc, updateDoc } from 'firebase/firestore'
-import { db } from '../lib/firebase'
+import { getDownloadURL, ref } from 'firebase/storage'
+import { db, storage } from '../lib/firebase'
 import { Card, CardContent } from '../components/Card'
 import { StatusBadge } from '../components/Badge'
 import { Avatar } from '../components/Avatar'
@@ -30,9 +31,13 @@ interface Courier {
     rejectionReason?: string
     documents?: Array<{
       label: string
-      url: string
+      url?: string
       name: string
       contentType: string
+      downloadUrl?: string
+      fileUrl?: string
+      storagePath?: string
+      path?: string
       uploadedAt?: any
     }>
   }
@@ -163,6 +168,36 @@ export default function CourierApprovalPage() {
         courier.courierProfile?.phone?.includes(q)
       )
     })
+
+  const openDocument = async (docItem: NonNullable<Courier['courierProfile']>['documents'][number]) => {
+    try {
+      let resolvedUrl =
+        docItem.url?.trim() ||
+        docItem.downloadUrl?.trim() ||
+        docItem.fileUrl?.trim() ||
+        ''
+
+      if (!resolvedUrl) {
+        const storagePath = docItem.storagePath?.trim() || docItem.path?.trim() || ''
+        if (storagePath) {
+          resolvedUrl = await getDownloadURL(ref(storage, storagePath))
+        }
+      }
+
+      if (!resolvedUrl) {
+        alert('Document URL is missing for this file. Ask courier to re-upload this document.')
+        return
+      }
+
+      const opened = window.open(resolvedUrl, '_blank', 'noopener,noreferrer')
+      if (!opened) {
+        window.location.assign(resolvedUrl)
+      }
+    } catch (error) {
+      console.error('Failed to open document', error)
+      alert('Unable to open this document. Please try again.')
+    }
+  }
 
   if (loading) {
     return (
@@ -353,19 +388,17 @@ export default function CourierApprovalPage() {
                       <div className="p-3 bg-white border border-gray-200 rounded-xl mb-4">
                         <p className="text-xs text-gray-500 mb-2">Uploaded Documents</p>
                         <div className="space-y-2">
-                          {profile.documents.map((docItem) => (
-                            <div key={docItem.url} className="flex items-center justify-between text-sm">
+                          {profile.documents.map((docItem, index) => (
+                            <div key={`${docItem.label}-${docItem.name}-${index}`} className="flex items-center justify-between text-sm">
                               <span className="text-gray-700">
                                 {docItem.label}: {docItem.name}
                               </span>
-                              <a
-                                href={docItem.url}
-                                target="_blank"
-                                rel="noreferrer"
+                              <button
+                                onClick={() => openDocument(docItem)}
                                 className="text-indigo-600 hover:underline"
                               >
                                 View
-                              </a>
+                              </button>
                             </div>
                           ))}
                         </div>
