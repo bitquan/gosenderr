@@ -80,13 +80,13 @@ export default function PaymentPage() {
 
     // Fallback to query params
     const itemId = searchParams.get("itemId");
-    const courierId = searchParams.get('courierUid');
+    const courierUid = searchParams.get('courierUid');
     const courierRate = searchParams.get("courierRate");
     const platformFee = searchParams.get("platformFee");
     const dropoffAddress = searchParams.get("dropoffAddress");
 
     if (
-      !itemId || !courierId || !courierRate || !platformFee || !dropoffAddress
+      !itemId || !courierUid || !courierRate || !platformFee || !dropoffAddress
     ) {
       setError("Missing required order information. Please start over.");
       return;
@@ -94,7 +94,7 @@ export default function PaymentPage() {
 
     setOrderDetails({
       itemId,
-      courierId,
+      courierUid,
       courierName: searchParams.get("courierName") || undefined,
       courierRate: parseFloat(courierRate),
       platformFee: parseFloat(platformFee),
