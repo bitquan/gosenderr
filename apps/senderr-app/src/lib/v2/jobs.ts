@@ -8,7 +8,9 @@ import {
   Timestamp,
   getDoc,
 } from "firebase/firestore";
+import { httpsCallable } from "firebase/functions";
 import { db } from "@/lib/firebase";
+import { functions } from "@/lib/firebase";
 import {
   GeoPoint,
   JobStatus,
@@ -186,4 +188,89 @@ export async function updateJobStatus(
       updatedAt: serverTimestamp(),
     });
   });
+}
+
+export type TokenPolicyPack = {
+  id: string;
+  tokens: number;
+  priceUsd: number;
+};
+
+export type TokenPolicyResponse = {
+  enabled: boolean;
+  costs: {
+    claimJob: number;
+    cancelJob: number;
+    disputeJob: number;
+  };
+  packs: TokenPolicyPack[];
+};
+
+export type TokenWalletSummaryResponse = {
+  available: number;
+  reserved: number;
+};
+
+export type TokenCheckoutSessionResponse = {
+  url: string;
+  sessionId?: string;
+  emulated?: boolean;
+};
+
+type TokenCheckoutSessionRequest = {
+  packId: string;
+  successUrl: string;
+  cancelUrl: string;
+  idempotencyKey: string;
+};
+
+export async function getTokenPolicy(): Promise<TokenPolicyResponse> {
+  if (!functions) {
+    throw new Error("Firebase Functions not initialized");
+  }
+
+  const callable = httpsCallable<unknown, TokenPolicyResponse>(
+    functions,
+    "getTokenPolicy",
+  );
+  const result = await callable({});
+  return result.data;
+}
+
+export async function getTokenWalletSummary(): Promise<TokenWalletSummaryResponse> {
+  if (!functions) {
+    throw new Error("Firebase Functions not initialized");
+  }
+
+  const callable = httpsCallable<unknown, TokenWalletSummaryResponse>(
+    functions,
+    "getTokenWalletSummary",
+  );
+  const result = await callable({});
+  return result.data;
+}
+
+export async function tokenCreateCheckoutSession(
+  packId: string,
+  successUrl: string,
+  cancelUrl: string,
+  idempotencyKey: string,
+): Promise<TokenCheckoutSessionResponse> {
+  if (!functions) {
+    throw new Error("Firebase Functions not initialized");
+  }
+
+  const callable = httpsCallable<
+    TokenCheckoutSessionRequest,
+    TokenCheckoutSessionResponse
+  >(functions, "tokenCreateCheckoutSession");
+
+  const result = await callable({
+    packId,
+    successUrl,
+    cancelUrl,
+    idempotencyKey,
+  });
+
+  return result.data;
 }
