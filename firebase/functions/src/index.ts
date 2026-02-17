@@ -24,6 +24,7 @@ export { runTestFlow } from "./http/runTestFlow";
 export { getPublicConfig } from "./http/getPublicConfig";
 export { getPublicConfigHttp } from "./http/getPublicConfigHttp";
 export { createPaymentIntentHttp } from "./http/createPaymentIntentHttp";
+export * from "./http/tokenWalletCommands";
 
 // Stripe Functions
 export * from "./stripe";
