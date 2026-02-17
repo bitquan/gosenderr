@@ -230,6 +230,12 @@ export default function CourierSettingsPage() {
   const handleSavePreferences = async () => {
     if (!user) return;
 
+    const courierStatus = courierData?.courierProfile?.status;
+    if (availability && courierStatus !== "approved") {
+      alert("Your courier profile must be approved before going online.");
+      return;
+    }
+
     setSavingPreferences(true);
     try {
       await updateDoc(doc(db, 'users', user.uid), {

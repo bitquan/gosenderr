@@ -68,9 +68,27 @@ service cloud.firestore {
       
       // Users can create their own document (but NOT with admin role)
       allow create: if isSelf(uid) && validNonAdminRole(request.resource.data.role);
+
+      function approvedBeforeOnline() {
+        return !(
+          (
+            request.resource.data.get('courierProfile', {}).get('isOnline', false) == true
+            && resource.data.get('courierProfile', {}).get('isOnline', false) != true
+          )
+          ||
+          (
+            request.resource.data.get('courierProfile', {}).get('online', false) == true
+            && resource.data.get('courierProfile', {}).get('online', false) != true
+          )
+        ) || request.resource.data
+          .get('courierProfile', {})
+          .get('status', resource.data.get('courierProfile', {}).get('status', '')) == 'approved';
+      }
       
       // Users can update their own document (but cannot change role to admin)
-      allow update: if isSelf(uid) && (!('role' in request.resource.data) || validNonAdminRole(request.resource.data.role));
+      allow update: if isSelf(uid)
+        && (!('role' in request.resource.data) || validNonAdminRole(request.resource.data.role))
+        && approvedBeforeOnline();
 
       // Allow rating writers to update seller rating stats only
       allow update: if signedIn()

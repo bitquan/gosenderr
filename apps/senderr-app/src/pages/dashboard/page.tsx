@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { doc, updateDoc } from "firebase/firestore";
 import { LoadingState } from "@gosenderr/ui";
@@ -44,7 +44,12 @@ export default function CourierDashboardMapShell() {
   const [acceptingJobId, setAcceptingJobId] = useState<string | null>(null);
   const [decliningJobId, setDecliningJobId] = useState<string | null>(null);
   const [togglingOnline, setTogglingOnline] = useState(false);
-  const [showOnboardingModal, setShowOnboardingModal] = useState(false);
+  const [bottomSheetHeight, setBottomSheetHeight] = useState(340);
+  const bottomDragRef = useRef({
+    active: false,
+    startY: 0,
+    startHeight: 340,
+  });
   const [tokenClaimReadiness, setTokenClaimReadiness] =
     useState<TokenClaimReadiness | null>(null);
 
@@ -136,7 +141,18 @@ export default function CourierDashboardMapShell() {
   const courierStatus = (userDoc?.courierProfile as any)?.status || "none";
   const rejectionReason = (userDoc?.courierProfile as any)?.rejectionReason || null;
   const isApproved = courierStatus === "approved";
-  const isOnline = Boolean(userDoc?.courierProfile?.isOnline);
+  const storedIsOnline = Boolean(userDoc?.courierProfile?.isOnline);
+  const isOnline = isApproved && storedIsOnline;
+
+  useEffect(() => {
+    if (!uid || !storedIsOnline || isApproved) return;
+
+    updateDoc(doc(db, "users", uid), {
+      "courierProfile.isOnline": false,
+    }).catch((error) => {
+      console.error("Failed to reset online status for unapproved courier", error);
+    });
+  }, [uid, storedIsOnline, isApproved]);
 
   const getRateCardForJob = (job: Job): RateCard | PackageRateCard | FoodRateCard | null => {
     const isFoodJob = Boolean(
@@ -154,7 +170,7 @@ export default function CourierDashboardMapShell() {
     if (!uid || togglingOnline) return;
 
     if (!isApproved) {
-      setShowOnboardingModal(true);
+      alert("Your courier profile must be approved before going online.");
       return;
     }
 
@@ -226,6 +242,36 @@ export default function CourierDashboardMapShell() {
     }
   };
 
+  const beginBottomSheetDrag = (clientY: number) => {
+    bottomDragRef.current.active = true;
+    bottomDragRef.current.startY = clientY;
+    bottomDragRef.current.startHeight = bottomSheetHeight;
+  };
+
+  useEffect(() => {
+    const handleMove = (event: PointerEvent) => {
+      if (!bottomDragRef.current.active) return;
+
+      const deltaY = bottomDragRef.current.startY - event.clientY;
+      const minHeight = 220;
+      const maxHeight = Math.min(window.innerHeight * 0.82, 680);
+      const next = bottomDragRef.current.startHeight + deltaY;
+      setBottomSheetHeight(Math.max(minHeight, Math.min(maxHeight, next)));
+    };
+
+    const handleUp = () => {
+      bottomDragRef.current.active = false;
+    };
+
+    window.addEventListener("pointermove", handleMove);
+    window.addEventListener("pointerup", handleUp);
+
+    return () => {
+      window.removeEventListener("pointermove", handleMove);
+      window.removeEventListener("pointerup", handleUp);
+    };
+  }, [bottomSheetHeight]);
+
   if (authLoading || userLoading || jobsLoading) {
     return <LoadingState fullPage message="Loading map shell..." />;
   }
@@ -246,7 +292,7 @@ export default function CourierDashboardMapShell() {
         />
       </div>
 
-      <div className="relative z-10 min-h-screen flex flex-col justify-between">
+      <div className="relative z-10 min-h-screen flex flex-col justify-between pointer-events-none">
         <div className="p-4 space-y-3 pointer-events-none">
           <div className="pointer-events-auto bg-gradient-to-r from-blue-700 via-blue-600 to-purple-600 text-white rounded-b-3xl shadow-2xl border-b border-white/20 p-3 flex items-center justify-between gap-3">
             <div>
@@ -262,7 +308,7 @@ export default function CourierDashboardMapShell() {
                 isOnline
                   ? "bg-emerald-500/25 text-emerald-100 border-emerald-300/40"
                   : "bg-slate-950/50 text-blue-100 border-white/20"
-              } ${(togglingOnline || !isApproved) ? "opacity-60 cursor-not-allowed" : ""}`}
+              } ${togglingOnline || !isApproved ? "opacity-60 cursor-not-allowed" : ""}`}
             >
               {isOnline ? "Online" : "Offline"}
             </button>
@@ -295,7 +341,20 @@ export default function CourierDashboardMapShell() {
           )}
         </div>
 
-        <div className="pointer-events-auto rounded-t-3xl bg-gradient-to-br from-slate-900 via-purple-900 to-purple-950/90 border-t border-white/10 shadow-2xl p-4 space-y-4 max-h-[52vh] overflow-y-auto text-white backdrop-blur">
+        <div
+          className="pointer-events-auto rounded-t-3xl bg-gradient-to-br from-slate-900 via-purple-900 to-purple-950/90 border-t border-white/10 shadow-2xl p-4 space-y-4 overflow-y-auto text-white backdrop-blur"
+          style={{
+            height: `${bottomSheetHeight}px`,
+            transition: bottomDragRef.current.active ? "none" : "height 150ms ease-out",
+            touchAction: "none",
+          }}
+        >
+          <div
+            className="mx-auto h-1.5 w-14 rounded-full bg-white/30"
+            onPointerDown={(event) => beginBottomSheetDrag(event.clientY)}
+            style={{ cursor: "ns-resize", touchAction: "none" }}
+            aria-label="Drag map shell queue"
+          />
           <div className="flex items-center justify-between">
             <h2 className="text-base font-bold text-white">Map Shell Queue</h2>
             <div className="flex items-center gap-2 text-xs">
@@ -402,45 +461,22 @@ export default function CourierDashboardMapShell() {
           </div>
         </div>
 
-        {showOnboardingModal && (
-          <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-center justify-center px-4">
-            <div className="w-full max-w-md rounded-2xl border border-white/20 bg-gradient-to-br from-slate-900 via-purple-900 to-purple-950/95 p-5 shadow-2xl text-white pointer-events-auto">
-              <h3 className="text-lg font-bold">Complete onboarding to go Online</h3>
+        {!isApproved && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center px-4 pointer-events-none">
+            <div className="w-full max-w-md rounded-2xl border border-white/20 bg-gradient-to-br from-slate-900/95 via-purple-900/95 to-purple-950/95 p-5 shadow-2xl text-white pointer-events-auto">
+              <h3 className="text-lg font-bold">Onboarding required</h3>
               <p className="text-sm text-blue-100 mt-2">
-                Your current status is <span className="font-semibold text-white">{courierStatus}</span>. You must complete onboarding before enabling Online mode.
+                Status: <span className="font-semibold text-white">{courierStatus}</span>. Complete onboarding before going Online.
               </p>
               {rejectionReason && (
-                <p className="text-xs text-amber-200 mt-2">
-                  Review note: {rejectionReason}
-                </p>
+                <p className="text-xs text-amber-200 mt-2">Review note: {rejectionReason}</p>
               )}
-
-              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <button
-                  onClick={() => {
-                    setShowOnboardingModal(false);
-                    navigate("/onboarding");
-                  }}
-                  className="rounded-lg bg-gradient-to-r from-blue-700 via-blue-600 to-purple-600 px-4 py-2 text-sm font-semibold text-white"
-                >
-                  Start onboarding
-                </button>
-                <button
-                  onClick={() => {
-                    setShowOnboardingModal(false);
-                    navigate("/onboarding/stripe");
-                  }}
-                  className="rounded-lg border border-white/25 bg-white/10 px-4 py-2 text-sm font-semibold text-blue-100"
-                >
-                  Stripe step
-                </button>
-                <button
-                  onClick={() => setShowOnboardingModal(false)}
-                  className="sm:col-span-2 rounded-lg border border-white/20 bg-transparent px-4 py-2 text-sm font-semibold text-white/80"
-                >
-                  Not now
-                </button>
-              </div>
+              <button
+                onClick={() => navigate("/onboarding")}
+                className="mt-4 w-full rounded-lg bg-gradient-to-r from-blue-700 via-blue-600 to-purple-600 px-4 py-2 text-sm font-semibold text-white"
+              >
+                Go to onboarding
+              </button>
             </div>
           </div>
         )}

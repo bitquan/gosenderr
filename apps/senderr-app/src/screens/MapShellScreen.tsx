@@ -204,6 +204,12 @@ export default function MapShellScreen({
         try {
           await requestLocation();
           if (action === "start_tracking") {
+            const courierStatus =
+              userDoc?.courierProfile?.status || "none";
+            if (courierStatus !== "approved") {
+              alert("Your courier profile must be approved before going online.");
+              return;
+            }
             await updateDoc(doc(db, "users", uid), {
               "courierProfile.isOnline": true,
             });

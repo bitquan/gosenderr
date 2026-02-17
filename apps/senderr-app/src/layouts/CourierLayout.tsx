@@ -35,6 +35,13 @@ export default function CourierLayout() {
 
   const baseTop = isMapShellRoute ? 128 : 112;
 
+  const beginDrag = (clientY: number) => {
+    dragRef.current.active = true;
+    dragRef.current.moved = false;
+    dragRef.current.startY = clientY;
+    dragRef.current.startTop = overlayTop;
+  };
+
   useEffect(() => {
     debugLogger.log("render", "CourierLayout mounted with floating overlay navigation");
   }, []);
@@ -87,7 +94,11 @@ export default function CourierLayout() {
       >
         {overlayOpen && (
           <div className="ml-2 w-64 rounded-2xl border border-white/10 bg-slate-950/90 backdrop-blur shadow-2xl overflow-hidden text-white">
-            <div className="px-4 py-3 border-b border-white/20 bg-gradient-to-r from-blue-700 via-blue-600 to-purple-600 text-white">
+            <div
+              className="px-4 py-3 border-b border-white/20 bg-gradient-to-r from-blue-700 via-blue-600 to-purple-600 text-white"
+              onPointerDown={(event) => beginDrag(event.clientY)}
+              style={{ touchAction: "none", cursor: "grab" }}
+            >
               <p className="text-xs uppercase tracking-wide text-blue-100">Senderr</p>
               <p className="text-sm font-semibold text-white">Courier Navigation</p>
             </div>
@@ -117,12 +128,7 @@ export default function CourierLayout() {
         )}
 
         <button
-          onPointerDown={(event) => {
-            dragRef.current.active = true;
-            dragRef.current.moved = false;
-            dragRef.current.startY = event.clientY;
-            dragRef.current.startTop = overlayTop;
-          }}
+          onPointerDown={(event) => beginDrag(event.clientY)}
           onClick={() => {
             if (dragRef.current.moved) return;
             setOverlayOpen((prev) => !prev);
