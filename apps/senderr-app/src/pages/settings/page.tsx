@@ -68,6 +68,14 @@ const STATE_OPTIONS = [
   { code: "DC", name: "District of Columbia" },
 ];
 
+type SettingsTab =
+  | "account"
+  | "delivery"
+  | "payouts"
+  | "notifications"
+  | "documents"
+  | "support";
+
 export default function CourierSettingsPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -75,6 +83,7 @@ export default function CourierSettingsPage() {
   const [courierData, setCourierData] = useState<any>(null);
   const [dataLoading, setDataLoading] = useState(true);
   const [signingOut, setSigningOut] = useState(false);
+  const [activeTab, setActiveTab] = useState<SettingsTab>("account");
   const [availability, setAvailability] = useState(false);
   const [serviceRadius, setServiceRadius] = useState(10);
   const [taxState, setTaxState] = useState('');
@@ -365,18 +374,48 @@ export default function CourierSettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8F9FF]">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-purple-950/90">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-6">
         {/* Header */}
-        <div className="space-y-2">
+        <div className="space-y-2 rounded-3xl bg-gradient-to-r from-blue-700 via-blue-600 to-purple-600 text-white shadow-2xl border border-white/20 px-5 py-5">
           <div className="flex items-center justify-between">
-            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">
+            <h1 className="text-3xl sm:text-4xl font-bold text-white">
               ⚙️ Settings & Preferences
             </h1>
+          </div>
+          <p className="text-sm text-blue-100">Manage courier profile, payouts, and token mode.</p>
+        </div>
+
+        <div className="rounded-2xl border border-white/15 bg-slate-950/70 p-2 backdrop-blur">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {[
+              { id: "account", label: "Account" },
+              { id: "delivery", label: "Delivery" },
+              { id: "payouts", label: "Payouts" },
+              { id: "notifications", label: "Notifications" },
+              { id: "documents", label: "Documents" },
+              { id: "support", label: "Support" },
+            ].map((tab) => {
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as SettingsTab)}
+                  className={`rounded-xl px-3 py-2 text-xs sm:text-sm font-semibold transition-colors ${
+                    isActive
+                      ? "bg-gradient-to-r from-blue-700 via-blue-600 to-purple-600 text-white"
+                      : "bg-white/10 text-blue-100 hover:bg-white/20"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
           </div>
         </div>
 
         {/* Account Section */}
+        {activeTab === "account" && (
         <div className="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden">
           <div className="p-6 sm:p-8 border-b border-gray-200">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">
@@ -432,8 +471,10 @@ export default function CourierSettingsPage() {
             </div>
           </div>
         </div>
+        )}
 
         {/* Delivery Settings Section */}
+        {activeTab === "delivery" && (
         <div className="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden">
           <div className="p-6 sm:p-8 border-b border-gray-200">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">
@@ -492,7 +533,7 @@ export default function CourierSettingsPage() {
               <button
                 onClick={handleSavePreferences}
                 disabled={savingPreferences}
-                className="w-full rounded-xl bg-purple-600 px-4 py-3 text-sm font-semibold text-white hover:bg-purple-700 disabled:opacity-60"
+                className="w-full rounded-xl bg-gradient-to-r from-blue-700 via-blue-600 to-purple-600 px-4 py-3 text-sm font-semibold text-white hover:opacity-95 disabled:opacity-60"
               >
                 {savingPreferences ? "Saving..." : "Save Delivery Preferences"}
               </button>
@@ -500,7 +541,7 @@ export default function CourierSettingsPage() {
             <div className="space-y-3">
               <Link
                 to="/rate-cards"
-                className="flex items-center justify-between rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 px-6 py-4 font-semibold text-gray-900 hover:border-blue-300 hover:from-blue-100 hover:to-indigo-100 transition-all group"
+                className="flex items-center justify-between rounded-xl bg-gradient-to-br from-slate-900 via-purple-900 to-purple-950/90 text-white border border-white/10 px-6 py-4 font-semibold transition-all group"
               >
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">💰</span>
@@ -514,7 +555,7 @@ export default function CourierSettingsPage() {
 
               <Link
                 to="/equipment"
-                className="flex items-center justify-between rounded-xl bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200 px-6 py-4 font-semibold text-gray-900 hover:border-purple-300 hover:from-purple-100 hover:to-pink-100 transition-all group"
+                className="flex items-center justify-between rounded-xl bg-gradient-to-br from-slate-900 via-purple-900 to-purple-950/90 text-white border border-white/10 px-6 py-4 font-semibold transition-all group"
               >
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">🎒</span>
@@ -528,8 +569,11 @@ export default function CourierSettingsPage() {
             </div>
           </div>
         </div>
+        )}
 
         {/* Tax & Payout Settings */}
+        {activeTab === "payouts" && (
+        <>
         <div className="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden">
           <div className="p-6 sm:p-8 border-b border-gray-200">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">
@@ -642,8 +686,50 @@ export default function CourierSettingsPage() {
             </div>
           </div>
         </div>
+        
+
+        {/* Payments Section */}
+        <div className="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden">
+          <div className="p-6 sm:p-8 border-b border-gray-200">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              💳 Payments
+            </h2>
+            <div className="space-y-3">
+              <Link
+                to="/earnings"
+                className="flex items-center justify-between rounded-xl bg-gradient-to-r from-emerald-50 to-green-50 border-2 border-emerald-200 px-6 py-4 font-semibold text-gray-900 hover:border-emerald-300 hover:from-emerald-100 hover:to-green-100 transition-all group"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">💵</span>
+                  <div className="text-left">
+                    <p className="font-bold">Earnings & Payouts</p>
+                    <p className="text-xs text-gray-600">View your earnings history</p>
+                  </div>
+                </div>
+                <span className="text-2xl group-hover:translate-x-1 transition-transform">→</span>
+              </Link>
+
+              <Link
+                to="/onboarding/stripe"
+                className="flex items-center justify-between rounded-xl bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-200 px-6 py-4 font-semibold text-gray-900 hover:border-blue-300 hover:from-blue-100 hover:to-cyan-100 transition-all group"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">🏦</span>
+                  <div className="text-left">
+                    <p className="font-bold">Stripe Connect Setup</p>
+                    <p className="text-xs text-gray-600">Connect your bank account</p>
+                  </div>
+                </div>
+                <span className="text-2xl group-hover:translate-x-1 transition-transform">→</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+        </>
+        )}
 
         {/* Notification Preferences */}
+        {activeTab === "notifications" && (
         <div className="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden">
           <div className="p-6 sm:p-8 border-b border-gray-200">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">
@@ -718,8 +804,10 @@ export default function CourierSettingsPage() {
             </div>
           </div>
         </div>
+        )}
 
         {/* Verification Documents */}
+        {activeTab === "documents" && (
         <div className="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden">
           <div className="p-6 sm:p-8 border-b border-gray-200">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">
@@ -834,46 +922,11 @@ export default function CourierSettingsPage() {
             </div>
           </div>
         </div>
-
-        {/* Payments Section */}
-        <div className="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden">
-          <div className="p-6 sm:p-8 border-b border-gray-200">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
-              💳 Payments
-            </h2>
-            <div className="space-y-3">
-              <Link
-                to="/earnings"
-                className="flex items-center justify-between rounded-xl bg-gradient-to-r from-emerald-50 to-green-50 border-2 border-emerald-200 px-6 py-4 font-semibold text-gray-900 hover:border-emerald-300 hover:from-emerald-100 hover:to-green-100 transition-all group"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">💵</span>
-                  <div className="text-left">
-                    <p className="font-bold">Earnings & Payouts</p>
-                    <p className="text-xs text-gray-600">View your earnings history</p>
-                  </div>
-                </div>
-                <span className="text-2xl group-hover:translate-x-1 transition-transform">→</span>
-              </Link>
-
-              <Link
-                to="/onboarding/stripe"
-                className="flex items-center justify-between rounded-xl bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-200 px-6 py-4 font-semibold text-gray-900 hover:border-blue-300 hover:from-blue-100 hover:to-cyan-100 transition-all group"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">🏦</span>
-                  <div className="text-left">
-                    <p className="font-bold">Stripe Connect Setup</p>
-                    <p className="text-xs text-gray-600">Connect your bank account</p>
-                  </div>
-                </div>
-                <span className="text-2xl group-hover:translate-x-1 transition-transform">→</span>
-              </Link>
-            </div>
-          </div>
-        </div>
+        )}
 
         {/* Support Section */}
+        {activeTab === "support" && (
+        <>
         <div className="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden">
           <div className="p-6 sm:p-8 border-b border-gray-200">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">
@@ -914,6 +967,8 @@ export default function CourierSettingsPage() {
             </p>
           </div>
         </div>
+        </>
+        )}
       </div>
     </div>
   );

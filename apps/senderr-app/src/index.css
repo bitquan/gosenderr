@@ -6,11 +6,12 @@
   html,
   body {
     @apply bg-white text-gray-900 antialiased;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
     height: 100%;
     width: 100%;
     position: relative;
-    overscroll-behavior: none;
+    overscroll-behavior-y: contain;
   }
 
   :root {
@@ -20,7 +21,8 @@
   #root {
     height: 100%;
     width: 100%;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 
   .app-shell {

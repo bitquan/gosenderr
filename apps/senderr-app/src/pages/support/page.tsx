@@ -74,6 +74,9 @@ const faqs: FAQItem[] = [
 export default function CourierSupportPage() {
   const [activeCategory, setActiveCategory] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState<"help" | "contact" | "emergency">(
+    "help",
+  );
 
   const categories = [
     "All",
@@ -105,7 +108,41 @@ export default function CourierSupportPage() {
             Find answers or contact support
           </p>
 
+          <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-lg p-2 grid grid-cols-3 gap-2">
+            <button
+              onClick={() => setActiveTab("help")}
+              className={`rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${
+                activeTab === "help"
+                  ? "bg-gradient-to-r from-blue-700 via-blue-600 to-purple-600 text-white"
+                  : "text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              Help
+            </button>
+            <button
+              onClick={() => setActiveTab("contact")}
+              className={`rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${
+                activeTab === "contact"
+                  ? "bg-gradient-to-r from-blue-700 via-blue-600 to-purple-600 text-white"
+                  : "text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              Contact
+            </button>
+            <button
+              onClick={() => setActiveTab("emergency")}
+              className={`rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${
+                activeTab === "emergency"
+                  ? "bg-gradient-to-r from-blue-700 via-blue-600 to-purple-600 text-white"
+                  : "text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              Emergency
+            </button>
+          </div>
+
           {/* Search */}
+          {activeTab === "help" && (
           <div className="max-w-2xl mx-auto">
             <input
               type="text"
@@ -115,9 +152,11 @@ export default function CourierSupportPage() {
               className="w-full px-6 py-4 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-lg"
             />
           </div>
+          )}
         </div>
 
         {/* Quick Actions */}
+        {activeTab === "contact" && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card
             variant="elevated"
@@ -154,8 +193,10 @@ export default function CourierSupportPage() {
             </CardContent>
           </Card>
         </div>
+        )}
 
         {/* Category Filter */}
+        {activeTab === "help" && (
         <div className="flex flex-wrap gap-2 justify-center">
           {categories.map((category) => (
             <button
@@ -171,8 +212,10 @@ export default function CourierSupportPage() {
             </button>
           ))}
         </div>
+        )}
 
         {/* FAQ List */}
+        {activeTab === "help" && (
         <div className="space-y-4">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">
             Frequently Asked Questions
@@ -207,8 +250,10 @@ export default function CourierSupportPage() {
             ))
           )}
         </div>
+        )}
 
         {/* Emergency Contact */}
+        {activeTab === "emergency" && (
         <Card variant="outlined" className="border-red-200 bg-red-50">
           <CardContent className="p-6">
             <div className="flex items-start gap-3">
@@ -231,6 +276,7 @@ export default function CourierSupportPage() {
             </div>
           </CardContent>
         </Card>
+        )}
       </div>
     </div>
   );
