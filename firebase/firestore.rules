@@ -346,21 +346,6 @@ service cloud.firestore {
             'updatedAt'
           ])
         )
-        ||
-        // 2) Any courier can claim an open or pending job (atomic claim)
-        (
-          (resource.data.status == 'open' || resource.data.status == 'pending')
-          && (!('courierUid' in resource.data) || resource.data.courierUid == null)
-          && request.resource.data.courierUid == request.auth.uid
-          && request.resource.data.status == 'assigned'
-        )
-        ||
-        // 3) Assigned courier can update job progress
-        (
-          isAssignedCourier()
-          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['courierUid', 'createdByUid', 'agreedFee']))
-          && validJobStatus(request.resource.data.status)
-        )
       );
       
       // Admins have full access

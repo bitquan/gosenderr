@@ -24,7 +24,12 @@ export { runTestFlow } from "./http/runTestFlow";
 export { getPublicConfig } from "./http/getPublicConfig";
 export { getPublicConfigHttp } from "./http/getPublicConfigHttp";
 export { createPaymentIntentHttp } from "./http/createPaymentIntentHttp";
-export { claimCourierJob, advanceCourierJobStatus } from "./http/courierJobCommands";
+export {
+	claimCourierJob,
+	advanceCourierJobStatus,
+	submitCourierJobProof,
+	submitLegacyDeliveryProof,
+} from "./http/courierJobCommands";
 
 // Stripe Functions
 export * from "./stripe";

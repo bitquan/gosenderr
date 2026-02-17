@@ -23,6 +23,16 @@ interface CreateJobPayload {
   photos: JobPhoto[];
 }
 
+interface JobProofPayload {
+  type: "pickup" | "dropoff";
+  photoUrl: string;
+  coordinates: {
+    latitude: number;
+    longitude: number;
+    accuracy: number;
+  };
+}
+
 export async function createJob(
   userUid: string,
   payload: CreateJobPayload,
@@ -101,4 +111,38 @@ export async function updateJobStatus(
   >(functions, "advanceCourierJobStatus");
 
   await advanceCourierJobStatusCallable({ jobId, nextStatus });
+}
+
+export async function submitCourierJobProof(
+  jobId: string,
+  payload: JobProofPayload,
+): Promise<void> {
+  const submitCourierJobProofCallable = httpsCallable<
+    {
+      jobId: string;
+      type: "pickup" | "dropoff";
+      photoUrl: string;
+      coordinates: {
+        latitude: number;
+        longitude: number;
+        accuracy: number;
+      };
+    },
+    { success: boolean }
+  >(functions, "submitCourierJobProof");
+
+  await submitCourierJobProofCallable({ jobId, ...payload });
+}
+
+export async function submitLegacyDeliveryProof(
+  jobId: string,
+  photoUrl: string,
+  notes?: string,
+): Promise<void> {
+  const submitLegacyDeliveryProofCallable = httpsCallable<
+    { jobId: string; photoUrl: string; notes?: string },
+    { success: boolean; status: string }
+  >(functions, "submitLegacyDeliveryProof");
+
+  await submitLegacyDeliveryProofCallable({ jobId, photoUrl, notes });
 }
