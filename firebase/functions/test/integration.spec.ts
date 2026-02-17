@@ -187,6 +187,51 @@ describe('Cloud Functions integration tests (emulator)', function () {
     try { await admin.firestore().doc('simulateTest/doc1').delete() } catch (e) {}
   })
 
+  it('simulateRule should allow courierUid order reads and deny non-participants', async function () {
+    const adminUser = await admin.auth().createUser({ email: `rules-admin+${Date.now()}@example.com`, password: 'password123' })
+    await admin.firestore().doc(`users/${adminUser.uid}`).set(makeMockUser({ role: 'admin', email: adminUser.email }))
+
+    const courierUser = await admin.auth().createUser({ email: `rules-courier+${Date.now()}@example.com`, password: 'password123' })
+    await admin.firestore().doc(`users/${courierUser.uid}`).set(makeMockUser({ role: 'courier', email: courierUser.email }))
+
+    const orderRef = admin.firestore().collection('orders').doc(`rule-order-${Date.now()}`)
+    await orderRef.set({
+      customerId: 'customer-test',
+      sellerId: 'seller-test',
+      courierUid: courierUser.uid,
+      status: 'paid',
+      createdAt: admin.firestore.Timestamp.now(),
+      updatedAt: admin.firestore.Timestamp.now(),
+    })
+
+    const customToken = await admin.auth().createCustomToken(adminUser.uid)
+    const idToken = await getIdToken(customToken)
+
+    const allowedRes = await callCallable('simulateRule', idToken, {
+      op: 'get',
+      path: `orders/${orderRef.id}`,
+      auth: { uid: courierUser.uid },
+    })
+    const allowedJson = await allowedRes.json()
+    assert.equal(allowedRes.status, 200)
+    assert.strictEqual(allowedJson?.result?.allowed, true, 'courierUid participant should be allowed')
+
+    const deniedRes = await callCallable('simulateRule', idToken, {
+      op: 'get',
+      path: `orders/${orderRef.id}`,
+      auth: { uid: `not-participant-${Date.now()}` },
+    })
+    const deniedJson = await deniedRes.json()
+    assert.equal(deniedRes.status, 200)
+    assert.strictEqual(deniedJson?.result?.allowed, false, 'non-participant should be denied')
+
+    try { await admin.firestore().doc(`orders/${orderRef.id}`).delete() } catch (e) {}
+    try { await admin.auth().deleteUser(courierUser.uid) } catch (e) {}
+    try { await admin.firestore().doc(`users/${courierUser.uid}`).delete() } catch (e) {}
+    try { await admin.auth().deleteUser(adminUser.uid) } catch (e) {}
+    try { await admin.firestore().doc(`users/${adminUser.uid}`).delete() } catch (e) {}
+  })
+
   it('runSystemSimulation should orchestrate a multi-step system run and cleanup', async function () {
     // create admin caller
     const adminUser = await admin.auth().createUser({ email: `sim-admin+${Date.now()}@example.com`, password: 'password123' })
