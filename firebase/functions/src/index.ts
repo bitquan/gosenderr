@@ -29,6 +29,11 @@ export {
 	advanceCourierJobStatus,
 	submitCourierJobProof,
 	submitLegacyDeliveryProof,
+	declineCourierJobOffer,
+	reassignCourierJobAdmin,
+	cancelCourierJobAdmin,
+	updateLegacyCourierJobStatus,
+	rejectRunnerJob,
 } from "./http/courierJobCommands";
 
 // Stripe Functions

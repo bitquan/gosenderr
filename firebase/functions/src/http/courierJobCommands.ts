@@ -45,6 +45,30 @@ interface SubmitLegacyDeliveryProofRequest {
   notes?: string;
 }
 
+interface DeclineCourierJobOfferRequest {
+  jobId: string;
+}
+
+interface ReassignCourierJobAdminRequest {
+  jobId: string;
+  courierUid: string;
+}
+
+interface CancelCourierJobAdminRequest {
+  jobId: string;
+}
+
+interface UpdateLegacyCourierJobStatusRequest {
+  jobId: string;
+  status: "in_progress" | "completed";
+}
+
+interface RejectRunnerJobRequest {
+  jobId: string;
+  reasonLabel: string;
+  notes?: string;
+}
+
 function toRad(value: number): number {
   return (value * Math.PI) / 180;
 }
@@ -86,6 +110,16 @@ function getExpectedNextStatus(currentStatus: JobStatus): JobStatus | null {
   };
 
   return transitions[currentStatus] ?? null;
+}
+
+async function isAdminCaller(uid: string, token: Record<string, unknown> = {}): Promise<boolean> {
+  if (token.admin === true || token.role === "admin") {
+    return true;
+  }
+
+  const userSnap = await admin.firestore().doc(`users/${uid}`).get();
+  const userData = userSnap.data() as { role?: string } | undefined;
+  return userData?.role === "admin";
 }
 
 export const claimCourierJob = functions.https.onCall(
@@ -443,5 +477,257 @@ export const submitLegacyDeliveryProof = functions.https.onCall(
     });
 
     return { success: true, jobId, status: "delivered" };
+  },
+);
+
+export const declineCourierJobOffer = functions.https.onCall(
+  async (data: DeclineCourierJobOfferRequest, context) => {
+    if (!context.auth?.uid) {
+      throw new functions.https.HttpsError("unauthenticated", "Authentication required");
+    }
+
+    const { jobId } = data || ({} as DeclineCourierJobOfferRequest);
+    if (!jobId || typeof jobId !== "string") {
+      throw new functions.https.HttpsError("invalid-argument", "jobId is required");
+    }
+
+    const courierUid = context.auth.uid;
+    const db = admin.firestore();
+    const jobRef = db.doc(`jobs/${jobId}`);
+
+    await db.runTransaction(async (tx) => {
+      const jobSnap = await tx.get(jobRef);
+      if (!jobSnap.exists) {
+        throw new functions.https.HttpsError("not-found", "Job not found");
+      }
+
+      const jobData = jobSnap.data() as {
+        offerQueue?: unknown;
+        offerCourierUid?: string | null;
+      };
+
+      const offerQueue = Array.isArray(jobData?.offerQueue)
+        ? (jobData.offerQueue as string[])
+        : [];
+
+      const isInQueue = offerQueue.includes(courierUid);
+      const isCurrentOffer = jobData?.offerCourierUid === courierUid;
+      if (!isInQueue && !isCurrentOffer) {
+        throw new functions.https.HttpsError(
+          "permission-denied",
+          "Courier is not part of this offer queue",
+        );
+      }
+
+      const remaining = offerQueue.filter((uid) => uid !== courierUid);
+      const nextCourierUid = remaining[0] || null;
+
+      tx.update(jobRef, {
+        offerQueue: remaining,
+        offerCourierUid: nextCourierUid,
+        offerStatus: nextCourierUid ? "pending" : "open",
+        offerExpiresAt: nextCourierUid
+          ? admin.firestore.Timestamp.fromMillis(Date.now() + 90 * 1000)
+          : null,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    });
+
+    return { success: true, jobId };
+  },
+);
+
+export const reassignCourierJobAdmin = functions.https.onCall(
+  async (data: ReassignCourierJobAdminRequest, context) => {
+    if (!context.auth?.uid) {
+      throw new functions.https.HttpsError("unauthenticated", "Authentication required");
+    }
+
+    const { jobId, courierUid } = data || ({} as ReassignCourierJobAdminRequest);
+    if (!jobId || typeof jobId !== "string" || !courierUid || typeof courierUid !== "string") {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "jobId and courierUid are required",
+      );
+    }
+
+    const adminUid = context.auth.uid;
+    const callerIsAdmin = await isAdminCaller(adminUid, context.auth.token as Record<string, unknown>);
+    if (!callerIsAdmin) {
+      throw new functions.https.HttpsError("permission-denied", "Admin privileges required");
+    }
+
+    const db = admin.firestore();
+    const [jobSnap, courierSnap] = await Promise.all([
+      db.doc(`jobs/${jobId}`).get(),
+      db.doc(`users/${courierUid}`).get(),
+    ]);
+
+    if (!jobSnap.exists) {
+      throw new functions.https.HttpsError("not-found", "Job not found");
+    }
+
+    if (!courierSnap.exists) {
+      throw new functions.https.HttpsError("not-found", "Courier not found");
+    }
+
+    await db.doc(`jobs/${jobId}`).update({
+      courierUid,
+      status: "assigned",
+      acceptedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      adminLastActionBy: adminUid,
+    });
+
+    return { success: true, jobId, courierUid, status: "assigned" };
+  },
+);
+
+export const cancelCourierJobAdmin = functions.https.onCall(
+  async (data: CancelCourierJobAdminRequest, context) => {
+    if (!context.auth?.uid) {
+      throw new functions.https.HttpsError("unauthenticated", "Authentication required");
+    }
+
+    const { jobId } = data || ({} as CancelCourierJobAdminRequest);
+    if (!jobId || typeof jobId !== "string") {
+      throw new functions.https.HttpsError("invalid-argument", "jobId is required");
+    }
+
+    const adminUid = context.auth.uid;
+    const callerIsAdmin = await isAdminCaller(adminUid, context.auth.token as Record<string, unknown>);
+    if (!callerIsAdmin) {
+      throw new functions.https.HttpsError("permission-denied", "Admin privileges required");
+    }
+
+    await admin.firestore().doc(`jobs/${jobId}`).update({
+      status: "cancelled",
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      adminLastActionBy: adminUid,
+    });
+
+    return { success: true, jobId, status: "cancelled" };
+  },
+);
+
+export const updateLegacyCourierJobStatus = functions.https.onCall(
+  async (data: UpdateLegacyCourierJobStatusRequest, context) => {
+    if (!context.auth?.uid) {
+      throw new functions.https.HttpsError("unauthenticated", "Authentication required");
+    }
+
+    const { jobId, status } = data || ({} as UpdateLegacyCourierJobStatusRequest);
+    if (!jobId || typeof jobId !== "string") {
+      throw new functions.https.HttpsError("invalid-argument", "jobId is required");
+    }
+
+    if (!(status === "in_progress" || status === "completed")) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "status must be in_progress or completed",
+      );
+    }
+
+    const courierUid = context.auth.uid;
+    const db = admin.firestore();
+    const jobRef = db.doc(`jobs/${jobId}`);
+
+    await db.runTransaction(async (tx) => {
+      const jobSnap = await tx.get(jobRef);
+      if (!jobSnap.exists) {
+        throw new functions.https.HttpsError("not-found", "Job not found");
+      }
+
+      const jobData = jobSnap.data() as { status?: string; courierUid?: string | null };
+      if (!jobData?.courierUid || jobData.courierUid !== courierUid) {
+        throw new functions.https.HttpsError(
+          "permission-denied",
+          "Only assigned courier can update this job",
+        );
+      }
+
+      if (status === "in_progress" && jobData.status !== "assigned") {
+        throw new functions.https.HttpsError(
+          "failed-precondition",
+          `Cannot set in_progress from ${jobData.status || "unknown"}`,
+        );
+      }
+
+      if (status === "completed" && !["assigned", "in_progress"].includes(jobData.status || "")) {
+        throw new functions.https.HttpsError(
+          "failed-precondition",
+          `Cannot complete from ${jobData.status || "unknown"}`,
+        );
+      }
+
+      tx.update(jobRef, {
+        status,
+        ...(status === "completed"
+          ? { completedAt: admin.firestore.FieldValue.serverTimestamp() }
+          : {}),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    });
+
+    return { success: true, jobId, status };
+  },
+);
+
+export const rejectRunnerJob = functions.https.onCall(
+  async (data: RejectRunnerJobRequest, context) => {
+    if (!context.auth?.uid) {
+      throw new functions.https.HttpsError("unauthenticated", "Authentication required");
+    }
+
+    const { jobId, reasonLabel, notes } = data || ({} as RejectRunnerJobRequest);
+    if (!jobId || typeof jobId !== "string") {
+      throw new functions.https.HttpsError("invalid-argument", "jobId is required");
+    }
+
+    if (!reasonLabel || typeof reasonLabel !== "string") {
+      throw new functions.https.HttpsError("invalid-argument", "reasonLabel is required");
+    }
+
+    const runnerId = context.auth.uid;
+    const db = admin.firestore();
+    const jobRef = db.doc(`jobs/${jobId}`);
+
+    await db.runTransaction(async (tx) => {
+      const jobSnap = await tx.get(jobRef);
+      if (!jobSnap.exists) {
+        throw new functions.https.HttpsError("not-found", "Job not found");
+      }
+
+      const jobData = jobSnap.data() as { courierUid?: string | null };
+      if (!jobData?.courierUid || jobData.courierUid !== runnerId) {
+        throw new functions.https.HttpsError(
+          "permission-denied",
+          "Only assigned runner can reject this job",
+        );
+      }
+
+      tx.update(jobRef, {
+        status: "pending",
+        courierUid: null,
+        agreedFee: null,
+        rejectedBy: runnerId,
+        rejectedAt: admin.firestore.FieldValue.serverTimestamp(),
+        rejectionReason: reasonLabel,
+        rejectionNotes: notes || "",
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      const eventRef = db.collection("jobEvents").doc();
+      tx.set(eventRef, {
+        jobId,
+        runnerId,
+        eventType: "rejection",
+        reason: reasonLabel,
+        notes: notes || "",
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    });
+
+    return { success: true, jobId, status: "pending" };
   },
 );

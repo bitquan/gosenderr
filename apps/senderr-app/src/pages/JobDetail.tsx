@@ -1,13 +1,14 @@
 // @ts-nocheck
 import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate, Navigate } from 'react-router-dom'
-import { doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore'
+import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { useAuth } from '../hooks/useAuth'
 import { useAdmin } from '../hooks/useAdmin'
 import { Card, CardHeader, CardTitle, CardContent } from '../components/Card'
 import { StatusBadge } from '../components/Badge'
 import { formatCurrency, formatDate } from '../lib/utils'
+import { claimJob, updateLegacyCourierJobStatus } from '@/lib/v2/jobs'
 
 interface Job {
   id: string
@@ -82,14 +83,14 @@ export default function CourierJobDetailPage() {
   const handleAcceptJob = async () => {
     if (!job || !jobId || !user) return
     if (!window.confirm('Accept this delivery job?')) return
+    if (!job.agreedFee || job.agreedFee <= 0) {
+      alert('Job fee is missing. Please accept from the dashboard view.')
+      return
+    }
 
     setUpdating(true)
     try {
-      await updateDoc(doc(db, 'jobs', jobId), {
-        status: 'assigned',
-        courierUid: user.uid,
-        acceptedAt: serverTimestamp()
-      })
+      await claimJob(jobId, user.uid, job.agreedFee)
       alert('Job accepted! You can now proceed with the delivery.')
     } catch (error) {
       console.error('Error accepting job:', error)
@@ -111,13 +112,7 @@ export default function CourierJobDetailPage() {
 
     setUpdating(true)
     try {
-      const updateData: any = { status: newStatus }
-      
-      if (newStatus === 'completed') {
-        updateData.completedAt = serverTimestamp()
-      }
-
-      await updateDoc(doc(db, 'jobs', jobId), updateData)
+      await updateLegacyCourierJobStatus(jobId, newStatus as 'in_progress' | 'completed')
       
       if (newStatus === 'completed') {
         alert('Delivery completed! 🎉')

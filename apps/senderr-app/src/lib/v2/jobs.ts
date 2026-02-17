@@ -146,3 +146,58 @@ export async function submitLegacyDeliveryProof(
 
   await submitLegacyDeliveryProofCallable({ jobId, photoUrl, notes });
 }
+
+export async function declineCourierJobOffer(jobId: string): Promise<void> {
+  const declineCourierJobOfferCallable = httpsCallable<
+    { jobId: string },
+    { success: boolean }
+  >(functions, "declineCourierJobOffer");
+
+  await declineCourierJobOfferCallable({ jobId });
+}
+
+export async function reassignCourierJobAdmin(
+  jobId: string,
+  courierUid: string,
+): Promise<void> {
+  const reassignCourierJobAdminCallable = httpsCallable<
+    { jobId: string; courierUid: string },
+    { success: boolean; status: JobStatus }
+  >(functions, "reassignCourierJobAdmin");
+
+  await reassignCourierJobAdminCallable({ jobId, courierUid });
+}
+
+export async function cancelCourierJobAdmin(jobId: string): Promise<void> {
+  const cancelCourierJobAdminCallable = httpsCallable<
+    { jobId: string },
+    { success: boolean; status: JobStatus }
+  >(functions, "cancelCourierJobAdmin");
+
+  await cancelCourierJobAdminCallable({ jobId });
+}
+
+export async function updateLegacyCourierJobStatus(
+  jobId: string,
+  status: "in_progress" | "completed",
+): Promise<void> {
+  const updateLegacyCourierJobStatusCallable = httpsCallable<
+    { jobId: string; status: "in_progress" | "completed" },
+    { success: boolean; status: "in_progress" | "completed" }
+  >(functions, "updateLegacyCourierJobStatus");
+
+  await updateLegacyCourierJobStatusCallable({ jobId, status });
+}
+
+export async function rejectRunnerJob(
+  jobId: string,
+  reasonLabel: string,
+  notes?: string,
+): Promise<void> {
+  const rejectRunnerJobCallable = httpsCallable<
+    { jobId: string; reasonLabel: string; notes?: string },
+    { success: boolean; status: JobStatus }
+  >(functions, "rejectRunnerJob");
+
+  await rejectRunnerJobCallable({ jobId, reasonLabel, notes });
+}

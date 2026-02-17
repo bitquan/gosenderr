@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { doc, onSnapshot, updateDoc } from 'firebase/firestore'
+import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { Card, CardHeader, CardTitle, CardContent } from '../components/Card'
 import { StatusBadge } from '../components/Badge'
 import { formatCurrency, formatDate } from '../lib/utils'
+import { cancelCourierJobAdmin, reassignCourierJobAdmin } from '@/lib/v2/jobs'
 
 interface Job {
   id: string
@@ -155,10 +156,7 @@ export default function AdminJobDetailPage() {
                       
                       setProcessing(true)
                       try {
-                        await updateDoc(doc(db, 'jobs', job.id), {
-                          courierUid: courierInput,
-                          status: 'assigned'
-                        })
+                        await reassignCourierJobAdmin(job.id, courierInput)
                         alert('✅ Job reassigned successfully!')
                       } catch (error: any) {
                         console.error('Error reassigning:', error)
@@ -180,9 +178,7 @@ export default function AdminJobDetailPage() {
                     
                     setProcessing(true)
                     try {
-                      await updateDoc(doc(db, 'jobs', job.id), {
-                        status: 'cancelled'
-                      })
+                      await cancelCourierJobAdmin(job.id)
                       alert('✅ Job cancelled')
                       navigate('/admin/jobs')
                     } catch (error: any) {

@@ -1,13 +1,13 @@
 import { useMemo, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { doc, updateDoc, Timestamp, serverTimestamp } from "firebase/firestore";
+import { doc, updateDoc } from "firebase/firestore";
 import { LoadingState } from "@gosenderr/ui";
 
 import { db } from "@/lib/firebase";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { useUserDoc } from "@/hooks/v2/useUserDoc";
 import { useOpenJobs } from "@/hooks/v2/useOpenJobs";
-import { claimJob } from "@/lib/v2/jobs";
+import { claimJob, declineCourierJobOffer } from "@/lib/v2/jobs";
 import { CourierJobPreview } from "@/components/v2/CourierJobPreview";
 import type { Job } from "@/lib/v2/types";
 
@@ -145,18 +145,7 @@ export default function CourierDashboardMobile() {
   const handleDeclineOffer = async (job: Job) => {
     if (!uid) return;
     try {
-      const offerQueue: string[] = (job as any).offerQueue || [];
-      const remaining = offerQueue.filter((id) => id !== uid);
-      const nextCourierUid = remaining[0] || null;
-      await updateDoc(doc(db, "jobs", job.id), {
-        offerQueue: remaining,
-        offerCourierUid: nextCourierUid,
-        offerStatus: nextCourierUid ? "pending" : "open",
-        offerExpiresAt: nextCourierUid
-          ? Timestamp.fromDate(new Date(Date.now() + 90 * 1000))
-          : null,
-        updatedAt: serverTimestamp(),
-      });
+      await declineCourierJobOffer(job.id);
     } catch (error) {
       console.error("Failed to decline offer:", error);
       alert("Failed to decline offer. Please try again.");
