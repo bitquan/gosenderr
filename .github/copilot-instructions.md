@@ -4,7 +4,17 @@
 
 This file defines repo-wide Copilot behavior for active GoSenderr development.
 
-Use canonical docs from `/docs/BLUEPRINT.md` as operational truth.
+Use canonical system docs from `/Users/papadev/dev/worktrees/gosenderr/SYSTEMS/` as operational truth.
+
+## Systems Docs First (Required)
+
+Before planning, coding, or reviewing changes:
+
+1. Open `/Users/papadev/dev/worktrees/gosenderr/SYSTEMS/INDEX.md`.
+2. Read the relevant system docs under `/Users/papadev/dev/worktrees/gosenderr/SYSTEMS/`.
+3. Treat those docs as the architecture and boundary source of truth.
+
+If any local docs conflict, stop and reconcile against SYSTEMS docs before implementation.
 
 ## Active Repo Topology
 

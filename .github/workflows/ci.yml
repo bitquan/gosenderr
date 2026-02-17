@@ -285,6 +285,11 @@ jobs:
       - name: Build workspace
         run: pnpm build
 
+      - name: Enforce bundle size limits
+        env:
+          MAX_BUNDLE_CHUNK_BYTES: 1550000
+        run: pnpm check:bundle-size
+
   tests:
     name: Unit Tests
     needs: [changes]

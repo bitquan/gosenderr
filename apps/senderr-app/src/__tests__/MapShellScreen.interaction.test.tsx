@@ -40,6 +40,9 @@ describe("MapShellScreen interactions", () => {
     await waitFor(() =>
       expect((alertSpy as any).mock.calls.length).toBeGreaterThanOrEqual(1),
     );
+    await waitFor(() =>
+      expect((claimJob as any).mock.calls.length).toBeGreaterThanOrEqual(1),
+    );
     alertSpy.mockClear();
 
     // Unmount first render before subsequent renders to avoid duplicate nodes

@@ -57,11 +57,11 @@ export default function MapShellScreen({
         return;
       }
 
-      // For demo, use the dev pending job id
+      // Placeholder until real active job wiring is connected
       const jobId = "dev_job_1";
 
-      // Dev placeholders should not call real backend resources — skip in demo mode
-      if (devPreview || jobId.startsWith("dev_")) {
+      // Dev preview should never call backend resources
+      if (devPreview) {
         alert("Demo mode: action skipped (no backend calls in dev preview)");
         return;
       }
