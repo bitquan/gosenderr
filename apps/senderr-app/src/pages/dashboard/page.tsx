@@ -315,8 +315,8 @@ export default function CourierDashboardMapShell() {
       </div>
 
       <div className="relative z-10 min-h-screen flex flex-col justify-between pointer-events-none">
-        <div className="p-4 space-y-3 pointer-events-none">
-          <div className="pointer-events-auto bg-gradient-to-r from-blue-700 via-blue-600 to-purple-600 text-white rounded-b-3xl shadow-2xl border-b border-white/20 p-3 flex items-center justify-between gap-3">
+        <div className="pt-0 px-0 space-y-3 pointer-events-none">
+          <div className="pointer-events-auto w-full bg-gradient-to-r from-blue-700 via-blue-600 to-purple-600 text-white rounded-b-3xl shadow-2xl border-b border-white/20 px-4 py-3 flex items-center justify-between gap-3">
             <div>
               <p className="text-xs text-blue-100">Senderr Map Shell</p>
               <p className="text-sm font-semibold text-white">
