@@ -416,53 +416,53 @@ export default function CourierSettingsPage() {
 
         {/* Account Section */}
         {activeTab === "account" && (
-        <div className="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden">
-          <div className="p-6 sm:p-8 border-b border-gray-200">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+        <div className="bg-slate-950/70 rounded-2xl border border-white/15 overflow-hidden text-white backdrop-blur">
+          <div className="p-6 sm:p-8 border-b border-white/10">
+            <h2 className="text-2xl font-bold text-white mb-6">
               👤 Account
             </h2>
             <div className="space-y-4">
               <Link
                 to="/profile"
-                className="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-100"
+                className="flex items-center justify-between rounded-xl bg-white/10 border border-white/15 px-4 py-3 text-sm font-semibold text-blue-100 hover:bg-white/20"
               >
                 <div className="flex items-center gap-3">
                   <span className="text-lg">🧾</span>
                   <span>Profile</span>
                 </div>
-                <span className="text-gray-400">→</span>
+                <span className="text-blue-200">→</span>
               </Link>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="bg-gray-50 rounded-xl p-4">
-                  <p className="text-xs text-gray-600 font-medium mb-1">Email</p>
-                  <p className="text-lg font-semibold text-gray-900 break-all">
+                <div className="bg-white/10 border border-white/15 rounded-xl p-4">
+                  <p className="text-xs text-blue-100 font-medium mb-1">Email</p>
+                  <p className="text-lg font-semibold text-white break-all">
                     {user.email || 'N/A'}
                   </p>
                 </div>
-                <div className="bg-gray-50 rounded-xl p-4">
-                  <p className="text-xs text-gray-600 font-medium mb-1">Account Type</p>
-                  <p className="text-lg font-semibold text-gray-900">
+                <div className="bg-white/10 border border-white/15 rounded-xl p-4">
+                  <p className="text-xs text-blue-100 font-medium mb-1">Account Type</p>
+                  <p className="text-lg font-semibold text-white">
                     {courierData?.role === 'courier' ? '📦 Courier' : '⚙️ Admin'}
                   </p>
                 </div>
               </div>
               {courierData?.courierProfile && (
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
-                    <p className="text-xs text-blue-600 font-medium mb-1">Status</p>
-                    <p className="text-lg font-bold text-blue-900">
+                  <div className="bg-blue-600/20 rounded-xl p-4 border border-blue-300/30">
+                    <p className="text-xs text-blue-100 font-medium mb-1">Status</p>
+                    <p className="text-lg font-bold text-white">
                       {courierData.courierProfile.isOnline ? '🟢 Online' : '⚪ Offline'}
                     </p>
                   </div>
-                  <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-200">
-                    <p className="text-xs text-emerald-600 font-medium mb-1">Completed Deliveries</p>
-                    <p className="text-lg font-bold text-emerald-900">
+                  <div className="bg-emerald-600/20 rounded-xl p-4 border border-emerald-300/30">
+                    <p className="text-xs text-emerald-100 font-medium mb-1">Completed Deliveries</p>
+                    <p className="text-lg font-bold text-white">
                       {courierData.courierProfile.completedJobs || 0}
                     </p>
                   </div>
-                  <div className="bg-purple-50 rounded-xl p-4 border border-purple-200">
-                    <p className="text-xs text-purple-600 font-medium mb-1">Today's Deliveries</p>
-                    <p className="text-lg font-bold text-purple-900">
+                  <div className="bg-purple-600/20 rounded-xl p-4 border border-purple-300/30">
+                    <p className="text-xs text-purple-100 font-medium mb-1">Today's Deliveries</p>
+                    <p className="text-lg font-bold text-white">
                       {courierData.courierProfile.todayJobs || 0}
                     </p>
                   </div>
@@ -475,16 +475,16 @@ export default function CourierSettingsPage() {
 
         {/* Delivery Settings Section */}
         {activeTab === "delivery" && (
-        <div className="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden">
-          <div className="p-6 sm:p-8 border-b border-gray-200">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+        <div className="bg-slate-950/70 rounded-2xl border border-white/15 overflow-hidden text-white backdrop-blur">
+          <div className="p-6 sm:p-8 border-b border-white/10">
+            <h2 className="text-2xl font-bold text-white mb-6">
               🚚 Delivery Settings
             </h2>
             <div className="space-y-5 mb-6">
-              <div className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3">
+              <div className="flex items-center justify-between rounded-xl border border-white/15 bg-white/10 px-4 py-3">
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">Availability</p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-sm font-semibold text-white">Availability</p>
+                  <p className="text-xs text-blue-100">
                     Toggle whether you are accepting new deliveries.
                   </p>
                 </div>
@@ -503,15 +503,15 @@ export default function CourierSettingsPage() {
                 </button>
               </div>
 
-              <div className="rounded-xl border border-gray-200 px-4 py-3">
+              <div className="rounded-xl border border-white/15 bg-white/10 px-4 py-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-semibold text-gray-900">Service radius</p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-sm font-semibold text-white">Service radius</p>
+                    <p className="text-xs text-blue-100">
                       How far you are willing to drive for pickups.
                     </p>
                   </div>
-                  <span className="text-sm font-semibold text-gray-900">
+                  <span className="text-sm font-semibold text-white">
                     {serviceRadius} mi
                   </span>
                 </div>
@@ -524,7 +524,7 @@ export default function CourierSettingsPage() {
                   onChange={(event) => setServiceRadius(Number(event.target.value))}
                   className="mt-3 w-full"
                 />
-                <div className="mt-2 flex justify-between text-xs text-gray-400">
+                <div className="mt-2 flex justify-between text-xs text-blue-100">
                   <span>1 mi</span>
                   <span>50 mi</span>
                 </div>
@@ -547,7 +547,7 @@ export default function CourierSettingsPage() {
                   <span className="text-2xl">💰</span>
                   <div className="text-left">
                     <p className="font-bold">Rate Cards & Pricing</p>
-                    <p className="text-xs text-gray-600">Set your delivery rates</p>
+                    <p className="text-xs text-blue-100">Set your delivery rates</p>
                   </div>
                 </div>
                 <span className="text-2xl group-hover:translate-x-1 transition-transform">→</span>
@@ -561,7 +561,7 @@ export default function CourierSettingsPage() {
                   <span className="text-2xl">🎒</span>
                   <div className="text-left">
                     <p className="font-bold">Equipment & Vehicle</p>
-                    <p className="text-xs text-gray-600">Manage your delivery equipment</p>
+                    <p className="text-xs text-blue-100">Manage your delivery equipment</p>
                   </div>
                 </div>
                 <span className="text-2xl group-hover:translate-x-1 transition-transform">→</span>
@@ -574,18 +574,18 @@ export default function CourierSettingsPage() {
         {/* Tax & Payout Settings */}
         {activeTab === "payouts" && (
         <>
-        <div className="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden">
-          <div className="p-6 sm:p-8 border-b border-gray-200">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+        <div className="bg-slate-950/70 rounded-2xl border border-white/15 overflow-hidden text-white backdrop-blur">
+          <div className="p-6 sm:p-8 border-b border-white/10">
+            <h2 className="text-2xl font-bold text-white mb-6">
               🧾 Taxes & Payouts
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="bg-gray-50 rounded-xl p-4">
-                <p className="text-xs text-gray-600 font-medium mb-1">Tax State</p>
+              <div className="bg-white/10 border border-white/15 rounded-xl p-4">
+                <p className="text-xs text-blue-100 font-medium mb-1">Tax State</p>
                 <select
                   value={taxState}
                   onChange={(e) => setTaxState(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                  className="w-full px-3 py-2 border border-white/20 bg-slate-950/40 text-white rounded-lg text-sm"
                 >
                   <option value="">Select state</option>
                   {STATE_OPTIONS.map((state) => (
@@ -594,18 +594,18 @@ export default function CourierSettingsPage() {
                     </option>
                   ))}
                 </select>
-                <p className="text-xs text-gray-500 mt-2">
+                <p className="text-xs text-blue-100 mt-2">
                   Used for tax estimates in Earnings.
                 </p>
               </div>
-              <div className="bg-gray-50 rounded-xl p-4">
-                <p className="text-xs text-gray-600 font-medium mb-1">Payouts</p>
+              <div className="bg-white/10 border border-white/15 rounded-xl p-4">
+                <p className="text-xs text-blue-100 font-medium mb-1">Payouts</p>
                 <div className="mt-2">
-                  <label className="text-xs text-gray-600 font-medium">Payout Mode</label>
+                  <label className="text-xs text-blue-100 font-medium">Payout Mode</label>
                   <select
                     value={payoutMode}
                     onChange={(event) => setPayoutMode(event.target.value as "cash" | "token")}
-                    className="mt-1 w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                    className="mt-1 w-full px-3 py-2 border border-white/20 bg-slate-950/40 text-white rounded-lg text-sm"
                   >
                     <option value="cash">Cash payouts</option>
                     <option value="token">Token wallet mode</option>
@@ -613,56 +613,56 @@ export default function CourierSettingsPage() {
                 </div>
                 <Link
                   to="/earnings"
-                  className="inline-flex items-center gap-2 mt-1 text-sm font-semibold text-indigo-600"
+                  className="inline-flex items-center gap-2 mt-1 text-sm font-semibold text-blue-200"
                 >
                   View earnings & payouts →
                 </Link>
-                <p className="text-xs text-gray-500 mt-2">
+                <p className="text-xs text-blue-100 mt-2">
                   Update your Stripe Connect details in Earnings.
                 </p>
 
                 {payoutMode === "token" && (
-                  <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3">
+                  <div className="mt-3 rounded-lg border border-emerald-300/30 bg-emerald-600/15 p-3">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <p className="text-xs font-medium text-emerald-700">Token Wallet</p>
-                        <p className="text-xs text-emerald-800 mt-1">
+                        <p className="text-xs font-medium text-emerald-100">Token Wallet</p>
+                        <p className="text-xs text-emerald-100 mt-1">
                           Token mode requires an unlock cost before claiming jobs.
                         </p>
                       </div>
-                      <span className="rounded-full bg-white border border-emerald-200 px-2 py-1 text-[11px] font-semibold text-emerald-700">
+                      <span className="rounded-full bg-slate-950/40 border border-emerald-300/30 px-2 py-1 text-[11px] font-semibold text-emerald-100">
                         {tokenPolicy?.enabled ? "Enabled" : "Disabled"}
                       </span>
                     </div>
                     {tokenLoading ? (
-                      <p className="text-xs text-emerald-700 mt-1">Loading wallet...</p>
+                      <p className="text-xs text-emerald-100 mt-1">Loading wallet...</p>
                     ) : (
                       <>
                         {tokenCheckoutMessage && (
-                          <p className="text-xs text-emerald-800 mt-2 rounded-md bg-white/70 border border-emerald-200 px-2 py-1">
+                          <p className="text-xs text-emerald-100 mt-2 rounded-md bg-slate-950/40 border border-emerald-300/30 px-2 py-1">
                             {tokenCheckoutMessage}
                           </p>
                         )}
                         <div className="mt-2 grid grid-cols-2 gap-2">
-                          <div className="rounded-md border border-emerald-200 bg-white px-2 py-2">
-                            <p className="text-[11px] text-emerald-700">Available</p>
-                            <p className="text-sm font-semibold text-emerald-900">
+                          <div className="rounded-md border border-emerald-300/30 bg-slate-950/40 px-2 py-2">
+                            <p className="text-[11px] text-emerald-100">Available</p>
+                            <p className="text-sm font-semibold text-white">
                               {tokenWallet?.available ?? 0} tokens
                             </p>
                           </div>
-                          <div className="rounded-md border border-emerald-200 bg-white px-2 py-2">
-                            <p className="text-[11px] text-emerald-700">Reserved</p>
-                            <p className="text-sm font-semibold text-emerald-900">
+                          <div className="rounded-md border border-emerald-300/30 bg-slate-950/40 px-2 py-2">
+                            <p className="text-[11px] text-emerald-100">Reserved</p>
+                            <p className="text-sm font-semibold text-white">
                               {tokenWallet?.reserved ?? 0} tokens
                             </p>
                           </div>
                         </div>
                         <div className="mt-3">
-                          <label className="text-xs font-medium text-emerald-700">Token Pack</label>
+                          <label className="text-xs font-medium text-emerald-100">Token Pack</label>
                           <select
                             value={selectedPackId}
                             onChange={(event) => setSelectedPackId(event.target.value)}
-                            className="mt-1 w-full rounded-lg border border-emerald-200 bg-white px-3 py-2 text-xs"
+                            className="mt-1 w-full rounded-lg border border-emerald-300/30 bg-slate-950/40 text-white px-3 py-2 text-xs"
                           >
                             {(tokenPolicy?.packs || []).map((pack) => (
                               <option key={pack.id} value={pack.id}>
@@ -689,21 +689,21 @@ export default function CourierSettingsPage() {
         
 
         {/* Payments Section */}
-        <div className="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden">
-          <div className="p-6 sm:p-8 border-b border-gray-200">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+        <div className="bg-slate-950/70 rounded-2xl border border-white/15 overflow-hidden text-white backdrop-blur">
+          <div className="p-6 sm:p-8 border-b border-white/10">
+            <h2 className="text-2xl font-bold text-white mb-6">
               💳 Payments
             </h2>
             <div className="space-y-3">
               <Link
                 to="/earnings"
-                className="flex items-center justify-between rounded-xl bg-gradient-to-r from-emerald-50 to-green-50 border-2 border-emerald-200 px-6 py-4 font-semibold text-gray-900 hover:border-emerald-300 hover:from-emerald-100 hover:to-green-100 transition-all group"
+                className="flex items-center justify-between rounded-xl bg-gradient-to-r from-emerald-600/20 to-green-600/20 border border-emerald-300/30 px-6 py-4 font-semibold text-white hover:bg-emerald-600/30 transition-all group"
               >
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">💵</span>
                   <div className="text-left">
                     <p className="font-bold">Earnings & Payouts</p>
-                    <p className="text-xs text-gray-600">View your earnings history</p>
+                    <p className="text-xs text-blue-100">View your earnings history</p>
                   </div>
                 </div>
                 <span className="text-2xl group-hover:translate-x-1 transition-transform">→</span>
@@ -711,13 +711,13 @@ export default function CourierSettingsPage() {
 
               <Link
                 to="/onboarding/stripe"
-                className="flex items-center justify-between rounded-xl bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-200 px-6 py-4 font-semibold text-gray-900 hover:border-blue-300 hover:from-blue-100 hover:to-cyan-100 transition-all group"
+                className="flex items-center justify-between rounded-xl bg-gradient-to-r from-blue-600/20 to-cyan-600/20 border border-blue-300/30 px-6 py-4 font-semibold text-white hover:bg-blue-600/30 transition-all group"
               >
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">🏦</span>
                   <div className="text-left">
                     <p className="font-bold">Stripe Connect Setup</p>
-                    <p className="text-xs text-gray-600">Connect your bank account</p>
+                    <p className="text-xs text-blue-100">Connect your bank account</p>
                   </div>
                 </div>
                 <span className="text-2xl group-hover:translate-x-1 transition-transform">→</span>
@@ -730,16 +730,16 @@ export default function CourierSettingsPage() {
 
         {/* Notification Preferences */}
         {activeTab === "notifications" && (
-        <div className="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden">
-          <div className="p-6 sm:p-8 border-b border-gray-200">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+        <div className="bg-slate-950/70 rounded-2xl border border-white/15 overflow-hidden text-white backdrop-blur">
+          <div className="p-6 sm:p-8 border-b border-white/10">
+            <h2 className="text-2xl font-bold text-white mb-6">
               🔔 Notifications
             </h2>
             <div className="space-y-4">
-              <div className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3">
+              <div className="flex items-center justify-between rounded-xl border border-white/15 bg-white/10 px-4 py-3">
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">Job Offers</p>
-                  <p className="text-xs text-gray-500">Get notified when new jobs are available.</p>
+                  <p className="text-sm font-semibold text-white">Job Offers</p>
+                  <p className="text-xs text-blue-100">Get notified when new jobs are available.</p>
                 </div>
                 <button
                   onClick={() =>
@@ -750,18 +750,18 @@ export default function CourierSettingsPage() {
                   }
                   className={`px-4 py-2 rounded-full text-xs font-semibold border transition-colors ${
                     notificationPrefs.jobOffers
-                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                      : "bg-white text-gray-600 border-gray-200"
+                      ? "bg-emerald-600/20 text-emerald-100 border-emerald-300/30"
+                      : "bg-slate-950/40 text-blue-100 border-white/20"
                   }`}
                 >
                   {notificationPrefs.jobOffers ? "On" : "Off"}
                 </button>
               </div>
 
-              <div className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3">
+              <div className="flex items-center justify-between rounded-xl border border-white/15 bg-white/10 px-4 py-3">
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">Payout Updates</p>
-                  <p className="text-xs text-gray-500">Get notified about payout status.</p>
+                  <p className="text-sm font-semibold text-white">Payout Updates</p>
+                  <p className="text-xs text-blue-100">Get notified about payout status.</p>
                 </div>
                 <button
                   onClick={() =>
@@ -772,18 +772,18 @@ export default function CourierSettingsPage() {
                   }
                   className={`px-4 py-2 rounded-full text-xs font-semibold border transition-colors ${
                     notificationPrefs.payoutUpdates
-                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                      : "bg-white text-gray-600 border-gray-200"
+                      ? "bg-emerald-600/20 text-emerald-100 border-emerald-300/30"
+                      : "bg-slate-950/40 text-blue-100 border-white/20"
                   }`}
                 >
                   {notificationPrefs.payoutUpdates ? "On" : "Off"}
                 </button>
               </div>
 
-              <div className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3">
+              <div className="flex items-center justify-between rounded-xl border border-white/15 bg-white/10 px-4 py-3">
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">Reminders</p>
-                  <p className="text-xs text-gray-500">Get reminders for documents and tasks.</p>
+                  <p className="text-sm font-semibold text-white">Reminders</p>
+                  <p className="text-xs text-blue-100">Get reminders for documents and tasks.</p>
                 </div>
                 <button
                   onClick={() =>
@@ -794,8 +794,8 @@ export default function CourierSettingsPage() {
                   }
                   className={`px-4 py-2 rounded-full text-xs font-semibold border transition-colors ${
                     notificationPrefs.reminders
-                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                      : "bg-white text-gray-600 border-gray-200"
+                      ? "bg-emerald-600/20 text-emerald-100 border-emerald-300/30"
+                      : "bg-slate-950/40 text-blue-100 border-white/20"
                   }`}
                 >
                   {notificationPrefs.reminders ? "On" : "Off"}
@@ -808,30 +808,30 @@ export default function CourierSettingsPage() {
 
         {/* Verification Documents */}
         {activeTab === "documents" && (
-        <div className="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden">
-          <div className="p-6 sm:p-8 border-b border-gray-200">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+        <div className="bg-slate-950/70 rounded-2xl border border-white/15 overflow-hidden text-white backdrop-blur">
+          <div className="p-6 sm:p-8 border-b border-white/10">
+            <h2 className="text-2xl font-bold text-white mb-6">
               🧾 Verification Documents
             </h2>
-            <p className="text-sm text-gray-600 mb-6">
+            <p className="text-sm text-blue-100 mb-6">
               Upload updated documents if your details have changed or if your application was rejected.
             </p>
 
             {Array.isArray(courierData?.courierProfile?.documents) &&
               courierData.courierProfile.documents.length > 0 && (
-                <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6">
-                  <p className="text-xs text-gray-500 mb-2">Current Documents</p>
+                <div className="bg-white/10 border border-white/15 rounded-xl p-4 mb-6">
+                  <p className="text-xs text-blue-100 mb-2">Current Documents</p>
                   <div className="space-y-2">
                     {courierData.courierProfile.documents.map((docItem: any) => (
                       <div key={docItem.url} className="flex items-center justify-between text-sm">
-                        <span className="text-gray-700">
+                        <span className="text-blue-100">
                           {docItem.label}: {docItem.name}
                         </span>
                         <a
                           href={docItem.url}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-indigo-600 hover:underline"
+                          className="text-blue-200 hover:underline"
                         >
                           View
                         </a>
@@ -843,7 +843,7 @@ export default function CourierSettingsPage() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-blue-100 mb-2">
                   Government ID
                 </label>
                 <input
@@ -855,17 +855,17 @@ export default function CourierSettingsPage() {
                       governmentId: e.target.files?.[0] || null,
                     })
                   }
-                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                  className="block w-full text-sm text-blue-100 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-700 file:text-white hover:file:bg-blue-600"
                 />
                 {documents.governmentId && (
-                  <p className="text-xs text-gray-500 mt-2">
+                  <p className="text-xs text-blue-100 mt-2">
                     Selected: {documents.governmentId.name}
                   </p>
                 )}
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-blue-100 mb-2">
                   Vehicle Registration
                 </label>
                 <input
@@ -877,17 +877,17 @@ export default function CourierSettingsPage() {
                       vehicleRegistration: e.target.files?.[0] || null,
                     })
                   }
-                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                  className="block w-full text-sm text-blue-100 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-700 file:text-white hover:file:bg-blue-600"
                 />
                 {documents.vehicleRegistration && (
-                  <p className="text-xs text-gray-500 mt-2">
+                  <p className="text-xs text-blue-100 mt-2">
                     Selected: {documents.vehicleRegistration.name}
                   </p>
                 )}
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-blue-100 mb-2">
                   Proof of Insurance
                 </label>
                 <input
@@ -899,16 +899,16 @@ export default function CourierSettingsPage() {
                       insurance: e.target.files?.[0] || null,
                     })
                   }
-                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                  className="block w-full text-sm text-blue-100 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-700 file:text-white hover:file:bg-blue-600"
                 />
                 {documents.insurance && (
-                  <p className="text-xs text-gray-500 mt-2">
+                  <p className="text-xs text-blue-100 mt-2">
                     Selected: {documents.insurance.name}
                   </p>
                 )}
               </div>
 
-              <div className="text-xs text-gray-500">
+              <div className="text-xs text-blue-100">
                 Accepted formats: JPG, PNG, WEBP, PDF. Max size 15MB.
               </div>
 
@@ -927,20 +927,20 @@ export default function CourierSettingsPage() {
         {/* Support Section */}
         {activeTab === "support" && (
         <>
-        <div className="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden">
-          <div className="p-6 sm:p-8 border-b border-gray-200">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+        <div className="bg-slate-950/70 rounded-2xl border border-white/15 overflow-hidden text-white backdrop-blur">
+          <div className="p-6 sm:p-8 border-b border-white/10">
+            <h2 className="text-2xl font-bold text-white mb-6">
               ❓ Help & Support
             </h2>
             <Link
               to="/support"
-              className="flex items-center justify-between rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 px-6 py-4 font-semibold text-gray-900 hover:border-amber-300 hover:from-amber-100 hover:to-orange-100 transition-all group"
+              className="flex items-center justify-between rounded-xl bg-gradient-to-r from-amber-600/20 to-orange-600/20 border border-amber-300/30 px-6 py-4 font-semibold text-white hover:bg-amber-600/30 transition-all group"
             >
               <div className="flex items-center gap-3">
                 <span className="text-2xl">💬</span>
                 <div className="text-left">
                   <p className="font-bold">Contact Support</p>
-                  <p className="text-xs text-gray-600">Get help with your account</p>
+                  <p className="text-xs text-blue-100">Get help with your account</p>
                 </div>
               </div>
               <span className="text-2xl group-hover:translate-x-1 transition-transform">→</span>
@@ -949,9 +949,9 @@ export default function CourierSettingsPage() {
         </div>
 
         {/* Danger Zone */}
-        <div className="bg-white rounded-2xl border-2 border-red-200 overflow-hidden">
+        <div className="bg-red-500/15 rounded-2xl border border-red-300/30 overflow-hidden text-white backdrop-blur">
           <div className="p-6 sm:p-8">
-            <h2 className="text-2xl font-bold text-red-900 mb-6">
+            <h2 className="text-2xl font-bold text-red-100 mb-6">
               🚪 Danger Zone
             </h2>
             <button
@@ -962,7 +962,7 @@ export default function CourierSettingsPage() {
               <span className="text-2xl">🚪</span>
               <span>{signingOut ? 'Signing out...' : 'Sign Out'}</span>
             </button>
-            <p className="text-xs text-gray-500 mt-3 text-center">
+            <p className="text-xs text-red-100 mt-3 text-center">
               You'll be logged out and returned to the login screen
             </p>
           </div>

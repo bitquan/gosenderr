@@ -252,8 +252,8 @@ export default function CourierDashboardMapShell() {
               disabled={togglingOnline || !isApproved}
               className={`rounded-full px-3 py-1.5 text-xs font-semibold border ${
                 isOnline
-                  ? "bg-emerald-100/90 text-emerald-900 border-emerald-200"
-                  : "bg-white/20 text-white border-white/40"
+                  ? "bg-emerald-500/25 text-emerald-100 border-emerald-300/40"
+                  : "bg-slate-950/50 text-blue-100 border-white/20"
               } ${(togglingOnline || !isApproved) ? "opacity-60 cursor-not-allowed" : ""}`}
             >
               {isOnline ? "Online" : "Offline"}
@@ -264,7 +264,7 @@ export default function CourierDashboardMapShell() {
             <div
               className={`pointer-events-auto rounded-xl border p-3 ${
                 tokenClaimReadiness.canClaim
-                  ? "bg-slate-950/60 border-white/10 text-white shadow-2xl backdrop-blur"
+                  ? "bg-gradient-to-r from-blue-700/35 via-blue-600/30 to-purple-600/30 border-blue-300/30 text-white shadow-2xl backdrop-blur"
                   : "bg-gradient-to-br from-slate-900 via-purple-900 to-purple-950/90 border-white/10 text-white shadow-2xl"
               }`}
             >
@@ -277,7 +277,7 @@ export default function CourierDashboardMapShell() {
                 <div className="mt-2">
                   <Link
                     to="/settings"
-                    className="inline-flex items-center rounded-md border border-current px-2 py-1 text-[11px] font-semibold"
+                    className="inline-flex items-center rounded-md border border-blue-200/40 bg-slate-950/40 px-2 py-1 text-[11px] font-semibold text-blue-100"
                   >
                     Top up tokens
                   </Link>
@@ -287,30 +287,30 @@ export default function CourierDashboardMapShell() {
           )}
         </div>
 
-        <div className="pointer-events-auto rounded-t-3xl bg-white border-t border-gray-200 shadow-2xl p-4 space-y-4 max-h-[52vh] overflow-y-auto">
+        <div className="pointer-events-auto rounded-t-3xl bg-gradient-to-br from-slate-900 via-purple-900 to-purple-950/90 border-t border-white/10 shadow-2xl p-4 space-y-4 max-h-[52vh] overflow-y-auto text-white backdrop-blur">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold text-gray-900">Map Shell Queue</h2>
+            <h2 className="text-base font-bold text-white">Map Shell Queue</h2>
             <div className="flex items-center gap-2 text-xs">
-              <Link to="/settings" className="text-indigo-600 font-semibold">Settings</Link>
-              <span className="text-gray-300">•</span>
-              <Link to="/earnings" className="text-indigo-600 font-semibold">Earnings</Link>
+              <Link to="/settings" className="text-blue-200 font-semibold hover:text-white">Settings</Link>
+              <span className="text-white/30">•</span>
+              <Link to="/earnings" className="text-blue-200 font-semibold hover:text-white">Earnings</Link>
             </div>
           </div>
 
           {activeJob && (
-            <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-3">
-              <p className="text-xs text-indigo-700 font-semibold">Current Job</p>
-              <p className="text-sm font-semibold text-indigo-900 mt-1">{formatStatus(activeJob.status)}</p>
-              <p className="text-xs text-indigo-800 mt-1">
+            <div className="rounded-xl border border-blue-300/30 bg-blue-600/20 p-3">
+              <p className="text-xs text-blue-100 font-semibold">Current Job</p>
+              <p className="text-sm font-semibold text-white mt-1">{formatStatus(activeJob.status)}</p>
+              <p className="text-xs text-blue-100 mt-1">
                 Pickup: {activeJob.pickup?.label || "Pickup point"}
               </p>
-              <p className="text-xs text-indigo-800">
+              <p className="text-xs text-blue-100">
                 Dropoff: {activeJob.dropoff?.label || "Dropoff point"}
               </p>
               <div className="mt-2">
                 <Link
                   to={`/jobs/${activeJob.id}`}
-                  className="inline-flex items-center rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white"
+                  className="inline-flex items-center rounded-md bg-gradient-to-r from-blue-700 via-blue-600 to-purple-600 px-3 py-1.5 text-xs font-semibold text-white"
                 >
                   Open active job
                 </Link>
@@ -319,12 +319,12 @@ export default function CourierDashboardMapShell() {
           )}
 
           <div className="space-y-2">
-            <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+            <p className="text-xs font-semibold text-blue-100 uppercase tracking-wide">
               Available Offers ({availableJobs.length})
             </p>
 
             {availableJobs.length === 0 && (
-              <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm text-gray-600">
+              <div className="rounded-xl border border-white/20 bg-white/10 p-3 text-sm text-blue-100">
                 No open offers right now. Stay online and refresh shortly.
               </div>
             )}
@@ -337,7 +337,7 @@ export default function CourierDashboardMapShell() {
                 <div
                   key={job.id}
                   className={`rounded-xl border p-3 ${
-                    selected ? "border-indigo-300 bg-indigo-50" : "border-gray-200 bg-white"
+                    selected ? "border-blue-300/40 bg-blue-600/20" : "border-white/15 bg-white/10"
                   }`}
                 >
                   <button
@@ -345,14 +345,14 @@ export default function CourierDashboardMapShell() {
                     className="w-full text-left"
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <p className="text-sm font-semibold text-gray-900">
+                      <p className="text-sm font-semibold text-white">
                         {job.package?.size ? `${job.package.size} package` : "Delivery offer"}
                       </p>
-                      <span className="text-xs font-semibold text-emerald-700">
+                      <span className="text-xs font-semibold text-emerald-300">
                         ${(job.agreedFee || 0).toFixed(2)}
                       </span>
                     </div>
-                    <p className="text-xs text-gray-600 mt-1">
+                    <p className="text-xs text-blue-100 mt-1">
                       {job.pickup?.label || "Pickup"} → {job.dropoff?.label || "Dropoff"}
                     </p>
                   </button>
@@ -380,8 +380,8 @@ export default function CourierDashboardMapShell() {
                         disabled={decliningJobId === job.id}
                         className={`rounded-lg px-3 py-2 text-xs font-semibold border ${
                           decliningJobId === job.id
-                            ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
-                            : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                            ? "bg-white/10 text-white/40 border-white/15 cursor-not-allowed"
+                            : "bg-transparent text-blue-100 border-white/25 hover:bg-white/10"
                         }`}
                       >
                         {decliningJobId === job.id ? "Declining..." : "Decline"}
