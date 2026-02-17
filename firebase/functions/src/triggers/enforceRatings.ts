@@ -89,7 +89,7 @@ export const enforceRatings = functions.firestore
         // Create dispute document
         await db.collection("disputes").add({
           type: "low_rating_suspension",
-          courierId: toUserId,
+          courierUid: toUserId,
           deliveryJobId: null,
           reportedBy: "system",
           reportedAgainst: toUserId,

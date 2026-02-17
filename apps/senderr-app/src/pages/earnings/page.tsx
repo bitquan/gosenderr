@@ -16,6 +16,7 @@ import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { useUserDoc } from "@/hooks/v2/useUserDoc";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { StatCard } from "@/components/ui/StatCard";
+import { subscribeCourierJobs } from "@/lib/jobs/subscribeCourierJobs";
 
 interface PayoutRecord {
   id: string;
@@ -181,21 +182,6 @@ export default function EarningsPage() {
 
     setLoading(true);
 
-    const jobsRef = collection(db, "jobs");
-    const primaryQuery = query(jobsRef, where("courierUid", "==", uid));
-    const legacyQuery = query(jobsRef, where('courierUid', "==", uid));
-
-    let primaryJobs: any[] = [];
-    let legacyJobs: any[] = [];
-
-    const mergeJobs = (lists: any[][]) => {
-      const map = new Map<string, any>();
-      lists.flat().forEach((job) => {
-        map.set(job.id, job);
-      });
-      return Array.from(map.values());
-    };
-
     const calcStats = (jobsList: any[]) => {
       const completedStatuses = new Set(["completed", "delivered"]);
       const completed = jobsList.filter((job) =>
@@ -222,35 +208,16 @@ export default function EarningsPage() {
       setLoading(false);
     };
 
-    const unsubPrimary = onSnapshot(
-      primaryQuery,
-      (snapshot) => {
-        primaryJobs = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        updateState(mergeJobs([primaryJobs, legacyJobs]));
-      },
-      (error) => {
+    const unsubJobs = subscribeCourierJobs<any>({
+      db,
+      uid,
+      mapDoc: ({ id, data }) => ({ id, ...(data() as Record<string, unknown>) }),
+      onUpdate: (merged) => updateState(merged),
+      onError: (error) => {
         console.error("Error loading earnings:", error);
         setLoading(false);
       },
-    );
-
-    const unsubLegacy = onSnapshot(
-      legacyQuery,
-      (snapshot) => {
-        legacyJobs = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        updateState(mergeJobs([primaryJobs, legacyJobs]));
-      },
-      (error) => {
-        console.error("Error loading legacy earnings:", error);
-        setLoading(false);
-      },
-    );
+    });
 
     // Get payouts (if implemented)
     let unsubPayouts: (() => void) | null = null;
@@ -275,8 +242,7 @@ export default function EarningsPage() {
     }
 
     return () => {
-      unsubPrimary();
-      unsubLegacy();
+      unsubJobs();
       unsubPayouts?.();
     };
   };

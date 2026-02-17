@@ -151,13 +151,14 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
   }
 
   const itemData = itemDoc.data();
+  const assignedCourierUid = orderData.courierUid || orderData.courierId || null;
 
   // Create job in the "jobs" collection that couriers watch
   const jobData = {
     createdByUid: orderData.buyerId,
-    courierUid: orderData.courierId || null,
+    courierUid: assignedCourierUid,
     agreedFee: orderData.deliveryFee || null,
-    status: orderData.courierId ? 'assigned' : 'open',
+    status: assignedCourierUid ? 'assigned' : 'open',
     pickup: {
       lat: itemData?.pickupLocation?.lat || 0,
       lng: itemData?.pickupLocation?.lng || 0,

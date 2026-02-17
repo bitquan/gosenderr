@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { useAuth } from '../hooks/useAuth'
 import { useAdmin } from '../hooks/useAdmin'
 import { Card, CardHeader, CardTitle, CardContent } from '../components/Card'
 import { StatusBadge } from '../components/Badge'
 import { formatCurrency, formatDate } from '../lib/utils'
+import { subscribeCourierJobs } from '../lib/jobs/subscribeCourierJobs'
 
 interface Job {
   id: string
@@ -44,16 +44,8 @@ export default function CourierJobsPage() {
 
     setLoading(true)
 
-    const jobsRef = collection(db, 'jobs')
-    const primaryQuery = query(jobsRef, where('courierUid', '==', user.uid))
-    const legacyQuery = query(jobsRef, where('courierUid', '==', user.uid))
-
-    const mergeJobs = (lists: Job[][]) => {
-      const map = new Map<string, Job>()
-      lists.flat().forEach((job) => {
-        map.set(job.id, job)
-      })
-      const merged = Array.from(map.values())
+    const sortJobs = (jobsList: Job[]) => {
+      const merged = [...jobsList]
       merged.sort((a, b) => {
         const aDate = a.createdAt?.toDate?.() ?? a.completedAt?.toDate?.() ?? new Date(0)
         const bDate = b.createdAt?.toDate?.() ?? b.completedAt?.toDate?.() ?? new Date(0)
@@ -62,47 +54,25 @@ export default function CourierJobsPage() {
       return merged
     }
 
-    let primaryJobs: Job[] = []
-    let legacyJobs: Job[] = []
-
-    const updateState = () => {
-      setJobs(mergeJobs([primaryJobs, legacyJobs]))
-      setLoading(false)
-    }
-
-    const unsubPrimary = onSnapshot(
-      primaryQuery,
-      (snapshot) => {
-        primaryJobs = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as Job[]
-        updateState()
+    const unsubscribe = subscribeCourierJobs<Job>({
+      db,
+      uid: user.uid,
+      mapDoc: ({ id, data }) => ({
+        id,
+        ...(data() as Omit<Job, 'id'>),
+      }),
+      onUpdate: (merged) => {
+        setJobs(sortJobs(merged))
+        setLoading(false)
       },
-      (error) => {
+      onError: (error) => {
         console.error('Error loading jobs:', error)
         setLoading(false)
-      }
-    )
-
-    const unsubLegacy = onSnapshot(
-      legacyQuery,
-      (snapshot) => {
-        legacyJobs = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as Job[]
-        updateState()
       },
-      (error) => {
-        console.error('Error loading legacy jobs:', error)
-        setLoading(false)
-      }
-    )
+    })
 
     return () => {
-      unsubPrimary()
-      unsubLegacy()
+      unsubscribe()
     }
   }, [user])
 

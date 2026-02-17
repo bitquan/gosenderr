@@ -129,30 +129,30 @@ service firebase.storage {
       );
     }
 
-    // Delivery proof photos: delivery-photos/{courierId}/{jobId}/{photoFile}
-    match /delivery-photos/{courierId}/{jobId}/{photoFile} {
+    // Delivery proof photos: delivery-photos/{courierUid}/{jobId}/{photoFile}
+    match /delivery-photos/{courierUid}/{jobId}/{photoFile} {
       // Assigned courier can upload proof photos for the job
       allow write: if isSignedIn()
-        && uid() == courierId
+        && uid() == courierUid
         && isValidImage();
 
       // Job creator and assigned courier can read proof photos
       allow read: if isSignedIn() && (
-        uid() == courierId
+        uid() == courierUid
         || isJobCreator(jobId)
         || isAssignedCourier(jobId)
         || get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin'
       );
     }
 
-    // Courier expense receipts: courier-expenses/{courierId}/{year}/{receiptFile}
-    match /courier-expenses/{courierId}/{year}/{receiptFile} {
+    // Courier expense receipts: courier-expenses/{courierUid}/{year}/{receiptFile}
+    match /courier-expenses/{courierUid}/{year}/{receiptFile} {
       allow write: if isSignedIn()
-        && uid() == courierId
+        && uid() == courierUid
         && isValidCourierDocument();
 
       allow read: if isSignedIn() && (
-        uid() == courierId
+        uid() == courierUid
         || get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin'
       );
     }

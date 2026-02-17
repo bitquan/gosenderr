@@ -61,6 +61,10 @@ service cloud.firestore {
       return (data is map && data.participants is list) ? data.participants : [];
     }
 
+    function courierUidOf(data) {
+      return (data is map) ? data.get('courierUid', data.get('courierId', null)) : null;
+    }
+
     // ========== USERS ==========
     match /users/{uid} {
       // Anyone can read user documents (for marketplace, tracking, etc)
@@ -212,7 +216,7 @@ service cloud.firestore {
       }
 
       function isJobCourier() {
-        return signedIn() && resource.data.get('courierId', null) == request.auth.uid;
+        return signedIn() && courierUidOf(resource.data) == request.auth.uid;
       }
       
       function courierHasRequiredEquipment() {
@@ -242,7 +246,7 @@ service cloud.firestore {
       allow create: if signedIn()
         && ((('customerId' in request.resource.data && request.resource.data.customerId == request.auth.uid) || ('sellerId' in request.resource.data && request.resource.data.sellerId == request.auth.uid)))
         && request.resource.data.status == 'open'
-        && request.resource.data.get('courierId', null) == null
+        && courierUidOf(request.resource.data) == null
         && validJobStatus(request.resource.data.status)
         && request.resource.data.jobType in ['package', 'food'];
       
@@ -258,8 +262,8 @@ service cloud.firestore {
         // 2) Any courier with proper equipment can claim an open job
         (
           resource.data.status == 'open'
-          && resource.data.get('courierId', null) == null
-          && request.resource.data.courierId == request.auth.uid
+          && courierUidOf(resource.data) == null
+          && courierUidOf(request.resource.data) == request.auth.uid
           && request.resource.data.status == 'assigned'
           && isCourier()
           && courierHasRequiredEquipment()
@@ -485,7 +489,7 @@ service cloud.firestore {
     // ========== ROUTES (Local Delivery Routes) ==========
     match /routes/{routeId} {
       function isCourier() {
-        return signedIn() && resource.data.get('courierId', null) == request.auth.uid;
+        return signedIn() && courierUidOf(resource.data) == request.auth.uid;
       }
       
       // Any authenticated courier can view available routes
@@ -629,10 +633,10 @@ service cloud.firestore {
     // ========== EQUIPMENT SUBMISSIONS ==========
     match /equipmentSubmissions/{submissionId} {
       // Couriers can read their own submissions
-      allow read: if signedIn() && resource.data.courierId == request.auth.uid;
+      allow read: if signedIn() && courierUidOf(resource.data) == request.auth.uid;
       
       // Couriers can create equipment submissions
-      allow create: if signedIn() && request.resource.data.courierId == request.auth.uid;
+      allow create: if signedIn() && courierUidOf(request.resource.data) == request.auth.uid;
       
       // Only admins can update/delete equipment submissions
       allow update, delete: if isAdmin();
@@ -711,7 +715,7 @@ service cloud.firestore {
         (('buyerId' in resource.data) && request.auth.uid == resource.data.buyerId) ||
         (('customerId' in resource.data) && request.auth.uid == resource.data.customerId) ||
         (('sellerId' in resource.data) && request.auth.uid == resource.data.sellerId) ||
-        (('courierId' in resource.data) && request.auth.uid == resource.data.courierId)
+        (courierUidOf(resource.data) != null && request.auth.uid == courierUidOf(resource.data))
       );
       
       // Allow buyer to create order (dev/mock flow)

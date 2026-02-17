@@ -1,4 +1,5 @@
 import { Timestamp } from 'firebase/firestore';
+import { JobStatus } from '../types/firestore';
 import type { UserDoc, JobDoc } from '../types/firestore';
 import type { Order } from '../types/marketplace';
 
@@ -8,7 +9,7 @@ import type { Order } from '../types/marketplace';
 export function makeMockUser(overrides: Partial<UserDoc> = {}): UserDoc {
   const now = Timestamp.now();
   return {
-    role: (overrides as any).role ?? 'buyer',
+    role: overrides.role ?? 'buyer',
     email: overrides.email ?? 'test@example.com',
     phone: overrides.phone ?? undefined,
     displayName: overrides.displayName ?? 'Test User',
@@ -28,9 +29,9 @@ export function makeMockJob(overrides: Partial<JobDoc> = {}): JobDoc {
   const now = Timestamp.now();
   const defaultJob: JobDoc = {
     createdByUid: overrides.createdByUid ?? 'buyer_1',
-    courierUid: (overrides as any).courierUid ?? null,
-    agreedFee: (overrides as any).agreedFee ?? null,
-    status: (overrides.status as any) ?? 'open',
+    courierUid: overrides.courierUid ?? null,
+    agreedFee: overrides.agreedFee ?? null,
+    status: overrides.status ?? JobStatus.OPEN,
     pickup: overrides.pickup ?? { lat: 0, lng: 0, label: 'Pickup' },
     dropoff: overrides.dropoff ?? { lat: 0, lng: 0, label: 'Dropoff' },
     courierSnapshot: overrides.courierSnapshot ?? undefined,
@@ -55,11 +56,11 @@ export function makeMockOrder(overrides: Partial<Order> = {}): Order {
     total: overrides.total ?? 0,
     currency: overrides.currency ?? 'USD',
     paymentIntentId: overrides.paymentIntentId ?? 'pi_123',
-    paymentStatus: (overrides as any).paymentStatus ?? 'pending',
+    paymentStatus: overrides.paymentStatus ?? 'pending',
     fulfillmentMethod: overrides.fulfillmentMethod ?? 'shipping',
-    status: (overrides as any).status ?? 'pending',
+    status: overrides.status ?? 'pending',
     createdAt: overrides.createdAt ?? now,
     updatedAt: overrides.updatedAt ?? now,
-    ...(overrides as any),
+    ...overrides,
   } as Order;
 }
