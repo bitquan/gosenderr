@@ -1,6 +1,6 @@
 
 import { LoadingState } from "@gosenderr/ui";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { Link } from "react-router-dom";
 import { getAuthSafe } from "@/lib/firebase";
@@ -70,6 +70,7 @@ const STATE_OPTIONS = [
 
 export default function CourierSettingsPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user, loading } = useAuthUser();
   const [courierData, setCourierData] = useState<any>(null);
   const [dataLoading, setDataLoading] = useState(true);
@@ -90,6 +91,8 @@ export default function CourierSettingsPage() {
     enabled: boolean;
     packs: Array<{ id: string; tokens: number; priceUsd: number }>;
   } | null>(null);
+  const [selectedPackId, setSelectedPackId] = useState<string>("");
+  const [tokenCheckoutMessage, setTokenCheckoutMessage] = useState<string | null>(null);
   const [tokenWallet, setTokenWallet] = useState<{
     available: number;
     reserved: number;
@@ -140,6 +143,8 @@ export default function CourierSettingsPage() {
                 priceUsd: pack.priceUsd,
               })),
             });
+            const firstPackId = policy.packs?.[0]?.id || "";
+            setSelectedPackId((prev) => prev || firstPackId);
             setTokenWallet({
               available: wallet.available,
               reserved: wallet.reserved,
@@ -159,6 +164,31 @@ export default function CourierSettingsPage() {
       setDataLoading(false);
     }
   }, [user]);
+
+  useEffect(() => {
+    const topupStatus = searchParams.get("tokenTopup");
+    if (!topupStatus) return;
+
+    if (topupStatus === "success") {
+      setTokenCheckoutMessage("Token top-up completed. Your wallet will refresh shortly.");
+      getTokenWalletSummary()
+        .then((wallet) => {
+          setTokenWallet({
+            available: wallet.available,
+            reserved: wallet.reserved,
+          });
+        })
+        .catch((error) => {
+          console.error("Error refreshing token wallet after top-up:", error);
+        });
+    } else if (topupStatus === "cancel") {
+      setTokenCheckoutMessage("Token top-up was canceled.");
+    }
+
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete("tokenTopup");
+    setSearchParams(nextParams, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   const handleSignOut = async () => {
     setSigningOut(true);
@@ -280,7 +310,7 @@ export default function CourierSettingsPage() {
       return;
     }
 
-    const selectedPack = tokenPolicy.packs[0];
+    const selectedPack = tokenPolicy.packs.find((pack) => pack.id === selectedPackId) || tokenPolicy.packs[0];
     const randomSuffix =
       typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
         ? crypto.randomUUID().replace(/-/g, "").slice(0, 12)
@@ -540,12 +570,29 @@ export default function CourierSettingsPage() {
                       <p className="text-xs text-emerald-700 mt-1">Loading wallet...</p>
                     ) : (
                       <>
+                        {tokenCheckoutMessage && (
+                          <p className="text-xs text-emerald-800 mt-1">{tokenCheckoutMessage}</p>
+                        )}
                         <p className="text-sm font-semibold text-emerald-900 mt-1">
                           Available: {tokenWallet?.available ?? 0} tokens
                         </p>
                         <p className="text-xs text-emerald-800 mt-1">
                           Reserved: {tokenWallet?.reserved ?? 0} tokens
                         </p>
+                        <div className="mt-3">
+                          <label className="text-xs font-medium text-emerald-700">Token Pack</label>
+                          <select
+                            value={selectedPackId}
+                            onChange={(event) => setSelectedPackId(event.target.value)}
+                            className="mt-1 w-full rounded-lg border border-emerald-200 bg-white px-3 py-2 text-xs"
+                          >
+                            {(tokenPolicy?.packs || []).map((pack) => (
+                              <option key={pack.id} value={pack.id}>
+                                {pack.tokens} tokens — ${pack.priceUsd.toFixed(2)} ({pack.id})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                         <button
                           onClick={handleTokenTopUp}
                           disabled={tokenTopUpLoading || !tokenPolicy?.enabled || !tokenPolicy.packs.length}

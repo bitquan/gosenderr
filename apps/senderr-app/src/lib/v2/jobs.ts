@@ -3,7 +3,6 @@ import {
   addDoc,
   doc,
   serverTimestamp,
-  updateDoc,
   getDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -55,6 +54,73 @@ interface TokenWalletSummary {
   lifetimeAdjusted: number;
 }
 
+export interface TokenClaimReadiness {
+  payoutMode: "cash" | "token";
+  useTokenMode: boolean;
+  requiredTokens: number;
+  availableTokens: number;
+  canClaim: boolean;
+  reason?: string;
+}
+
+export async function getTokenClaimReadiness(
+  courierUid: string,
+): Promise<TokenClaimReadiness> {
+  const userSnap = await getDoc(doc(db, "users", courierUid));
+  const payoutMode =
+    (userSnap.data()?.courierProfile?.payoutMode as string | undefined) === "token"
+      ? "token"
+      : "cash";
+
+  if (payoutMode !== "token") {
+    return {
+      payoutMode,
+      useTokenMode: false,
+      requiredTokens: 0,
+      availableTokens: 0,
+      canClaim: true,
+    };
+  }
+
+  const [policy, wallet] = await Promise.all([
+    getTokenPolicy(),
+    getTokenWalletSummary(),
+  ]);
+
+  const requiredTokens = Number(policy.costs?.jobUnlockStandard || 1);
+  const availableTokens = Number(wallet.available || 0);
+
+  if (!policy.enabled) {
+    return {
+      payoutMode,
+      useTokenMode: true,
+      requiredTokens,
+      availableTokens,
+      canClaim: false,
+      reason: "Token mode is enabled but token purchases are currently disabled.",
+    };
+  }
+
+  if (availableTokens < requiredTokens) {
+    return {
+      payoutMode,
+      useTokenMode: true,
+      requiredTokens,
+      availableTokens,
+      canClaim: false,
+      reason: `Insufficient tokens. Requires ${requiredTokens}, available ${availableTokens}.`,
+    };
+  }
+
+  return {
+    payoutMode,
+    useTokenMode: true,
+    requiredTokens,
+    availableTokens,
+    canClaim: true,
+  };
+}
+
 export async function createJob(
   userUid: string,
   payload: CreateJobPayload,
@@ -102,23 +168,22 @@ export async function claimJob(
     { success: boolean; status: JobStatus }
   >(functions, "claimCourierJob");
 
-  const userSnap = await getDoc(doc(db, "users", courierUid));
-  const payoutMode =
-    (userSnap.data()?.courierProfile?.payoutMode as string | undefined) || "cash";
+  const readiness = await getTokenClaimReadiness(courierUid);
+  const useTokenMode = readiness.useTokenMode;
 
-  const useTokenMode = payoutMode === "token";
+  if (!readiness.canClaim) {
+    throw new Error(readiness.reason || "Unable to claim this job in token mode");
+  }
+
   const reserveKey = `claim_${jobId}_${courierUid}`;
   const commitKey = `claim_commit_${jobId}_${courierUid}`;
   const releaseKey = `claim_release_${jobId}_${courierUid}`;
 
   try {
     if (useTokenMode) {
-      const policy = await getTokenPolicy();
-      const unlockCost = Number(policy.costs?.jobUnlockStandard || 1);
-
       await tokenReserve(
         "jobUnlockStandard",
-        unlockCost,
+        readiness.requiredTokens,
         reserveKey,
         { jobId, courierUid },
       );

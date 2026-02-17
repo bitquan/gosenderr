@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { doc, updateDoc } from "firebase/firestore";
 import { LoadingState } from "@gosenderr/ui";
@@ -7,7 +7,12 @@ import { db } from "@/lib/firebase";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { useUserDoc } from "@/hooks/v2/useUserDoc";
 import { useOpenJobs } from "@/hooks/v2/useOpenJobs";
-import { claimJob, declineCourierJobOffer } from "@/lib/v2/jobs";
+import {
+  claimJob,
+  declineCourierJobOffer,
+  getTokenClaimReadiness,
+  type TokenClaimReadiness,
+} from "@/lib/v2/jobs";
 import { CourierJobPreview } from "@/components/v2/CourierJobPreview";
 import type { Job } from "@/lib/v2/types";
 
@@ -18,6 +23,9 @@ export default function CourierDashboardMobile() {
   const { jobs, loading: jobsLoading } = useOpenJobs();
   const [acceptingJobId, setAcceptingJobId] = useState<string | null>(null);
   const [togglingOnline, setTogglingOnline] = useState(false);
+  const [tokenClaimReadiness, setTokenClaimReadiness] =
+    useState<TokenClaimReadiness | null>(null);
+  const [tokenReadinessLoading, setTokenReadinessLoading] = useState(false);
 
   const courierLocation = userDoc?.courierProfile?.currentLocation || null;
   const transportMode = userDoc?.courierProfile?.vehicleType || "car";
@@ -117,6 +125,34 @@ export default function CourierDashboardMobile() {
       userDoc?.courierProfile?.foodRateCard,
   );
 
+  useEffect(() => {
+    if (!uid) {
+      setTokenClaimReadiness(null);
+      return;
+    }
+
+    let active = true;
+    setTokenReadinessLoading(true);
+    getTokenClaimReadiness(uid)
+      .then((result) => {
+        if (active) {
+          setTokenClaimReadiness(result);
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to load token claim readiness:", error);
+      })
+      .finally(() => {
+        if (active) {
+          setTokenReadinessLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [uid]);
+
   const getRateCardForJob = (job: Job) => {
     const isFoodJob = Boolean(
       (job as any).isFoodItem ||
@@ -131,6 +167,13 @@ export default function CourierDashboardMobile() {
   const handleAccept = async (jobId: string, fee: number) => {
     if (!uid) return;
     try {
+      if (tokenClaimReadiness?.useTokenMode && !tokenClaimReadiness.canClaim) {
+        alert(
+          tokenClaimReadiness.reason ||
+            `Insufficient tokens. Requires ${tokenClaimReadiness.requiredTokens}.`,
+        );
+        return;
+      }
       await claimJob(jobId, uid, fee);
       navigate(`/jobs/${jobId}`);
     } catch (error) {
@@ -251,6 +294,27 @@ export default function CourierDashboardMobile() {
                 Start Onboarding
               </Link>
             </div>
+          </div>
+        )}
+
+        {tokenClaimReadiness?.useTokenMode && (
+          <div
+            className={`rounded-2xl p-4 border ${
+              tokenClaimReadiness.canClaim
+                ? "bg-emerald-50 border-emerald-200 text-emerald-900"
+                : "bg-red-50 border-red-200 text-red-900"
+            }`}
+          >
+            <p className="font-semibold">Token Claim Mode Active</p>
+            <p className="text-sm mt-1">
+              Unlock cost: {tokenClaimReadiness.requiredTokens} token
+              {tokenClaimReadiness.requiredTokens === 1 ? "" : "s"} • Available: {tokenClaimReadiness.availableTokens}
+            </p>
+            {!tokenClaimReadiness.canClaim && (
+              <p className="text-sm mt-1">
+                {tokenClaimReadiness.reason || "Top up tokens in Settings to claim jobs."}
+              </p>
+            )}
           </div>
         )}
 
@@ -484,9 +548,17 @@ export default function CourierDashboardMobile() {
                   loading={acceptingJobId === job.id}
                   enableRoute={true}
                   showAcceptButton={true}
+                  tokenModeEnabled={Boolean(tokenClaimReadiness?.useTokenMode)}
+                  tokenClaimCost={tokenClaimReadiness?.requiredTokens || 0}
+                  insufficientTokens={Boolean(
+                    tokenClaimReadiness?.useTokenMode && !tokenClaimReadiness?.canClaim,
+                  )}
                 />
               ))}
             </div>
+          )}
+          {tokenReadinessLoading && (
+            <p className="text-xs text-gray-500">Loading token claim requirements…</p>
           )}
         </div>
       </div>

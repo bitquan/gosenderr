@@ -1,6 +1,8 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 
+const serverTimestamp = (): Date => new Date();
+
 type JobStatus =
   | "open"
   | "pending"
@@ -193,15 +195,15 @@ async function refundTokenCommitForJob(
       lifetimePurchased: currentPurchased,
       lifetimeSpent: currentSpent,
       lifetimeAdjusted: currentAdjusted,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: serverTimestamp(),
     }, { merge: true });
 
     if (reservationRef && reservationSnap?.exists) {
       tx.set(reservationRef, {
         status: "refunded",
-        refundedAt: admin.firestore.FieldValue.serverTimestamp(),
+        refundedAt: serverTimestamp(),
         refundSource: reason,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: serverTimestamp(),
       }, { merge: true });
     }
 
@@ -219,7 +221,7 @@ async function refundTokenCommitForJob(
         jobId,
         actorUid,
       },
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: serverTimestamp(),
     }, { merge: true });
   });
 }
@@ -301,7 +303,7 @@ export const claimCourierJob = functions.https.onCall(
           courierUid,
           agreedFee,
           status: "assigned",
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: serverTimestamp(),
         });
       });
 
@@ -387,7 +389,7 @@ export const advanceCourierJobStatus = functions.https.onCall(
 
         tx.update(jobRef, {
           status: nextStatus,
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: serverTimestamp(),
         });
       });
 
@@ -511,12 +513,12 @@ export const submitCourierJobProof = functions.https.onCall(
             lng: coordinates.longitude,
           },
           accuracy: coordinates.accuracy,
-          timestamp: admin.firestore.FieldValue.serverTimestamp(),
+          timestamp: serverTimestamp(),
         };
 
         tx.update(jobRef, {
           ...(type === "pickup" ? { pickupProof: proofPayload } : { dropoffProof: proofPayload }),
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: serverTimestamp(),
         });
       });
 
@@ -571,11 +573,11 @@ export const submitLegacyDeliveryProof = functions.https.onCall(
       proofOfDelivery: {
         photoURL: photoUrl,
         notes: notes || "Delivery completed",
-        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        timestamp: serverTimestamp(),
       },
       status: "delivered",
-      deliveredAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      deliveredAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
     });
 
     return { success: true, jobId, status: "delivered" };
@@ -631,7 +633,7 @@ export const declineCourierJobOffer = functions.https.onCall(
         offerExpiresAt: nextCourierUid
           ? admin.firestore.Timestamp.fromMillis(Date.now() + 90 * 1000)
           : null,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: serverTimestamp(),
       });
     });
 
@@ -676,8 +678,8 @@ export const reassignCourierJobAdmin = functions.https.onCall(
     await db.doc(`jobs/${jobId}`).update({
       courierUid,
       status: "assigned",
-      acceptedAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      acceptedAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
       adminLastActionBy: adminUid,
     });
 
@@ -704,7 +706,7 @@ export const cancelCourierJobAdmin = functions.https.onCall(
 
     await admin.firestore().doc(`jobs/${jobId}`).update({
       status: "cancelled",
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: serverTimestamp(),
       adminLastActionBy: adminUid,
     });
 
@@ -757,8 +759,8 @@ export const cancelCourierJob = functions.https.onCall(
       tx.update(jobRef, {
         status: "cancelled",
         cancelledBy: callerUid,
-        cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        cancelledAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
       });
     });
 
@@ -822,10 +824,10 @@ export const submitCourierJobDispute = functions.https.onCall(
       tx.update(jobRef, {
         status: "disputed",
         disputedBy: callerUid,
-        disputedAt: admin.firestore.FieldValue.serverTimestamp(),
+        disputedAt: serverTimestamp(),
         disputeReason: reason,
         disputeDescription: description.trim(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: serverTimestamp(),
       });
 
       const disputeRef = db.collection("disputes").doc();
@@ -836,8 +838,8 @@ export const submitCourierJobDispute = functions.https.onCall(
         description: description.trim(),
         status: "open",
         type: "delivery",
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
       });
     });
 
@@ -900,9 +902,9 @@ export const updateLegacyCourierJobStatus = functions.https.onCall(
       tx.update(jobRef, {
         status,
         ...(status === "completed"
-          ? { completedAt: admin.firestore.FieldValue.serverTimestamp() }
+          ? { completedAt: serverTimestamp() }
           : {}),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: serverTimestamp(),
       });
     });
 
@@ -948,10 +950,10 @@ export const rejectRunnerJob = functions.https.onCall(
         courierUid: null,
         agreedFee: null,
         rejectedBy: runnerId,
-        rejectedAt: admin.firestore.FieldValue.serverTimestamp(),
+        rejectedAt: serverTimestamp(),
         rejectionReason: reasonLabel,
         rejectionNotes: notes || "",
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: serverTimestamp(),
       });
 
       const eventRef = db.collection("jobEvents").doc();
@@ -961,7 +963,7 @@ export const rejectRunnerJob = functions.https.onCall(
         eventType: "rejection",
         reason: reasonLabel,
         notes: notes || "",
-        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        timestamp: serverTimestamp(),
       });
     });
 

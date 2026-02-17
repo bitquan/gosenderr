@@ -1,13 +1,18 @@
 import React from "react";
 import { MapboxMap } from "@/components/v2/MapboxMap";
-import { useMemo } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { buildMapShellOverlayModel } from "@/lib/mapShell/overlayController";
 import ActiveJobOverlay from "@/components/mapShell/ActiveJobOverlay";
 import SettingsOverlay from "@/components/mapShell/SettingsOverlay";
 import MapShellLayout from "@/components/mapShell/MapShellLayout";
 import { Slot } from "@/components/mapShell/slots";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
-import { claimJob, updateJobStatus } from "@/lib/v2/jobs";
+import {
+  claimJob,
+  getTokenClaimReadiness,
+  type TokenClaimReadiness,
+  updateJobStatus,
+} from "@/lib/v2/jobs";
 
 export type MapShellScreenProps = {
   className?: string;
@@ -46,6 +51,43 @@ export default function MapShellScreen({
   }, [devOverlayModel]);
 
   const { uid } = useAuthUser();
+  const [tokenClaimReadiness, setTokenClaimReadiness] =
+    useState<TokenClaimReadiness | null>(null);
+
+  useEffect(() => {
+    if (!uid) return;
+    let mounted = true;
+
+    getTokenClaimReadiness(uid)
+      .then((readiness) => {
+        if (mounted) {
+          setTokenClaimReadiness(readiness);
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to load token claim readiness in map shell", error);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [uid]);
+
+  const resolvedOverlayModel = useMemo(() => {
+    if (overlayModel.state !== "offer" || !tokenClaimReadiness?.useTokenMode) {
+      return overlayModel;
+    }
+
+    const tokenLabel = `${tokenClaimReadiness.requiredTokens} token${tokenClaimReadiness.requiredTokens === 1 ? "" : "s"}`;
+    return {
+      ...overlayModel,
+      primaryLabel: `Accept Job (${tokenLabel})`,
+      description: tokenClaimReadiness.canClaim
+        ? `${overlayModel.description} Unlock cost: ${tokenLabel}.`
+        : `${overlayModel.description} ${tokenClaimReadiness.reason || "Insufficient tokens."}`,
+      tone: tokenClaimReadiness.canClaim ? overlayModel.tone : "error",
+    };
+  }, [overlayModel, tokenClaimReadiness]);
 
   const handlePrimaryAction = async (
     action: string,
@@ -67,6 +109,14 @@ export default function MapShellScreen({
       }
 
       if (action === "update_status" && nextStatus === "accepted") {
+        if (tokenClaimReadiness?.useTokenMode && !tokenClaimReadiness.canClaim) {
+          alert(
+            tokenClaimReadiness.reason ||
+              `Insufficient tokens. Requires ${tokenClaimReadiness.requiredTokens}.`,
+          );
+          return;
+        }
+
         // Claim the job (uses agreedFee=0 for demo)
         await claimJob(jobId, uid, 0);
         alert("Job claimed (dev)");
@@ -147,7 +197,7 @@ export default function MapShellScreen({
           <Slot name="topRight">
             <div data-testid="active-overlay" className="pointer-events-auto">
               <ActiveJobOverlay
-                model={overlayModel}
+                model={resolvedOverlayModel}
                 onPrimaryAction={handlePrimaryAction}
               />
             </div>

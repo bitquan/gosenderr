@@ -3,6 +3,8 @@ import * as admin from "firebase-admin";
 import { getStripeClient } from "../stripe/stripeSecrets";
 import { logAdminAction, verifyAdmin } from "../utils/adminUtils";
 
+const serverTimestamp = (): Date => new Date();
+
 interface TokenPolicy {
   enabled: boolean;
   finalSale: boolean;
@@ -23,7 +25,7 @@ interface TokenWalletSummary {
   lifetimePurchased: number;
   lifetimeSpent: number;
   lifetimeAdjusted: number;
-  updatedAt?: FirebaseFirestore.Timestamp | FirebaseFirestore.FieldValue;
+  updatedAt?: FirebaseFirestore.Timestamp | FirebaseFirestore.FieldValue | Date;
 }
 
 interface TokenReserveRequest {
@@ -121,7 +123,7 @@ function walletFromSnapshot(
     lifetimeAdjusted: normalizeNumber(data?.lifetimeAdjusted),
     updatedAt:
       (data?.updatedAt as FirebaseFirestore.Timestamp | undefined) ||
-      admin.firestore.FieldValue.serverTimestamp(),
+      serverTimestamp(),
   };
 }
 
@@ -224,7 +226,7 @@ export const tokenReserve = functions.https.onCall(
         ...current,
         available: nextAvailable,
         reserved: current.reserved + amount,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: serverTimestamp(),
       };
 
       tx.set(walletRef, {
@@ -233,7 +235,7 @@ export const tokenReserve = functions.https.onCall(
         lifetimePurchased: wallet.lifetimePurchased,
         lifetimeSpent: wallet.lifetimeSpent,
         lifetimeAdjusted: wallet.lifetimeAdjusted,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: serverTimestamp(),
       }, { merge: true });
 
       tx.set(reservationRef, {
@@ -244,8 +246,8 @@ export const tokenReserve = functions.https.onCall(
         idempotencyKey,
         metadata: data?.metadata || {},
         actorUid,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
       }, { merge: true });
 
       tx.set(txRef, {
@@ -257,7 +259,7 @@ export const tokenReserve = functions.https.onCall(
         idempotencyKey,
         reservationId: idempotencyKey,
         metadata: data?.metadata || {},
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: serverTimestamp(),
       }, { merge: true });
     });
 
@@ -330,23 +332,25 @@ export const tokenCommit = functions.https.onCall(
         ...current,
         reserved: nextReserved,
         lifetimeSpent: current.lifetimeSpent + reservation.amount,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: serverTimestamp(),
       };
 
+      const committedWallet = resultWallet as TokenWalletSummary;
+
       tx.set(walletRef, {
-        available: resultWallet.available,
-        reserved: resultWallet.reserved,
-        lifetimePurchased: resultWallet.lifetimePurchased,
-        lifetimeSpent: resultWallet.lifetimeSpent,
-        lifetimeAdjusted: resultWallet.lifetimeAdjusted,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        available: committedWallet.available,
+        reserved: committedWallet.reserved,
+        lifetimePurchased: committedWallet.lifetimePurchased,
+        lifetimeSpent: committedWallet.lifetimeSpent,
+        lifetimeAdjusted: committedWallet.lifetimeAdjusted,
+        updatedAt: serverTimestamp(),
       }, { merge: true });
 
       tx.set(reservationRef, {
         status: "committed",
-        committedAt: admin.firestore.FieldValue.serverTimestamp(),
+        committedAt: serverTimestamp(),
         commitIdempotencyKey: idempotencyKey,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: serverTimestamp(),
       }, { merge: true });
 
       tx.set(txRef, {
@@ -358,7 +362,7 @@ export const tokenCommit = functions.https.onCall(
         idempotencyKey,
         reservationId,
         metadata: data?.metadata || {},
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: serverTimestamp(),
       }, { merge: true });
     });
 
@@ -435,24 +439,26 @@ export const tokenRelease = functions.https.onCall(
         ...current,
         available: current.available + reservation.amount,
         reserved: nextReserved,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: serverTimestamp(),
       };
 
+      const releasedWallet = resultWallet as TokenWalletSummary;
+
       tx.set(walletRef, {
-        available: resultWallet.available,
-        reserved: resultWallet.reserved,
-        lifetimePurchased: resultWallet.lifetimePurchased,
-        lifetimeSpent: resultWallet.lifetimeSpent,
-        lifetimeAdjusted: resultWallet.lifetimeAdjusted,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        available: releasedWallet.available,
+        reserved: releasedWallet.reserved,
+        lifetimePurchased: releasedWallet.lifetimePurchased,
+        lifetimeSpent: releasedWallet.lifetimeSpent,
+        lifetimeAdjusted: releasedWallet.lifetimeAdjusted,
+        updatedAt: serverTimestamp(),
       }, { merge: true });
 
       tx.set(reservationRef, {
         status: "released",
         releaseReason: data?.reason || "released",
         releaseIdempotencyKey: idempotencyKey,
-        releasedAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        releasedAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
       }, { merge: true });
 
       tx.set(txRef, {
@@ -464,7 +470,7 @@ export const tokenRelease = functions.https.onCall(
         idempotencyKey,
         reservationId,
         metadata: data?.metadata || {},
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: serverTimestamp(),
       }, { merge: true });
     });
 
@@ -545,23 +551,25 @@ export const tokenRefund = functions.https.onCall(
       walletResult = {
         ...current,
         available: current.available + amount,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: serverTimestamp(),
       };
 
+      const refundedWallet = walletResult as TokenWalletSummary;
+
       tx.set(walletRef, {
-        available: walletResult.available,
-        reserved: walletResult.reserved,
-        lifetimePurchased: walletResult.lifetimePurchased,
-        lifetimeSpent: walletResult.lifetimeSpent,
-        lifetimeAdjusted: walletResult.lifetimeAdjusted,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        available: refundedWallet.available,
+        reserved: refundedWallet.reserved,
+        lifetimePurchased: refundedWallet.lifetimePurchased,
+        lifetimeSpent: refundedWallet.lifetimeSpent,
+        lifetimeAdjusted: refundedWallet.lifetimeAdjusted,
+        updatedAt: serverTimestamp(),
       }, { merge: true });
 
       tx.set(reservationRef, {
         status: "refunded",
-        refundedAt: admin.firestore.FieldValue.serverTimestamp(),
+        refundedAt: serverTimestamp(),
         refundIdempotencyKey: idempotencyKey,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: serverTimestamp(),
       }, { merge: true });
 
       tx.set(txRef, {
@@ -574,7 +582,7 @@ export const tokenRefund = functions.https.onCall(
         reservationId,
         reason: data?.reason || "policy_refund",
         metadata: data?.metadata || {},
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: serverTimestamp(),
       }, { merge: true });
     });
 
@@ -658,8 +666,8 @@ export const tokenCreateCheckoutSession = functions.https.onCall(
       stripeSessionId: session.id,
       paymentStatus: "pending",
       url: session.url || null,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
     }, { merge: true });
 
     return {
@@ -723,7 +731,7 @@ export const adjustTokenWalletBalance = functions.https.onCall(
       lifetimePurchased: 0,
       lifetimeSpent: 0,
       lifetimeAdjusted: 0,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: serverTimestamp(),
     };
 
     await db.runTransaction(async (tx) => {
@@ -752,7 +760,7 @@ export const adjustTokenWalletBalance = functions.https.onCall(
         ...current,
         available: nextAvailable,
         lifetimeAdjusted: current.lifetimeAdjusted + delta,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: serverTimestamp(),
       };
 
       tx.set(walletRef, {
@@ -761,7 +769,7 @@ export const adjustTokenWalletBalance = functions.https.onCall(
         lifetimePurchased: nextWallet.lifetimePurchased,
         lifetimeSpent: nextWallet.lifetimeSpent,
         lifetimeAdjusted: nextWallet.lifetimeAdjusted,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: serverTimestamp(),
       }, { merge: true });
 
       tx.set(txRef, {
@@ -776,7 +784,7 @@ export const adjustTokenWalletBalance = functions.https.onCall(
           actorUid: adminUid,
           ...(data?.metadata || {}),
         },
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: serverTimestamp(),
       }, { merge: true });
     });
 
