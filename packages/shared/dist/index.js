@@ -18,3 +18,5 @@ __exportStar(require("./types/firestore"), exports);
 __exportStar(require("./types/tokenWallet"), exports);
 __exportStar(require("./stateMachine/jobTransitions"), exports);
 __exportStar(require("./utils/roleDisplay"), exports);
+// Shared test utilities (factories)
+__exportStar(require("./test-utils/mocks"), exports);
