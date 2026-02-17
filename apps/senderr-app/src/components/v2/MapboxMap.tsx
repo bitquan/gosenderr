@@ -92,7 +92,8 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(({
           
         const map = new mapboxgl.Map({
           container: mapContainer.current,
-          style: "mapbox://styles/mapbox/streets-v12",
+          // Use dark style to match app theme
+          style: "mapbox://styles/mapbox/dark-v10",
           center: initialCenter as [number, number],
           zoom: 12,
         });
