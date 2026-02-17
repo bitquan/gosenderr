@@ -87,3 +87,35 @@ Location and settings checks:
 - In-shell location chip supports repeated `Enable location` -> `Start tracking` -> `Stop tracking`.
 - Settings/profile overlay can be opened from map shell and closed without leaving map context.
 - Profile save and feature flag debug behavior still work from overlay.
+
+## 7) Token lifecycle BAT checkpoint (courier token mode)
+
+Run against local emulators from repo root:
+
+```bash
+pnpm exec firebase emulators:exec --only auth,firestore,functions --project gosenderr-6773f "node scripts/token-emulator-smoke.mjs"
+```
+
+Pass criteria:
+- token reserve succeeds for courier wallet
+- courier claim + token commit succeeds
+- customer cancel triggers auto refund (`tokenTransactions/auto_refund_job_cancelled_<jobId>`)
+- customer dispute triggers auto refund (`tokenTransactions/auto_refund_job_disputed_<jobId>`)
+
+Current checkpoint status:
+- Reserve/claim/commit: PASS
+- Cancel refund: PASS
+- Dispute refund: PASS
+- Checkout session in emulator: expected to be blocked without valid Stripe test key
+
+## 8) Staging deploy checkpoint
+
+Attempted deploy command:
+
+```bash
+pnpm exec firebase deploy --project staging --only functions,firestore:rules
+```
+
+Current status:
+- Deploy blocked with `HTTP 403` from Firebaserules API (`caller does not have permission`)
+- Requires staging Firebase IAM access before rerun
