@@ -111,7 +111,7 @@ export default function FoodPickupsPage() {
 
     try {
       await createFoodPickupRestaurant({
-        courierId: uid,
+        courierUid: uid,
         courierName: user?.displayName || user?.email?.split("@")[0] || "Senderr customer",
         restaurantName,
         location: {

@@ -86,6 +86,12 @@ export interface CourierDocuments {
     reviewedAt?: Timestamp;
     reviewedBy?: string;
 }
+export type CourierPayoutMode = "stripe_auto" | "manual_review";
+export interface TokenWalletSummary {
+    balance: number;
+    currency?: string;
+    updatedAt?: Timestamp;
+}
 export interface CourierProfile {
     status: CourierStatus;
     isOnline?: boolean;
@@ -103,6 +109,9 @@ export interface CourierProfile {
         lng: number;
     };
     stripeConnectAccountId?: string;
+    payoutMode?: CourierPayoutMode;
+    showTokenWallet?: boolean;
+    tokenWallet?: TokenWalletSummary;
     todayJobs?: number;
     completedJobs?: number;
 }
@@ -252,7 +261,8 @@ export interface JobTimeline {
     orderPlaced: Timestamp;
     courierAssigned?: {
         timestamp: Timestamp;
-        courierId: string;
+        courierUid?: string;
+        courierId?: string;
         courierName: string;
     };
     courierEnRoute?: {
@@ -300,6 +310,7 @@ export interface DeliveryJobDoc {
     itemId: string;
     customerId: string;
     sellerId: string;
+    courierUid?: string;
     courierId?: string;
     jobType: JobType;
     priority: number;
@@ -429,6 +440,8 @@ export interface FeatureFlags {
         analytics: boolean;
         featureFlagsControl: boolean;
         webPortalEnabled: boolean;
+        systemLogs: boolean;
+        firebaseExplorer: boolean;
     };
     advanced: {
         pushNotifications: boolean;

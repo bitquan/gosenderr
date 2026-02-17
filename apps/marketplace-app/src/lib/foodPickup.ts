@@ -17,7 +17,8 @@ export interface FoodPickupRestaurantPublicLocation {
 }
 
 export interface FoodPickupRestaurantInput {
-  courierId: string;
+  courierUid?: string;
+  courierId?: string; // deprecated
   courierName?: string;
   restaurantName: string;
   location: FoodPickupRestaurantLocation;
@@ -32,7 +33,8 @@ export interface FoodPickupRestaurantInput {
 
 export interface FoodPickupRestaurantDoc {
   id: string;
-  courierId: string;
+  courierUid?: string;
+  courierId?: string; // legacy
   courierName?: string | null;
   restaurantName: string;
   location: FoodPickupRestaurantLocation;
@@ -45,7 +47,7 @@ export interface FoodPickupRestaurantDoc {
   isPublic: boolean;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
-}
+} 
 
 interface ParsedAddress {
   city?: string;
@@ -213,7 +215,7 @@ export async function createFoodPickupRestaurant(input: FoodPickupRestaurantInpu
     null;
 
   const docRef = await addDoc(collection(db, "foodPickupRestaurants"), {
-    courierId: input.courierId,
+    courierUid: input.courierUid ?? input.courierId ?? null,
     courierName: input.courierName?.trim() || null,
     restaurantName,
     location: {

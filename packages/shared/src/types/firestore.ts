@@ -337,7 +337,8 @@ export interface JobTimeline {
   orderPlaced: Timestamp;
   courierAssigned?: {
     timestamp: Timestamp;
-    courierId: string;
+    courierUid?: string;
+    courierId?: string; // legacy
     courierName: string;
   };
   courierEnRoute?: {
@@ -382,7 +383,8 @@ export interface DeliveryJobDoc {
   itemId: string;
   customerId: string;
   sellerId: string;
-  courierId?: string;
+  courierUid?: string;
+  courierId?: string; // legacy
   jobType: JobType;
   priority: number; // Food = 100, Package = 50
   status: JobStatus;

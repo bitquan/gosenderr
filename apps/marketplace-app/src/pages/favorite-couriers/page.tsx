@@ -19,7 +19,8 @@ import { Avatar } from "@/components/ui/Avatar";
 
 interface FavoriteCourier {
   id: string;
-  courierId: string;
+  courierUid?: string;
+  courierId?: string; // legacy
   courierName: string;
   courierPhoto?: string;
   rating: number;
@@ -97,7 +98,7 @@ export default function FavoriteCouriersPage() {
 
     // Check if already favorited
     const alreadyFavorited = favorites.some(
-      (fav) => fav.courierId === courier.id,
+      (fav) => (fav.courierUid || fav.courierId) === courier.id,
     );
     if (alreadyFavorited) {
       alert("This Senderr is already in your favorites!");
@@ -107,7 +108,7 @@ export default function FavoriteCouriersPage() {
     try {
       await addDoc(collection(db, "favoriteCouriers"), {
         customerId: userId,
-        courierId: courier.id,
+        courierUid: courier.id,
         courierName: courier.name,
         courierPhoto: courier.photoURL || "",
         rating: courier.rating,

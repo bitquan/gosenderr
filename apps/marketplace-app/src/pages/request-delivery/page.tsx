@@ -276,7 +276,7 @@ export default function RequestDeliveryPage() {
     // Build checkout URL with all necessary parameters
     const params = new URLSearchParams({
       itemId,
-      courierId: selectedCourier.id,
+      courierUid: selectedCourier.id,
       pickupAddress: item.pickupLocation.address,
       dropoffAddress: dropoffAddress.address,
       dropoffLat: dropoffAddress.lat.toString(),

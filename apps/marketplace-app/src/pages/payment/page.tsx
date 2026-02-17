@@ -16,7 +16,7 @@ import { Avatar } from "@/components/ui/Avatar";
 
 interface OrderDetails {
   itemId: string;
-  courierId: string;
+  courierUid: string;
   courierName?: string;
   courierRate: number;
   platformFee: number;
@@ -80,14 +80,14 @@ export default function PaymentPage() {
 
     // Fallback to query params
     const itemId = searchParams.get("itemId");
-    const courierId = searchParams.get("courierId");
+    const courierUid = searchParams.get("courierUid") || searchParams.get("courierId");
     const courierRate = searchParams.get("courierRate");
     const platformFee = searchParams.get("platformFee");
     const dropoffAddress = searchParams.get("dropoffAddress");
 
     if (
       !itemId ||
-      !courierId ||
+      !courierUid ||
       !courierRate ||
       !platformFee ||
       !dropoffAddress
@@ -98,7 +98,7 @@ export default function PaymentPage() {
 
     setOrderDetails({
       itemId,
-      courierId,
+      courierUid,
       courierName: searchParams.get("courierName") || undefined,
       courierRate: parseFloat(courierRate),
       platformFee: parseFloat(platformFee),
@@ -125,7 +125,7 @@ export default function PaymentPage() {
       // Create delivery job in Firestore
       const deliveryJobData = {
         customerId: user.uid,
-        courierId: orderDetails.courierId,
+        courierUid: orderDetails.courierUid,
         itemId: orderDetails.itemId,
         status: "pending",
         paymentStatus: "authorized",
@@ -143,7 +143,7 @@ export default function PaymentPage() {
         stripePaymentIntentId: tempJobId,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-      };
+      }; 
 
       const jobRef = await addDoc(
         collection(db, "deliveryJobs"),
