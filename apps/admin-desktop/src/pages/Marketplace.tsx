@@ -97,9 +97,7 @@ export default function AdminMarketplacePage() {
 
   const filteredItems = items.filter(item => {
     const matchesFilter = filter === 'all' || item.status === filter
-    const matchesSearch = !searchQuery || 
-      item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.sellerName.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesSearch = !searchQuery || item.title.toLowerCase().includes(searchQuery.toLowerCase()) || item.sellerName.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory
     return matchesFilter && matchesSearch && matchesCategory
   })
@@ -138,7 +136,6 @@ export default function AdminMarketplacePage() {
           </button>
         </div>
       </div>
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 -mt-6 space-y-4">
         {/* Filter Tabs */}
         <div className="bg-white rounded-2xl shadow-lg p-2 flex gap-2 flex-wrap">
@@ -304,5 +301,5 @@ export default function AdminMarketplacePage() {
         )}
       </div>
     </div>
-  )
+  );
 }

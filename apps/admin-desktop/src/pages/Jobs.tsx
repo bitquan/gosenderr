@@ -117,13 +117,7 @@ export default function AdminJobsPage() {
     .filter(job => {
       if (!searchQuery) return true
       const q = searchQuery.toLowerCase()
-      return (
-        job.id.toLowerCase().includes(q) ||
-        job.pickupAddress?.toLowerCase().includes(q) ||
-        job.deliveryAddress?.toLowerCase().includes(q) ||
-        job.createdByEmail?.toLowerCase().includes(q) ||
-        job.courierEmail?.toLowerCase().includes(q)
-      )
+      return job.id.toLowerCase().includes(q) || job.pickupAddress?.toLowerCase().includes(q) || job.deliveryAddress?.toLowerCase().includes(q) || job.createdByEmail?.toLowerCase().includes(q) || job.courierEmail?.toLowerCase().includes(q);
     })
     .filter(job => {
       if (dateFilter === 'all') return true
@@ -152,7 +146,6 @@ export default function AdminJobsPage() {
           <p className="text-purple-100">{jobs.length} total jobs</p>
         </div>
       </div>
-
       <div className="max-w-6xl mx-auto px-4 sm:px-6 -mt-6 space-y-4">
         {/* Search and Export and Create */}
         <div className="bg-white rounded-2xl shadow-lg p-4 flex gap-3 flex-wrap">
@@ -310,7 +303,6 @@ export default function AdminJobsPage() {
           </CardContent>
         </Card>
       </div>
-
       {/* Cancel Job Modal */}
       {showCancelModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -358,7 +350,6 @@ export default function AdminJobsPage() {
           </div>
         </div>
       )}
-
       {/* Create Job Modal */}
       <CreateJobModal
         isOpen={showCreateModal}
@@ -366,5 +357,5 @@ export default function AdminJobsPage() {
         onJobCreated={() => loadJobs()}
       />
     </div>
-  )
+  );
 }

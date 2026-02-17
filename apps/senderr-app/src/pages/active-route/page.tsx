@@ -43,7 +43,7 @@ export default function ActiveRoutePage() {
 
   const { routes, loading: routesLoading } = useRoutes({
     status: "in_progress",
-    courierId: currentUser?.uid,
+    courierUid: currentUser?.uid,
   });
 
   const activeRoute = routes[0]; // Get the first (and should be only) active route

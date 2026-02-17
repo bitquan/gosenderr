@@ -23,7 +23,7 @@ export function CategoryNav({ categories, selectedCategory, onSelectCategory }: 
       Automotive: '🚗',
       Other: '📦',
     }
-    return icons[category] || '📦'
+    return icons[category] || '📦';
   }
 
   return (

@@ -167,7 +167,6 @@ function OrderSummary({
   return (
     <div className="bg-white rounded-lg shadow-md p-6 sticky top-6">
       <h2 className="text-xl font-bold text-gray-900 mb-4">Order Summary</h2>
-      
       {/* Item */}
       <div className="flex gap-4 mb-6 pb-6 border-b">
         <img
@@ -181,7 +180,6 @@ function OrderSummary({
           <p className="text-sm text-gray-600 mt-1">Condition: {item.condition}</p>
         </div>
       </div>
-
       {/* Price Breakdown */}
       <div className="space-y-3 mb-6">
         <div className="flex justify-between text-gray-700">
@@ -203,7 +201,6 @@ function OrderSummary({
           <span>${total.toFixed(2)}</span>
         </div>
       </div>
-
       {deliveryOption === 'courier' && selectedCourier && (
         <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-6">
           <div className="flex items-center justify-between">
@@ -229,7 +226,6 @@ function OrderSummary({
           </div>
         </div>
       )}
-
       {/* Trust Badges */}
       <div className="bg-green-50 border border-green-200 rounded-lg p-4">
         <div className="flex items-center text-green-800 mb-2">
@@ -515,7 +511,6 @@ function CheckoutForm({
     return (
       <div className="bg-white rounded-lg shadow-md p-8">
         <h2 className="text-2xl font-bold text-gray-900 mb-6">Delivery Information</h2>
-        
         {/* Development Mode Warning */}
         {import.meta.env.DEV && !import.meta.env.VITE_USE_REAL_FUNCTIONS && (
           <div className="mb-6 bg-yellow-50 border border-yellow-300 rounded-lg p-4">
@@ -533,7 +528,6 @@ function CheckoutForm({
             </div>
           </div>
         )}
-        
         <form onSubmit={handleDeliverySubmit} className="space-y-6">
           {/* Delivery Option */}
           <div>
@@ -924,20 +918,17 @@ function PaymentForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <PaymentElement />
-
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <p className="text-red-800">{error}</p>
         </div>
       )}
-
       <div className="bg-gray-50 rounded-lg p-4">
         <h3 className="font-semibold text-gray-900 mb-2">Payment secured by Stripe</h3>
         <p className="text-sm text-gray-600">
           Your payment information is encrypted and secure. Funds are held for 3 days to protect buyers.
         </p>
       </div>
-
       <button
         type="submit"
         disabled={!stripe || loading}

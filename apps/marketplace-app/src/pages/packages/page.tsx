@@ -223,7 +223,6 @@ export default function CustomerPackagesNew() {
           </div>
         </div>
       </div>
-
       {/* Filter Tabs */}
       <div className="max-w-4xl mx-auto px-6 -mt-4 mb-6 space-y-3">
         <div className="bg-white rounded-2xl shadow-lg p-2 flex gap-2 overflow-x-auto">
@@ -276,7 +275,6 @@ export default function CustomerPackagesNew() {
           </button>
         </div>
       </div>
-
       {/* Packages List */}
       <div className="max-w-4xl mx-auto px-6 space-y-4">
         {filteredPackages.length === 0 ? (
@@ -356,14 +354,10 @@ export default function CustomerPackagesNew() {
                         </span>
                       </div>
 
-                      {(pkg.estimatedDelivery ||
-                        pkg.estimatedDeliveryDate ||
-                        pkg.eta) && (
+                      {(pkg.estimatedDelivery || pkg.estimatedDeliveryDate || pkg.eta) && (
                         <div className="mt-2 text-xs text-gray-500">
                           ETA: {formatDate(
-                            pkg.estimatedDelivery ||
-                              pkg.estimatedDeliveryDate ||
-                              pkg.eta,
+                            pkg.estimatedDelivery || pkg.estimatedDeliveryDate || pkg.eta,
                           )}
                         </div>
                       )}

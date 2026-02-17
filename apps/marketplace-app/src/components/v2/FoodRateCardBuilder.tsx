@@ -249,7 +249,6 @@ export function FoodRateCardBuilder({
       <h2 style={{ marginBottom: "24px", fontSize: "24px", fontWeight: "600" }}>
         🍔 Food Delivery Rate Card
       </h2>
-
       <form onSubmit={handleSubmit}>
         {/* Base Rates */}
         <div

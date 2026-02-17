@@ -187,7 +187,6 @@ export default function SettingsPage() {
         <h1 className="text-3xl font-bold text-gray-900">Platform Settings</h1>
         <p className="text-gray-600 mt-2">Configure platform-wide settings and preferences</p>
       </div>
-
       {/* Quick Links to Advanced Settings */}
       <Card>
         <CardHeader>
@@ -224,7 +223,6 @@ export default function SettingsPage() {
           </div>
         </CardContent>
       </Card>
-
       {/* Settings Groups */}
       <div className="space-y-6">
         {Object.entries(groupedSettings).map(([group, groupSettings]) => (
@@ -272,7 +270,6 @@ export default function SettingsPage() {
           </Card>
         ))}
       </div>
-
       {settings.length === 0 && (
         <Card>
           <CardContent>
@@ -287,5 +284,5 @@ export default function SettingsPage() {
         </Card>
       )}
     </div>
-  )
+  );
 }

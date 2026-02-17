@@ -110,7 +110,6 @@ export function StatusTimeline({ currentStatus, isPaymentLocked }: StatusTimelin
                 >
                   {isCompleted ? "✓" : isCurrent ? "●" : ""}
                 </div>
-
                 {/* Label */}
                 <div
                   style={{

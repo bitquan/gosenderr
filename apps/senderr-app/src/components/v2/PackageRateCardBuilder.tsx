@@ -150,7 +150,6 @@ export function PackageRateCardBuilder({
       <h2 style={{ marginBottom: '24px', fontSize: '24px', fontWeight: '600' }}>
         📦 Package Delivery Rate Card
       </h2>
-
       <form onSubmit={handleSubmit}>
         {/* Base Rates */}
         <div style={{ marginBottom: '24px', padding: '20px', background: '#f9fafb', borderRadius: '8px' }}>

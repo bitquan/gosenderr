@@ -157,7 +157,7 @@ export interface Order {
   sellerName: string;
   sellerPhotoURL?: string;
   
-  courierId?: string;
+  courierUid?: string;
   courierName?: string;
   
   // Item snapshot (preserve at time of order)

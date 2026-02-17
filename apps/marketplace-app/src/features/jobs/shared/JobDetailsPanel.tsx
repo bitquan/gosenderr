@@ -28,7 +28,6 @@ export function JobDetailsPanel({ job, visibility, showStatus = true, children }
           <JobStatusPills status={job.status} />
         </div>
       )}
-
       {/* Addresses */}
       <div style={{ marginBottom: '16px' }}>
         <AddressBlock
@@ -42,7 +41,6 @@ export function JobDetailsPanel({ job, visibility, showStatus = true, children }
           canSeeExact={visibility.canSeeExactAddresses}
         />
       </div>
-
       {/* Package Details */}
       <div style={{ marginBottom: '16px' }}>
         <PackageDetailsPanel
@@ -51,7 +49,6 @@ export function JobDetailsPanel({ job, visibility, showStatus = true, children }
           canSeePhotos={visibility.canSeePhotos}
         />
       </div>
-
       {/* Courier Info (if assigned) */}
       {job.courierSnapshot && job.courierUid && (
         <div style={{ marginBottom: '16px', padding: '12px', background: '#f5f5f5', borderRadius: '6px' }}>
@@ -71,7 +68,6 @@ export function JobDetailsPanel({ job, visibility, showStatus = true, children }
           )}
         </div>
       )}
-
       {/* Role-specific actions */}
       {children && <div style={{ marginTop: '16px' }}>{children}</div>}
     </div>

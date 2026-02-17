@@ -84,7 +84,6 @@ export function ItemCard({ item, sellerBadges = [], sellerRating }: ItemCardProp
           </div>
         )}
       </div>
-
       {/* Content */}
       <div className="p-4">
         {/* Title */}
@@ -138,5 +137,5 @@ export function ItemCard({ item, sellerBadges = [], sellerRating }: ItemCardProp
         </div>
       </div>
     </Link>
-  )
+  );
 }

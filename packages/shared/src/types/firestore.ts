@@ -337,7 +337,7 @@ export interface JobTimeline {
   orderPlaced: Timestamp;
   courierAssigned?: {
     timestamp: Timestamp;
-    courierId: string;
+    courierUid: string;
     courierName: string;
   };
   courierEnRoute?: {
@@ -382,7 +382,7 @@ export interface DeliveryJobDoc {
   itemId: string;
   customerId: string;
   sellerId: string;
-  courierId?: string;
+  courierUid?: string;
   jobType: JobType;
   priority: number; // Food = 100, Package = 50
   status: JobStatus;
@@ -617,7 +617,7 @@ export interface RouteDoc {
     totalCustomerPaid: number;
   };
 
-  courierId?: string;
+  courierUid?: string;
   courierName?: string;
   vehicleType?: string;
   claimedAt?: Timestamp;
@@ -665,7 +665,7 @@ export interface LongRouteDoc {
     totalCustomerPaid: number;
   };
 
-  courierId?: string;
+  courierUid?: string;
   courierName?: string;
   claimedAt?: Timestamp;
 
@@ -870,7 +870,7 @@ export interface PackageJourneyLeg {
   type: LegType;
 
   jobId?: string;
-  courierId?: string;
+  courierUid?: string;
 
   routeId?: string;
   runnerId?: string;

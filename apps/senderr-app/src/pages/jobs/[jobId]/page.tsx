@@ -75,10 +75,7 @@ export default function CourierJobDetail() {
 
   const job = convertJobDocToJob(jobDoc, jobId);
   const fallbackFee =
-    job.agreedFee ??
-    (job as any)?.pricing?.courierRate ??
-    (job as any)?.pricing?.totalAmount ??
-    0;
+    job.agreedFee ?? (job as any)?.pricing?.courierRate ?? (job as any)?.pricing?.totalAmount ?? 0;
 
   if (job.courierUid !== uid) {
     return (
@@ -129,7 +126,6 @@ export default function CourierJobDetail() {
           Accepted: {job.updatedAt?.toDate?.()?.toLocaleString() || "Just now"}
         </p>
       </div>
-
       <div className="max-w-4xl mx-auto px-4 py-4 space-y-4">
         {isPaymentLocked && (
           <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl p-4">
@@ -189,16 +185,10 @@ export default function CourierJobDetail() {
           <button
             onClick={() => handleStartNavigation('pickup')}
             disabled={
-              isNavigating ||
-              !userDoc?.location ||
-              isPaymentLocked ||
-              !canNavigateToPickup
+              isNavigating || !userDoc?.location || isPaymentLocked || !canNavigateToPickup
             }
             className={`py-4 px-4 rounded-xl font-semibold text-white shadow-lg transition-all ${
-              isNavigating ||
-              !userDoc?.location ||
-              isPaymentLocked ||
-              !canNavigateToPickup
+              isNavigating || !userDoc?.location || isPaymentLocked || !canNavigateToPickup
                 ? "bg-gray-400 cursor-not-allowed"
                 : "bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] hover:shadow-xl active:scale-95"
             }`}
@@ -213,16 +203,10 @@ export default function CourierJobDetail() {
           <button
             onClick={() => handleStartNavigation('dropoff')}
             disabled={
-              isNavigating ||
-              !userDoc?.location ||
-              isPaymentLocked ||
-              !canNavigateToDropoff
+              isNavigating || !userDoc?.location || isPaymentLocked || !canNavigateToDropoff
             }
             className={`py-4 px-4 rounded-xl font-semibold text-white shadow-lg transition-all ${
-              isNavigating ||
-              !userDoc?.location ||
-              isPaymentLocked ||
-              !canNavigateToDropoff
+              isNavigating || !userDoc?.location || isPaymentLocked || !canNavigateToDropoff
                 ? "bg-gray-400 cursor-not-allowed"
                 : "bg-gradient-to-br from-emerald-500 to-emerald-600 hover:shadow-xl active:scale-95"
             }`}

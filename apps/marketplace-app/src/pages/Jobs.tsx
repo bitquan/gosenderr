@@ -75,11 +75,7 @@ export default function JobsPage() {
     if (searchQuery) {
       const query = searchQuery.toLowerCase()
       searchMatch = 
-        job.pickupAddress?.toLowerCase().includes(query) ||
-        job.deliveryAddress?.toLowerCase().includes(query) ||
-        job.description?.toLowerCase().includes(query) ||
-        job.id.toLowerCase().includes(query) ||
-        false
+        job.pickupAddress?.toLowerCase().includes(query) || job.deliveryAddress?.toLowerCase().includes(query) || job.description?.toLowerCase().includes(query) || job.id.toLowerCase().includes(query) || false
     }
 
     return tabMatch && searchMatch
@@ -126,7 +122,6 @@ export default function JobsPage() {
           </div>
         </div>
       </div>
-
       {/* Main Content */}
       <div className="max-w-4xl mx-auto px-6 -mt-8 space-y-4">
         {/* Search and Filters */}
@@ -304,5 +299,5 @@ export default function JobsPage() {
         )}
       </div>
     </div>
-  )
+  );
 }

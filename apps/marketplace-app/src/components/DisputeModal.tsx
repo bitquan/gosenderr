@@ -194,5 +194,5 @@ export default function DisputeModal({
         </form>
       </div>
     </div>
-  )
+  );
 }

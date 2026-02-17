@@ -170,9 +170,7 @@ export default function EarningsPage() {
   useEffect(() => {
     if (!uid) return;
     const taxState =
-      (userDoc as any)?.courierProfile?.taxState ||
-      (userDoc as any)?.taxState ||
-      "";
+      (userDoc as any)?.courierProfile?.taxState || (userDoc as any)?.taxState || "";
     if (!selectedState && taxState) {
       setSelectedState(taxState);
     }
@@ -185,7 +183,7 @@ export default function EarningsPage() {
 
     const jobsRef = collection(db, "jobs");
     const primaryQuery = query(jobsRef, where("courierUid", "==", uid));
-    const legacyQuery = query(jobsRef, where("courierId", "==", uid));
+    const legacyQuery = query(jobsRef, where('courierUid', "==", uid));
 
     let primaryJobs: any[] = [];
     let legacyJobs: any[] = [];
@@ -204,14 +202,7 @@ export default function EarningsPage() {
         completedStatuses.has(job.status),
       );
       const totalEarnings = completed.reduce((sum: number, job: any) => {
-        return (
-          sum +
-          (job.agreedFee ||
-            job.pricing?.courierRate ||
-            job.pricing?.totalAmount ||
-            job.courierFee ||
-            0)
-        );
+        return (sum + (job.agreedFee || job.pricing?.courierRate || job.pricing?.totalAmount || job.courierFee || 0));
       }, 0);
       const completedCount = completed.length;
       const avgPerJob = completedCount > 0 ? totalEarnings / completedCount : 0;
@@ -333,23 +324,14 @@ export default function EarningsPage() {
   const taxYearJobs = useMemo(() => {
     return completedJobs.filter((job) => {
       const date =
-        job.completedAt?.toDate?.() ||
-        job.updatedAt?.toDate?.() ||
-        job.createdAt?.toDate?.();
+        job.completedAt?.toDate?.() || job.updatedAt?.toDate?.() || job.createdAt?.toDate?.();
       return date ? date.getFullYear() === taxYear : false;
     });
   }, [completedJobs, taxYear]);
 
   const taxYearTotal = useMemo(() => {
     return taxYearJobs.reduce((sum: number, job: any) => {
-      return (
-        sum +
-        (job.agreedFee ||
-          job.pricing?.courierRate ||
-          job.pricing?.totalAmount ||
-          job.courierFee ||
-          0)
-      );
+      return (sum + (job.agreedFee || job.pricing?.courierRate || job.pricing?.totalAmount || job.courierFee || 0));
     }, 0);
   }, [taxYearJobs]);
 
@@ -387,15 +369,9 @@ export default function EarningsPage() {
       ["Job ID", "Date", "Status", "Amount"],
       ...taxYearJobs.map((job) => {
         const date =
-          job.completedAt?.toDate?.() ||
-          job.updatedAt?.toDate?.() ||
-          job.createdAt?.toDate?.();
+          job.completedAt?.toDate?.() || job.updatedAt?.toDate?.() || job.createdAt?.toDate?.();
         const amount =
-          job.agreedFee ||
-          job.pricing?.courierRate ||
-          job.pricing?.totalAmount ||
-          job.courierFee ||
-          0;
+          job.agreedFee || job.pricing?.courierRate || job.pricing?.totalAmount || job.courierFee || 0;
         return [
           job.id,
           date ? date.toLocaleDateString() : "—",

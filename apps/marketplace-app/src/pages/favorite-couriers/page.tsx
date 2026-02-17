@@ -19,7 +19,7 @@ import { Avatar } from "@/components/ui/Avatar";
 
 interface FavoriteCourier {
   id: string;
-  courierId: string;
+  courierUid: string;
   courierName: string;
   courierPhoto?: string;
   rating: number;
@@ -97,7 +97,7 @@ export default function FavoriteCouriersPage() {
 
     // Check if already favorited
     const alreadyFavorited = favorites.some(
-      (fav) => fav.courierId === courier.id,
+      (fav) => fav.courierUid === courier.id,
     );
     if (alreadyFavorited) {
       alert("This Senderr is already in your favorites!");
@@ -187,7 +187,7 @@ export default function FavoriteCouriersPage() {
                 {availableCouriers
                   .filter(
                     (courier) =>
-                      !favorites.some((fav) => fav.courierId === courier.id),
+                      !favorites.some((fav) => fav.courierUid === courier.id),
                   )
                   .map((courier) => (
                     <div

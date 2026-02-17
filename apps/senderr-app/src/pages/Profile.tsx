@@ -191,7 +191,6 @@ export default function CourierProfilePage() {
           <p className="text-purple-100">Manage your {isAdmin ? 'admin' : 'courier'} account</p>
         </div>
       </div>
-
       {/* Content */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 -mt-8 space-y-4">
         {/* User Info Card */}
@@ -379,5 +378,5 @@ export default function CourierProfilePage() {
         </Card>
       </div>
     </div>
-  )
+  );
 }

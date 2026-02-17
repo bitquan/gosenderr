@@ -164,5 +164,5 @@ export default function RateDeliveryModal({
         </form>
       </div>
     </div>
-  )
+  );
 }

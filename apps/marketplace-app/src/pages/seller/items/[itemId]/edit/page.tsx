@@ -247,7 +247,6 @@ export default function EditSellerItem() {
           <p className="text-blue-100">Update your marketplace listing</p>
         </div>
       </div>
-
       <div className="max-w-3xl mx-auto px-4 py-6">
         <Card>
           <CardContent className="p-6">

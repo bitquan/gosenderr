@@ -159,7 +159,6 @@ export default function ItemDetailPage() {
         <span>/</span>
         <span className="text-gray-900">{item.title}</span>
       </nav>
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Image Gallery */}
         <div>
@@ -383,5 +382,5 @@ export default function ItemDetailPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

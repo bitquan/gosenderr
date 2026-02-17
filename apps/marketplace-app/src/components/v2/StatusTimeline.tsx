@@ -93,7 +93,6 @@ export function StatusTimeline({ currentStatus }: StatusTimelineProps) {
                 >
                   {isCompleted ? "✓" : isCurrent ? "●" : ""}
                 </div>
-
                 {/* Label */}
                 <div
                   style={{

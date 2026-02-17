@@ -124,7 +124,6 @@ export default function PaymentSettingsPage() {
           <p className="text-purple-100">Configure payment processing and payouts</p>
         </div>
       </div>
-
       <div className="max-w-4xl mx-auto px-4 sm:px-6 -mt-8 space-y-6">
         {/* Stripe Configuration */}
         <Card variant="elevated">
@@ -399,5 +398,5 @@ export default function PaymentSettingsPage() {
         </button>
       </div>
     </div>
-  )
+  );
 }

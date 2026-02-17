@@ -95,7 +95,6 @@ export default function FeatureFlagsPage() {
           <p className="text-purple-100">Enable or disable platform features</p>
         </div>
       </div>
-
       <div className="max-w-6xl mx-auto px-4 sm:px-6 -mt-8 space-y-6">
         {loading ? (
           <Card variant="elevated">
@@ -188,5 +187,5 @@ export default function FeatureFlagsPage() {
         </Card>
       </div>
     </div>
-  )
+  );
 }
