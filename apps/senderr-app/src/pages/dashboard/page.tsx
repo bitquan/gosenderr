@@ -240,10 +240,10 @@ export default function CourierDashboardMapShell() {
 
       <div className="relative z-10 min-h-screen flex flex-col justify-between">
         <div className="p-4 space-y-3 pointer-events-none">
-          <div className="pointer-events-auto bg-white/95 backdrop-blur rounded-2xl border border-gray-200 p-3 flex items-center justify-between gap-3">
+          <div className="pointer-events-auto bg-gradient-to-r from-blue-700 via-blue-600 to-purple-600 text-white rounded-b-3xl shadow-2xl border-b border-white/20 p-3 flex items-center justify-between gap-3">
             <div>
-              <p className="text-xs text-gray-500">Senderr Map Shell</p>
-              <p className="text-sm font-semibold text-gray-900">
+              <p className="text-xs text-blue-100">Senderr Map Shell</p>
+              <p className="text-sm font-semibold text-white">
                 {activeJob ? "Active delivery in progress" : "Waiting for next delivery"}
               </p>
             </div>
@@ -252,8 +252,8 @@ export default function CourierDashboardMapShell() {
               disabled={togglingOnline || !isApproved}
               className={`rounded-full px-3 py-1.5 text-xs font-semibold border ${
                 isOnline
-                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                  : "bg-white text-gray-700 border-gray-300"
+                  ? "bg-emerald-100/90 text-emerald-900 border-emerald-200"
+                  : "bg-white/20 text-white border-white/40"
               } ${(togglingOnline || !isApproved) ? "opacity-60 cursor-not-allowed" : ""}`}
             >
               {isOnline ? "Online" : "Offline"}
@@ -264,8 +264,8 @@ export default function CourierDashboardMapShell() {
             <div
               className={`pointer-events-auto rounded-xl border p-3 ${
                 tokenClaimReadiness.canClaim
-                  ? "bg-emerald-50/95 border-emerald-200 text-emerald-900"
-                  : "bg-red-50/95 border-red-200 text-red-900"
+                  ? "bg-slate-950/60 border-white/10 text-white shadow-2xl backdrop-blur"
+                  : "bg-gradient-to-br from-slate-900 via-purple-900 to-purple-950/90 border-white/10 text-white shadow-2xl"
               }`}
             >
               <p className="text-xs font-semibold">Token Claim Mode</p>
