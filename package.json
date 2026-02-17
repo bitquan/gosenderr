@@ -57,7 +57,12 @@
     "ios:clean:build:debug": "bash scripts/ios-clean-install.sh && (cd apps/courieriosnativeclean/ios && xcodebuild -workspace Senderrappios.xcworkspace -scheme Senderr -configuration Debug -sdk iphoneos -destination 'generic/platform=iOS' clean build)",
     "migrate:courierid": "node scripts/migrate-courierid-to-courieruid.js",
     "verify:migrate:courierid": "node scripts/verify-migration-courierid.js",
-    "check:no-legacy-courierid": "node scripts/check-no-legacy-courierid.js"
+    "check:no-legacy-courierid": "node scripts/check-no-legacy-courierid.js",
+    "ci:local": "pnpm run check:no-legacy-courierid && pnpm --filter @gosenderr/marketplace-app lint && pnpm --filter @gosenderr/marketplace-app build && pnpm --filter @gosenderr/marketplace-app test",
+    "ci:local:quick": "pnpm run check:no-legacy-courierid && pnpm --filter @gosenderr/marketplace-app lint && pnpm --filter @gosenderr/marketplace-app test",
+    "ci:local:quick:no-build": "pnpm run check:no-legacy-courierid && pnpm --filter @gosenderr/marketplace-app lint && pnpm --filter @gosenderr/marketplace-app test",
+    "codemod:courierid": "pnpm dlx jscodeshift -t scripts/codemods/rename-courierid-to-courieruid.js 'apps/**/src/**' 'packages/**/src/**' --parser=tsx",
+    "test:watch:marketplace": "pnpm --filter @gosenderr/marketplace-app test --watch"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "2.0.7",
@@ -72,7 +77,10 @@
     "turbo": "^2.3.3",
     "typescript": "^5.7.2",
     "vite": "^7.3.1",
-    "which": "^6.0.0"
+    "which": "^6.0.0",
+    "husky": "^8.0.3",
+    "lint-staged": "^14.0.0",
+    "jscodeshift": "^0.13.0"
   },
   "packageManager": "pnpm@8.15.1",
   "dependencies": {
@@ -92,5 +100,18 @@
       "@types/react": "18.3.1",
       "@types/react-dom": "18.3.1"
     }
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "eslint --fix",
+      "git add"
+    ],
+    "*.{json,md}": [
+      "prettier --write",
+      "git add"
+    ],
+    "*": [
+      "pnpm run check:no-legacy-courierid"
+    ]
   }
 }

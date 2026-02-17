@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Run staged-lint fixes, then run repo guard
+pnpm -s lint-staged
+pnpm -s check:no-legacy-courierid
