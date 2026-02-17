@@ -82,6 +82,11 @@ export const stripeWebhook = functions.https.onRequest(
 async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
   console.log('Processing checkout.session.completed:', session.id);
 
+  const tokenPurchaseHandled = await handleTokenPurchaseCheckout(session);
+  if (tokenPurchaseHandled) {
+    return;
+  }
+
   // Find the marketplace order by checkoutSessionId
   const ordersSnapshot = await db
     .collection('marketplaceOrders')
@@ -169,6 +174,98 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
   });
 
   console.log(`Created job ${jobRef.id} for marketplace order ${orderDoc.id}`);
+}
+
+async function handleTokenPurchaseCheckout(session: Stripe.Checkout.Session): Promise<boolean> {
+  const metadata = session.metadata || {};
+  if (metadata.purchaseType !== 'token_purchase') {
+    return false;
+  }
+
+  const uid = metadata.uid || session.client_reference_id;
+  const tokens = Number(metadata.tokens || 0);
+  const idempotencyKey = metadata.idempotencyKey || session.id;
+
+  if (!uid || !Number.isFinite(tokens) || tokens <= 0) {
+    console.error('Invalid token purchase session metadata', {
+      sessionId: session.id,
+      uid,
+      tokens,
+    });
+    return true;
+  }
+
+  const walletRef = db.doc(`tokenWallets/${uid}`);
+  const checkoutRef = db.doc(`tokenCheckoutSessions/${idempotencyKey}`);
+  const purchaseTxRef = db.doc(`tokenTransactions/stripe_purchase_${session.id}`);
+
+  await db.runTransaction(async (tx) => {
+    const [walletSnap, checkoutSnap, purchaseTxSnap] = await Promise.all([
+      tx.get(walletRef),
+      tx.get(checkoutRef),
+      tx.get(purchaseTxRef),
+    ]);
+
+    if (purchaseTxSnap.exists) {
+      return;
+    }
+
+    const walletData = walletSnap.exists ? walletSnap.data() || {} : {};
+    const currentAvailable = Number(walletData.available || 0);
+    const currentReserved = Number(walletData.reserved || 0);
+    const currentPurchased = Number(walletData.lifetimePurchased || 0);
+    const currentSpent = Number(walletData.lifetimeSpent || 0);
+    const currentAdjusted = Number(walletData.lifetimeAdjusted || 0);
+
+    tx.set(walletRef, {
+      available: currentAvailable + tokens,
+      reserved: currentReserved,
+      lifetimePurchased: currentPurchased + tokens,
+      lifetimeSpent: currentSpent,
+      lifetimeAdjusted: currentAdjusted,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+
+    tx.set(purchaseTxRef, {
+      uid,
+      type: 'purchase',
+      actorType: 'system',
+      action: 'token_purchase',
+      amount: tokens,
+      idempotencyKey: `stripe_checkout_${session.id}`,
+      metadata: {
+        stripeSessionId: session.id,
+        stripePaymentIntentId: session.payment_intent || null,
+        packId: metadata.packId || null,
+        checkoutIdempotencyKey: idempotencyKey,
+      },
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+
+    tx.set(checkoutRef, {
+      uid,
+      stripeSessionId: session.id,
+      paymentStatus: 'paid',
+      fulfilled: true,
+      fulfilledAt: admin.firestore.FieldValue.serverTimestamp(),
+      paymentIntentId: session.payment_intent || null,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      ...(checkoutSnap.exists ? {} : {
+        idempotencyKey,
+        tokens,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      }),
+    }, { merge: true });
+  });
+
+  console.log('Token wallet credited from checkout session', {
+    sessionId: session.id,
+    uid,
+    tokens,
+    idempotencyKey,
+  });
+
+  return true;
 }
 
 async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent) {

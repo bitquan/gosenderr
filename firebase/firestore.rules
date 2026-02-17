@@ -672,6 +672,20 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    match /tokenCheckoutSessions/{sessionId} {
+      allow read: if signedIn() && (
+        (resource.data.uid == request.auth.uid) || isAdmin()
+      );
+      allow create, update, delete: if false;
+    }
+
+    match /tokenPurchases/{purchaseId} {
+      allow read: if signedIn() && (
+        (resource.data.uid == request.auth.uid) || isAdmin()
+      );
+      allow create, update, delete: if false;
+    }
+
     // ========== MARKETPLACE ITEMS ==========
     match /marketplaceItems/{itemId} {
       // Public can read active items

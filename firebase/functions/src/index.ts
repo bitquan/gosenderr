@@ -27,6 +27,11 @@ export { createPaymentIntentHttp } from "./http/createPaymentIntentHttp";
 export {
 	getTokenPolicy,
 	getTokenWalletSummary,
+	tokenReserve,
+	tokenCommit,
+	tokenRelease,
+	tokenRefund,
+	tokenCreateCheckoutSession,
 	adjustTokenWalletBalance,
 } from "./http/tokenWalletCommands";
 export {

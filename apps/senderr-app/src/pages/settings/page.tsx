@@ -8,6 +8,11 @@ import { useEffect, useState } from "react";
 import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db, storage } from "@/lib/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import {
+  getTokenPolicy,
+  getTokenWalletSummary,
+  tokenCreateCheckoutSession,
+} from "@/lib/v2/jobs";
 
 const STATE_OPTIONS = [
   { code: "AL", name: "Alabama" },
@@ -78,6 +83,17 @@ export default function CourierSettingsPage() {
     reminders: true,
   });
   const [savingPreferences, setSavingPreferences] = useState(false);
+  const [payoutMode, setPayoutMode] = useState<"cash" | "token">("cash");
+  const [tokenLoading, setTokenLoading] = useState(false);
+  const [tokenTopUpLoading, setTokenTopUpLoading] = useState(false);
+  const [tokenPolicy, setTokenPolicy] = useState<{
+    enabled: boolean;
+    packs: Array<{ id: string; tokens: number; priceUsd: number }>;
+  } | null>(null);
+  const [tokenWallet, setTokenWallet] = useState<{
+    available: number;
+    reserved: number;
+  } | null>(null);
   const [uploadingDocs, setUploadingDocs] = useState(false);
   const [documents, setDocuments] = useState<{
     governmentId: File | null;
@@ -101,12 +117,37 @@ export default function CourierSettingsPage() {
               setAvailability(Boolean(profile.isOnline));
               setServiceRadius(Number(profile.serviceRadius || 10));
               setTaxState(profile.taxState || userDoc.data().taxState || '');
+              setPayoutMode(profile.payoutMode === "token" ? "token" : "cash");
               setNotificationPrefs({
                 jobOffers: profile.notificationPrefs?.jobOffers ?? true,
                 payoutUpdates: profile.notificationPrefs?.payoutUpdates ?? true,
                 reminders: profile.notificationPrefs?.reminders ?? true,
               });
             }
+          }
+
+          setTokenLoading(true);
+          try {
+            const [policy, wallet] = await Promise.all([
+              getTokenPolicy(),
+              getTokenWalletSummary(),
+            ]);
+            setTokenPolicy({
+              enabled: policy.enabled,
+              packs: policy.packs.map((pack) => ({
+                id: pack.id,
+                tokens: pack.tokens,
+                priceUsd: pack.priceUsd,
+              })),
+            });
+            setTokenWallet({
+              available: wallet.available,
+              reserved: wallet.reserved,
+            });
+          } catch (error) {
+            console.error("Error loading token policy/wallet:", error);
+          } finally {
+            setTokenLoading(false);
           }
         } finally {
           setDataLoading(false);
@@ -142,6 +183,7 @@ export default function CourierSettingsPage() {
         'courierProfile.isOnline': availability,
         'courierProfile.serviceRadius': serviceRadius,
         'courierProfile.taxState': taxState,
+        'courierProfile.payoutMode': payoutMode,
         'courierProfile.notificationPrefs': notificationPrefs,
         updatedAt: serverTimestamp(),
       });
@@ -229,6 +271,43 @@ export default function CourierSettingsPage() {
       alert("Failed to upload documents. Please try again.");
     } finally {
       setUploadingDocs(false);
+    }
+  };
+
+  const handleTokenTopUp = async () => {
+    if (!tokenPolicy?.enabled || !tokenPolicy.packs.length) {
+      alert("Token top-up is currently unavailable.");
+      return;
+    }
+
+    const selectedPack = tokenPolicy.packs[0];
+    const randomSuffix =
+      typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID().replace(/-/g, "").slice(0, 12)
+        : `${Date.now()}`;
+    const idempotencyKey = `topup_${Date.now()}_${randomSuffix}`;
+
+    setTokenTopUpLoading(true);
+    try {
+      const successUrl = `${window.location.origin}/settings?tokenTopup=success`;
+      const cancelUrl = `${window.location.origin}/settings?tokenTopup=cancel`;
+      const session = await tokenCreateCheckoutSession(
+        selectedPack.id,
+        successUrl,
+        cancelUrl,
+        idempotencyKey,
+      );
+
+      if (!session.url) {
+        throw new Error("Checkout URL missing");
+      }
+
+      window.location.href = session.url;
+    } catch (error) {
+      console.error("Error creating token checkout session:", error);
+      alert("Unable to start token top-up right now. Please try again.");
+    } finally {
+      setTokenTopUpLoading(false);
     }
   };
 
@@ -433,6 +512,17 @@ export default function CourierSettingsPage() {
               </div>
               <div className="bg-gray-50 rounded-xl p-4">
                 <p className="text-xs text-gray-600 font-medium mb-1">Payouts</p>
+                <div className="mt-2">
+                  <label className="text-xs text-gray-600 font-medium">Payout Mode</label>
+                  <select
+                    value={payoutMode}
+                    onChange={(event) => setPayoutMode(event.target.value as "cash" | "token")}
+                    className="mt-1 w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                  >
+                    <option value="cash">Cash payouts</option>
+                    <option value="token">Token wallet mode</option>
+                  </select>
+                </div>
                 <Link
                   to="/earnings"
                   className="inline-flex items-center gap-2 mt-1 text-sm font-semibold text-indigo-600"
@@ -442,6 +532,31 @@ export default function CourierSettingsPage() {
                 <p className="text-xs text-gray-500 mt-2">
                   Update your Stripe Connect details in Earnings.
                 </p>
+
+                {payoutMode === "token" && (
+                  <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3">
+                    <p className="text-xs font-medium text-emerald-700">Token Wallet</p>
+                    {tokenLoading ? (
+                      <p className="text-xs text-emerald-700 mt-1">Loading wallet...</p>
+                    ) : (
+                      <>
+                        <p className="text-sm font-semibold text-emerald-900 mt-1">
+                          Available: {tokenWallet?.available ?? 0} tokens
+                        </p>
+                        <p className="text-xs text-emerald-800 mt-1">
+                          Reserved: {tokenWallet?.reserved ?? 0} tokens
+                        </p>
+                        <button
+                          onClick={handleTokenTopUp}
+                          disabled={tokenTopUpLoading || !tokenPolicy?.enabled || !tokenPolicy.packs.length}
+                          className="mt-3 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+                        >
+                          {tokenTopUpLoading ? "Starting top-up..." : "Top up tokens"}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>

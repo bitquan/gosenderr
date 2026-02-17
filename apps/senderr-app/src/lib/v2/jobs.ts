@@ -33,6 +33,28 @@ interface JobProofPayload {
   };
 }
 
+interface TokenPolicy {
+  enabled: boolean;
+  finalSale: boolean;
+  tokenValueUsd: number;
+  costs: Record<string, number>;
+  packs: Array<{
+    id: string;
+    tokens: number;
+    priceUsd: number;
+    stripePriceId?: string;
+  }>;
+}
+
+interface TokenWalletSummary {
+  uid: string;
+  available: number;
+  reserved: number;
+  lifetimePurchased: number;
+  lifetimeSpent: number;
+  lifetimeAdjusted: number;
+}
+
 export async function createJob(
   userUid: string,
   payload: CreateJobPayload,
@@ -93,7 +115,52 @@ export async function claimJob(
     { success: boolean; status: JobStatus }
   >(functions, "claimCourierJob");
 
-  await claimCourierJobCallable({ jobId, agreedFee });
+  const userSnap = await getDoc(doc(db, "users", courierUid));
+  const payoutMode =
+    (userSnap.data()?.courierProfile?.payoutMode as string | undefined) || "cash";
+
+  const useTokenMode = payoutMode === "token";
+  const reserveKey = `claim_${jobId}_${courierUid}`;
+  const commitKey = `claim_commit_${jobId}_${courierUid}`;
+  const releaseKey = `claim_release_${jobId}_${courierUid}`;
+
+  try {
+    if (useTokenMode) {
+      const policy = await getTokenPolicy();
+      const unlockCost = Number(policy.costs?.jobUnlockStandard || 1);
+
+      await tokenReserve(
+        "jobUnlockStandard",
+        unlockCost,
+        reserveKey,
+        { jobId, courierUid },
+      );
+    }
+
+    await claimCourierJobCallable({ jobId, agreedFee });
+
+    if (useTokenMode) {
+      await tokenCommit(
+        reserveKey,
+        commitKey,
+        { jobId, courierUid },
+      );
+    }
+  } catch (error) {
+    if (useTokenMode) {
+      try {
+        await tokenRelease(
+          reserveKey,
+          releaseKey,
+          "claim_failed",
+          { jobId, courierUid },
+        );
+      } catch (releaseError) {
+        console.error("Failed to release reserved tokens after claim failure", releaseError);
+      }
+    }
+    throw error;
+  }
 }
 
 export async function updateJobStatus(
@@ -200,4 +267,97 @@ export async function rejectRunnerJob(
   >(functions, "rejectRunnerJob");
 
   await rejectRunnerJobCallable({ jobId, reasonLabel, notes });
+}
+
+export async function getTokenPolicy(): Promise<TokenPolicy> {
+  const callable = httpsCallable<undefined, TokenPolicy>(functions, "getTokenPolicy");
+  const result = await callable();
+  return result.data;
+}
+
+export async function getTokenWalletSummary(): Promise<TokenWalletSummary> {
+  const callable = httpsCallable<undefined, TokenWalletSummary>(functions, "getTokenWalletSummary");
+  const result = await callable();
+  return result.data;
+}
+
+export async function tokenReserve(
+  action: string,
+  amount: number,
+  idempotencyKey: string,
+  metadata?: Record<string, unknown>,
+): Promise<{ reservationId: string; wallet: TokenWalletSummary }> {
+  const callable = httpsCallable<
+    { action: string; amount: number; idempotencyKey: string; metadata?: Record<string, unknown> },
+    { reservationId: string; wallet: TokenWalletSummary }
+  >(functions, "tokenReserve");
+  const result = await callable({ action, amount, idempotencyKey, metadata });
+  return result.data;
+}
+
+export async function tokenCommit(
+  reservationId: string,
+  idempotencyKey: string,
+  metadata?: Record<string, unknown>,
+): Promise<{ reservationId: string; wallet: TokenWalletSummary | null }> {
+  const callable = httpsCallable<
+    { reservationId: string; idempotencyKey: string; metadata?: Record<string, unknown> },
+    { reservationId: string; wallet: TokenWalletSummary | null }
+  >(functions, "tokenCommit");
+  const result = await callable({ reservationId, idempotencyKey, metadata });
+  return result.data;
+}
+
+export async function tokenRelease(
+  reservationId: string,
+  idempotencyKey: string,
+  reason?: string,
+  metadata?: Record<string, unknown>,
+): Promise<{ reservationId: string; wallet: TokenWalletSummary | null }> {
+  const callable = httpsCallable<
+    {
+      reservationId: string;
+      idempotencyKey: string;
+      reason?: string;
+      metadata?: Record<string, unknown>;
+    },
+    { reservationId: string; wallet: TokenWalletSummary | null }
+  >(functions, "tokenRelease");
+  const result = await callable({ reservationId, idempotencyKey, reason, metadata });
+  return result.data;
+}
+
+export async function tokenRefund(
+  reservationId: string,
+  idempotencyKey: string,
+  amount?: number,
+  reason?: string,
+  metadata?: Record<string, unknown>,
+): Promise<{ reservationId: string; wallet: TokenWalletSummary | null }> {
+  const callable = httpsCallable<
+    {
+      reservationId: string;
+      idempotencyKey: string;
+      amount?: number;
+      reason?: string;
+      metadata?: Record<string, unknown>;
+    },
+    { reservationId: string; wallet: TokenWalletSummary | null }
+  >(functions, "tokenRefund");
+  const result = await callable({ reservationId, idempotencyKey, amount, reason, metadata });
+  return result.data;
+}
+
+export async function tokenCreateCheckoutSession(
+  packId: string,
+  successUrl: string,
+  cancelUrl: string,
+  idempotencyKey: string,
+): Promise<{ sessionId: string; url: string | null }> {
+  const callable = httpsCallable<
+    { packId: string; successUrl: string; cancelUrl: string; idempotencyKey: string },
+    { sessionId: string; url: string | null }
+  >(functions, "tokenCreateCheckoutSession");
+  const result = await callable({ packId, successUrl, cancelUrl, idempotencyKey });
+  return result.data;
 }
