@@ -48,6 +48,8 @@ import MessagesPage from './pages/messages/page'
 import ConversationPage from './pages/messages/[conversationId]/page'
 import { useFeatureFlags } from './hooks/useFeatureFlags'
 import { StripeModeBanner } from './components/StripeModeBanner'
+import FoodPickupsPage from './pages/food-pickups/page'
+import FoodPickupOrderPage from './pages/food-pickups/[restaurantId]/order'
 
 // Seller pages
 import SellerApplicationPage from './pages/seller/apply/page'
@@ -113,9 +115,21 @@ function App() {
           <Route element={<ProtectedRoute><CustomerLayout /></ProtectedRoute>}>
             <Route path="/sell" element={<Navigate to="/marketplace/sell" replace />} />
             <Route path="/marketplace/sell" element={marketplaceEnabled ? <MarketplaceSellPage /> : <MarketplaceDisabled />} />
-            <Route path="/profile/listings" element={<MyListingsPage />} />
-            <Route path="/profile/seller-settings" element={<SellerSettingsPage />} />
-            <Route path="/profile/stripe-onboarding" element={<StripeOnboardingPage />} />
+            <Route path="/profile/listings" element={
+              <RoleGuard allowedRoles={['admin', 'seller']}>
+                <MyListingsPage />
+              </RoleGuard>
+            } />
+            <Route path="/profile/seller-settings" element={
+              <RoleGuard allowedRoles={['admin', 'seller']}>
+                <SellerSettingsPage />
+              </RoleGuard>
+            } />
+            <Route path="/profile/stripe-onboarding" element={
+              <RoleGuard allowedRoles={['admin', 'seller']}>
+                <StripeOnboardingPage />
+              </RoleGuard>
+            } />
           </Route>
           
           {/* Protected customer routes */}
@@ -169,6 +183,16 @@ function App() {
             <Route path="/favorite-couriers" element={
               <RoleGuard allowedRoles={['customer', 'buyer']}>
                 <FavoriteCouriersPage />
+              </RoleGuard>
+            } />
+            <Route path="/food-pickups" element={
+              <RoleGuard allowedRoles={['customer', 'buyer', 'seller']}>
+                <FoodPickupsPage />
+              </RoleGuard>
+            } />
+            <Route path="/food-pickups/:restaurantId/order" element={
+              <RoleGuard allowedRoles={['customer', 'buyer', 'seller']}>
+                <FoodPickupOrderPage />
               </RoleGuard>
             } />
             <Route path="/promo-codes" element={
