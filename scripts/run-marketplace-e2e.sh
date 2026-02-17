@@ -59,6 +59,9 @@ if [ "$SEED_DONE" != "true" ]; then
   exit 1
 fi
 
+echo "🔁 Running migration verification (courierId -> courierUid) against emulator..."
+FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 node "$SCRIPT_DIR/verify-migration-courierid.js" || { echo "Migration verification failed"; exit 1; }
+
 cd "$MARKETPLACE_DIR"
 echo "🧪 Running Playwright e2e..."
 pnpm exec playwright test tests/e2e --config=playwright.config.ts "$@"
