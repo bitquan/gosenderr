@@ -1,11 +1,11 @@
 import { test, expect } from '@playwright/test'
 
-// Verifies that a courier can read legacy jobs (courierId) on the Earnings page
-// (regression test for Firestore rules allowing `courierId` legacy field).
+// Verifies that legacy `courierId`-only job documents are NOT visible to couriers on the Earnings page
+// after removing the `courierId` read-fallback from Firestore rules.
 
 const E2E_PASSWORD = 'DemoPass123!'
 
-test('courier can read legacy jobs (courierId) on /earnings', async ({ page }) => {
+test('legacy courierId-only jobs are not visible on /earnings', async ({ page }) => {
   await page.goto('/');
   await page.context().clearCookies();
   await page.evaluate(() => localStorage.clear());
@@ -82,10 +82,8 @@ test('courier can read legacy jobs (courierId) on /earnings', async ({ page }) =
   await page.goto('/earnings');
   await page.waitForTimeout(1000);
 
-  // Ensure no permission-denied error appeared in console
-  expect(consoleErrors.join('\n')).not.toContain('Missing or insufficient permissions');
-
-  // Also check completed job appears in earnings UI (by job id string present in page content)
+  // The page SHOULD NOT show the legacy job (courierId-only) because rules no longer
+  // grant read access based on `courierId`. Assert the job id is absent.
   const pageText = await page.textContent('body');
-  expect(pageText).toContain(jobId);
+  expect(pageText).not.toContain(jobId);
 });
