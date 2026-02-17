@@ -58,7 +58,7 @@ export function ItemCard({ item, sellerBadges = [], sellerRating }: ItemCardProp
   return (
     <Link
       to={`/marketplace/${item.id}`}
-      className="group block bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden"
+      className="group block bg-gradient-to-br from-slate-900 via-purple-950 to-purple-900 text-white rounded-2xl shadow-2xl hover:shadow-2xl transition-shadow overflow-hidden border border-white/10"
     >
       {/* Image */}
       <div className="relative aspect-square overflow-hidden bg-gray-100">
@@ -88,25 +88,25 @@ export function ItemCard({ item, sellerBadges = [], sellerRating }: ItemCardProp
       {/* Content */}
       <div className="p-4">
         {/* Title */}
-        <h3 className="font-semibold text-gray-900 line-clamp-2 group-hover:text-blue-600 transition-colors mb-2">
+        <h3 className="font-semibold text-white line-clamp-2 group-hover:text-blue-100 transition-colors mb-2">
           {item.title}
         </h3>
 
         {/* Category */}
-        <p className="text-sm text-gray-500 mb-3 capitalize">{item.category}</p>
+        <p className="text-sm text-white/70 mb-3 capitalize">{item.category}</p>
 
         {/* Price and quantity */}
         <div className="flex items-center justify-between mb-3">
-          <div className="text-2xl font-bold text-gray-900">
+          <div className="text-2xl font-bold text-white">
             {formatPrice(item.price)}
           </div>
-          <div className="text-xs text-gray-500">
+          <div className="text-xs text-white/70">
             {item.quantity} available
           </div>
         </div>
 
         {/* Seller info */}
-        <div className="pt-3 border-t border-gray-100">
+        <div className="pt-3 border-t border-white/10">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               {item.sellerPhotoURL ? (
@@ -120,9 +120,9 @@ export function ItemCard({ item, sellerBadges = [], sellerRating }: ItemCardProp
                   {item.sellerName?.charAt(0).toUpperCase() || 'S'}
                 </div>
               )}
-              <span className="text-sm text-gray-600">{item.sellerName || 'Seller'}</span>
+              <span className="text-sm text-white/80">{item.sellerName || 'Seller'}</span>
             </div>
-            <div className="text-xs text-gray-500">
+            <div className="text-xs text-white/70">
               {sellerRating && sellerRating.count > 0 ? (
                 <span>⭐ {sellerRating.average.toFixed(1)} ({sellerRating.count})</span>
               ) : (

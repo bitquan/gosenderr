@@ -134,13 +134,13 @@ export default function CourierJobsPage() {
   const activeCount = jobs.filter(job => activeStatuses.has(job.status)).length
 
   return (
-    <div className="min-h-screen bg-[#F8F9FF]">
+    <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95">
       {/* Header */}
-      <div className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] rounded-b-[32px] p-6 text-white shadow-lg">
+      <div className="border-b border-white/15 bg-slate-950/80 p-6 text-white shadow-lg backdrop-blur">
         <div className="max-w-4xl mx-auto">
           <Link
             to="/dashboard"
-            className="inline-flex items-center gap-2 text-white/90 hover:text-white mb-4 transition-colors"
+            className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-4 transition-colors"
           >
             <span className="text-xl">←</span>
             <span className="font-medium">Back to Dashboard</span>
@@ -151,15 +151,15 @@ export default function CourierJobsPage() {
           {/* Stats */}
           <div className="grid grid-cols-3 gap-3 sm:gap-4">
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
-              <p className="text-purple-100 text-xs mb-1">Total Earned</p>
+              <p className="text-white/70 text-xs mb-1">Total Earned</p>
               <p className="text-2xl sm:text-3xl font-bold">{formatCurrency(totalEarnings)}</p>
             </div>
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
-              <p className="text-purple-100 text-xs mb-1">Completed</p>
+              <p className="text-white/70 text-xs mb-1">Completed</p>
               <p className="text-2xl sm:text-3xl font-bold">{completedCount}</p>
             </div>
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
-              <p className="text-purple-100 text-xs mb-1">Active</p>
+              <p className="text-white/70 text-xs mb-1">Active</p>
               <p className="text-2xl sm:text-3xl font-bold">{activeCount}</p>
             </div>
           </div>
@@ -219,7 +219,6 @@ export default function CourierJobsPage() {
         ) : filteredJobs.length === 0 ? (
           <Card variant="elevated">
             <CardContent className="text-center py-12">
-              <div className="text-6xl mb-4">📦</div>
               <h3 className="text-xl font-bold text-gray-900 mb-2">No deliveries found</h3>
               <p className="text-gray-600 mb-6">
                 {filter === 'all' 
@@ -317,7 +316,7 @@ export default function CourierJobsPage() {
                     {job.description && (
                       <div className="pt-3 border-t border-gray-100">
                         <p className="text-sm text-gray-600 line-clamp-2">
-                          📦 {job.description}
+                          {job.description}
                         </p>
                       </div>
                     )}

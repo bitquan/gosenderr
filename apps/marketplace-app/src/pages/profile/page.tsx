@@ -10,10 +10,12 @@ import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Avatar } from "@/components/ui/Avatar";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { useRole } from "@/hooks/useRole";
 
 export default function CustomerProfilePage() {
   const navigate = useNavigate();
   const { user, loading } = useAuthUser();
+  const { isSeller, isAdmin } = useRole();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [displayName, setDisplayName] = useState("");
@@ -253,20 +255,32 @@ export default function CustomerProfilePage() {
             <CardTitle>Marketplace</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              <Link
-                to="/profile/listings"
-                className="block w-full text-left px-4 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all"
-              >
-                📦 My Listings
-              </Link>
-              <Link
-                to="/marketplace/sell"
-                className="block w-full text-left px-4 py-3 bg-purple-50 text-purple-700 font-semibold rounded-lg hover:bg-purple-100 transition-all"
-              >
-                ➕ Create New Listing
-              </Link>
-            </div>
+            {isSeller || isAdmin ? (
+              <div className="space-y-3">
+                <Link
+                  to="/profile/listings"
+                  className="block w-full text-left px-4 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all"
+                >
+                  📦 My Listings
+                </Link>
+                <Link
+                  to="/marketplace/sell"
+                  className="block w-full text-left px-4 py-3 bg-purple-50 text-purple-700 font-semibold rounded-lg hover:bg-purple-100 transition-all"
+                >
+                  ➕ Create New Listing
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-gray-600">Selling tools are available after seller approval.</p>
+                <Link
+                  to="/seller/apply"
+                  className="block w-full text-left px-4 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all"
+                >
+                  🏪 Apply to Become a Seller
+                </Link>
+              </div>
+            )}
           </CardContent>
         </Card>
 

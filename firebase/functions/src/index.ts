@@ -26,6 +26,8 @@ export { logCommandFailure } from "./http/logCommandFailure";
 export { getPublicConfig } from "./http/getPublicConfig";
 export { getPublicConfigHttp } from "./http/getPublicConfigHttp";
 export { createPaymentIntentHttp } from "./http/createPaymentIntentHttp";
+export { claimJob } from "./http/claimJob";
+export { updateJobStatus } from "./http/updateJobStatus";
 
 // Stripe Functions
 export * from "./stripe";

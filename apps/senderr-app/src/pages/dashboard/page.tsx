@@ -17,6 +17,11 @@ export default function CourierDashboardMobile() {
   const { userDoc, loading: userLoading } = useUserDoc();
   const { jobs, loading: jobsLoading, error: jobsError, retry: retryJobs, isOffline } = useOpenJobs();
   const [acceptingJobId, setAcceptingJobId] = useState<string | null>(null);
+  const [acceptError, setAcceptError] = useState<string | null>(null);
+  const [lastAcceptAttempt, setLastAcceptAttempt] = useState<{
+    jobId: string;
+    fee: number;
+  } | null>(null);
   const [togglingOnline, setTogglingOnline] = useState(false);
 
   const courierLocation = userDoc?.courierProfile?.currentLocation || null;
@@ -108,6 +113,22 @@ export default function CourierDashboardMobile() {
     return jobs.filter((job) => job.status === "open");
   }, [jobs]);
 
+  const currentActiveJob = activeJobs[0] || null;
+  const paymentLockedActiveJobs = activeJobs.filter(
+    (job) => job.paymentStatus !== "authorized",
+  ).length;
+  const awaitingOfferCount = openJobs.filter(
+    (job) => (job as any).offerCourierUid === uid,
+  ).length;
+  const walletBalanceRaw =
+    (userDoc as any)?.courierProfile?.tokenWallet?.balance ??
+    (userDoc as any)?.tokenWallet?.balance ??
+    (userDoc as any)?.wallet?.tokenBalance ??
+    null;
+  const walletBalance = walletBalanceRaw == null ? null : Number(walletBalanceRaw);
+  const payoutMode = (userDoc as any)?.courierProfile?.payoutMode || "stripe_auto";
+  const isWalletVisible = userDoc?.courierProfile?.showTokenWallet !== false;
+
   const hasRateCards = Boolean(
     userDoc?.courierProfile?.packageRateCard ||
       userDoc?.courierProfile?.foodRateCard,
@@ -126,13 +147,24 @@ export default function CourierDashboardMobile() {
 
   const handleAccept = async (jobId: string, fee: number) => {
     if (!uid) return;
+
+    if (isOffline) {
+      setAcceptError("You are offline. Reconnect to accept this job.");
+      setLastAcceptAttempt({ jobId, fee });
+      return;
+    }
+
+    setAcceptingJobId(jobId);
+    setAcceptError(null);
+    setLastAcceptAttempt({ jobId, fee });
+
     try {
       await claimJob(jobId, uid, fee);
       navigate(`/jobs/${jobId}`);
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to accept job";
-      alert(message);
+      setAcceptError(message);
     } finally {
       setAcceptingJobId(null);
     }
@@ -269,7 +301,6 @@ export default function CourierDashboardMobile() {
           </div>
         )}
 
-        {/* KPI Row */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="bg-white border border-gray-200 rounded-2xl p-4">
             <p className="text-xs text-gray-500">Today’s Earnings</p>
@@ -297,125 +328,133 @@ export default function CourierDashboardMobile() {
             <p className="text-xs text-gray-400">Based on finished jobs</p>
           </div>
           <div className="bg-white border border-gray-200 rounded-2xl p-4">
-            <p className="text-xs text-gray-500">Cancellation Rate</p>
-            <p className="text-2xl font-bold text-orange-600">
-              {cancellationRate == null ? "—" : `${cancellationRate}%`}
+            <p className="text-xs text-gray-500">Active Deliveries</p>
+            <p className="text-2xl font-bold text-indigo-600">
+              {activeJobs.length}
             </p>
-            <p className="text-xs text-gray-400">Last 30 days</p>
+            <p className="text-xs text-gray-400">In your lifecycle queue</p>
           </div>
         </div>
 
-        {/* Live Status + Quick Actions */}
         <div className="grid lg:grid-cols-3 gap-4">
-          <div className="bg-white border border-gray-200 rounded-2xl p-4 lg:col-span-2">
+          <div className="bg-white border border-gray-200 rounded-2xl p-4 lg:col-span-2 space-y-4">
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div>
-                <p className="text-sm text-gray-600">Current Job</p>
-                <p className="text-lg font-semibold text-gray-900">No active job</p>
+                <p className="text-sm text-gray-600">Current Delivery</p>
+                <p className="text-lg font-semibold text-gray-900">
+                  {currentActiveJob ? `Job #${currentActiveJob.id.slice(0, 8)}` : "No active delivery"}
+                </p>
+                {currentActiveJob && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Status: {currentActiveJob.status.replace(/_/g, " ")}
+                  </p>
+                )}
               </div>
               <div className="flex gap-2">
-                <button className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold">
-                  Open Navigation
-                </button>
-                <button className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-semibold">
-                  Contact Support
-                </button>
+                <Link
+                  to={currentActiveJob ? `/jobs/${currentActiveJob.id}` : "/jobs"}
+                  className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700"
+                >
+                  {currentActiveJob ? "Resume Delivery" : "View Jobs"}
+                </Link>
+                <Link
+                  to="/support"
+                  className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-semibold hover:bg-gray-200"
+                >
+                  Support
+                </Link>
               </div>
             </div>
+            {currentActiveJob && currentActiveJob.paymentStatus !== "authorized" && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                <p className="font-semibold">Payment authorization pending</p>
+                <p className="mt-1">Lifecycle actions remain locked until payment is authorized.</p>
+              </div>
+            )}
           </div>
           <div className="bg-white border border-gray-200 rounded-2xl p-4">
-            <p className="text-sm text-gray-600">Online Time</p>
-            <p className="text-3xl font-bold text-gray-900">0h 00m</p>
-            <p className="text-xs text-gray-400">Current shift</p>
-            <div className="mt-3 flex gap-2">
-              <button className="flex-1 px-3 py-2 rounded-lg bg-gray-100 text-sm font-semibold">Pause</button>
-              <button className="flex-1 px-3 py-2 rounded-lg bg-gray-100 text-sm font-semibold">End</button>
+            <p className="text-sm text-gray-600">Queue Summary</p>
+            <div className="mt-3 space-y-2 text-sm text-gray-700">
+              <div className="flex items-center justify-between">
+                <span>Open jobs</span>
+                <span className="font-semibold">{openJobs.length}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Offers waiting</span>
+                <span className="font-semibold">{awaitingOfferCount}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Payment locked</span>
+                <span className="font-semibold">{paymentLockedActiveJobs}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Cancellation rate</span>
+                <span className="font-semibold">
+                  {cancellationRate == null ? "—" : `${cancellationRate}%`}
+                </span>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Earnings & Payouts */}
         <div className="grid lg:grid-cols-3 gap-4">
           <div className="bg-white border border-gray-200 rounded-2xl p-4 lg:col-span-2">
-            <p className="text-sm text-gray-600 mb-2">Earnings Trend</p>
-            <div className="h-36 rounded-xl bg-gradient-to-br from-purple-50 to-white border border-purple-100 flex items-center justify-center text-sm text-gray-500">
-              Earnings chart (7/30 days)
-            </div>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-2xl p-4">
-            <p className="text-sm text-gray-600">Next payout</p>
-            <p className="text-2xl font-bold text-emerald-600">
-              {formatMoney(timeWindowStats.weekEarnings)}
-            </p>
-            <p className="text-xs text-gray-500">Scheduled: —</p>
-            <div className="mt-3 text-xs text-gray-500">Pending tips: $0.00</div>
-          </div>
-        </div>
-
-        {/* Performance + Quality */}
-        <div className="grid md:grid-cols-2 gap-4">
-          <div className="bg-white border border-gray-200 rounded-2xl p-4">
-            <p className="text-sm text-gray-600">Ratings</p>
-            <div className="flex items-center justify-between mt-2">
-              <p className="text-3xl font-bold">4.9</p>
-              <p className="text-xs text-gray-400">Last 30 days</p>
-            </div>
-            <p className="text-sm text-gray-600 mt-3">“Great service!” — Recent feedback</p>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-2xl p-4">
-            <p className="text-sm text-gray-600">Reliability</p>
-            <div className="grid grid-cols-2 gap-3 mt-3">
-              <div className="p-3 rounded-lg bg-emerald-50">
-                <p className="text-xs text-gray-500">Completion</p>
-                <p className="text-xl font-bold text-emerald-600">100%</p>
+            <p className="text-sm text-gray-600 mb-3">Compliance & Payout Readiness</p>
+            <div className="grid md:grid-cols-2 gap-3 text-sm">
+              <div className="rounded-xl border border-gray-200 p-3">
+                <p className="text-gray-500">Courier approval</p>
+                <p className="font-semibold text-gray-900 mt-1">
+                  {(userDoc?.courierProfile as any)?.status || "not started"}
+                </p>
               </div>
-              <div className="p-3 rounded-lg bg-orange-50">
-                <p className="text-xs text-gray-500">Cancellations</p>
-                <p className="text-xl font-bold text-orange-600">0%</p>
+              <div className="rounded-xl border border-gray-200 p-3">
+                <p className="text-gray-500">Stripe payouts</p>
+                <p className="font-semibold text-gray-900 mt-1">
+                  {(userDoc as any)?.stripePayoutsEnabled || (userDoc as any)?.courierProfile?.stripePayoutsEnabled
+                    ? "enabled"
+                    : "not enabled"}
+                </p>
+              </div>
+              <div className="rounded-xl border border-gray-200 p-3">
+                <p className="text-gray-500">Charges enabled</p>
+                <p className="font-semibold text-gray-900 mt-1">
+                  {(userDoc as any)?.stripeChargesEnabled || (userDoc as any)?.courierProfile?.stripeChargesEnabled
+                    ? "yes"
+                    : "no"}
+                </p>
+              </div>
+              <div className="rounded-xl border border-gray-200 p-3">
+                <p className="text-gray-500">Wallet visibility</p>
+                <p className="font-semibold text-gray-900 mt-1">
+                  {userDoc?.courierProfile?.showTokenWallet === false ? "hidden" : "visible"}
+                </p>
+              </div>
+              <div className="rounded-xl border border-gray-200 p-3">
+                <p className="text-gray-500">Payout mode</p>
+                <p className="font-semibold text-gray-900 mt-1">
+                  {payoutMode === "manual_review" ? "manual review" : "automatic"}
+                </p>
+              </div>
+              <div className="rounded-xl border border-gray-200 p-3">
+                <p className="text-gray-500">Token wallet</p>
+                <p className="font-semibold text-gray-900 mt-1">
+                  {isWalletVisible
+                    ? walletBalance == null
+                      ? "not available"
+                      : walletBalance.toLocaleString()
+                    : "hidden in settings"}
+                </p>
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Opportunities */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-4">
-          <p className="text-sm text-gray-600 mb-3">Opportunities</p>
-          <div className="grid md:grid-cols-3 gap-3">
-            <div className="p-4 rounded-xl bg-red-50 border border-red-100">
-              <p className="text-sm font-semibold">Hot Zone</p>
-              <p className="text-xs text-gray-500">Downtown • +$2.00</p>
-            </div>
-            <div className="p-4 rounded-xl bg-blue-50 border border-blue-100">
-              <p className="text-sm font-semibold">Peak Hours</p>
-              <p className="text-xs text-gray-500">5:00–8:00 PM</p>
-            </div>
-            <div className="p-4 rounded-xl bg-purple-50 border border-purple-100">
-              <p className="text-sm font-semibold">Suggested Shift</p>
-              <p className="text-xs text-gray-500">Sat 11:00 AM–2:00 PM</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Schedule + Compliance + Inbox */}
-        <div className="grid lg:grid-cols-3 gap-4">
           <div className="bg-white border border-gray-200 rounded-2xl p-4">
-            <p className="text-sm text-gray-600">Availability</p>
-            <p className="text-sm text-gray-500 mt-2">No schedule set</p>
-            <button className="mt-3 px-4 py-2 rounded-lg bg-gray-100 text-sm font-semibold">
-              Set Availability
-            </button>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-2xl p-4">
-            <p className="text-sm text-gray-600">Compliance</p>
-            <p className="text-sm text-gray-500 mt-2">All documents up to date</p>
-            <p className="text-xs text-gray-400 mt-1">No actions required</p>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-2xl p-4">
-            <p className="text-sm text-gray-600">Inbox</p>
-            <p className="text-sm text-gray-500 mt-2">No new messages</p>
-            <button className="mt-3 px-4 py-2 rounded-lg bg-gray-100 text-sm font-semibold">
-              Open Messages
-            </button>
+            <p className="text-sm text-gray-600 mb-3">Quick Links</p>
+            <div className="space-y-2">
+              <Link to="/earnings" className="block rounded-lg bg-gray-100 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-200">Earnings & payouts</Link>
+              <Link to="/rate-cards" className="block rounded-lg bg-gray-100 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-200">Rate cards</Link>
+              <Link to="/equipment" className="block rounded-lg bg-gray-100 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-200">Equipment & badges</Link>
+              <Link to="/settings" className="block rounded-lg bg-gray-100 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-200">Settings & docs</Link>
+            </div>
           </div>
         </div>
 
@@ -447,6 +486,23 @@ export default function CourierDashboardMobile() {
 
         <div className="space-y-3">
           <h2 className="text-xl font-semibold text-gray-900">Open Jobs</h2>
+          {acceptError && (
+            <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-red-900">
+              <p className="font-semibold">Unable to accept job</p>
+              <p className="text-sm mt-1">{acceptError}</p>
+              {lastAcceptAttempt && (
+                <button
+                  onClick={() =>
+                    handleAccept(lastAcceptAttempt.jobId, lastAcceptAttempt.fee)
+                  }
+                  disabled={Boolean(acceptingJobId)}
+                  className="mt-3 inline-flex items-center px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-60"
+                >
+                  {acceptingJobId ? "Retrying..." : "Retry Accept"}
+                </button>
+              )}
+            </div>
+          )}
           {!isApproved ? (
             <div className="bg-white border border-gray-200 rounded-2xl p-6 text-center text-gray-600">
               Approval required before going online or viewing jobs.

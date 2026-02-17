@@ -16,6 +16,18 @@
   :root {
     --bottom-nav-height: 0px;
   }
+
+  @media (max-width: 1023px) {
+    :root {
+      --bottom-nav-height: 120px;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    :root {
+      --bottom-nav-height: 0px;
+    }
+  }
   
   #root {
     height: 100%;

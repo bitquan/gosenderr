@@ -30,8 +30,8 @@ export default function CourierJobDetail() {
 
   if (jobLoading) {
     return (
-      <div style={{ padding: "30px" }}>
-        <p>Loading job...</p>
+      <div className="min-h-screen bg-gradient-to-br from-blue-950/95 via-purple-900/90 to-purple-950/95 p-8 text-white/85">
+        Loading delivery...
       </div>
     );
   }
@@ -116,16 +116,16 @@ export default function CourierJobDetail() {
   return (
     <div className="min-h-screen bg-[#F8F9FF]">
       {/* Header */}
-      <div className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] p-6 text-white shadow-lg sticky top-0 z-10">
+      <div className="bg-slate-950/95 p-6 text-white shadow-lg sticky top-0 z-10 border-b border-white/15 backdrop-blur">
         <Link
           to="/dashboard"
-          className="inline-flex items-center text-white/90 hover:text-white mb-3 transition-colors text-sm"
+          className="inline-flex items-center text-white/80 hover:text-white mb-3 transition-colors text-sm"
         >
           <span className="mr-2">←</span>
           Back to Dashboard
         </Link>
         <h1 className="text-2xl font-bold">Active Delivery</h1>
-        <p className="text-purple-100 text-sm mt-1">
+        <p className="text-white/70 text-sm mt-1">
           Accepted: {job.updatedAt?.toDate?.()?.toLocaleString() || "Just now"}
         </p>
       </div>

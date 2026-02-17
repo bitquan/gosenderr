@@ -1,11 +1,12 @@
 
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { signOut } from "firebase/auth";
 import { getAuthSafe } from "@/lib/firebase";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { useUserRole } from "@/hooks/v2/useUserRole";
 import { Link } from "react-router-dom";
+import { getPendingCount } from "@/lib/offline/commandQueue";
 
 interface NavbarProps {
   children: ReactNode;
@@ -16,6 +17,28 @@ export function Navbar({ children }: NavbarProps) {
   const { role } = useUserRole();
   const navigate = useNavigate();
   const location = useLocation(); const pathname = location.pathname;
+
+  const [queuedCount, setQueuedCount] = useState<number>(0)
+
+  useEffect(() => {
+    let mounted = true
+    async function refresh() {
+      try {
+        if (user?.uid) {
+          const c = await getPendingCount(user.uid)
+          if (mounted) setQueuedCount(c)
+        } else {
+          if (mounted) setQueuedCount(0)
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+    refresh()
+    const id = setInterval(refresh, 20000)
+    return () => { mounted = false; clearInterval(id) }
+  }, [user?.uid])
+
 
   const handleSignOut = async () => {
     const auth = getAuthSafe();
@@ -126,68 +149,34 @@ export function Navbar({ children }: NavbarProps) {
               }}
               title={`Go to ${role} dashboard`}
             >
-              {role === "admin"
-                ? "👨‍💼 Admin"
-                : role === "customer"
-                  ? "👤 Order Up"
-                  : role === "courier"
-                    ? "🚗 Senderr"
-                    : role === "runner"
-                      ? "🚚 Shifter"
-                      : role === "seller"
-                        ? "🏪 Market Senderr"
-                        : role}
-            </Link>
-          )}
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <span>
+                  {role === "admin"
+                    ? "👨‍💼 Admin"
+                    : role === "customer"
+                      ? "👤 Order Up"
+                      : role === "courier"
+                        ? "🚗 Senderr"
+                        : role === "runner"
+                          ? "🚚 Shifter"
+                          : role === "seller"
+                            ? "🏪 Market Senderr"
+                            : role}
+                </span>
 
-          {/* Navigation Links - Responsive */}
-          <div
-            style={{
-              display: "flex",
-              gap: "8px",
-              alignItems: "center",
-              flexWrap: "wrap",
-              justifyContent: "flex-end",
-            }}
-          >
-            <Link
-              to="/marketplace"
-              style={{
-                fontSize: "13px",
-                fontWeight: pathname.startsWith("/marketplace") ? "600" : "400",
-                color: pathname.startsWith("/marketplace") ? "#6E56CF" : "#666",
-                textDecoration: "none",
-                whiteSpace: "nowrap",
-              }}
-            >
-              Marketplace
-            </Link>
-
-            {user && role === "seller" && (
-              <Link
-                to="/marketplace/create"
-                style={{
-                  fontSize: "13px",
-                  fontWeight:
-                    pathname === "/marketplace/create" ? "600" : "400",
-                  color:
-                    pathname === "/marketplace/create" ? "#6E56CF" : "#666",
-                  textDecoration: "none",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                + List Item
-              </Link>
-            )}
-
-            {user && role && role !== "seller" && (
-              <Link
-                to="/marketplace/create"
-                style={{
-                  fontSize: "13px",
-                  fontWeight:
-                    pathname === "/marketplace/create" ? "600" : "400",
-                  color:
+                {/* queued commands badge */}
+                {queuedCount > 0 && (
+                  <span style={{
+                    background: '#ef4444',
+                    color: 'white',
+                    borderRadius: 9999,
+                    padding: '2px 8px',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.12)'
+                  }} title={`${queuedCount} queued commands`}>{queuedCount}</span>
+                )}
+              </span>
                     pathname === "/marketplace/create" ? "#6E56CF" : "#666",
                   textDecoration: "none",
                   whiteSpace: "nowrap",

@@ -60,6 +60,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } catch (error) {
           console.error('🔐 AuthContext: Failed to ensure user profile', error)
         }
+
+        // kick off queued command processing for this user (offline replay)
+        try {
+          // lazy-import to avoid cycles
+          const { processQueuedCommands } = await import('@/lib/v2/jobs')
+          processQueuedCommands(user.uid).catch((e) => console.error('processQueuedCommands failed', e))
+        } catch (e) {
+          console.warn('AuthContext: failed to start queued command processor', e)
+        }
       }
       setUser(user)
       setLoading(false)

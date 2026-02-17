@@ -94,6 +94,8 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
         uid: topupUid,
         delta: topupAmount,
         reason: 'stripe_checkout_topup',
+        idempotencyKey: `checkout:${session.id}`,
+        idempotencyActor: 'stripe',
         metadata: {
           checkoutSessionId: session.id,
           paymentIntentId: session.payment_intent || null,

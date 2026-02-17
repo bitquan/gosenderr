@@ -8,7 +8,8 @@ import {
   Timestamp,
   getDoc,
 } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { db, functions } from "@/lib/firebase";
+import { httpsCallable } from "firebase/functions";
 import {
   GeoPoint,
   JobStatus,
@@ -74,116 +75,82 @@ export async function cancelJob(jobId: string, userUid: string): Promise<void> {
   });
 }
 
-export async function claimJob(
-  jobId: string,
-  courierUid: string,
-  agreedFee: number,
-): Promise<void> {
-  const jobRef = doc(db, "jobs", jobId);
-  const courierRef = doc(db, "users", courierUid);
+import { enqueueCommand, flushQueue, getPendingCount } from '@/lib/offline/commandQueue'
 
-  await runTransaction(db, async (transaction) => {
-    const jobDoc = await transaction.get(jobRef);
-    const courierDoc = await transaction.get(courierRef);
+export async function claimJob(jobId: string, courierUid: string, agreedFee: number): Promise<void> {
+  const idempotencyKey = `claim_${crypto.randomUUID()}`
+  const payload = { jobId, agreedFee, idempotencyKey }
 
-    if (!jobDoc.exists()) {
-      throw new Error("Job not found");
-    }
+  // queue when offline
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    await enqueueCommand(courierUid, { type: 'claimJob', payload, idempotencyKey })
+    return
+  }
 
-    if (!courierDoc.exists()) {
-      throw new Error("Courier not found");
-    }
-
-    const jobData = jobDoc.data();
-    const courierData = courierDoc.data() as UserDoc;
-
-    if (jobData.status !== "open" || jobData.courierUid !== null) {
-      throw new Error("Job already claimed or not available");
-    }
-
-    // Server-side eligibility check - use courierProfile
-    if (!courierData.courierProfile?.currentLocation) {
-      throw new Error("Senderr location not available");
-    }
-
-    // Determine appropriate rate card based on job type
-    const isFoodJob = jobData.isFoodItem || false;
-    const rateCard = isFoodJob
-      ? courierData.courierProfile.foodRateCard
-      : courierData.courierProfile.packageRateCard;
-
-    if (!rateCard) {
-      throw new Error(
-        `Senderr ${isFoodJob ? "food" : "package"} rate card not configured`,
-      );
-    }
-
-    const courierLocation = courierData.courierProfile.currentLocation;
-    const pickup = jobData.pickup as GeoPoint;
-    const dropoff = jobData.dropoff as GeoPoint;
-
-    const pickupMiles = calcMiles(courierLocation, pickup);
-    const jobMiles = calcMiles(pickup, dropoff);
-
-    const eligibilityResult = getEligibilityReason(
-      rateCard,
-      jobMiles,
-      pickupMiles,
+  try {
+    const callable = httpsCallable<{ jobId: string; agreedFee: number; idempotencyKey?: string }, { ok: boolean; duplicate?: boolean }>(
+      functions,
+      'claimJob',
     );
-
-    if (!eligibilityResult.eligible) {
-      throw new Error(
-        `not-eligible: ${eligibilityResult.reason || "Job exceeds distance limits"}`,
-      );
+    const res = await callable(payload)
+    if (res && (res as any).data && (res as any).data.duplicate) {
+      // server indicated duplicate/replay — treat as success
+      return
     }
-
-    // All checks passed - claim the job
-    transaction.update(jobRef, {
-      courierUid,
-      agreedFee,
-      status: "assigned" as JobStatus,
-      updatedAt: serverTimestamp(),
-    });
-  });
+  } catch (err: any) {
+    const msg = err?.message || 'Failed to claim job'
+    // if offline-ish error, enqueue for later replay
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      await enqueueCommand(courierUid, { type: 'claimJob', payload, idempotencyKey })
+      return
+    }
+    throw new Error(msg)
+  }
 }
 
-export async function updateJobStatus(
-  jobId: string,
-  nextStatus: JobStatus,
-  actorUid?: string,
-): Promise<void> {
-  const jobRef = doc(db, "jobs", jobId);
+export async function updateJobStatus(jobId: string, nextStatus: JobStatus, actorUid?: string): Promise<void> {
+  const uid = actorUid || undefined
+  const idempotencyKey = `status_${crypto.randomUUID()}`
+  const payload = { jobId, nextStatus, idempotencyKey }
 
-  await runTransaction(db, async (transaction) => {
-    const jobDoc = await transaction.get(jobRef);
+  // queue when offline
+  if (typeof navigator !== 'undefined' && !navigator.onLine && uid) {
+    await enqueueCommand(uid, { type: 'updateJobStatus', payload, idempotencyKey })
+    return
+  }
 
-    if (!jobDoc.exists()) {
-      throw new Error("Job not found");
+  try {
+    const callable = httpsCallable<{ jobId: string; nextStatus: JobStatus; idempotencyKey?: string }, { ok: boolean; duplicate?: boolean }>(
+      functions,
+      'updateJobStatus',
+    );
+    const res = await callable(payload)
+    if (res && (res as any).data && (res as any).data.duplicate) {
+      return
     }
-
-    const jobData = jobDoc.data() as Job;
-
-    // Server-side guard: Only assigned courier can update status
-    if (actorUid && jobData.courierUid !== actorUid) {
-      throw new Error("Only the assigned courier can update job status");
+  } catch (err: any) {
+    const msg = err?.message || 'Failed to update job status'
+    if (typeof navigator !== 'undefined' && !navigator.onLine && uid) {
+      await enqueueCommand(uid, { type: 'updateJobStatus', payload, idempotencyKey })
+      return
     }
-
-    // Validate status progression
-    const expectedNextStatus = getNextStatus(jobData.status);
-    if (!expectedNextStatus) {
-      throw new Error(`Cannot advance from status: ${jobData.status}`);
-    }
-
-    if (nextStatus !== expectedNextStatus) {
-      throw new Error(
-        `Invalid status transition. Expected: ${expectedNextStatus}, Received: ${nextStatus}`,
-      );
-    }
-
-    // All checks passed - update status
-    transaction.update(jobRef, {
-      status: nextStatus,
-      updatedAt: serverTimestamp(),
-    });
-  });
+    throw new Error(msg)
+  }
 }
+
+// Process queued commands for a user (used by AuthContext on sign-in)
+export async function processQueuedCommands(userUid: string) {
+  if (!userUid) return
+  return flushQueue(userUid, async (cmd) => {
+    if (cmd.type === 'claimJob') {
+      const callable = httpsCallable<{ jobId: string; agreedFee: number; idempotencyKey?: string }, any>(functions, 'claimJob')
+      return callable(cmd.payload)
+    }
+    if (cmd.type === 'updateJobStatus') {
+      const callable = httpsCallable<{ jobId: string; nextStatus: JobStatus; idempotencyKey?: string }, any>(functions, 'updateJobStatus')
+      return callable(cmd.payload)
+    }
+    throw new Error(`unknown queued command type: ${cmd.type}`)
+  })
+}
+

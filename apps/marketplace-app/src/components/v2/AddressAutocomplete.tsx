@@ -5,7 +5,15 @@ import { geocodeAddress, GeocodedAddress } from "@/lib/mapbox/geocode";
 interface AddressAutocompleteProps {
   label: string;
   placeholder?: string;
-  onSelect: (result: { address: string; lat: number; lng: number }) => void;
+  onSelect: (result: {
+    address: string;
+    lat: number;
+    lng: number;
+    city?: string;
+    state?: string;
+    zipCode?: string;
+    cityZip?: string;
+  }) => void;
   required?: boolean;
 }
 
@@ -72,6 +80,10 @@ export function AddressAutocomplete({
       address: suggestion.address,
       lat: suggestion.lat,
       lng: suggestion.lng,
+      city: suggestion.city,
+      state: suggestion.state,
+      zipCode: suggestion.zipCode,
+      cityZip: suggestion.cityZip,
     });
   };
 

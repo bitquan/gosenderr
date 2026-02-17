@@ -128,7 +128,7 @@ export function CourierJobActions({ job, courierUid, estimatedFee, onJobUpdated 
         await handleProofCapture('dropoff');
       }
 
-      await updateJobStatus(job.id, nextStatus);
+      await updateJobStatus(job.id, nextStatus, courierUid);
       onJobUpdated?.();
     } catch (error) {
       console.error('Failed to update job status:', error);

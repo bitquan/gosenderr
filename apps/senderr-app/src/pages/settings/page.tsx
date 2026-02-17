@@ -277,7 +277,7 @@ export default function CourierSettingsPage() {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">
-              ⚙️ Settings & Preferences
+              Settings & Preferences
             </h1>
           </div>
         </div>
@@ -286,7 +286,7 @@ export default function CourierSettingsPage() {
         <div className="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden">
           <div className="p-6 sm:p-8 border-b border-gray-200">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">
-              👤 Account
+              Account
             </h2>
             <div className="space-y-4">
               <Link
@@ -343,7 +343,7 @@ export default function CourierSettingsPage() {
         <div className="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden">
           <div className="p-6 sm:p-8 border-b border-gray-200">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">
-              🚚 Delivery Settings
+              Delivery Settings
             </h2>
             <div className="space-y-5 mb-6">
               <div className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3">
@@ -439,7 +439,7 @@ export default function CourierSettingsPage() {
         <div className="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden">
           <div className="p-6 sm:p-8 border-b border-gray-200">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">
-              🧾 Taxes & Payouts
+              Taxes & Payouts
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="bg-gray-50 rounded-xl p-4">
@@ -485,7 +485,7 @@ export default function CourierSettingsPage() {
                   View earnings & payouts →
                 </Link>
                 <p className="text-xs text-gray-500 mt-1">
-                  Update your Stripe Connect details in Earnings.
+                  Manage payout provider details in Earnings.
                 </p>
               </div>
               <div className="bg-gray-50 rounded-xl p-4">
@@ -522,7 +522,7 @@ export default function CourierSettingsPage() {
         <div className="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden">
           <div className="p-6 sm:p-8 border-b border-gray-200">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">
-              🔔 Notifications
+              Notifications
             </h2>
             <div className="space-y-4">
               <div className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3">
