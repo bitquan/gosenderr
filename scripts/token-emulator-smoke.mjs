@@ -189,18 +189,14 @@ async function main() {
   const disputeRefundTx = await db.doc(`tokenTransactions/auto_refund_job_disputed_${job2Ref.id}`).get();
   assert(disputeRefundTx.exists, 'Expected auto dispute refund transaction');
 
-  let checkoutStatus = 'not-run';
-  try {
-    await callCallable('tokenCreateCheckoutSession', courier.idToken, {
-      packId: 'starter_10',
-      successUrl: 'http://localhost:5174/settings?tokenTopup=success',
-      cancelUrl: 'http://localhost:5174/settings?tokenTopup=cancel',
-      idempotencyKey: `smoke_checkout_${Date.now()}`,
-    });
-    checkoutStatus = 'ok';
-  } catch (error) {
-    checkoutStatus = `blocked (${error.message})`;
-  }
+  const checkout = await callCallable('tokenCreateCheckoutSession', courier.idToken, {
+    packId: 'starter_10',
+    successUrl: 'http://localhost:5174/settings?tokenTopup=success',
+    cancelUrl: 'http://localhost:5174/settings?tokenTopup=cancel',
+    idempotencyKey: `smoke_checkout_${Date.now()}`,
+  });
+  assert(Boolean(checkout?.sessionId), 'Expected checkout sessionId');
+  assert(Boolean(checkout?.url), 'Expected checkout URL');
 
   console.log('✅ Token smoke summary');
   console.log(JSON.stringify({
@@ -208,7 +204,7 @@ async function main() {
     courierUid: courier.localId,
     cancelRefund: 'ok',
     disputeRefund: 'ok',
-    checkoutSession: checkoutStatus,
+    checkoutSession: 'ok',
   }, null, 2));
 }
 

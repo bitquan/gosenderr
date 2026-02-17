@@ -112,9 +112,12 @@ export function CourierJobPreview({
           </p>
           <p className="text-lg font-bold text-emerald-600">${displayFee.toFixed(2)}</p>
           {tokenModeEnabled && (
-            <p className="text-xs text-amber-700 font-semibold mt-1">
-              Unlock cost: {tokenClaimCost} token{tokenClaimCost === 1 ? "" : "s"}
-            </p>
+            <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5">
+              <span className="text-[10px] font-semibold text-amber-800">Token mode</span>
+              <span className="text-[10px] text-amber-700">
+                {tokenClaimCost} token{tokenClaimCost === 1 ? "" : "s"}
+              </span>
+            </div>
           )}
         </div>
       </div>
@@ -215,6 +218,8 @@ export function CourierJobPreview({
                     ? "Accepting..."
                     : insufficientTokens
                       ? "Insufficient Tokens"
+                    : tokenModeEnabled
+                      ? `Accept (${tokenClaimCost} token${tokenClaimCost === 1 ? "" : "s"})`
                     : !hasRateCard
                       ? "Set Rate Card"
                       : !eligible

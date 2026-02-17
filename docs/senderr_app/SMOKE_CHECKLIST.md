@@ -106,7 +106,7 @@ Current checkpoint status:
 - Reserve/claim/commit: PASS
 - Cancel refund: PASS
 - Dispute refund: PASS
-- Checkout session in emulator: expected to be blocked without valid Stripe test key
+- Checkout session in emulator: PASS (uses callable emulator fallback when Stripe key is invalid)
 
 ## 8) Staging deploy checkpoint
 

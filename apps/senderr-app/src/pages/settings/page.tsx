@@ -187,6 +187,20 @@ export default function CourierSettingsPage() {
 
     const nextParams = new URLSearchParams(searchParams);
     nextParams.delete("tokenTopup");
+    nextParams.delete("tokenCheckout");
+    setSearchParams(nextParams, { replace: true });
+  }, [searchParams, setSearchParams]);
+
+  useEffect(() => {
+    const checkoutStatus = searchParams.get("tokenCheckout");
+    if (!checkoutStatus) return;
+
+    if (checkoutStatus === "emulated") {
+      setTokenCheckoutMessage("Emulator checkout fallback was used. No Stripe charge was created.");
+    }
+
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete("tokenCheckout");
     setSearchParams(nextParams, { replace: true });
   }, [searchParams, setSearchParams]);
 
@@ -565,20 +579,40 @@ export default function CourierSettingsPage() {
 
                 {payoutMode === "token" && (
                   <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3">
-                    <p className="text-xs font-medium text-emerald-700">Token Wallet</p>
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-medium text-emerald-700">Token Wallet</p>
+                        <p className="text-xs text-emerald-800 mt-1">
+                          Token mode requires an unlock cost before claiming jobs.
+                        </p>
+                      </div>
+                      <span className="rounded-full bg-white border border-emerald-200 px-2 py-1 text-[11px] font-semibold text-emerald-700">
+                        {tokenPolicy?.enabled ? "Enabled" : "Disabled"}
+                      </span>
+                    </div>
                     {tokenLoading ? (
                       <p className="text-xs text-emerald-700 mt-1">Loading wallet...</p>
                     ) : (
                       <>
                         {tokenCheckoutMessage && (
-                          <p className="text-xs text-emerald-800 mt-1">{tokenCheckoutMessage}</p>
+                          <p className="text-xs text-emerald-800 mt-2 rounded-md bg-white/70 border border-emerald-200 px-2 py-1">
+                            {tokenCheckoutMessage}
+                          </p>
                         )}
-                        <p className="text-sm font-semibold text-emerald-900 mt-1">
-                          Available: {tokenWallet?.available ?? 0} tokens
-                        </p>
-                        <p className="text-xs text-emerald-800 mt-1">
-                          Reserved: {tokenWallet?.reserved ?? 0} tokens
-                        </p>
+                        <div className="mt-2 grid grid-cols-2 gap-2">
+                          <div className="rounded-md border border-emerald-200 bg-white px-2 py-2">
+                            <p className="text-[11px] text-emerald-700">Available</p>
+                            <p className="text-sm font-semibold text-emerald-900">
+                              {tokenWallet?.available ?? 0} tokens
+                            </p>
+                          </div>
+                          <div className="rounded-md border border-emerald-200 bg-white px-2 py-2">
+                            <p className="text-[11px] text-emerald-700">Reserved</p>
+                            <p className="text-sm font-semibold text-emerald-900">
+                              {tokenWallet?.reserved ?? 0} tokens
+                            </p>
+                          </div>
+                        </div>
                         <div className="mt-3">
                           <label className="text-xs font-medium text-emerald-700">Token Pack</label>
                           <select
@@ -598,7 +632,7 @@ export default function CourierSettingsPage() {
                           disabled={tokenTopUpLoading || !tokenPolicy?.enabled || !tokenPolicy.packs.length}
                           className="mt-3 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
                         >
-                          {tokenTopUpLoading ? "Starting top-up..." : "Top up tokens"}
+                          {tokenTopUpLoading ? "Starting top-up..." : "Start token checkout"}
                         </button>
                       </>
                     )}

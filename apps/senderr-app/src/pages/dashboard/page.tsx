@@ -305,15 +305,32 @@ export default function CourierDashboardMobile() {
                 : "bg-red-50 border-red-200 text-red-900"
             }`}
           >
-            <p className="font-semibold">Token Claim Mode Active</p>
-            <p className="text-sm mt-1">
-              Unlock cost: {tokenClaimReadiness.requiredTokens} token
-              {tokenClaimReadiness.requiredTokens === 1 ? "" : "s"} • Available: {tokenClaimReadiness.availableTokens}
-            </p>
-            {!tokenClaimReadiness.canClaim && (
-              <p className="text-sm mt-1">
-                {tokenClaimReadiness.reason || "Top up tokens in Settings to claim jobs."}
-              </p>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="font-semibold">Token Claim Mode Active</p>
+                <p className="text-sm mt-1">
+                  Unlock cost: {tokenClaimReadiness.requiredTokens} token
+                  {tokenClaimReadiness.requiredTokens === 1 ? "" : "s"} • Available: {tokenClaimReadiness.availableTokens}
+                </p>
+              </div>
+              <span className="rounded-full border px-2 py-1 text-xs font-semibold bg-white/60">
+                {tokenClaimReadiness.canClaim ? "Ready" : "Top-up needed"}
+              </span>
+            </div>
+            {!tokenClaimReadiness.canClaim ? (
+              <div className="mt-2 flex items-center justify-between gap-3">
+                <p className="text-sm">
+                  {tokenClaimReadiness.reason || "Top up tokens in Settings to claim jobs."}
+                </p>
+                <Link
+                  to="/settings"
+                  className="inline-flex items-center rounded-lg border border-current px-3 py-1.5 text-xs font-semibold hover:bg-white/40"
+                >
+                  Top up tokens
+                </Link>
+              </div>
+            ) : (
+              <p className="text-xs mt-2">You can claim eligible jobs immediately.</p>
             )}
           </div>
         )}

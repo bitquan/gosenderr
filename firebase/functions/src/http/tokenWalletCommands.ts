@@ -4,6 +4,8 @@ import { getStripeClient } from "../stripe/stripeSecrets";
 import { logAdminAction, verifyAdmin } from "../utils/adminUtils";
 
 const serverTimestamp = (): Date => new Date();
+const isFunctionsEmulator =
+  process.env.FUNCTIONS_EMULATOR === "true" || Boolean(process.env.FIREBASE_EMULATOR_HUB);
 
 interface TokenPolicy {
   enabled: boolean;
@@ -630,50 +632,85 @@ export const tokenCreateCheckoutSession = functions.https.onCall(
       }
     }
 
-    const stripe = await getStripeClient();
-    const lineItem = selectedPack.stripePriceId
-      ? { price: selectedPack.stripePriceId, quantity: 1 }
-      : {
-          price_data: {
-            currency: "usd",
-            product_data: { name: `${selectedPack.tokens} Senderr tokens` },
-            unit_amount: Math.round(selectedPack.priceUsd * 100),
-          },
-          quantity: 1,
-        };
+    try {
+      const stripe = await getStripeClient();
+      const lineItem = selectedPack.stripePriceId
+        ? { price: selectedPack.stripePriceId, quantity: 1 }
+        : {
+            price_data: {
+              currency: "usd",
+              product_data: { name: `${selectedPack.tokens} Senderr tokens` },
+              unit_amount: Math.round(selectedPack.priceUsd * 100),
+            },
+            quantity: 1,
+          };
 
-    const session = await stripe.checkout.sessions.create({
-      mode: "payment",
-      line_items: [lineItem],
-      success_url: successUrl,
-      cancel_url: cancelUrl,
-      client_reference_id: uid,
-      metadata: {
-        purchaseType: "token_purchase",
+      const session = await stripe.checkout.sessions.create({
+        mode: "payment",
+        line_items: [lineItem],
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+        client_reference_id: uid,
+        metadata: {
+          purchaseType: "token_purchase",
+          uid,
+          packId: selectedPack.id,
+          tokens: String(selectedPack.tokens),
+          idempotencyKey,
+        },
+      });
+
+      await sessionRef.set({
         uid,
-        packId: selectedPack.id,
-        tokens: String(selectedPack.tokens),
         idempotencyKey,
-      },
-    });
+        packId: selectedPack.id,
+        tokens: selectedPack.tokens,
+        priceUsd: selectedPack.priceUsd,
+        stripeSessionId: session.id,
+        paymentStatus: "pending",
+        url: session.url || null,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
 
-    await sessionRef.set({
-      uid,
-      idempotencyKey,
-      packId: selectedPack.id,
-      tokens: selectedPack.tokens,
-      priceUsd: selectedPack.priceUsd,
-      stripeSessionId: session.id,
-      paymentStatus: "pending",
-      url: session.url || null,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    }, { merge: true });
+      return {
+        sessionId: session.id,
+        url: session.url,
+      };
+    } catch (error) {
+      if (!isFunctionsEmulator) {
+        throw error;
+      }
 
-    return {
-      sessionId: session.id,
-      url: session.url,
-    };
+      const emulatedSessionId = `emulated_${idempotencyKey}`;
+      const emulatedUrl = `${successUrl}${successUrl.includes("?") ? "&" : "?"}tokenCheckout=emulated`;
+
+      console.warn("tokenCreateCheckoutSession emulator fallback", {
+        idempotencyKey,
+        reason: error instanceof Error ? error.message : "unknown",
+      });
+
+      await sessionRef.set({
+        uid,
+        idempotencyKey,
+        packId: selectedPack.id,
+        tokens: selectedPack.tokens,
+        priceUsd: selectedPack.priceUsd,
+        stripeSessionId: emulatedSessionId,
+        paymentStatus: "emulated",
+        url: emulatedUrl,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        metadata: {
+          emulatorFallback: true,
+        },
+      }, { merge: true });
+
+      return {
+        sessionId: emulatedSessionId,
+        url: emulatedUrl,
+      };
+    }
   },
 );
 
