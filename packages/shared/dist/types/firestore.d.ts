@@ -86,6 +86,12 @@ export interface CourierDocuments {
     reviewedAt?: Timestamp;
     reviewedBy?: string;
 }
+export type CourierPayoutMode = "stripe_auto" | "manual_review";
+export interface TokenWalletSummary {
+    balance: number;
+    currency?: string;
+    updatedAt?: Timestamp;
+}
 export interface CourierProfile {
     status: CourierStatus;
     isOnline?: boolean;
@@ -103,6 +109,9 @@ export interface CourierProfile {
         lng: number;
     };
     stripeConnectAccountId?: string;
+    payoutMode?: CourierPayoutMode;
+    showTokenWallet?: boolean;
+    tokenWallet?: TokenWalletSummary;
     todayJobs?: number;
     completedJobs?: number;
 }
@@ -252,7 +261,7 @@ export interface JobTimeline {
     orderPlaced: Timestamp;
     courierAssigned?: {
         timestamp: Timestamp;
-        courierId: string;
+        courierUid: string;
         courierName: string;
     };
     courierEnRoute?: {
@@ -300,7 +309,7 @@ export interface DeliveryJobDoc {
     itemId: string;
     customerId: string;
     sellerId: string;
-    courierId?: string;
+    courierUid?: string;
     jobType: JobType;
     priority: number;
     status: JobStatus;
@@ -429,6 +438,8 @@ export interface FeatureFlags {
         analytics: boolean;
         featureFlagsControl: boolean;
         webPortalEnabled: boolean;
+        systemLogs: boolean;
+        firebaseExplorer: boolean;
     };
     advanced: {
         pushNotifications: boolean;
@@ -480,7 +491,7 @@ export interface RouteDoc {
         platformFees: number;
         totalCustomerPaid: number;
     };
-    courierId?: string;
+    courierUid?: string;
     courierName?: string;
     vehicleType?: string;
     claimedAt?: Timestamp;
@@ -522,7 +533,7 @@ export interface LongRouteDoc {
         platformFees: number;
         totalCustomerPaid: number;
     };
-    courierId?: string;
+    courierUid?: string;
     courierName?: string;
     claimedAt?: Timestamp;
     startedAt?: Timestamp;
@@ -675,7 +686,7 @@ export interface PackageJourneyLeg {
     legNumber: number;
     type: LegType;
     jobId?: string;
-    courierId?: string;
+    courierUid?: string;
     routeId?: string;
     runnerId?: string;
     fromHub?: string;

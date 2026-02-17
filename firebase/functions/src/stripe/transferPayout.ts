@@ -21,7 +21,7 @@ export async function transferPayoutHandler(change: functions.Change<FirebaseFir
     return null
   }
 
-  const stripe = stripeClient || await getStripeClient()
+  const stripe = stripeClient || (await getStripeClient())
 
   let courierEarnings = 0 as number
   try {
