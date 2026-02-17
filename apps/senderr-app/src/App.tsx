@@ -1,3 +1,4 @@
+import { Suspense, lazy } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { NavigationProvider } from './contexts/NavigationContext'
@@ -14,8 +15,6 @@ import DashboardPage from './pages/dashboard/page'
 import LoginPage from './pages/Login'
 import SignupPage from './pages/Signup'
 import JobsPage from './pages/Jobs'
-import JobDetailPage from './pages/jobs/[jobId]/page'
-import ActiveNavigationPage from './pages/navigation/active'
 import RoutesPage from './pages/routes/page'
 import ActiveRoutePage from './pages/active-route/page'
 import SettingsPage from './pages/settings/page'
@@ -28,6 +27,9 @@ import SetupPage from './pages/setup/page'
 import EarningsPage from './pages/earnings/page'
 import ProfilePage from './pages/Profile'
 import { StripeModeBanner } from './components/StripeModeBanner'
+
+const JobDetailPage = lazy(() => import('./pages/jobs/[jobId]/page'))
+const ActiveNavigationPage = lazy(() => import('./pages/navigation/active'))
 
 function App() {
   useEffect(() => {
@@ -62,9 +64,23 @@ function App() {
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/routes" element={<RoutesPage />} />
               <Route path="/active-route" element={<ActiveRoutePage />} />
-              <Route path="/jobs/:jobId" element={<JobDetailPage />} />
+              <Route
+                path="/jobs/:jobId"
+                element={
+                  <Suspense fallback={<div className="p-6 text-sm text-gray-600">Loading job map…</div>}>
+                    <JobDetailPage />
+                  </Suspense>
+                }
+              />
               <Route path="/jobs" element={<JobsPage />} />
-              <Route path="/navigation/active" element={<ActiveNavigationPage />} />
+              <Route
+                path="/navigation/active"
+                element={
+                  <Suspense fallback={<div className="p-6 text-sm text-gray-600">Loading navigation map…</div>}>
+                    <ActiveNavigationPage />
+                  </Suspense>
+                }
+              />
               <Route path="/earnings" element={<EarningsPage />} />
               <Route path="/rate-cards" element={<RateCardsPage />} />
               <Route path="/equipment" element={<EquipmentPage />} />
