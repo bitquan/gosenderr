@@ -56,7 +56,12 @@ export default function CourierApprovalPage() {
     const unsubscribe = onSnapshot(usersQuery, (snapshot) => {
       const couriersData = snapshot.docs
         .map(doc => ({ id: doc.id, ...doc.data() } as Courier))
-        .filter(user => user.role === 'courier' && user.courierProfile)
+        .filter((user) => {
+          const status = user.courierProfile?.status
+          const hasApplicationStatus =
+            status === 'pending' || status === 'approved' || status === 'rejected'
+          return Boolean(user.courierProfile) && (user.role === 'courier' || hasApplicationStatus)
+        })
       
       setCouriers(couriersData)
       setLoading(false)
