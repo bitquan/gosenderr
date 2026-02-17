@@ -2,72 +2,11 @@ import type { FeatureFlags } from "../types/firestore";
 
 type UnknownRecord = Record<string, unknown>;
 
-export const DEFAULT_FEATURE_FLAGS: FeatureFlags = {
-  marketplace: {
-    enabled: true,
-    itemListings: true,
-    combinedPayments: true,
-    courierOffers: false,
-    messaging: true,
-    ratings: true,
-  },
-  delivery: {
-    onDemand: true,
-    routes: true,
-    longRoutes: false,
-    longHaul: false,
-    mapShell: false,
-  },
-  courier: {
-    rateCards: true,
-    equipmentBadges: true,
-    workModes: true,
-  },
-  seller: {
-    stripeConnect: true,
-    multiplePhotos: true,
-    foodListings: true,
-  },
-  customer: {
-    liveTracking: true,
-    proofPhotos: true,
-    routeDelivery: false,
-    packageShipping: true,
-  },
-  packageRunner: {
-    enabled: true,
-    hubNetwork: true,
-    packageTracking: true,
-  },
-  admin: {
-    courierApproval: true,
-    equipmentReview: true,
-    disputeManagement: true,
-    analytics: true,
-    featureFlagsControl: true,
-    webPortalEnabled: true,
-    systemLogs: false,
-    firebaseExplorer: false,
-  },
-  advanced: {
-    pushNotifications: true,
-    ratingEnforcement: true,
-    autoCancel: true,
-    refunds: true,
-  },
-  ui: {
-    modernStyling: true,
-    darkMode: true,
-    animations: true,
-  },
-  senderrplace: {
-    marketplace_v2: true,
-    seller_portal_v2: true,
-    listing_create_v1: true,
-    checkout_v2: true,
-    messaging_v1: true,
-  },
-};
+import { DEFAULT_FEATURE_FLAGS } from "../types/firestore";
+
+// Note: `DEFAULT_FEATURE_FLAGS` is defined in `types/firestore.ts` as the
+// canonical source of truth for feature flag defaults. We import it here so
+// utility normalization uses the same shape and avoids duplicate exports.
 
 function asRecord(input: unknown): UnknownRecord {
   if (!input || typeof input !== "object") {
@@ -90,7 +29,10 @@ function normalizeSection<TSection extends object>(
   for (const key of Object.keys(defaults) as Array<keyof TSection>) {
     const fallback = defaults[key];
     if (typeof fallback === "boolean") {
-      next[key] = coerceBool(rawRecord[key as string], fallback) as TSection[keyof TSection];
+      next[key] = coerceBool(
+        rawRecord[key as string],
+        fallback,
+      ) as TSection[keyof TSection];
       continue;
     }
     next[key] = fallback;
@@ -102,7 +44,10 @@ interface NormalizeOptions {
   forceAdminWebEnabled?: boolean;
 }
 
-function readLegacyFlagValue(rawFlags: UnknownRecord, legacyPath: string): unknown {
+function readLegacyFlagValue(
+  rawFlags: UnknownRecord,
+  legacyPath: string,
+): unknown {
   const parts = legacyPath.split(".");
   let cursor: unknown = rawFlags;
   for (const part of parts) {
@@ -119,12 +64,19 @@ export function normalizeFeatureFlags(
   options: NormalizeOptions = {},
 ): FeatureFlags {
   const root = asRecord(rawFlags);
-  const senderrplaceSeed = asRecord(root.senderrplace);
+  // Support both modern `senderrplaceV2` and older `senderrplace` namespaces.
+  const senderrplaceSeed = asRecord(root.senderrplaceV2 ?? root.senderrplace ?? {});
 
-  // Backfill legacy flat aliases into the nested senderrplace namespace.
-  for (const [legacyKey, mappedPath] of Object.entries(FEATURE_FLAG_DEPRECATED_ALIASES)) {
-    if (!mappedPath.startsWith("senderrplace.")) continue;
-    const senderrplaceKey = mappedPath.replace("senderrplace.", "");
+  // Backfill legacy flat aliases into the nested senderrplace namespace
+  // (handles either `senderrplace.` or `senderrplaceV2.` mapped paths).
+  for (const [legacyKey, mappedPath] of Object.entries(
+    FEATURE_FLAG_DEPRECATED_ALIASES,
+  )) {
+    const isV2 = mappedPath.startsWith("senderrplaceV2.");
+    const isV1 = mappedPath.startsWith("senderrplace.");
+    if (!isV1 && !isV2) continue;
+    const prefix = isV2 ? "senderrplaceV2." : "senderrplace.";
+    const senderrplaceKey = mappedPath.replace(prefix, "");
     if (typeof senderrplaceSeed[senderrplaceKey] === "boolean") continue;
     const legacyValue = readLegacyFlagValue(root, legacyKey);
     if (typeof legacyValue === "boolean") {
@@ -133,16 +85,26 @@ export function normalizeFeatureFlags(
   }
 
   const normalized: FeatureFlags = {
-    marketplace: normalizeSection(root.marketplace, DEFAULT_FEATURE_FLAGS.marketplace),
+    marketplace: normalizeSection(
+      root.marketplace,
+      DEFAULT_FEATURE_FLAGS.marketplace,
+    ),
     delivery: normalizeSection(root.delivery, DEFAULT_FEATURE_FLAGS.delivery),
     courier: normalizeSection(root.courier, DEFAULT_FEATURE_FLAGS.courier),
     seller: normalizeSection(root.seller, DEFAULT_FEATURE_FLAGS.seller),
     customer: normalizeSection(root.customer, DEFAULT_FEATURE_FLAGS.customer),
-    packageRunner: normalizeSection(root.packageRunner, DEFAULT_FEATURE_FLAGS.packageRunner),
+    packageRunner: normalizeSection(
+      root.packageRunner,
+      DEFAULT_FEATURE_FLAGS.packageRunner,
+    ),
     admin: normalizeSection(root.admin, DEFAULT_FEATURE_FLAGS.admin),
     advanced: normalizeSection(root.advanced, DEFAULT_FEATURE_FLAGS.advanced),
     ui: normalizeSection(root.ui, DEFAULT_FEATURE_FLAGS.ui),
-    senderrplace: normalizeSection(senderrplaceSeed, DEFAULT_FEATURE_FLAGS.senderrplace),
+    // Use modern senderrplaceV2 namespace which is defined in types/firestore
+    senderrplaceV2: normalizeSection(
+      senderrplaceSeed,
+      DEFAULT_FEATURE_FLAGS.senderrplaceV2,
+    ),
   };
 
   if (options.forceAdminWebEnabled) {
@@ -152,34 +114,39 @@ export function normalizeFeatureFlags(
   return normalized;
 }
 
-function flattenBooleanPaths(rootKey: string, section: UnknownRecord): string[] {
+function flattenBooleanPaths(
+  rootKey: string,
+  section: UnknownRecord,
+): string[] {
   return Object.keys(section).map((key) => `${rootKey}.${key}`);
 }
 
-export const REQUIRED_FEATURE_FLAG_PATHS: string[] = Object.entries(DEFAULT_FEATURE_FLAGS)
+export const REQUIRED_FEATURE_FLAG_PATHS: string[] = Object.entries(
+  DEFAULT_FEATURE_FLAGS,
+)
   .flatMap(([sectionKey, sectionValue]) =>
     flattenBooleanPaths(sectionKey, sectionValue as UnknownRecord),
   )
   .sort();
 
 export const FEATURE_FLAG_DEPRECATED_ALIASES: Record<string, string> = {
-  senderrplaceV2: "senderrplace.marketplace_v2",
-  marketplace_v2: "senderrplace.marketplace_v2",
-  seller_portal_v2: "senderrplace.seller_portal_v2",
-  listing_create_v1: "senderrplace.listing_create_v1",
-  checkout_v2: "senderrplace.checkout_v2",
-  messaging_v1: "senderrplace.messaging_v1",
+  senderrplaceV2: "senderrplaceV2.enabled",
+  marketplace_v2: "senderrplaceV2.enabled",
+  seller_portal_v2: "senderrplaceV2.adminControls",
+  listing_create_v1: "senderrplaceV2.enabled",
+  checkout_v2: "senderrplaceV2.enabled",
+  messaging_v1: "senderrplaceV2.enabled",
 };
 
 export function getUnknownFeatureFlagPaths(rawFlags: unknown): string[] {
   const root = asRecord(rawFlags);
   const knownRootSections = Object.keys(DEFAULT_FEATURE_FLAGS);
-  const ignoredRootKeys = new Set(
-    [
-      "updatedAt",
-      ...Object.keys(FEATURE_FLAG_DEPRECATED_ALIASES).filter((key) => !key.includes(".")),
-    ],
-  );
+  const ignoredRootKeys = new Set([
+    "updatedAt",
+    ...Object.keys(FEATURE_FLAG_DEPRECATED_ALIASES).filter(
+      (key) => !key.includes("."),
+    ),
+  ]);
   const unknownPaths: string[] = [];
 
   for (const rootKey of Object.keys(root)) {
@@ -206,11 +173,15 @@ export function getUnknownFeatureFlagPaths(rawFlags: unknown): string[] {
   return unknownPaths.sort();
 }
 
-export function getMissingRequiredFeatureFlagPaths(rawFlags: unknown): string[] {
+export function getMissingRequiredFeatureFlagPaths(
+  rawFlags: unknown,
+): string[] {
   const root = asRecord(rawFlags);
   const missing: string[] = [];
 
-  for (const [rootKey, sectionDefaults] of Object.entries(DEFAULT_FEATURE_FLAGS)) {
+  for (const [rootKey, sectionDefaults] of Object.entries(
+    DEFAULT_FEATURE_FLAGS,
+  )) {
     const sectionRaw = asRecord(root[rootKey]);
     for (const sectionKey of Object.keys(sectionDefaults as UnknownRecord)) {
       if (typeof sectionRaw[sectionKey] !== "boolean") {

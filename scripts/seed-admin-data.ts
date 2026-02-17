@@ -1,13 +1,9 @@
 // Seed admin-specific data: categories, feature flags, platform settings
+const admin = require('firebase-admin');
 const path = require('path');
 
-// Load firebase-admin from functions folder if it exists, fallback to project root
-let adminModule;
-try {
-  adminModule = require(path.join(__dirname, '../firebase/functions/node_modules/firebase-admin'));
-} catch (err) {
-  adminModule = require('firebase-admin');
-}
+// Use admin SDK from functions folder
+const adminModule = require(path.join(__dirname, '../firebase/functions/node_modules/firebase-admin'));
 
 // Connect to emulator
 process.env.FIRESTORE_EMULATOR_HOST = '127.0.0.1:8080';
@@ -56,12 +52,7 @@ async function seedAdminData() {
     { id: 'stripe_payments', name: 'Stripe Payments', description: 'Enable Stripe payment processing', enabled: true, category: 'payments' },
     { id: 'email_notifications', name: 'Email Notifications', description: 'Send email notifications to users', enabled: true, category: 'notifications' },
     { id: 'maintenance_mode', name: 'Maintenance Mode', description: 'Put platform in maintenance mode', enabled: false, category: 'system' },
-    { id: 'reviews_enabled', name: 'Reviews & Ratings', description: 'Allow users to leave reviews', enabled: true, category: 'marketplace' },
-    { id: 'marketplace_v2', name: 'Senderrplace v2', description: 'Enable the new Senderrplace experience for shoppers', enabled: false, category: 'marketplace' },
-    { id: 'seller_portal_v2', name: 'Seller Portal v2', description: 'Show the Senderrplace seller dashboard and listing flow', enabled: false, category: 'seller' },
-    { id: 'listing_create_v1', name: 'Listing Creation v1', description: 'Gate Senderrplace listing creation enhancements', enabled: false, category: 'seller' },
-    { id: 'checkout_v2', name: 'Checkout v2', description: 'Enable Senderrplace checkout branding and tracking', enabled: false, category: 'payments' },
-    { id: 'messaging_v1', name: 'Messaging v1', description: 'Use the Senderrplace messaging experience', enabled: false, category: 'marketplace' }
+    { id: 'reviews_enabled', name: 'Reviews & Ratings', description: 'Allow users to leave reviews', enabled: true, category: 'marketplace' }
   ];
 
   for (const flag of featureFlags) {
@@ -116,6 +107,28 @@ async function seedAdminData() {
       orderStatusEmail: true,
       vendorNewOrderEmail: true,
       courierJobAssignedEmail: true
+    },
+    // Token policy for token wallet / packs (seeded for local dev & emulators)
+    tokenPolicy: {
+      enabled: true,
+      finalSale: true,
+      tokenValueUsd: 1,
+      costs: {
+        jobUnlockStandard: 1,
+        jobUnlockPriority: 2,
+        jobUnlockHeavy: 3,
+        listingPublish: 2,
+        cashFee: 1,
+        adBoost24h: 5,
+        adBoost7d: 25,
+        adBoost30d: 80,
+        adFeatured7d: 120,
+      },
+      packs: [
+        { id: 'starter_10', tokens: 10, priceUsd: 10 },
+        { id: 'starter_100', name: 'Starter 100', tokens: 100, priceUsd: 10, active: true },
+        { id: 'pro_250', name: 'Pro 250', tokens: 250, priceUsd: 25, active: true }
+      ]
     }
   };
 

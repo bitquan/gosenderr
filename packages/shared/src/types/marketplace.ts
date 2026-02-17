@@ -226,6 +226,17 @@ export interface SellerProfile {
   contactPhone?: string;
   businessAddress?: Address;
 
+  // Payment links / external payment handles (optional)
+  paymentLinks?: {
+    cashApp?: string;
+    venmo?: string;
+    zelle?: string;
+    paypal?: string;
+    cashAppQrUrl?: string;
+    venmoQrUrl?: string;
+    paypalQrUrl?: string;
+  };
+
   // Settings
   isActive?: boolean;
   categories?: string[];
