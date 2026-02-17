@@ -58,7 +58,7 @@ export function ItemCard({ item, sellerBadges = [], sellerRating }: ItemCardProp
   return (
     <Link
       to={`/marketplace/${item.id}`}
-      className="group block bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden"
+      className="group block bg-gradient-to-br from-slate-900 via-purple-950 to-purple-900 text-white rounded-2xl shadow-2xl hover:shadow-2xl transition-shadow overflow-hidden border border-white/10"
     >
       {/* Image */}
       <div className="relative aspect-square overflow-hidden bg-gray-100">

@@ -91,7 +91,7 @@ export function FilterSidebar({ filters, onFilterChange, onClose }: FilterSideba
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6 sticky top-24">
+    <div className="bg-gradient-to-br from-slate-900 via-purple-900 to-purple-950/90 text-white rounded-2xl shadow-2xl p-6 sticky top-24 border border-white/10">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-semibold text-gray-900">Filters</h2>

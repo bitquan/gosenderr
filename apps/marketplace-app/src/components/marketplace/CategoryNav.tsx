@@ -29,7 +29,7 @@ export function CategoryNav({ categories, selectedCategory, onSelectCategory }: 
   return (
     <div className="bg-white border-b border-gray-200 sticky top-16 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center space-x-2 overflow-x-auto py-4 scrollbar-hide">
+        <div className="flex items-center justify-center gap-3 overflow-x-auto py-4 scrollbar-hide rounded-3xl bg-slate-950/60 border border-white/10 shadow-2xl backdrop-blur">
           {allCategories.map((category) => {
             const isSelected = category === 'All' 
               ? selectedCategory === null 
