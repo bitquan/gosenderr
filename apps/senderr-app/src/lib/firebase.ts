@@ -1,16 +1,17 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app'
-import { getFirestore, Firestore } from 'firebase/firestore'
+import { getFirestore, Firestore, connectFirestoreEmulator } from 'firebase/firestore'
 import {
   getAuth,
   Auth,
   indexedDBLocalPersistence,
   initializeAuth,
+  connectAuthEmulator,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
 } from 'firebase/auth'
-import { getStorage, FirebaseStorage } from 'firebase/storage'
-import { getFunctions, Functions } from 'firebase/functions'
+import { getStorage, FirebaseStorage, connectStorageEmulator } from 'firebase/storage'
+import { getFunctions, Functions, connectFunctionsEmulator } from 'firebase/functions'
 import { Capacitor } from '@capacitor/core'
 
 const firebaseConfig = {
@@ -48,6 +49,19 @@ if (isValidConfig) {
     
     storageInstance = getStorage(app)
     functionsInstance = getFunctions(app)
+
+    if (import.meta.env.DEV) {
+      try {
+        connectFirestoreEmulator(dbInstance, '127.0.0.1', 8080)
+        connectAuthEmulator(authInstance, 'http://127.0.0.1:9099', { disableWarnings: true })
+        connectStorageEmulator(storageInstance, '127.0.0.1', 9199)
+        connectFunctionsEmulator(functionsInstance, '127.0.0.1', 5001)
+        console.log('Connected to Firebase Emulators')
+      } catch (e) {
+        console.log('Emulators already connected or not available')
+      }
+    }
+
     console.log('Firebase initialized successfully')
   } catch (error) {
     console.error('Failed to initialize Firebase:', error)
