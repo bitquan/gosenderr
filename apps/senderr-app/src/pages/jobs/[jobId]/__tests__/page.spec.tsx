@@ -86,7 +86,7 @@ describe("CourierJobDetail — navigation button + payment-locked banner", () =>
 
     // at least one of the rendered navigation controls should be disabled
     // when payment is pending (some UI sections may still show a CTA)
-    expect(pickupBtns.some(btn => btn.disabled)).toBe(true);
-    expect(dropoffBtns.some(btn => btn.disabled)).toBe(true);
+    expect(pickupBtns.some(btn => (btn as HTMLButtonElement).disabled)).toBe(true);
+    expect(dropoffBtns.some(btn => (btn as HTMLButtonElement).disabled)).toBe(true);
   });
 });
