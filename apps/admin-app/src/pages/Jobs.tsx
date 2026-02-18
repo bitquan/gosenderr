@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { collection, getDocs, orderBy, query, where, doc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore'
-import { auth, db } from '../lib/firebase'
+import { collection, getDocs, orderBy, query, where, doc, updateDoc } from 'firebase/firestore'
+import { db } from '../lib/firebase'
 import { Card, CardHeader, CardTitle, CardContent } from '../components/Card'
 import { StatusBadge } from '../components/Badge'
 import { formatCurrency, formatDate } from '../lib/utils'
 import { getFunctions, httpsCallable } from 'firebase/functions'
 import { exportToCSV, formatJobsForExport } from '../lib/csvExport'
 import { CreateJobModal } from '../components/CreateJobModal'
+import { createAdminJob } from '../lib/cloudFunctions'
 
 interface Job {
   id: string
@@ -87,11 +88,6 @@ export default function AdminJobsPage() {
   const handleReorderJob = async (job: Job) => {
     setProcessing(job.id)
     try {
-      const currentUser = auth.currentUser
-      if (!currentUser?.uid) {
-        throw new Error('You must be signed in to reorder jobs')
-      }
-
       const source = job as Job & {
         type?: string
         pickup?: { label?: string; address?: string; lat?: number; lng?: number }
@@ -136,43 +132,25 @@ export default function AdminJobsPage() {
         source.dropoff?.label ||
         'Dropoff address'
 
-      await addDoc(collection(db, 'jobs'), {
-        type: source.type || 'package',
-        status: source.manualOrder ? 'pending' : 'open',
-        pickupAddress,
-        deliveryAddress,
+      await createAdminJob({
+        mode: source.manualOrder ? 'manual' : 'test',
+        type: source.type === 'food' ? 'food' : 'package',
         pickup: {
-          label: source.pickup?.label || pickupAddress,
+          name: source.pickup?.label || pickupAddress,
           address: source.pickup?.address || pickupAddress,
           lat: pickupLat,
           lng: pickupLng,
         },
         dropoff: {
-          label: source.dropoff?.label || deliveryAddress,
+          name: source.dropoff?.label || deliveryAddress,
           address: source.dropoff?.address || deliveryAddress,
           lat: dropoffLat,
           lng: dropoffLng,
         },
         estimatedFee: defaultFee,
         agreedFee,
-        vehicleType: source.vehicleType || (source.type === 'food' ? 'scooter' : 'car'),
         description: source.description || '',
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        createdByUid: currentUser.uid,
-        createdByEmail: currentUser.email || '',
-        createdByName: currentUser.displayName || 'Admin',
-        courierUid: null,
-        offerCourierUid: null,
-        preferredCourierUid: null,
-        offerQueue: [],
-        offerStatus: 'open',
-        paymentStatus: 'pending',
-        paymentIntentId: null,
-        testRecord: Boolean(source.testRecord),
-        manualOrder: Boolean(source.manualOrder),
-        createdByAdmin: true,
-        reorderedFromJobId: source.id,
+        sourceJobId: source.id,
       })
 
       alert('Job reordered successfully')

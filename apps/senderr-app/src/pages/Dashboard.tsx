@@ -8,6 +8,7 @@ import { StatusBadge } from '../components/Badge'
 import { Avatar } from '../components/Avatar'
 import { formatCurrency, formatDate } from '../lib/utils'
 import { useNavigate, Link } from 'react-router-dom'
+import { maskAddress } from '@/features/jobs/shared/privacy'
 
 interface Job {
   id: string
@@ -748,7 +749,7 @@ export default function CourierDashboardPage() {
                           <div className="flex-1 min-w-0">
                             <p className="text-xs text-gray-500 mb-1">Pickup</p>
                             <p className="font-medium text-gray-900 text-sm break-words">
-                              {job.pickupAddress || 'Address not provided'}
+                              {job.pickupAddress ? maskAddress(job.pickupAddress) : 'Approximate location'}
                             </p>
                           </div>
                         </div>
@@ -761,7 +762,7 @@ export default function CourierDashboardPage() {
                           <div className="flex-1 min-w-0">
                             <p className="text-xs text-gray-500 mb-1">Delivery</p>
                             <p className="font-medium text-gray-900 text-sm break-words">
-                              {job.deliveryAddress || 'Address not provided'}
+                              {job.deliveryAddress ? maskAddress(job.deliveryAddress) : 'Approximate location'}
                             </p>
                           </div>
                         </div>

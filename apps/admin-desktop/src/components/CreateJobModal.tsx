@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { addDoc, collection } from 'firebase/firestore'
-import { db } from '../lib/firebase'
+import { createAdminJob } from '../lib/cloudFunctions'
 import { geocodeAddress } from '../lib/mapbox/geocode'
 
 interface LocationSuggestion {
@@ -131,34 +130,26 @@ export function CreateJobModal({ isOpen, onClose, onJobCreated }: CreateJobModal
 
     setLoading(true)
     try {
-      const jobData = {
+      const fee = parseFloat(estimatedFee)
+      await createAdminJob({
+        mode: 'test',
         type: jobType,
-        status: 'open',
-        // Flat fields for compatibility with Jobs page
-        pickupAddress: pickupSelected.address,
-        deliveryAddress: dropoffSelected.address,
-        // Nested fields for full location data
         pickup: {
-          label: pickupSelected.name,
+          name: pickupSelected.name,
           address: pickupSelected.address,
           lat: pickupSelected.lat,
           lng: pickupSelected.lng,
         },
         dropoff: {
-          label: dropoffSelected.name,
+          name: dropoffSelected.name,
           address: dropoffSelected.address,
           lat: dropoffSelected.lat,
           lng: dropoffSelected.lng,
         },
-        estimatedFee: parseFloat(estimatedFee),
-        vehicleType: jobType === 'package' ? 'car' : 'scooter',
-        description: description || '',
-        createdAt: new Date(),
-        testRecord: true,
-        createdByAdmin: true,
-      }
-
-      await addDoc(collection(db, 'jobs'), jobData)
+        estimatedFee: fee,
+        agreedFee: fee,
+        description,
+      })
       
       // Reset form
       setPickupQuery('')

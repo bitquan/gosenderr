@@ -86,9 +86,34 @@ interface RunTestFlowResult {
   runLogId?: string
 }
 
+interface AdminJobLocationInput {
+  name?: string
+  address: string
+  lat: number
+  lng: number
+}
+
+interface CreateAdminJobRequest {
+  mode: 'test' | 'manual'
+  type: 'package' | 'food'
+  pickup: AdminJobLocationInput
+  dropoff: AdminJobLocationInput
+  estimatedFee: number
+  agreedFee?: number
+  description?: string
+  sourceJobId?: string
+}
+
+interface CreateAdminJobResult {
+  success: boolean
+  jobId: string
+  status: string
+}
+
 const createUserForAdminFn = httpsCallable<CreateUserRequest, CreateUserResult>(functions, 'createUserForAdmin')
 const diagnoseCreateUserCallFn = httpsCallable<Record<string, unknown>, any>(functions, 'diagnoseCreateUserCall')
 const runTestFlowFn = httpsCallable<RunTestFlowRequest, RunTestFlowResult>(functions, 'runTestFlow')
+const createAdminJobFn = httpsCallable<CreateAdminJobRequest, CreateAdminJobResult>(functions, 'createAdminJob')
 
 // Simulate Firestore rules for a given path under the emulator (admin-only)
 interface SimulateRuleRequest {
@@ -132,6 +157,7 @@ const adjustTokenWalletBalanceFn = httpsCallable<AdjustTokenWalletBalanceRequest
 interface AdminGetTokenWalletViewRequest {
   targetUid?: string
   targetEmail?: string
+  walletType?: 'utility' | 'payout'
 }
 
 interface TokenWalletSummary {
@@ -153,6 +179,7 @@ interface AdminTokenTarget {
 interface AdminGetTokenWalletViewResult {
   user: AdminTokenTarget
   wallet: TokenWalletSummary
+  walletType?: 'utility' | 'payout'
 }
 
 interface AdminListTokenLedgerRequest {
@@ -162,12 +189,14 @@ interface AdminListTokenLedgerRequest {
   type?: string
   includeCashFeeOnly?: boolean
   limit?: number
+  walletType?: 'utility' | 'payout'
 }
 
 interface AdminListTokenLedgerResult {
   target: AdminTokenTarget | null
   count: number
   rows: Array<Record<string, unknown>>
+  walletType?: 'utility' | 'payout'
 }
 
 interface AdjustTokenWalletBalanceRequest {
@@ -252,6 +281,16 @@ export async function runTestFlow(data: RunTestFlowRequest): Promise<RunTestFlow
   } catch (error: any) {
     console.error('runTestFlow error', error)
     throw new Error(error.message || 'Failed to run test flow')
+  }
+}
+
+export async function createAdminJob(data: CreateAdminJobRequest): Promise<CreateAdminJobResult> {
+  try {
+    const res = await createAdminJobFn(data)
+    return res.data
+  } catch (error: any) {
+    console.error('createAdminJob error', error)
+    throw new Error(error.message || 'Failed to create admin job')
   }
 }
 

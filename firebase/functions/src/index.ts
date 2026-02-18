@@ -21,6 +21,7 @@ export { setPackageRunnerClaim } from "./http/setPackageRunnerClaim";
 export { setAdminClaim } from "./http/setAdminClaim";
 export { banUser } from "./http/banUser";
 export { createUserForAdmin } from "./http/createUserForAdmin";
+export { createAdminJob } from "./http/createAdminJob";
 export { runTestFlow } from "./http/runTestFlow";
 export { getPublicConfig } from "./http/getPublicConfig";
 export { getPublicConfigHttp } from "./http/getPublicConfigHttp";

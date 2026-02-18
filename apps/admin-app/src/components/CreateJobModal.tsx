@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
-import { auth, db } from '../lib/firebase'
+import { createAdminJob } from '../lib/cloudFunctions'
 
 interface LocationSuggestion {
   name: string
@@ -139,53 +138,31 @@ export function CreateJobModal({ isOpen, onClose, onJobCreated }: CreateJobModal
 
     setLoading(true)
     try {
-      const currentUser = auth.currentUser
-      if (!currentUser?.uid) {
-        throw new Error('You must be signed in to create a test job')
-      }
-
       const defaultFee = parseFloat(estimatedFee)
       const overrideFee = parseFloat(manualOverrideFee)
       const agreedFee = mode === 'manual' && Number.isFinite(overrideFee) && overrideFee > 0
         ? overrideFee
         : defaultFee
 
-      const jobData = {
+      await createAdminJob({
+        mode,
         type: jobType,
-        status: mode === 'manual' ? 'pending' : 'open',
-        // Flat fields for compatibility with Jobs page
-        pickupAddress: pickupSelected.address,
-        deliveryAddress: dropoffSelected.address,
-        // Nested fields for full location data
         pickup: {
-          label: pickupSelected.name,
+          name: pickupSelected.name,
           address: pickupSelected.address,
           lat: pickupSelected.lat,
           lng: pickupSelected.lng,
         },
         dropoff: {
-          label: dropoffSelected.name,
+          name: dropoffSelected.name,
           address: dropoffSelected.address,
           lat: dropoffSelected.lat,
           lng: dropoffSelected.lng,
         },
         estimatedFee: defaultFee,
         agreedFee,
-        vehicleType: jobType === 'package' ? 'car' : 'scooter',
-        description: description || '',
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        createdByUid: currentUser.uid,
-        createdByEmail: currentUser.email || '',
-        createdByName: currentUser.displayName || 'Admin',
-        courierUid: null,
-        offerCourierUid: null,
-        testRecord: mode === 'test',
-        manualOrder: mode === 'manual',
-        createdByAdmin: true,
-      }
-
-      await addDoc(collection(db, 'jobs'), jobData)
+        description,
+      })
       
       // Reset form
       setPickupQuery('')

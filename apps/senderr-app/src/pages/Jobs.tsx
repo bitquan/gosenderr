@@ -7,6 +7,7 @@ import { useAdmin } from '../hooks/useAdmin'
 import { Card, CardHeader, CardTitle, CardContent } from '../components/Card'
 import { StatusBadge } from '../components/Badge'
 import { formatCurrency, formatDate } from '../lib/utils'
+import { maskAddress } from '@/features/jobs/shared/privacy'
 
 interface Job {
   id: string
@@ -295,7 +296,9 @@ export default function CourierJobsPage() {
                       <div className="flex-1 min-w-0">
                         <p className="text-xs text-blue-100 mb-1">Pickup</p>
                         <p className="font-medium text-white text-sm break-words">
-                          {job.pickupAddress || 'Address not provided'}
+                          {job.status === 'open'
+                            ? (job.pickupAddress ? maskAddress(job.pickupAddress) : 'Approximate location')
+                            : (job.pickupAddress || 'Address not provided')}
                         </p>
                       </div>
                     </div>
@@ -308,7 +311,9 @@ export default function CourierJobsPage() {
                       <div className="flex-1 min-w-0">
                         <p className="text-xs text-blue-100 mb-1">Delivery</p>
                         <p className="font-medium text-white text-sm break-words">
-                          {job.deliveryAddress || 'Address not provided'}
+                          {job.status === 'open'
+                            ? (job.deliveryAddress ? maskAddress(job.deliveryAddress) : 'Approximate location')
+                            : (job.deliveryAddress || 'Address not provided')}
                         </p>
                       </div>
                     </div>

@@ -93,7 +93,7 @@ export default function CourierSettingsPage() {
     reminders: true,
   });
   const [savingPreferences, setSavingPreferences] = useState(false);
-  const [payoutMode, setPayoutMode] = useState<"cash" | "token">("cash");
+  const [payoutMode, setPayoutMode] = useState<"cash" | "token">("token");
   const [acceptTokenPayoutJobs, setAcceptTokenPayoutJobs] = useState(true);
   const [paymentLinks, setPaymentLinks] = useState({
     cashApp: "",
@@ -148,7 +148,7 @@ export default function CourierSettingsPage() {
               setAvailability(Boolean(profile.isOnline));
               setServiceRadius(Number(profile.serviceRadius || 10));
               setTaxState(profile.taxState || userDoc.data().taxState || '');
-              setPayoutMode(profile.payoutMode === "token" ? "token" : "cash");
+              setPayoutMode(profile.payoutMode === "cash" ? "cash" : "token");
               setAcceptTokenPayoutJobs(profile.acceptTokenPayoutJobs !== false);
               setPaymentLinks({
                 cashApp: profile.paymentLinks?.cashApp || "",

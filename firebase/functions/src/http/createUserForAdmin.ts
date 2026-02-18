@@ -1,5 +1,6 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
+import { grantSignupBonusTokens } from '../utils/signupBonus';
 
 interface CreateUserRequest {
   email: string;
@@ -80,6 +81,8 @@ export async function createUserForAdminHandler(data: CreateUserRequest, context
     if (role === 'courier') {
       userDoc.courierProfile = {
         isOnline: false,
+        payoutMode: 'token',
+        acceptTokenPayoutJobs: true,
         workModes: { packagesEnabled: false, foodEnabled: false },
         status: 'pending',
         stats: { totalDeliveries: 0, totalEarnings: 0 },
@@ -92,6 +95,8 @@ export async function createUserForAdminHandler(data: CreateUserRequest, context
 
     await admin.firestore().doc(`users/${userRecord.uid}`).set(userDoc);
 
+    const signupBonusResult = await grantSignupBonusTokens(userRecord.uid, 'createUserForAdmin');
+
     // Log admin action
     await admin.firestore().collection('adminActionLog').add({
       adminId: context.auth.uid,
@@ -99,6 +104,11 @@ export async function createUserForAdminHandler(data: CreateUserRequest, context
       targetUserId: userRecord.uid,
       email,
       role,
+      metadata: {
+        signupBonusGranted: signupBonusResult.granted,
+        signupBonusTokens: signupBonusResult.bonusTokens,
+        signupBonusTxId: signupBonusResult.txId,
+      },
       timestamp: getServerTimestamp(),
     });
 
