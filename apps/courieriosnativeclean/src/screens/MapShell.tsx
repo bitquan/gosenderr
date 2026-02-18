@@ -789,6 +789,22 @@ export function MapShell({ onSignOut }: MapShellProps) {
   };
   const isAssignedToMe = (job: Job) => !!user?.uid && job.courierUid === user.uid;
   const canRevealDetails = (job: Job) => isAssignedToMe(job);
+  const getVisibleJobTitle = (job: Job) =>
+    canRevealDetails(job)
+      ? (job.title || 'Delivery job')
+      : 'Delivery job';
+  const getVisibleJobItemSummary = (job: Job) => {
+    if (!canRevealDetails(job)) {
+      return 'Details unlock after claim';
+    }
+    if (job.package?.notes) {
+      return job.package.notes;
+    }
+    if (job.package?.size) {
+      return `${job.package.size.toUpperCase()} package`;
+    }
+    return 'Package';
+  };
   const getVisiblePickupLabel = (job: Job) =>
     !canRevealDetails(job)
       ? getMaskedLocation(job.pickup)
@@ -3100,7 +3116,7 @@ export function MapShell({ onSignOut }: MapShellProps) {
                   >
                     <View style={styles.jobHeaderCompact}>
                       <Text style={styles.jobTitle}>
-                        {job.title || 'Delivery job'}
+                        {getVisibleJobTitle(job)}
                       </Text>
                       <Text style={styles.jobPayout}>{getPayoutText(job)}</Text>
                     </View>
@@ -3115,11 +3131,7 @@ export function MapShell({ onSignOut }: MapShellProps) {
                       <View style={styles.jobThumbMeta}>
                         <Text style={styles.jobThumbLabel}>Item</Text>
                         <Text style={styles.jobThumbValue}>
-                          {job.package?.notes
-                            ? job.package.notes
-                            : job.package?.size
-                            ? `${job.package.size.toUpperCase()} package`
-                            : 'Package'}
+                          {getVisibleJobItemSummary(job)}
                         </Text>
                       </View>
                     </View>
