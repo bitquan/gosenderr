@@ -2690,148 +2690,179 @@ export function MapShell({ onSignOut }: MapShellProps) {
               </Pressable>
             </View>
 
-            <View style={styles.rateCardToggleRow}>
-              <Pressable
-                style={[styles.rateToggleButton, profileForm.packagesEnabled && styles.rateToggleActive]}
-                onPress={() => handleToggleWorkMode('packages')}
-              >
-                <Text style={styles.rateToggleText}>Packages {profileForm.packagesEnabled ? 'On' : 'Off'}</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.rateToggleButton, profileForm.foodEnabled && styles.rateToggleActive]}
-                onPress={() => handleToggleWorkMode('food')}
-              >
-                <Text style={styles.rateToggleText}>Food {profileForm.foodEnabled ? 'On' : 'Off'}</Text>
-              </Pressable>
+            <View style={styles.settingsSectionCard}>
+              <Text style={styles.settingsSectionTitle}>Active Services</Text>
+              <View style={styles.settingsOptionsWrap}>
+                <Pressable
+                  style={[
+                    styles.settingsOptionButton,
+                    styles.settingsOptionHalf,
+                    profileForm.packagesEnabled && styles.settingsOptionButtonActive,
+                  ]}
+                  onPress={() => handleToggleWorkMode('packages')}
+                >
+                  <Text style={styles.settingsOptionText}>Packages {profileForm.packagesEnabled ? 'On' : 'Off'}</Text>
+                </Pressable>
+                <Pressable
+                  style={[
+                    styles.settingsOptionButton,
+                    styles.settingsOptionHalf,
+                    profileForm.foodEnabled && styles.settingsOptionButtonActive,
+                  ]}
+                  onPress={() => handleToggleWorkMode('food')}
+                >
+                  <Text style={styles.settingsOptionText}>Food {profileForm.foodEnabled ? 'On' : 'Off'}</Text>
+                </Pressable>
+              </View>
             </View>
 
-            <Text style={styles.payoutsTitle}>Package Delivery</Text>
-            <TextInput
-              style={styles.receiptInput}
-              placeholder="Base fare (min 3.00)"
-              placeholderTextColor="#64748b"
-              keyboardType="decimal-pad"
-              value={packageRateDraft.baseFare}
-              onChangeText={(value: string) => {
-                rateCardDirtyRef.current = true;
-                setPackageRateDraft((prev) => ({ ...prev, baseFare: value }));
-              }}
-            />
-            <TextInput
-              style={styles.receiptInput}
-              placeholder="Per mile (min 0.50)"
-              placeholderTextColor="#64748b"
-              keyboardType="decimal-pad"
-              value={packageRateDraft.perMile}
-              onChangeText={(value: string) => {
-                rateCardDirtyRef.current = true;
-                setPackageRateDraft((prev) => ({ ...prev, perMile: value }));
-              }}
-            />
-            <TextInput
-              style={styles.receiptInput}
-              placeholder="Per minute (min 0.10)"
-              placeholderTextColor="#64748b"
-              keyboardType="decimal-pad"
-              value={packageRateDraft.perMinute}
-              onChangeText={(value: string) => {
-                rateCardDirtyRef.current = true;
-                setPackageRateDraft((prev) => ({ ...prev, perMinute: value }));
-              }}
-            />
-            <TextInput
-              style={styles.receiptInput}
-              placeholder="Max pickup miles (optional)"
-              placeholderTextColor="#64748b"
-              keyboardType="decimal-pad"
-              value={packageRateDraft.maxPickupDistanceMiles}
-              onChangeText={(value: string) => {
-                rateCardDirtyRef.current = true;
-                setPackageRateDraft((prev) => ({ ...prev, maxPickupDistanceMiles: value }));
-              }}
-            />
-            <TextInput
-              style={styles.receiptInput}
-              placeholder="Max delivery miles (optional)"
-              placeholderTextColor="#64748b"
-              keyboardType="decimal-pad"
-              value={packageRateDraft.maxDeliveryDistanceMiles}
-              onChangeText={(value: string) => {
-                rateCardDirtyRef.current = true;
-                setPackageRateDraft((prev) => ({ ...prev, maxDeliveryDistanceMiles: value }));
-              }}
-            />
-            <Pressable
-              style={[styles.receiptButton, styles.receiptButtonPrimary]}
-              onPress={() => handleSaveRateCard('package')}
-              disabled={rateCardSaving}
-            >
-              <Text style={styles.receiptButtonText}>{rateCardSaving ? 'Saving…' : 'Save Package Rates'}</Text>
-            </Pressable>
+            <View style={styles.settingsSectionCard}>
+              <Text style={styles.settingsSectionTitle}>Package Delivery</Text>
+              <View style={styles.settingsFieldStack}>
+                <TextInput
+                  style={styles.settingsInput}
+                  placeholder="Base fare (min 3.00)"
+                  placeholderTextColor="#64748b"
+                  keyboardType="decimal-pad"
+                  value={packageRateDraft.baseFare}
+                  onChangeText={(value: string) => {
+                    rateCardDirtyRef.current = true;
+                    setPackageRateDraft((prev) => ({ ...prev, baseFare: value }));
+                  }}
+                />
+                <TextInput
+                  style={styles.settingsInput}
+                  placeholder="Per mile (min 0.50)"
+                  placeholderTextColor="#64748b"
+                  keyboardType="decimal-pad"
+                  value={packageRateDraft.perMile}
+                  onChangeText={(value: string) => {
+                    rateCardDirtyRef.current = true;
+                    setPackageRateDraft((prev) => ({ ...prev, perMile: value }));
+                  }}
+                />
+                <TextInput
+                  style={styles.settingsInput}
+                  placeholder="Per minute (min 0.10)"
+                  placeholderTextColor="#64748b"
+                  keyboardType="decimal-pad"
+                  value={packageRateDraft.perMinute}
+                  onChangeText={(value: string) => {
+                    rateCardDirtyRef.current = true;
+                    setPackageRateDraft((prev) => ({ ...prev, perMinute: value }));
+                  }}
+                />
+                <TextInput
+                  style={styles.settingsInput}
+                  placeholder="Max pickup miles (optional)"
+                  placeholderTextColor="#64748b"
+                  keyboardType="decimal-pad"
+                  value={packageRateDraft.maxPickupDistanceMiles}
+                  onChangeText={(value: string) => {
+                    rateCardDirtyRef.current = true;
+                    setPackageRateDraft((prev) => ({ ...prev, maxPickupDistanceMiles: value }));
+                  }}
+                />
+                <TextInput
+                  style={styles.settingsInput}
+                  placeholder="Max delivery miles (optional)"
+                  placeholderTextColor="#64748b"
+                  keyboardType="decimal-pad"
+                  value={packageRateDraft.maxDeliveryDistanceMiles}
+                  onChangeText={(value: string) => {
+                    rateCardDirtyRef.current = true;
+                    setPackageRateDraft((prev) => ({ ...prev, maxDeliveryDistanceMiles: value }));
+                  }}
+                />
+              </View>
+              <View style={styles.settingsOptionsWrap}>
+                <Pressable
+                  style={[
+                    styles.settingsOptionButton,
+                    styles.settingsOptionFull,
+                    styles.settingsOptionButtonActive,
+                  ]}
+                  onPress={() => handleSaveRateCard('package')}
+                  disabled={rateCardSaving}
+                >
+                  <Text style={styles.settingsOptionText}>{rateCardSaving ? 'Saving…' : 'Save Package Rates'}</Text>
+                </Pressable>
+              </View>
+            </View>
 
-            <Text style={styles.payoutsTitle}>Food Delivery</Text>
-            <TextInput
-              style={styles.receiptInput}
-              placeholder="Base fare (min 2.50)"
-              placeholderTextColor="#64748b"
-              keyboardType="decimal-pad"
-              value={foodRateDraft.baseFare}
-              onChangeText={(value: string) => {
-                rateCardDirtyRef.current = true;
-                setFoodRateDraft((prev) => ({ ...prev, baseFare: value }));
-              }}
-            />
-            <TextInput
-              style={styles.receiptInput}
-              placeholder="Per mile (min 0.75)"
-              placeholderTextColor="#64748b"
-              keyboardType="decimal-pad"
-              value={foodRateDraft.perMile}
-              onChangeText={(value: string) => {
-                rateCardDirtyRef.current = true;
-                setFoodRateDraft((prev) => ({ ...prev, perMile: value }));
-              }}
-            />
-            <TextInput
-              style={styles.receiptInput}
-              placeholder="Restaurant wait pay (min 0.15)"
-              placeholderTextColor="#64748b"
-              keyboardType="decimal-pad"
-              value={foodRateDraft.restaurantWaitPay}
-              onChangeText={(value: string) => {
-                rateCardDirtyRef.current = true;
-                setFoodRateDraft((prev) => ({ ...prev, restaurantWaitPay: value }));
-              }}
-            />
-            <TextInput
-              style={styles.receiptInput}
-              placeholder="Max pickup miles (optional)"
-              placeholderTextColor="#64748b"
-              keyboardType="decimal-pad"
-              value={foodRateDraft.maxPickupDistanceMiles}
-              onChangeText={(value: string) => {
-                rateCardDirtyRef.current = true;
-                setFoodRateDraft((prev) => ({ ...prev, maxPickupDistanceMiles: value }));
-              }}
-            />
-            <TextInput
-              style={styles.receiptInput}
-              placeholder="Max delivery miles (optional)"
-              placeholderTextColor="#64748b"
-              keyboardType="decimal-pad"
-              value={foodRateDraft.maxDeliveryDistanceMiles}
-              onChangeText={(value: string) => {
-                rateCardDirtyRef.current = true;
-                setFoodRateDraft((prev) => ({ ...prev, maxDeliveryDistanceMiles: value }));
-              }}
-            />
-            <Pressable
-              style={[styles.receiptButton, styles.receiptButtonPrimary]}
-              onPress={() => handleSaveRateCard('food')}
-              disabled={rateCardSaving}
-            >
-              <Text style={styles.receiptButtonText}>{rateCardSaving ? 'Saving…' : 'Save Food Rates'}</Text>
-            </Pressable>
+            <View style={styles.settingsSectionCard}>
+              <Text style={styles.settingsSectionTitle}>Food Delivery</Text>
+              <View style={styles.settingsFieldStack}>
+                <TextInput
+                  style={styles.settingsInput}
+                  placeholder="Base fare (min 2.50)"
+                  placeholderTextColor="#64748b"
+                  keyboardType="decimal-pad"
+                  value={foodRateDraft.baseFare}
+                  onChangeText={(value: string) => {
+                    rateCardDirtyRef.current = true;
+                    setFoodRateDraft((prev) => ({ ...prev, baseFare: value }));
+                  }}
+                />
+                <TextInput
+                  style={styles.settingsInput}
+                  placeholder="Per mile (min 0.75)"
+                  placeholderTextColor="#64748b"
+                  keyboardType="decimal-pad"
+                  value={foodRateDraft.perMile}
+                  onChangeText={(value: string) => {
+                    rateCardDirtyRef.current = true;
+                    setFoodRateDraft((prev) => ({ ...prev, perMile: value }));
+                  }}
+                />
+                <TextInput
+                  style={styles.settingsInput}
+                  placeholder="Restaurant wait pay (min 0.15)"
+                  placeholderTextColor="#64748b"
+                  keyboardType="decimal-pad"
+                  value={foodRateDraft.restaurantWaitPay}
+                  onChangeText={(value: string) => {
+                    rateCardDirtyRef.current = true;
+                    setFoodRateDraft((prev) => ({ ...prev, restaurantWaitPay: value }));
+                  }}
+                />
+                <TextInput
+                  style={styles.settingsInput}
+                  placeholder="Max pickup miles (optional)"
+                  placeholderTextColor="#64748b"
+                  keyboardType="decimal-pad"
+                  value={foodRateDraft.maxPickupDistanceMiles}
+                  onChangeText={(value: string) => {
+                    rateCardDirtyRef.current = true;
+                    setFoodRateDraft((prev) => ({ ...prev, maxPickupDistanceMiles: value }));
+                  }}
+                />
+                <TextInput
+                  style={styles.settingsInput}
+                  placeholder="Max delivery miles (optional)"
+                  placeholderTextColor="#64748b"
+                  keyboardType="decimal-pad"
+                  value={foodRateDraft.maxDeliveryDistanceMiles}
+                  onChangeText={(value: string) => {
+                    rateCardDirtyRef.current = true;
+                    setFoodRateDraft((prev) => ({ ...prev, maxDeliveryDistanceMiles: value }));
+                  }}
+                />
+              </View>
+              <View style={styles.settingsOptionsWrap}>
+                <Pressable
+                  style={[
+                    styles.settingsOptionButton,
+                    styles.settingsOptionFull,
+                    styles.settingsOptionButtonActive,
+                  ]}
+                  onPress={() => handleSaveRateCard('food')}
+                  disabled={rateCardSaving}
+                >
+                  <Text style={styles.settingsOptionText}>{rateCardSaving ? 'Saving…' : 'Save Food Rates'}</Text>
+                </Pressable>
+              </View>
+            </View>
 
             {rateCardError && <Text style={styles.receiptError}>{rateCardError}</Text>}
           </ScrollView>
@@ -3866,28 +3897,6 @@ const styles = StyleSheet.create({
     color: '#E2E8F0',
     fontSize: 11,
     fontWeight: '600',
-  },
-  rateCardToggleRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 12,
-  },
-  rateToggleButton: {
-    flex: 1,
-    paddingVertical: 8,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#334155',
-    alignItems: 'center',
-  },
-  rateToggleActive: {
-    backgroundColor: '#1E3A8A',
-    borderColor: '#3B82F6',
-  },
-  rateToggleText: {
-    color: '#E2E8F0',
-    fontSize: 11,
-    fontWeight: '700',
   },
   receiptError: {
     marginTop: 6,
