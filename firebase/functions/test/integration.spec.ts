@@ -2,6 +2,17 @@ const assert = require('assert').strict
 const fetch = require('node-fetch')
 const admin = require('firebase-admin')
 
+// Set emulator hosts for tests
+process.env.FIRESTORE_EMULATOR_HOST = '127.0.0.1:8080'
+process.env.FIREBASE_AUTH_EMULATOR_HOST = '127.0.0.1:9099'
+
+// Initialize admin app if not already
+if (!admin.apps.length) {
+  admin.initializeApp({
+    projectId: 'gosenderr-6773f'
+  })
+}
+
 // Helper to exchange custom token for ID token from the Auth emulator
 async function getIdToken(customToken: string) {
   const url = `http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=anything`
@@ -55,7 +66,7 @@ describe('Cloud Functions integration tests (emulator)', function () {
     await admin.firestore().doc(`users/${adminUser.uid}`).set({ role: 'admin' })
 
     // For better visibility in tests, call the handler directly to get a stack trace when it errors
-    const context: any = { auth: { uid: adminUser.uid } }
+    const context: any = { auth: { uid: adminUser.uid, token: { role: 'admin' } } }
     const emailCallable = `new-user+callable+${Date.now()}+${Math.random().toString(36).slice(2,8)}@example.com`
     const emailHandler = `new-user+handler+${Date.now()}+${Math.random().toString(36).slice(2,8)}@example.com`
 
@@ -63,7 +74,7 @@ describe('Cloud Functions integration tests (emulator)', function () {
     const createdUids: string[] = []
 
     // Also exercise the callable endpoint (as the browser would) to ensure callable plumbing works
-    const customToken = await admin.auth().createCustomToken(adminUser.uid)
+    const customToken = await admin.auth().createCustomToken(adminUser.uid, { role: 'admin' })
     const idToken = await getIdToken(customToken)
 
     const res = await callCallable('createUserForAdmin', idToken, { email: emailCallable, password: 'secret123', role: 'customer', displayName: 'Test User' })
