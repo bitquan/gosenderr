@@ -59,6 +59,7 @@ export const adminNavGroups: AdminNavGroup[] = [
       { label: 'Secrets', path: '/settings/secrets', icon: '🔑' },
       { label: 'Admin Flow Logs', path: '/admin-flow-logs', icon: '🧪' },
       { label: 'Settings', path: '/settings', icon: '⚙️' },
+      { label: 'Payment Settings', path: '/settings/payment', icon: '💳' },
     ],
   },
 ]
