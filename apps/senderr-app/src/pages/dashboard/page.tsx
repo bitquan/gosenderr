@@ -44,6 +44,7 @@ export default function CourierDashboardMapShell() {
   const [acceptingJobId, setAcceptingJobId] = useState<string | null>(null);
   const [decliningJobId, setDecliningJobId] = useState<string | null>(null);
   const [togglingOnline, setTogglingOnline] = useState(false);
+  const [updatingIdleState, setUpdatingIdleState] = useState(false);
   const [bottomSheetHeight, setBottomSheetHeight] = useState(340);
   const bottomDragRef = useRef({
     active: false,
@@ -97,9 +98,17 @@ export default function CourierDashboardMapShell() {
   );
 
   const activeJob = activeJobs[0] || null;
+  const courierStatus = (userDoc?.courierProfile as any)?.status || "none";
+  const courierDispatchState =
+    (userDoc?.courierProfile as any)?.dispatchState === "idle" ? "idle" : "active";
+  const isIdle = courierDispatchState === "idle";
+  const rejectionReason = (userDoc?.courierProfile as any)?.rejectionReason || null;
+  const isApproved = courierStatus === "approved";
+  const storedIsOnline = Boolean(userDoc?.courierProfile?.isOnline);
+  const isOnline = isApproved && storedIsOnline;
 
   useEffect(() => {
-    const preferredJobId = activeJob?.id || availableJobs[0]?.id || null;
+    const preferredJobId = activeJob?.id || (!isIdle ? availableJobs[0]?.id : null) || null;
     if (!selectedJobId && preferredJobId) {
       setSelectedJobId(preferredJobId);
       return;
@@ -111,11 +120,38 @@ export default function CourierDashboardMapShell() {
         setSelectedJobId(preferredJobId);
       }
     }
-  }, [activeJob?.id, availableJobs, activeJobs, selectedJobId]);
+  }, [activeJob?.id, availableJobs, activeJobs, selectedJobId, isIdle]);
 
   const selectedJob = useMemo(
     () => [...activeJobs, ...availableJobs].find((job) => job.id === selectedJobId) || null,
     [activeJobs, availableJobs, selectedJobId],
+  );
+
+  const mapOfferJobs = useMemo(
+    () => availableJobs.filter((job) => job.status === "open"),
+    [availableJobs],
+  );
+
+  const jobsForQueue = useMemo(() => {
+    if (!isIdle) return availableJobs;
+    if (!selectedJobId) return [];
+    return availableJobs.filter((job) => job.id === selectedJobId);
+  }, [availableJobs, isIdle, selectedJobId]);
+
+  const mapJobMarkers = useMemo(
+    () =>
+      mapOfferJobs
+        .filter((job) => Number.isFinite(job.pickup?.lat) && Number.isFinite(job.pickup?.lng))
+        .map((job) => ({
+          id: job.id,
+          location: {
+            lat: job.pickup.lat,
+            lng: job.pickup.lng,
+          },
+          label: job.pickup?.label || "Pickup",
+          isSelected: selectedJobId === job.id,
+        })),
+    [mapOfferJobs, selectedJobId],
   );
 
   useEffect(() => {
@@ -137,12 +173,6 @@ export default function CourierDashboardMapShell() {
       mounted = false;
     };
   }, [uid]);
-
-  const courierStatus = (userDoc?.courierProfile as any)?.status || "none";
-  const rejectionReason = (userDoc?.courierProfile as any)?.rejectionReason || null;
-  const isApproved = courierStatus === "approved";
-  const storedIsOnline = Boolean(userDoc?.courierProfile?.isOnline);
-  const isOnline = isApproved && storedIsOnline;
 
   useEffect(() => {
     if (!uid || !storedIsOnline || isApproved) return;
@@ -184,6 +214,22 @@ export default function CourierDashboardMapShell() {
       alert("Unable to update availability. Please try again.");
     } finally {
       setTogglingOnline(false);
+    }
+  };
+
+  const handleSetDispatchState = async (nextState: "active" | "idle") => {
+    if (!uid || updatingIdleState || courierDispatchState === nextState) return;
+
+    setUpdatingIdleState(true);
+    try {
+      await updateDoc(doc(db, "users", uid), {
+        "courierProfile.dispatchState": nextState,
+      });
+    } catch (error) {
+      console.error("Failed to update dispatch state", error);
+      alert("Unable to update mode. Please try again.");
+    } finally {
+      setUpdatingIdleState(false);
     }
   };
 
@@ -242,6 +288,11 @@ export default function CourierDashboardMapShell() {
     }
   };
 
+  const handleSelectJobFromMap = (jobId: string) => {
+    setSelectedJobId(jobId);
+    setBottomSheetHeight((prev) => Math.max(prev, 360));
+  };
+
   const beginBottomSheetDrag = (clientY: number) => {
     bottomDragRef.current.active = true;
     bottomDragRef.current.startY = clientY;
@@ -289,6 +340,9 @@ export default function CourierDashboardMapShell() {
           pickup={selectedJob?.pickup}
           dropoff={selectedJob?.dropoff}
           courierLocation={mapCourierLocation as any}
+          autoFit={!isIdle}
+          jobMarkers={mapJobMarkers}
+          onJobMarkerClick={handleSelectJobFromMap}
         />
       </div>
 
@@ -298,20 +352,48 @@ export default function CourierDashboardMapShell() {
             <div>
               <p className="text-xs text-blue-100">Senderr Map Shell</p>
               <p className="text-sm font-semibold text-white">
-                {activeJob ? "Active delivery in progress" : "Waiting for next delivery"}
+                {activeJob
+                  ? "Active delivery in progress"
+                  : isIdle
+                    ? "Idle mode: free roam and tap pins"
+                    : "Waiting for next delivery"}
               </p>
             </div>
-            <button
-              onClick={handleToggleOnline}
-              disabled={togglingOnline || !isApproved}
-              className={`rounded-full px-3 py-1.5 text-xs font-semibold border ${
-                isOnline
-                  ? "bg-emerald-500/25 text-emerald-100 border-emerald-300/40"
-                  : "bg-slate-950/50 text-blue-100 border-white/20"
-              } ${togglingOnline || !isApproved ? "opacity-60 cursor-not-allowed" : ""}`}
-            >
-              {isOnline ? "Online" : "Offline"}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handleSetDispatchState("active")}
+                disabled={updatingIdleState}
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold border ${
+                  !isIdle
+                    ? "bg-purple-500/30 text-purple-100 border-purple-300/50"
+                    : "bg-slate-950/50 text-blue-100 border-white/20"
+                } ${updatingIdleState ? "opacity-60 cursor-not-allowed" : ""}`}
+              >
+                Active
+              </button>
+              <button
+                onClick={() => handleSetDispatchState("idle")}
+                disabled={updatingIdleState}
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold border ${
+                  isIdle
+                    ? "bg-amber-500/30 text-amber-100 border-amber-300/50"
+                    : "bg-slate-950/50 text-blue-100 border-white/20"
+                } ${updatingIdleState ? "opacity-60 cursor-not-allowed" : ""}`}
+              >
+                Idle
+              </button>
+              <button
+                onClick={handleToggleOnline}
+                disabled={togglingOnline || !isApproved}
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold border ${
+                  isOnline
+                    ? "bg-emerald-500/25 text-emerald-100 border-emerald-300/40"
+                    : "bg-slate-950/50 text-blue-100 border-white/20"
+                } ${togglingOnline || !isApproved ? "opacity-60 cursor-not-allowed" : ""}`}
+              >
+                {isOnline ? "Online" : "Offline"}
+              </button>
+            </div>
           </div>
 
           {tokenClaimReadiness?.useTokenMode && (
@@ -390,13 +472,19 @@ export default function CourierDashboardMapShell() {
               Available Offers ({availableJobs.length})
             </p>
 
+            {isIdle && !selectedJobId && (
+              <div className="rounded-xl border border-amber-300/30 bg-amber-500/15 p-3 text-sm text-amber-100">
+                Idle mode is on. Pan freely and tap any purple job pin on the map to open its offer here.
+              </div>
+            )}
+
             {availableJobs.length === 0 && (
               <div className="rounded-xl border border-white/20 bg-white/10 p-3 text-sm text-blue-100">
                 No open offers right now. Stay online and refresh shortly.
               </div>
             )}
 
-            {availableJobs.map((job) => {
+            {jobsForQueue.map((job) => {
               const selected = selectedJobId === job.id;
               const canClaim = !(tokenClaimReadiness?.useTokenMode && !tokenClaimReadiness?.canClaim);
 

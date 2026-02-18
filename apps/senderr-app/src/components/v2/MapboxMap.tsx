@@ -25,10 +25,18 @@ interface MapboxMapProps {
   courierLocation?: CourierLocation | null;
   height?: string;
   routeSegments?: RouteSegment[];
+  jobMarkers?: Array<{
+    id: string;
+    location: { lat: number; lng: number };
+    label?: string;
+    isSelected?: boolean;
+  }>;
+  onJobMarkerClick?: (jobId: string) => void;
   onMapLoad?: (map: MapboxMapInstance) => void;
   showLabels?: boolean;
   showPopups?: boolean;
   interactive?: boolean;
+  autoFit?: boolean;
 }
 
 export interface MapboxMapHandle {
@@ -43,10 +51,13 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(
       courierLocation,
       height = "400px",
       routeSegments = [],
+      jobMarkers = [],
+      onJobMarkerClick,
       onMapLoad,
       showLabels = true,
       showPopups = true,
       interactive = true,
+      autoFit = true,
     },
     ref,
   ) => {
@@ -67,6 +78,7 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(
       pickup?: MapboxMarker | null;
       dropoff?: MapboxMarker | null;
       courier?: MapboxMarker | null;
+      jobs?: Record<string, MapboxMarker>;
     }>({});
     const [mapReady, setMapReady] = useState(false);
     const [fallbackRouteCoordinates, setFallbackRouteCoordinates] = useState<
@@ -196,6 +208,10 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(
           window.cancelAnimationFrame(routeAnimationFrameRef.current);
           routeAnimationFrameRef.current = null;
         }
+        if (markersRef.current.jobs) {
+          Object.values(markersRef.current.jobs).forEach((marker) => marker.remove());
+          markersRef.current.jobs = {};
+        }
         if (fitRetryTimeoutRef.current) {
           window.clearTimeout(fitRetryTimeoutRef.current);
           fitRetryTimeoutRef.current = null;
@@ -275,7 +291,7 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(
     }, [pickup?.lng, pickup?.lat, dropoff?.lng, dropoff?.lat, routeSegments]);
 
     const fitMapToRoute = () => {
-      if (!mapReady || !mapRef.current) return;
+      if (!autoFit || !mapReady || !mapRef.current) return;
 
       const map = mapRef.current;
       const mapboxgl = window.mapboxgl;
@@ -379,7 +395,7 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(
 
     useEffect(() => {
       fitMapToRoute();
-    }, [mapReady, pickup, dropoff, routeSegments, fallbackRouteCoordinates]);
+    }, [autoFit, mapReady, pickup, dropoff, routeSegments, fallbackRouteCoordinates]);
 
     useEffect(() => {
       if (!mapReady || !mapRef.current) {
@@ -485,6 +501,71 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(
         }
       }
     }, [courierLocation, mapReady]);
+
+    useEffect(() => {
+      if (!mapReady || !mapRef.current) return;
+
+      const map = mapRef.current;
+      const mapboxgl = window.mapboxgl;
+      if (!mapboxgl) return;
+
+      const existingMarkers = markersRef.current.jobs || {};
+      const nextById = new Map(jobMarkers.map((marker) => [marker.id, marker]));
+
+      Object.entries(existingMarkers).forEach(([jobId, marker]) => {
+        if (!nextById.has(jobId)) {
+          marker.remove();
+          delete existingMarkers[jobId];
+        }
+      });
+
+      jobMarkers.forEach((jobMarker) => {
+        if (!isValidLngLat(jobMarker.location.lng, jobMarker.location.lat)) return;
+
+        const existing = existingMarkers[jobMarker.id];
+        if (existing) {
+          existing.setLngLat([jobMarker.location.lng, jobMarker.location.lat]);
+          const el = existing.getElement() as HTMLElement;
+          el.style.background = jobMarker.isSelected ? "#a78bfa" : "#7c3aed";
+          el.style.width = jobMarker.isSelected ? "20px" : "16px";
+          el.style.height = jobMarker.isSelected ? "20px" : "16px";
+          el.style.boxShadow = jobMarker.isSelected
+            ? "0 0 0 5px rgba(124,58,237,0.35), 0 6px 10px rgba(0,0,0,0.4)"
+            : "0 0 0 4px rgba(124,58,237,0.25), 0 4px 8px rgba(0,0,0,0.35)";
+          return;
+        }
+
+        const el = document.createElement("button");
+        el.type = "button";
+        el.className = "mapshell-job-pin";
+        el.style.cssText = `
+          width: 16px;
+          height: 16px;
+          border-radius: 9999px;
+          border: 2px solid rgba(255,255,255,0.95);
+          background: ${jobMarker.isSelected ? "#a78bfa" : "#7c3aed"};
+          box-shadow: ${jobMarker.isSelected ? "0 0 0 5px rgba(124,58,237,0.35), 0 6px 10px rgba(0,0,0,0.4)" : "0 0 0 4px rgba(124,58,237,0.25), 0 4px 8px rgba(0,0,0,0.35)"};
+          transition: box-shadow 120ms ease, background 120ms ease, width 120ms ease, height 120ms ease;
+          cursor: pointer;
+        `;
+        el.title = jobMarker.label || "Open offer";
+        el.onclick = (event) => {
+          event.stopPropagation();
+          onJobMarkerClick?.(jobMarker.id);
+        };
+
+        const marker = new mapboxgl.Marker({
+          element: el,
+          anchor: "center",
+        })
+          .setLngLat([jobMarker.location.lng, jobMarker.location.lat])
+          .addTo(map);
+
+        existingMarkers[jobMarker.id] = marker;
+      });
+
+      markersRef.current.jobs = existingMarkers;
+    }, [jobMarkers, mapReady, onJobMarkerClick]);
 
     // Update pickup/dropoff markers when they change
     useEffect(() => {
