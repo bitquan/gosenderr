@@ -19,12 +19,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import messaging from '@react-native-firebase/messaging';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { mapboxConfig } from '../config/mapbox';
-import { mockJobs } from '../data/mockJobs';
 import { useOpenJobs } from '../hooks/useOpenJobs';
 import { useAuth } from '../hooks/useAuth';
 import { useFeatureFlags } from '../hooks/useFeatureFlags';
 import type { Job } from '../types/job';
-import type { MockJob } from '../data/mockJobs';
 import { claimJob, updateJobStatus } from '../lib/jobs';
 import { addDoc, collection, doc, onSnapshot, orderBy, query, serverTimestamp, Timestamp, updateDoc, where } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
@@ -50,17 +48,9 @@ export function MapShell({ onSignOut }: MapShellProps) {
   const { user } = useAuth();
   const { flags } = useFeatureFlags();
   const { jobs, completedJobs, loading } = useOpenJobs(user?.uid ?? null);
-  const [useMockJobs, setUseMockJobs] = useState(false);
-  const canUseMock = jobs.length === 0;
-  const usingMockJobs = useMockJobs && canUseMock;
-  const displayJobs: Array<Job | MockJob> = usingMockJobs ? mockJobs : jobs;
   const [followUser] = useState(true);
   const [busyJobId, setBusyJobId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [mockClaimedId, setMockClaimedId] = useState<string | null>(null);
-  const [mockStatus, setMockStatus] = useState<
-    'assigned' | 'enroute_pickup' | 'arrived_pickup' | 'picked_up' | 'enroute_dropoff' | 'arrived_dropoff' | 'completed'
-  >('assigned');
   const lastLocationWriteRef = useRef(0);
   const lastLocationRef = useRef<{ lat: number; lng: number } | null>(null);
   const shouldShareLocationRef = useRef(false);
@@ -159,7 +149,7 @@ export function MapShell({ onSignOut }: MapShellProps) {
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const [pendingSyncCount, setPendingSyncCount] = useState(0);
   const flushBusyRef = useRef(false);
-  const [selectedJob, setSelectedJob] = useState<Job | MockJob | null>(null);
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [previewRoute, setPreviewRoute] = useState<{
     toPickup?: { geojson: any; distance: number; duration: number };
     toDropoff?: { geojson: any; distance: number; duration: number };
@@ -304,16 +294,10 @@ export function MapShell({ onSignOut }: MapShellProps) {
   }, []);
 
   useEffect(() => {
-    if (jobs.length > 0 && useMockJobs) {
-      setUseMockJobs(false);
-    }
-  }, [jobs.length, useMockJobs]);
-
-  useEffect(() => {
     if (!selectedJob) return;
-    const exists = displayJobs.some((job) => job.id === selectedJob.id);
+    const exists = jobs.some((job) => job.id === selectedJob.id);
     if (!exists) setSelectedJob(null);
-  }, [displayJobs, selectedJob]);
+  }, [jobs, selectedJob]);
 
   useEffect(() => {
     if (!pushEnabled || !user?.uid) return;
@@ -515,8 +499,7 @@ export function MapShell({ onSignOut }: MapShellProps) {
 
   useEffect(() => {
     if (!jobAlertsEnabled) return;
-    const alertSource = usingMockJobs ? mockJobs : jobs;
-    const liveIds = alertSource.map((job) => job.id).sort();
+    const liveIds = jobs.map((job) => job.id).sort();
     const previous = lastJobIdsRef.current;
     const added = liveIds.filter((id) => !previous.includes(id));
     const removed = previous.filter((id) => !liveIds.includes(id));
@@ -532,7 +515,7 @@ export function MapShell({ onSignOut }: MapShellProps) {
         void logCourierEvent({
           courierUid: user.uid,
           event: 'job_alert_new',
-          details: { count: added.length, source: usingMockJobs ? 'mock' : 'live' },
+          details: { count: added.length, source: 'live' },
         });
       }
       const flash = setInterval(() => setJobAlertFlash((prev) => !prev), 400);
@@ -555,7 +538,7 @@ export function MapShell({ onSignOut }: MapShellProps) {
       setJobAlert(null);
       setJobAlertBody(null);
     }
-  }, [jobs, jobAlertsEnabled, usingMockJobs, jobAlertActive, user?.uid, addInboxItem]);
+  }, [jobs, jobAlertsEnabled, jobAlertActive, user?.uid, addInboxItem]);
 
   useEffect(() => {
     let isMounted = true;
@@ -708,22 +691,20 @@ export function MapShell({ onSignOut }: MapShellProps) {
     return () => unsubscribe();
   }, [user?.uid]);
 
-  const getMarkerEmoji = (job: Job | MockJob) =>
-    'type' in job && job.type === 'food' ? '🍔' : '📦';
-  const isFoodJob = (job: Job | MockJob) => 'type' in job && job.type === 'food';
-  const getPayoutText = (job: Job | MockJob) => {
-    if ('payout' in job) return `$${job.payout.toFixed(2)}`;
+  const getMarkerEmoji = (job: Job) =>
+    job.type === 'food' ? '🍔' : '📦';
+  const isFoodJob = (job: Job) => job.type === 'food';
+  const getPayoutText = (job: Job) => {
     if (job.agreedFee != null) return `$${job.agreedFee.toFixed(2)}`;
     return '—';
   };
-  const getJobPhotoUrl = (job: Job | MockJob) => {
-    if (!isLiveJob(job)) return null;
+  const getJobPhotoUrl = (job: Job) => {
     const photos = (job as any).photos || [];
     return photos?.[0]?.thumbnailURL || photos?.[0]?.url || null;
   };
-  const getPickupLabel = (job: Job | MockJob) =>
+  const getPickupLabel = (job: Job) =>
     (job.pickup as any).label || (job.pickup as any).address || 'Pickup';
-  const getDropoffLabel = (job: Job | MockJob) =>
+  const getDropoffLabel = (job: Job) =>
     (job.dropoff as any).label || (job.dropoff as any).address || 'Dropoff';
   const getMaskedLocation = (point: { label?: string; address?: string }) => {
     const raw = point.address || point.label || '';
@@ -737,17 +718,15 @@ export function MapShell({ onSignOut }: MapShellProps) {
     }
     return zip ? `Area ${zip}` : 'Area';
   };
-  const isLiveJob = (job: Job | MockJob): job is Job => 'status' in job;
-  const isMockJob = (job: Job | MockJob): job is MockJob => !isLiveJob(job);
   const getEffectiveStatus = (job: Job): string => job.statusDetail ?? job.status;
   const isAssignedToMe = (job: Job) => !!user?.uid && job.courierUid === user.uid;
   const canRevealDetails = (job: Job) => isAssignedToMe(job);
-  const getVisiblePickupLabel = (job: Job | MockJob) =>
-    isLiveJob(job) && !canRevealDetails(job)
+  const getVisiblePickupLabel = (job: Job) =>
+    !canRevealDetails(job)
       ? getMaskedLocation(job.pickup)
       : getPickupLabel(job);
-  const getVisibleDropoffLabel = (job: Job | MockJob) =>
-    isLiveJob(job) && !canRevealDetails(job)
+  const getVisibleDropoffLabel = (job: Job) =>
+    !canRevealDetails(job)
       ? getMaskedLocation(job.dropoff)
       : getDropoffLabel(job);
 
@@ -1608,11 +1587,10 @@ export function MapShell({ onSignOut }: MapShellProps) {
     }
   };
 
-  const mockJob = displayJobs.find((job) => isMockJob(job) && job.id === mockClaimedId) as MockJob | undefined;
   const liveActiveJob = jobs.find(
     (job) => isAssignedToMe(job) && job.status !== 'completed' && job.status !== 'cancelled'
   );
-  const hasActiveJob = Boolean(liveActiveJob || mockJob);
+  const hasActiveJob = Boolean(liveActiveJob);
   const [jobsView, setJobsView] = useState<'active' | 'jobs'>('active');
 
   useEffect(() => {
@@ -1746,18 +1724,6 @@ export function MapShell({ onSignOut }: MapShellProps) {
 
   const showPickupProofButton = !!liveActiveJob && needsPickupProof(liveActiveJob);
   const showDropoffProofButton = !!liveActiveJob && needsDropoffProof(liveActiveJob);
-  const advanceMockStatus = () => {
-    const next: Record<typeof mockStatus, typeof mockStatus | 'completed'> = {
-      assigned: 'enroute_pickup',
-      enroute_pickup: 'arrived_pickup',
-      arrived_pickup: 'picked_up',
-      picked_up: 'enroute_dropoff',
-      enroute_dropoff: 'arrived_dropoff',
-      arrived_dropoff: 'completed',
-      completed: 'completed',
-    };
-    setMockStatus(next[mockStatus] as typeof mockStatus);
-  };
 
   return (
     <View style={styles.container}>
@@ -1875,7 +1841,7 @@ export function MapShell({ onSignOut }: MapShellProps) {
             <MapboxGL.CircleLayer id="courier-location-dot" style={styles.courierCircleDot} />
           </MapboxGL.ShapeSource>
         )}
-        {displayJobs.map((job) => (
+        {jobs.map((job) => (
           <MapboxGL.MarkerView
             key={job.id}
             id={job.id}
@@ -2564,17 +2530,6 @@ export function MapShell({ onSignOut }: MapShellProps) {
                 </Text>
               </Pressable>
             )}
-            {showJobsPanel && (
-              <Pressable
-                style={styles.mockToggleButton}
-                onPress={() => setUseMockJobs((prev) => !prev)}
-                disabled={!canUseMock}
-              >
-                <Text style={styles.toggleButtonText}>
-                  {canUseMock ? (usingMockJobs ? 'Mock on' : 'Mock off') : 'Live'}
-                </Text>
-              </Pressable>
-            )}
             <Pressable
               style={styles.collapseButton}
               onPress={() => setShowJobsPanel((prev) => !prev)}
@@ -2591,23 +2546,6 @@ export function MapShell({ onSignOut }: MapShellProps) {
           >
             {hasActiveJob && jobsView === 'active' ? (
               <>
-                {mockJob && (
-                  <View style={[styles.activePanel, styles.activePanelInline]}>
-                    <Text style={styles.activeTitle}>Active job (mock)</Text>
-                    <Text style={styles.activeMeta}>
-                      {mockJob.title} • {mockStatus.replace('_', ' ')}
-                    </Text>
-                    <Text style={styles.activeMeta}>
-                      {mockJob.pickup.label} → {mockJob.dropoff.label}
-                    </Text>
-                    <Pressable style={styles.actionButton} onPress={advanceMockStatus}>
-                      <Text style={styles.actionButtonText}>
-                        {mockStatus === 'completed' ? 'Completed' : 'Advance status'}
-                      </Text>
-                    </Pressable>
-                  </View>
-                )}
-
                 {liveActiveJob && (
                   <View style={[styles.activePanel, styles.activePanelLive, styles.activePanelInline]}>
                     <Text style={styles.activeTitle}>Active job (live)</Text>
@@ -2752,7 +2690,7 @@ export function MapShell({ onSignOut }: MapShellProps) {
             ) : (
               <>
                 <Text style={styles.sourceBadge}>
-                  {usingMockJobs ? 'Mock data' : `Live jobs (${jobs.length})`}
+                  {`Live jobs (${jobs.length})`}
                 </Text>
                 {!isOnline && (
                   <Text style={styles.jobMeta}>Go online to claim new jobs.</Text>
@@ -2774,7 +2712,7 @@ export function MapShell({ onSignOut }: MapShellProps) {
                     </View>
                   </View>
                 )}
-                {!loading && displayJobs.length === 0 && (
+                {!loading && jobs.length === 0 && (
                   <View style={styles.emptyState}>
                     <Text style={styles.emptyStateTitle}>No jobs yet</Text>
                     <Text style={styles.emptyStateMeta}>
@@ -2784,7 +2722,7 @@ export function MapShell({ onSignOut }: MapShellProps) {
                     </Text>
                   </View>
                 )}
-                {displayJobs.map((job) => (
+                {jobs.map((job) => (
                   <Pressable
                     key={job.id}
                     style={[styles.jobCard, selectedJob?.id === job.id && styles.jobCardSelected]}
@@ -2792,7 +2730,7 @@ export function MapShell({ onSignOut }: MapShellProps) {
                   >
                     <View style={styles.jobHeaderCompact}>
                       <Text style={styles.jobTitle}>
-                        {'title' in job ? job.title : 'Delivery job'}
+                        {job.title || 'Delivery job'}
                       </Text>
                       <Text style={styles.jobPayout}>{getPayoutText(job)}</Text>
                     </View>
@@ -2807,9 +2745,9 @@ export function MapShell({ onSignOut }: MapShellProps) {
                       <View style={styles.jobThumbMeta}>
                         <Text style={styles.jobThumbLabel}>Item</Text>
                         <Text style={styles.jobThumbValue}>
-                          {isLiveJob(job) && job.package?.notes
+                          {job.package?.notes
                             ? job.package.notes
-                            : isLiveJob(job) && job.package?.size
+                            : job.package?.size
                             ? `${job.package.size.toUpperCase()} package`
                             : 'Package'}
                         </Text>
@@ -2819,9 +2757,9 @@ export function MapShell({ onSignOut }: MapShellProps) {
                       {getVisiblePickupLabel(job)} → {getVisibleDropoffLabel(job)}
                     </Text>
                     <Text style={styles.jobMeta}>
-                      {isLiveJob(job) ? `Live • ${getEffectiveStatus(job)}` : 'Mock'}
+                      {`Live • ${getEffectiveStatus(job)}`}
                     </Text>
-                    {selectedJob?.id === job.id && isLiveJob(job) && !isAssignedToMe(job) && (
+                    {selectedJob?.id === job.id && !isAssignedToMe(job) && (
                       <View style={styles.previewInlineRow}>
                         <Pressable
                           onPress={() => {
@@ -2847,86 +2785,70 @@ export function MapShell({ onSignOut }: MapShellProps) {
                         )}
                       </View>
                     )}
-                    {isLiveJob(job) && (
-                      <View style={styles.jobActions}>
-                        {isClaimable(job) && (
-                          <Pressable
-                            style={styles.actionButton}
-                            onPress={() => confirmClaim(job)}
-                            disabled={busyJobId === job.id}
-                          >
-                            {busyJobId === job.id ? (
-                              <ActivityIndicator color="#fff" />
-                            ) : (
-                              <Text style={styles.actionButtonText}>Claim job</Text>
-                            )}
-                          </Pressable>
-                        )}
-                        {isAssignedToMe(job) && getNextStatus(job.status) && (
-                          <Pressable
-                            style={[styles.actionButton, styles.actionButtonAlt]}
-                            onPress={() =>
-                              needsPickupProof(job) || needsDropoffProof(job)
-                                ? (setProofJob(job),
-                                  setProofMode(needsPickupProof(job) ? 'pickup' : 'dropoff'),
-                                  setProofLocation(
-                                    currentLocation
-                                      ? { lat: currentLocation.lat, lng: currentLocation.lng, accuracy: currentAccuracy ?? null }
-                                      : null
-                                  ))
-                                : handleAdvance(job)
+                    <View style={styles.jobActions}>
+                      {isClaimable(job) && (
+                        <Pressable
+                          style={styles.actionButton}
+                          onPress={() => confirmClaim(job)}
+                          disabled={busyJobId === job.id}
+                        >
+                          {busyJobId === job.id ? (
+                            <ActivityIndicator color="#fff" />
+                          ) : (
+                            <Text style={styles.actionButtonText}>Claim job</Text>
+                          )}
+                        </Pressable>
+                      )}
+                      {isAssignedToMe(job) && getNextStatus(job.status) && (
+                        <Pressable
+                          style={[styles.actionButton, styles.actionButtonAlt]}
+                          onPress={() =>
+                            needsPickupProof(job) || needsDropoffProof(job)
+                              ? (setProofJob(job),
+                                setProofMode(needsPickupProof(job) ? 'pickup' : 'dropoff'),
+                                setProofLocation(
+                                  currentLocation
+                                    ? { lat: currentLocation.lat, lng: currentLocation.lng, accuracy: currentAccuracy ?? null }
+                                    : null
+                                ))
+                              : handleAdvance(job)
+                          }
+                          disabled={busyJobId === job.id}
+                        >
+                          {busyJobId === job.id ? (
+                            <ActivityIndicator color="#fff" />
+                          ) : (
+                            <Text style={styles.actionButtonText}>
+                              {needsPickupProof(job)
+                                ? 'Confirm pickup'
+                                : needsDropoffProof(job)
+                                ? 'Complete delivery'
+                                : 'Advance status'}
+                            </Text>
+                          )}
+                        </Pressable>
+                      )}
+                      {job.status !== 'open' && !isAssignedToMe(job) && (
+                        <Text style={styles.jobMeta}>Status: {job.status}</Text>
+                      )}
+                      {jobDetailsEnabled && isAssignedToMe(job) && (
+                        <Pressable
+                          style={[styles.actionButton, styles.actionButtonSecondary]}
+                          onPress={() => {
+                            setDetailJob(job);
+                            if (user?.uid) {
+                              void logCourierEvent({
+                                courierUid: user.uid,
+                                event: 'job_details_open',
+                                jobId: job.id,
+                              });
                             }
-                            disabled={busyJobId === job.id}
-                          >
-                            {busyJobId === job.id ? (
-                              <ActivityIndicator color="#fff" />
-                            ) : (
-                              <Text style={styles.actionButtonText}>
-                                {needsPickupProof(job)
-                                  ? 'Confirm pickup'
-                                  : needsDropoffProof(job)
-                                  ? 'Complete delivery'
-                                  : 'Advance status'}
-                              </Text>
-                            )}
-                          </Pressable>
-                        )}
-                        {job.status !== 'open' && !isAssignedToMe(job) && (
-                          <Text style={styles.jobMeta}>Status: {job.status}</Text>
-                        )}
-                        {jobDetailsEnabled && isAssignedToMe(job) && (
-                          <Pressable
-                            style={[styles.actionButton, styles.actionButtonSecondary]}
-                            onPress={() => {
-                              setDetailJob(job);
-                              if (user?.uid) {
-                                void logCourierEvent({
-                                  courierUid: user.uid,
-                                  event: 'job_details_open',
-                                  jobId: job.id,
-                                });
-                              }
-                            }}
-                          >
-                            <Text style={[styles.actionButtonText, styles.actionButtonTextSecondary]}>Details</Text>
-                          </Pressable>
-                        )}
-                      </View>
-                    )}
-                    {isMockJob(job) && (
-                      <View style={styles.jobActions}>
-                        {mockClaimedId === job.id ? (
-                          <Text style={styles.jobMeta}>Claimed (mock)</Text>
-                        ) : (
-                          <Pressable
-                            style={styles.actionButton}
-                            onPress={() => setMockClaimedId(job.id)}
-                          >
-                            <Text style={styles.actionButtonText}>Claim (mock)</Text>
-                          </Pressable>
-                        )}
-                      </View>
-                    )}
+                          }}
+                        >
+                          <Text style={[styles.actionButtonText, styles.actionButtonTextSecondary]}>Details</Text>
+                        </Pressable>
+                      )}
+                    </View>
                   </Pressable>
                 ))}
               </>
@@ -3882,12 +3804,6 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 10,
     backgroundColor: '#1F2937',
-  },
-  mockToggleButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 10,
-    backgroundColor: '#111827',
   },
   collapseButton: {
     paddingHorizontal: 10,
