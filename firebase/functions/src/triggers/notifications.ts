@@ -144,8 +144,20 @@ async function sendNotification(uid: string, message: {
   try {
     const userDoc = await db.collection("users").doc(uid).get();
     const userData = userDoc.data() || {};
-    const prefs = userData.notificationPreferences || {};
-    const shouldSend = prefs[preferenceKey] !== false;
+    const globalPrefs = userData.notificationPreferences || {};
+    const courierPrefs = userData.courierProfile?.notificationPrefs || {};
+    const mappedCourierPref =
+      preferenceKey === "deliveryUpdates"
+        ? courierPrefs.jobOffers
+        : preferenceKey === "nearbyCourierAlerts"
+        ? courierPrefs.jobOffers
+        : preferenceKey === "marketing"
+        ? courierPrefs.reminders
+        : undefined;
+    const shouldSend =
+      mappedCourierPref !== undefined
+        ? mappedCourierPref !== false
+        : globalPrefs[preferenceKey] !== false;
     if (!shouldSend) {
       console.log(`Notifications disabled for ${uid} (${preferenceKey})`);
       return;

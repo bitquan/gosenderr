@@ -23,7 +23,13 @@ import { useOpenJobs } from '../hooks/useOpenJobs';
 import { useAuth } from '../hooks/useAuth';
 import { useFeatureFlags } from '../hooks/useFeatureFlags';
 import type { Job } from '../types/job';
-import { claimJob, updateJobStatus } from '../lib/jobs';
+import {
+  claimJob,
+  getTokenPolicy,
+  getTokenWalletSummary,
+  tokenCreateCheckoutSession,
+  updateJobStatus,
+} from '../lib/jobs';
 import { addDoc, collection, doc, onSnapshot, orderBy, query, serverTimestamp, Timestamp, updateDoc, where } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
@@ -139,10 +145,22 @@ export function MapShell({ onSignOut }: MapShellProps) {
     serviceRadius: '10',
     packagesEnabled: true,
     foodEnabled: false,
+    payoutMode: 'cash' as 'cash' | 'token',
+    acceptTokenPayoutJobs: true,
     identityDocUrl: '',
     identityStatus: 'missing',
     avatarUrl: '',
   });
+  const [notificationPrefs, setNotificationPrefs] = useState({
+    jobOffers: true,
+    payoutUpdates: true,
+    reminders: true,
+  });
+  const [tokenWallet, setTokenWallet] = useState<{ available: number; reserved: number } | null>(null);
+  const [tokenPolicy, setTokenPolicy] = useState<any | null>(null);
+  const [tokenWalletLoading, setTokenWalletLoading] = useState(false);
+  const [tokenWalletError, setTokenWalletError] = useState<string | null>(null);
+  const [tokenCheckoutBusy, setTokenCheckoutBusy] = useState(false);
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
@@ -470,6 +488,40 @@ export function MapShell({ onSignOut }: MapShellProps) {
   }, [pushEnabled, user?.uid, addPushLog, addInboxItem]);
 
   useEffect(() => {
+    if (!pushEnabled) return;
+
+    const handleOpened = (remoteMessage: any, source: 'opened' | 'initial') => {
+      const title = remoteMessage?.notification?.title || 'New notification';
+      const body = remoteMessage?.notification?.body || 'You have a new update.';
+      addPushLog(`${source === 'initial' ? 'Launch' : 'Opened'} push: ${title}`);
+      setJobAlert(title);
+      setJobAlertBody(body);
+      addInboxItem(title, body);
+      setJobAlertActive(true);
+      setTimeout(() => {
+        setJobAlertActive(false);
+        setJobAlert(null);
+        setJobAlertBody(null);
+      }, 3500);
+    };
+
+    const unsubscribe = messaging().onNotificationOpenedApp((remoteMessage) => {
+      handleOpened(remoteMessage, 'opened');
+    });
+
+    void messaging()
+      .getInitialNotification()
+      .then((remoteMessage) => {
+        if (remoteMessage) handleOpened(remoteMessage, 'initial');
+      })
+      .catch((error) => {
+        addPushLog(`Initial push read error: ${(error as any)?.message || error}`);
+      });
+
+    return () => unsubscribe();
+  }, [pushEnabled, addInboxItem, addPushLog]);
+
+  useEffect(() => {
     const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, {
@@ -617,9 +669,17 @@ export function MapShell({ onSignOut }: MapShellProps) {
         serviceRadius: String(data?.courierProfile?.serviceRadius || prev.serviceRadius),
         packagesEnabled: Boolean(data?.courierProfile?.workModes?.packagesEnabled ?? prev.packagesEnabled),
         foodEnabled: Boolean(data?.courierProfile?.workModes?.foodEnabled ?? prev.foodEnabled),
+        payoutMode: (data?.courierProfile?.payoutMode === 'token' ? 'token' : 'cash'),
+        acceptTokenPayoutJobs: data?.courierProfile?.acceptTokenPayoutJobs !== false,
         identityDocUrl: data?.courierProfile?.identityDocUrl || prev.identityDocUrl,
         identityStatus: data?.courierProfile?.identityStatus || prev.identityStatus,
         avatarUrl: data?.courierProfile?.avatarUrl || data?.photoURL || prev.avatarUrl,
+      }));
+      setNotificationPrefs((prev) => ({
+        ...prev,
+        jobOffers: data?.courierProfile?.notificationPrefs?.jobOffers ?? prev.jobOffers,
+        payoutUpdates: data?.courierProfile?.notificationPrefs?.payoutUpdates ?? prev.payoutUpdates,
+        reminders: data?.courierProfile?.notificationPrefs?.reminders ?? prev.reminders,
       }));
       void loadQueue<any>(LOCATION_QUEUE_KEY).then((items) => {
         void loadQueue<any>(STATUS_QUEUE_KEY).then((statusItems) => {
@@ -1035,6 +1095,14 @@ export function MapShell({ onSignOut }: MapShellProps) {
         'courierProfile.serviceRadius': Number.isNaN(radius) ? 10 : radius,
         'courierProfile.workModes.packagesEnabled': profileForm.packagesEnabled,
         'courierProfile.workModes.foodEnabled': profileForm.foodEnabled,
+        'courierProfile.payoutMode': profileForm.payoutMode,
+        'courierProfile.acceptTokenPayoutJobs': profileForm.acceptTokenPayoutJobs,
+        'courierProfile.notificationPrefs': notificationPrefs,
+        notificationPreferences: {
+          deliveryUpdates: notificationPrefs.jobOffers,
+          nearbyCourierAlerts: notificationPrefs.jobOffers,
+          marketing: notificationPrefs.reminders,
+        },
         updatedAt: serverTimestamp(),
       });
     } catch (err: any) {
@@ -1112,6 +1180,53 @@ export function MapShell({ onSignOut }: MapShellProps) {
       });
     } catch (err: any) {
       setRateCardError(err?.message ?? 'Failed to update work mode');
+    }
+  };
+
+  const refreshTokenWallet = useCallback(async () => {
+    if (!user?.uid) return;
+    setTokenWalletLoading(true);
+    try {
+      const [policy, wallet] = await Promise.all([
+        getTokenPolicy(),
+        getTokenWalletSummary(),
+      ]);
+      setTokenPolicy(policy);
+      setTokenWallet({ available: wallet.available, reserved: wallet.reserved });
+      setTokenWalletError(null);
+    } catch (error: any) {
+      setTokenWalletError(error?.message || 'Unable to sync token wallet');
+    } finally {
+      setTokenWalletLoading(false);
+    }
+  }, [user?.uid]);
+
+  useEffect(() => {
+    if (!showProfile || !user?.uid) return;
+    void refreshTokenWallet();
+  }, [showProfile, user?.uid, refreshTokenWallet]);
+
+  const handleTokenTopUp = async () => {
+    if (!user?.uid || !tokenPolicy?.enabled || !Array.isArray(tokenPolicy?.packs)) return;
+    const firstActivePack = tokenPolicy.packs.find((pack: any) => pack?.active !== false) || tokenPolicy.packs[0];
+    if (!firstActivePack?.id) return;
+
+    setTokenCheckoutBusy(true);
+    try {
+      const idempotencyKey = `native_token_checkout_${Date.now()}`;
+      const session = await tokenCreateCheckoutSession(
+        firstActivePack.id,
+        'https://gosenderr.com/senderr/token/success',
+        'https://gosenderr.com/senderr/token/cancel',
+        idempotencyKey,
+      );
+      if (session?.url) {
+        await Linking.openURL(session.url);
+      }
+    } catch (error: any) {
+      setTokenWalletError(error?.message || 'Unable to start token checkout');
+    } finally {
+      setTokenCheckoutBusy(false);
     }
   };
   const isClaimable = (job: Job) =>
@@ -2314,6 +2429,88 @@ export function MapShell({ onSignOut }: MapShellProps) {
                 onPress={() => setProfileForm((prev) => ({ ...prev, foodEnabled: !prev.foodEnabled }))}
               >
                 <Text style={styles.receiptButtonText}>Food</Text>
+              </Pressable>
+            </View>
+
+            <Text style={styles.payoutsTitle}>Payout Mode</Text>
+            <View style={styles.receiptActions}>
+              <Pressable
+                style={[styles.receiptButton, profileForm.payoutMode === 'cash' && styles.receiptButtonPrimary]}
+                onPress={() => setProfileForm((prev) => ({ ...prev, payoutMode: 'cash' }))}
+              >
+                <Text style={styles.receiptButtonText}>Cash</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.receiptButton, profileForm.payoutMode === 'token' && styles.receiptButtonPrimary]}
+                onPress={() => setProfileForm((prev) => ({ ...prev, payoutMode: 'token' }))}
+              >
+                <Text style={styles.receiptButtonText}>Token Wallet</Text>
+              </Pressable>
+            </View>
+
+            <View style={styles.receiptActions}>
+              <Pressable
+                style={[styles.receiptButton, profileForm.acceptTokenPayoutJobs && styles.receiptButtonPrimary]}
+                onPress={() =>
+                  setProfileForm((prev) => ({
+                    ...prev,
+                    acceptTokenPayoutJobs: !prev.acceptTokenPayoutJobs,
+                  }))
+                }
+              >
+                <Text style={styles.receiptButtonText}>
+                  {profileForm.acceptTokenPayoutJobs ? 'Token payout jobs: On' : 'Token payout jobs: Off'}
+                </Text>
+              </Pressable>
+            </View>
+
+            {profileForm.payoutMode === 'token' && (
+              <View style={styles.receiptCard}>
+                <Text style={styles.payoutsTitle}>Token Wallet</Text>
+                {tokenWalletLoading ? (
+                  <Text style={styles.stripeStatus}>Loading wallet…</Text>
+                ) : (
+                  <Text style={styles.stripeStatus}>
+                    Available: {tokenWallet?.available ?? 0} • Reserved: {tokenWallet?.reserved ?? 0}
+                  </Text>
+                )}
+                {tokenWalletError && <Text style={styles.receiptError}>{tokenWalletError}</Text>}
+                <View style={styles.receiptActions}>
+                  <Pressable style={styles.receiptButton} onPress={() => void refreshTokenWallet()}>
+                    <Text style={styles.receiptButtonText}>Refresh Wallet</Text>
+                  </Pressable>
+                  <Pressable
+                    style={[styles.receiptButton, styles.receiptButtonPrimary]}
+                    onPress={handleTokenTopUp}
+                    disabled={tokenCheckoutBusy}
+                  >
+                    <Text style={styles.receiptButtonText}>
+                      {tokenCheckoutBusy ? 'Opening…' : 'Buy Tokens'}
+                    </Text>
+                  </Pressable>
+                </View>
+              </View>
+            )}
+
+            <Text style={styles.payoutsTitle}>Notifications</Text>
+            <View style={styles.receiptActions}>
+              <Pressable
+                style={[styles.receiptButton, notificationPrefs.jobOffers && styles.receiptButtonPrimary]}
+                onPress={() => setNotificationPrefs((prev) => ({ ...prev, jobOffers: !prev.jobOffers }))}
+              >
+                <Text style={styles.receiptButtonText}>Job Offers {notificationPrefs.jobOffers ? 'On' : 'Off'}</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.receiptButton, notificationPrefs.payoutUpdates && styles.receiptButtonPrimary]}
+                onPress={() => setNotificationPrefs((prev) => ({ ...prev, payoutUpdates: !prev.payoutUpdates }))}
+              >
+                <Text style={styles.receiptButtonText}>Payout Updates {notificationPrefs.payoutUpdates ? 'On' : 'Off'}</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.receiptButton, notificationPrefs.reminders && styles.receiptButtonPrimary]}
+                onPress={() => setNotificationPrefs((prev) => ({ ...prev, reminders: !prev.reminders }))}
+              >
+                <Text style={styles.receiptButtonText}>Reminders {notificationPrefs.reminders ? 'On' : 'Off'}</Text>
               </Pressable>
             </View>
 

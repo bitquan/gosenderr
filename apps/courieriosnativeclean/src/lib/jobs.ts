@@ -12,6 +12,67 @@ type ClaimCourierJobCallableRequest = {
   jobId: string;
   agreedFee: number;
   idempotencyKey: string;
+  reservationId?: string;
+};
+
+type TokenPolicyResponse = {
+  enabled?: boolean;
+  costs?: Record<string, number>;
+  packs?: Array<{
+    id: string;
+    tokens: number;
+    priceUsd: number;
+    stripePriceId?: string;
+    name?: string;
+    active?: boolean;
+  }>;
+};
+
+type TokenWalletSummaryResponse = {
+  uid: string;
+  available: number;
+  reserved: number;
+  lifetimePurchased?: number;
+  lifetimeSpent?: number;
+  lifetimeAdjusted?: number;
+};
+
+type TokenReserveCallableRequest = {
+  action: string;
+  amount: number;
+  idempotencyKey: string;
+  metadata?: Record<string, unknown>;
+  walletType?: 'utility';
+};
+
+type TokenReserveCallableResponse = {
+  reservationId: string;
+  wallet?: TokenWalletSummaryResponse;
+};
+
+type TokenReleaseCallableRequest = {
+  reservationId: string;
+  idempotencyKey: string;
+  reason: string;
+  walletType?: 'utility';
+};
+
+type TokenReleaseCallableResponse = {
+  reservationId: string;
+  wallet?: TokenWalletSummaryResponse;
+};
+
+type TokenCheckoutSessionResponse = {
+  sessionId: string;
+  url: string;
+};
+
+type TokenClaimReadiness = {
+  useTokenMode: boolean;
+  canClaim: boolean;
+  requiredTokens: number;
+  availableTokens: number;
+  reason?: string;
 };
 
 type AdvanceCourierJobStatusCallableRequest = {
@@ -55,6 +116,24 @@ async function callClaimCourierJob(payload: ClaimCourierJobCallableRequest): Pro
   await callable(payload);
 }
 
+async function callTokenReserve(payload: TokenReserveCallableRequest): Promise<TokenReserveCallableResponse> {
+  const callable = httpsCallable<TokenReserveCallableRequest, TokenReserveCallableResponse>(
+    getFunctionsInstance(),
+    'tokenReserve',
+  );
+  const result = await callable(payload);
+  return result.data;
+}
+
+async function callTokenRelease(payload: TokenReleaseCallableRequest): Promise<TokenReleaseCallableResponse> {
+  const callable = httpsCallable<TokenReleaseCallableRequest, TokenReleaseCallableResponse>(
+    getFunctionsInstance(),
+    'tokenRelease',
+  );
+  const result = await callable(payload);
+  return result.data;
+}
+
 async function callAdvanceCourierJobStatus(payload: AdvanceCourierJobStatusCallableRequest): Promise<void> {
   const callable = httpsCallable<AdvanceCourierJobStatusCallableRequest, { success: boolean }>(
     getFunctionsInstance(),
@@ -77,11 +156,32 @@ export async function claimJob(job: Job, _courierUid: string, agreedFee?: number
     throw new Error('Cannot claim job: agreed fee is missing.');
   }
 
-  await callClaimCourierJob({
-    jobId: job.id,
-    agreedFee: resolvedFee,
-    idempotencyKey: createIdempotencyKey('claim', job.id),
-  });
+  const tokenPolicy = await getTokenPolicy();
+  const requiredTokens = getRequiredTokensForJob(job, tokenPolicy);
+
+  let reservationId: string | undefined;
+  if (requiredTokens > 0 && tokenPolicy.enabled !== false) {
+    const reserveResult = await reserveJobClaimTokens(job.id, requiredTokens);
+    reservationId = reserveResult.reservationId;
+  }
+
+  try {
+    await callClaimCourierJob({
+      jobId: job.id,
+      agreedFee: resolvedFee,
+      idempotencyKey: createIdempotencyKey('claim', job.id),
+      reservationId,
+    });
+  } catch (error) {
+    if (reservationId) {
+      try {
+        await releaseJobClaimTokens(reservationId, 'claim_failed');
+      } catch {
+        // Best effort rollback; original claim error should surface.
+      }
+    }
+    throw error;
+  }
 
   return { queued: false };
 }
@@ -231,4 +331,119 @@ export async function completePickupWithProof(params: {
   });
 
   await updateJobStatus(jobId, 'picked_up');
+}
+
+export async function getTokenPolicy(): Promise<TokenPolicyResponse> {
+  const callable = httpsCallable<unknown, TokenPolicyResponse>(
+    getFunctionsInstance(),
+    'getTokenPolicy',
+  );
+  const result = await callable({});
+  return result.data;
+}
+
+export async function getTokenWalletSummary(): Promise<TokenWalletSummaryResponse> {
+  const callable = httpsCallable<{ walletType: 'utility' }, TokenWalletSummaryResponse>(
+    getFunctionsInstance(),
+    'getTokenWalletSummary',
+  );
+  const result = await callable({ walletType: 'utility' });
+  return result.data;
+}
+
+export async function tokenCreateCheckoutSession(
+  packId: string,
+  successUrl: string,
+  cancelUrl: string,
+  idempotencyKey: string,
+): Promise<TokenCheckoutSessionResponse> {
+  const callable = httpsCallable<
+    { packId: string; successUrl: string; cancelUrl: string; idempotencyKey: string },
+    TokenCheckoutSessionResponse
+  >(getFunctionsInstance(), 'tokenCreateCheckoutSession');
+
+  const result = await callable({
+    packId,
+    successUrl,
+    cancelUrl,
+    idempotencyKey,
+  });
+
+  return result.data;
+}
+
+export function getRequiredTokensForJob(job: Job, policy: TokenPolicyResponse): number {
+  const costs = policy?.costs || {};
+  const size = String(job?.package?.size || '').trim().toLowerCase();
+  const flags = (job as any)?.package?.flags || {};
+
+  const isHeavy =
+    size === 'xl' ||
+    flags.needsSuvVan === true ||
+    flags.heavyTwoPerson === true ||
+    flags.oversized === true;
+
+  const toNumber = (value: unknown) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+
+  if (isHeavy) {
+    return Math.max(toNumber(costs.jobUnlockHeavy ?? costs.jobUnlockPriority ?? costs.jobUnlockStandard ?? costs.claimJob ?? 0), 0);
+  }
+
+  if (size === 'large') {
+    return Math.max(toNumber(costs.jobUnlockPriority ?? costs.jobUnlockStandard ?? costs.claimJob ?? 0), 0);
+  }
+
+  return Math.max(toNumber(costs.jobUnlockStandard ?? costs.claimJob ?? 0), 0);
+}
+
+export async function getTokenClaimReadiness(_uid: string, job: Job): Promise<TokenClaimReadiness> {
+  const [policy, wallet] = await Promise.all([
+    getTokenPolicy(),
+    getTokenWalletSummary(),
+  ]);
+
+  const requiredTokens = getRequiredTokensForJob(job, policy);
+  const availableTokens = Math.max(wallet?.available ?? 0, 0);
+  const useTokenMode = Boolean(policy?.enabled) && requiredTokens > 0;
+  const canClaim = !useTokenMode || availableTokens >= requiredTokens;
+
+  return {
+    useTokenMode,
+    canClaim,
+    requiredTokens,
+    availableTokens,
+    reason: canClaim
+      ? undefined
+      : `Insufficient tokens. Requires ${requiredTokens}, available ${availableTokens}.`,
+  };
+}
+
+export async function reserveJobClaimTokens(
+  jobId: string,
+  amount: number,
+): Promise<TokenReserveCallableResponse> {
+  const idempotencyKey = `claim_preview_${sanitizeIdPart(jobId)}_${Date.now()}_${idempotencyCounter + 1}`;
+  return callTokenReserve({
+    action: 'jobUnlockPreview',
+    amount,
+    idempotencyKey,
+    metadata: { jobId },
+    walletType: 'utility',
+  });
+}
+
+export async function releaseJobClaimTokens(
+  reservationId: string,
+  reason: string,
+): Promise<TokenReleaseCallableResponse> {
+  const idempotencyKey = `claim_preview_release_${sanitizeIdPart(reservationId)}_${Date.now()}_${idempotencyCounter + 1}`;
+  return callTokenRelease({
+    reservationId,
+    idempotencyKey,
+    reason,
+    walletType: 'utility',
+  });
 }
