@@ -68,6 +68,13 @@ export function useFeatureFlags() {
               autoCancel: true,
               refunds: true,
             },
+            senderrplaceV2: {
+              enabled: false,
+              ads: false,
+              badges: false,
+              bookingLinks: false,
+              adminControls: false,
+            },
             ui: {
               modernStyling: true,
               darkMode: true,
