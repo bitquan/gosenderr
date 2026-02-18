@@ -3,6 +3,8 @@ import { Job } from '../shared/types';
 import { claimJob, submitCourierJobProof, updateJobStatus } from '@/lib/v2/jobs';
 import { captureGPSPhoto } from '@/lib/gpsPhoto';
 import { calcMiles } from '@/lib/v2/pricing';
+import { db } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 import type { JobStatus } from '../shared/types';
 
 interface CourierJobActionsProps {
@@ -67,24 +69,36 @@ export function CourierJobActions({
   };
 
   const handleUpdateStatus = async () => {
-    if (!nextStatus) return;
+    if (!isAssignedToCourier) return;
 
-    if (job.paymentStatus !== 'authorized') {
+    const latestJobSnap = await getDoc(doc(db, 'jobs', job.id));
+    const latestJobData = latestJobSnap.exists() ? (latestJobSnap.data() as { status?: JobStatus; paymentStatus?: string }) : null;
+    const currentStatus = latestJobData?.status ?? job.status;
+    const currentPaymentStatus = latestJobData?.paymentStatus ?? job.paymentStatus;
+    const resolvedNextStatus = getNextStatus(currentStatus);
+
+    if (!resolvedNextStatus) {
+      alert('This job is not in a state that can be advanced right now. Please refresh.');
+      onJobUpdated?.();
+      return;
+    }
+
+    if (currentPaymentStatus !== 'authorized') {
       alert('Payment not authorized yet. Please wait for customer payment before starting this trip.');
       return;
     }
 
     onProcessingChange?.(true);
     try {
-      if (nextStatus === 'picked_up') {
+      if (resolvedNextStatus === 'picked_up') {
         await handleProofCapture('pickup');
       }
 
-      if (nextStatus === 'completed') {
+      if (resolvedNextStatus === 'completed') {
         await handleProofCapture('dropoff');
       }
 
-      const result = await updateJobStatus(job.id, nextStatus);
+      const result = await updateJobStatus(job.id, resolvedNextStatus);
       if (result.queued) {
         alert('Status update queued (offline). It will sync automatically.');
       }
