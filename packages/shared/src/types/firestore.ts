@@ -128,6 +128,7 @@ export interface CourierDocuments {
 export interface CourierProfile {
   status: CourierStatus;
   isOnline?: boolean;
+  acceptTokenPayoutJobs?: boolean;
   vehicleType: VehicleType;
   vehicleDetails?: VehicleDetails;
   workModes: WorkModes;

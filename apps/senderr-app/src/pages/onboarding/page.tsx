@@ -331,6 +331,7 @@ const OnboardingPage = () => {
 
       const courierProfile: CourierProfileSnapshot & {
         isOnline: boolean;
+        acceptTokenPayoutJobs: boolean;
         documents: UploadedDocument[];
         status: CourierProfileStatus;
         appliedAt: ReturnType<typeof serverTimestamp>;
@@ -340,6 +341,7 @@ const OnboardingPage = () => {
         vehicleType,
         serviceRadius,
         isOnline: false,
+        acceptTokenPayoutJobs: true,
         phone,
         workModes: {
           packagesEnabled,

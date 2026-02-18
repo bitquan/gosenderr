@@ -94,6 +94,7 @@ export default function CourierSettingsPage() {
   });
   const [savingPreferences, setSavingPreferences] = useState(false);
   const [payoutMode, setPayoutMode] = useState<"cash" | "token">("cash");
+  const [acceptTokenPayoutJobs, setAcceptTokenPayoutJobs] = useState(true);
   const [paymentLinks, setPaymentLinks] = useState({
     cashApp: "",
     venmo: "",
@@ -148,6 +149,7 @@ export default function CourierSettingsPage() {
               setServiceRadius(Number(profile.serviceRadius || 10));
               setTaxState(profile.taxState || userDoc.data().taxState || '');
               setPayoutMode(profile.payoutMode === "token" ? "token" : "cash");
+              setAcceptTokenPayoutJobs(profile.acceptTokenPayoutJobs !== false);
               setPaymentLinks({
                 cashApp: profile.paymentLinks?.cashApp || "",
                 venmo: profile.paymentLinks?.venmo || "",
@@ -270,6 +272,7 @@ export default function CourierSettingsPage() {
         'courierProfile.serviceRadius': serviceRadius,
         'courierProfile.taxState': taxState,
         'courierProfile.payoutMode': payoutMode,
+        'courierProfile.acceptTokenPayoutJobs': acceptTokenPayoutJobs,
         'courierProfile.paymentLinks': paymentLinks,
         'courierProfile.notificationPrefs': notificationPrefs,
         updatedAt: serverTimestamp(),
@@ -702,6 +705,20 @@ export default function CourierSettingsPage() {
                       <p className="text-xs text-emerald-100 mt-1">Loading wallet...</p>
                     ) : (
                       <>
+                        <div className="mt-2 rounded-md border border-emerald-300/30 bg-slate-950/40 px-3 py-2">
+                          <label className="inline-flex items-center gap-2 text-xs text-emerald-100">
+                            <input
+                              type="checkbox"
+                              checked={acceptTokenPayoutJobs}
+                              onChange={(event) => setAcceptTokenPayoutJobs(event.target.checked)}
+                              className="h-4 w-4 rounded border-emerald-300/40 bg-slate-950/40 text-emerald-500 focus:ring-emerald-400"
+                            />
+                            Accept jobs requiring token payout settlement
+                          </label>
+                          <p className="mt-1 text-[11px] text-emerald-100/90">
+                            Turn this off to hide and block token-payout jobs from your claim flow.
+                          </p>
+                        </div>
                         {tokenCheckoutMessage && (
                           <p className="text-xs text-emerald-100 mt-2 rounded-md bg-slate-950/40 border border-emerald-300/30 px-2 py-1">
                             {tokenCheckoutMessage}

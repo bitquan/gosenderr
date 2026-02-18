@@ -32,18 +32,26 @@ interface TokenWalletSummary {
   updatedAt?: FirebaseFirestore.Timestamp | FirebaseFirestore.FieldValue | Date;
 }
 
+type WalletType = "utility" | "payout";
+
+interface WalletSummaryRequest {
+  walletType?: WalletType;
+}
+
 interface TokenReserveRequest {
   action?: string;
   amount?: number;
   idempotencyKey?: string;
   metadata?: Record<string, unknown>;
   targetUid?: string;
+  walletType?: WalletType;
 }
 
 interface TokenCommitRequest {
   reservationId?: string;
   idempotencyKey?: string;
   metadata?: Record<string, unknown>;
+  walletType?: WalletType;
 }
 
 interface TokenReleaseRequest {
@@ -51,6 +59,7 @@ interface TokenReleaseRequest {
   idempotencyKey?: string;
   reason?: string;
   metadata?: Record<string, unknown>;
+  walletType?: WalletType;
 }
 
 interface TokenRefundRequest {
@@ -59,6 +68,7 @@ interface TokenRefundRequest {
   idempotencyKey?: string;
   reason?: string;
   metadata?: Record<string, unknown>;
+  walletType?: WalletType;
 }
 
 interface AdjustTokenWalletBalanceRequest {
@@ -79,6 +89,7 @@ interface TokenCreateCheckoutSessionRequest {
 interface AdminGetTokenWalletViewRequest {
   targetUid?: string;
   targetEmail?: string;
+  walletType?: WalletType;
 }
 
 interface AdminListTokenLedgerRequest {
@@ -88,6 +99,7 @@ interface AdminListTokenLedgerRequest {
   type?: string;
   includeCashFeeOnly?: boolean;
   limit?: number;
+  walletType?: WalletType;
 }
 
 const DEFAULT_TOKEN_POLICY: TokenPolicy = {
@@ -128,6 +140,30 @@ function requireNonEmptyString(value: unknown, fieldName: string): string {
 function txDocId(type: string, idempotencyKey: string): string {
   const safe = idempotencyKey.replace(/[^a-zA-Z0-9_-]/g, "_");
   return `${type}_${safe}`;
+}
+
+function normalizeWalletType(value: unknown): WalletType {
+  return value === "payout" ? "payout" : "utility";
+}
+
+function getWalletCollections(walletType: WalletType): {
+  wallets: string;
+  reservations: string;
+  transactions: string;
+} {
+  if (walletType === "payout") {
+    return {
+      wallets: "payoutTokenWallets",
+      reservations: "payoutTokenReservations",
+      transactions: "payoutTokenTransactions",
+    };
+  }
+
+  return {
+    wallets: "tokenWallets",
+    reservations: "tokenReservations",
+    transactions: "tokenTransactions",
+  };
 }
 
 function walletFromSnapshot(
@@ -266,7 +302,7 @@ export const getTokenPolicy = functions.https.onCall(async (_data, context) => {
   return getTokenPolicyInternal();
 });
 
-export const getTokenWalletSummary = functions.https.onCall(async (_data, context) => {
+export const getTokenWalletSummary = functions.https.onCall(async (data: WalletSummaryRequest, context) => {
   if (!context.auth?.uid) {
     throw new functions.https.HttpsError(
       'unauthenticated',
@@ -275,9 +311,31 @@ export const getTokenWalletSummary = functions.https.onCall(async (_data, contex
   }
 
   const uid = context.auth.uid;
-  const walletRef = admin.firestore().doc(`tokenWallets/${uid}`);
+  const walletType = normalizeWalletType(data?.walletType);
+  const collections = getWalletCollections(walletType);
+  const walletRef = admin.firestore().doc(`${collections.wallets}/${uid}`);
   const walletSnap = await walletRef.get();
-  return walletFromSnapshot(uid, walletSnap);
+  return {
+    ...walletFromSnapshot(uid, walletSnap),
+    walletType,
+  };
+});
+
+export const getPayoutTokenWalletSummary = functions.https.onCall(async (_data, context) => {
+  if (!context.auth?.uid) {
+    throw new functions.https.HttpsError(
+      'unauthenticated',
+      'Authentication required',
+    );
+  }
+
+  const uid = context.auth.uid;
+  const walletRef = admin.firestore().doc(`payoutTokenWallets/${uid}`);
+  const walletSnap = await walletRef.get();
+  return {
+    ...walletFromSnapshot(uid, walletSnap),
+    walletType: 'payout' as const,
+  };
 });
 
 export const adminGetTokenWalletView = functions.https.onCall(
@@ -296,12 +354,15 @@ export const adminGetTokenWalletView = functions.https.onCall(
       throw new functions.https.HttpsError('invalid-argument', 'targetUid or targetEmail is required');
     }
 
-    const walletSnap = await admin.firestore().doc(`tokenWallets/${target.uid}`).get();
+    const walletType = normalizeWalletType(data?.walletType);
+    const collections = getWalletCollections(walletType);
+    const walletSnap = await admin.firestore().doc(`${collections.wallets}/${target.uid}`).get();
     const wallet = walletFromSnapshot(target.uid, walletSnap);
 
     return {
       user: target,
       wallet,
+      walletType,
     };
   },
 );
@@ -324,14 +385,16 @@ export const adminListTokenLedger = functions.https.onCall(
     const actionFilter = typeof data?.action === 'string' ? data.action.trim() : '';
     const typeFilter = typeof data?.type === 'string' ? data.type.trim() : '';
     const includeCashFeeOnly = Boolean(data?.includeCashFeeOnly);
+    const walletType = normalizeWalletType(data?.walletType);
+    const collections = getWalletCollections(walletType);
 
     const target = await resolveAdminTarget(data?.targetUid, data?.targetEmail);
     const db = admin.firestore();
 
-    let queryRef: FirebaseFirestore.Query = db.collection('tokenTransactions').limit(fetchSize);
+    let queryRef: FirebaseFirestore.Query = db.collection(collections.transactions).limit(fetchSize);
     if (target?.uid) {
       queryRef = db
-        .collection('tokenTransactions')
+        .collection(collections.transactions)
         .where('uid', '==', target.uid)
         .limit(fetchSize);
     }
@@ -368,6 +431,7 @@ export const adminListTokenLedger = functions.https.onCall(
       target: target || null,
       count: filtered.length,
       rows: filtered,
+      walletType,
     };
   },
 );
@@ -383,15 +447,17 @@ export const tokenReserve = functions.https.onCall(
     const action = requireNonEmptyString(data?.action, 'action');
     const amount = normalizeNumber(data?.amount);
     const targetUid = data?.targetUid?.trim() || actorUid;
+    const walletType = normalizeWalletType(data?.walletType);
+    const collections = getWalletCollections(walletType);
 
     if (!Number.isFinite(amount) || amount <= 0) {
       throw new functions.https.HttpsError('invalid-argument', 'amount must be a positive number');
     }
 
     const db = admin.firestore();
-    const reservationRef = db.doc(`tokenReservations/${idempotencyKey}`);
-    const txRef = db.doc(`tokenTransactions/${txDocId('reserve', idempotencyKey)}`);
-    const walletRef = db.doc(`tokenWallets/${targetUid}`);
+    const reservationRef = db.doc(`${collections.reservations}/${idempotencyKey}`);
+    const txRef = db.doc(`${collections.transactions}/${txDocId('reserve', idempotencyKey)}`);
+    const walletRef = db.doc(`${collections.wallets}/${targetUid}`);
 
     let wallet: TokenWalletSummary = {
       uid: targetUid,
@@ -436,6 +502,7 @@ export const tokenReserve = functions.https.onCall(
 
       tx.set(reservationRef, {
         uid: targetUid,
+        walletType,
         action,
         amount,
         status: 'reserved',
@@ -448,6 +515,7 @@ export const tokenReserve = functions.https.onCall(
 
       tx.set(txRef, {
         uid: targetUid,
+        walletType,
         type: 'reserve',
         actorType: 'courier',
         action,
@@ -461,6 +529,7 @@ export const tokenReserve = functions.https.onCall(
 
     return {
       reservationId: idempotencyKey,
+      walletType,
       wallet,
     };
   },
@@ -475,10 +544,12 @@ export const tokenCommit = functions.https.onCall(
     const actorUid = context.auth.uid;
     const reservationId = requireNonEmptyString(data?.reservationId, 'reservationId');
     const idempotencyKey = requireNonEmptyString(data?.idempotencyKey, 'idempotencyKey');
+    const walletType = normalizeWalletType(data?.walletType);
+    const collections = getWalletCollections(walletType);
 
     const db = admin.firestore();
-    const reservationRef = db.doc(`tokenReservations/${reservationId}`);
-    const txRef = db.doc(`tokenTransactions/${txDocId('commit', idempotencyKey)}`);
+    const reservationRef = db.doc(`${collections.reservations}/${reservationId}`);
+    const txRef = db.doc(`${collections.transactions}/${txDocId('commit', idempotencyKey)}`);
 
     let resultWallet: TokenWalletSummary | null = null;
 
@@ -491,7 +562,7 @@ export const tokenCommit = functions.https.onCall(
       if (txSnap.exists) {
         const existingReservation = await tx.get(reservationRef);
         const uid = (existingReservation.data()?.uid as string) || actorUid;
-        const existingWallet = await tx.get(db.doc(`tokenWallets/${uid}`));
+        const existingWallet = await tx.get(db.doc(`${collections.wallets}/${uid}`));
         resultWallet = walletFromSnapshot(uid, existingWallet);
         return;
       }
@@ -505,6 +576,7 @@ export const tokenCommit = functions.https.onCall(
         amount: number;
         action: string;
         status: string;
+        walletType?: WalletType;
       };
 
       if (reservation.uid !== actorUid) {
@@ -518,7 +590,7 @@ export const tokenCommit = functions.https.onCall(
         );
       }
 
-      const walletRef = db.doc(`tokenWallets/${reservation.uid}`);
+      const walletRef = db.doc(`${collections.wallets}/${reservation.uid}`);
       const walletSnap = await tx.get(walletRef);
       const current = walletFromSnapshot(reservation.uid, walletSnap);
       const nextReserved = current.reserved - reservation.amount;
@@ -551,6 +623,7 @@ export const tokenCommit = functions.https.onCall(
 
       tx.set(txRef, {
         uid: reservation.uid,
+        walletType,
         type: 'commit',
         actorType: 'courier',
         action: reservation.action,
@@ -564,6 +637,7 @@ export const tokenCommit = functions.https.onCall(
 
     return {
       reservationId,
+      walletType,
       wallet: resultWallet,
     };
   },
@@ -578,10 +652,12 @@ export const tokenRelease = functions.https.onCall(
     const actorUid = context.auth.uid;
     const reservationId = requireNonEmptyString(data?.reservationId, 'reservationId');
     const idempotencyKey = requireNonEmptyString(data?.idempotencyKey, 'idempotencyKey');
+    const walletType = normalizeWalletType(data?.walletType);
+    const collections = getWalletCollections(walletType);
 
     const db = admin.firestore();
-    const reservationRef = db.doc(`tokenReservations/${reservationId}`);
-    const txRef = db.doc(`tokenTransactions/${txDocId('release', idempotencyKey)}`);
+    const reservationRef = db.doc(`${collections.reservations}/${reservationId}`);
+    const txRef = db.doc(`${collections.transactions}/${txDocId('release', idempotencyKey)}`);
 
     let resultWallet: TokenWalletSummary | null = null;
 
@@ -604,6 +680,7 @@ export const tokenRelease = functions.https.onCall(
         amount: number;
         action: string;
         status: string;
+        walletType?: WalletType;
       };
 
       if (reservation.uid !== actorUid) {
@@ -620,7 +697,7 @@ export const tokenRelease = functions.https.onCall(
         );
       }
 
-      const walletRef = db.doc(`tokenWallets/${reservation.uid}`);
+      const walletRef = db.doc(`${collections.wallets}/${reservation.uid}`);
       const walletSnap = await tx.get(walletRef);
       const current = walletFromSnapshot(reservation.uid, walletSnap);
 
@@ -655,6 +732,7 @@ export const tokenRelease = functions.https.onCall(
 
       tx.set(txRef, {
         uid: reservation.uid,
+        walletType,
         type: 'release',
         actorType: 'courier',
         action: reservation.action,
@@ -668,6 +746,7 @@ export const tokenRelease = functions.https.onCall(
 
     return {
       reservationId,
+      walletType,
       wallet: resultWallet,
     };
   },
@@ -682,6 +761,8 @@ export const tokenRefund = functions.https.onCall(
     const actorUid = context.auth.uid;
     const idempotencyKey = requireNonEmptyString(data?.idempotencyKey, 'idempotencyKey');
     const reservationId = requireNonEmptyString(data?.reservationId, 'reservationId');
+    const walletType = normalizeWalletType(data?.walletType);
+    const collections = getWalletCollections(walletType);
 
     const policy = await getTokenPolicyInternal();
     const isAdmin = await verifyAdmin(actorUid);
@@ -693,8 +774,8 @@ export const tokenRefund = functions.https.onCall(
     }
 
     const db = admin.firestore();
-    const txRef = db.doc(`tokenTransactions/${txDocId('refund', idempotencyKey)}`);
-    const reservationRef = db.doc(`tokenReservations/${reservationId}`);
+    const txRef = db.doc(`${collections.transactions}/${txDocId('refund', idempotencyKey)}`);
+    const reservationRef = db.doc(`${collections.reservations}/${reservationId}`);
 
     let walletResult: TokenWalletSummary | null = null;
 
@@ -707,7 +788,7 @@ export const tokenRefund = functions.https.onCall(
       if (existingRefundSnap.exists) {
         const reservationData = reservationSnap.data() as { uid?: string } | undefined;
         const uid = reservationData?.uid || actorUid;
-        const walletSnap = await tx.get(db.doc(`tokenWallets/${uid}`));
+        const walletSnap = await tx.get(db.doc(`${collections.wallets}/${uid}`));
         walletResult = walletFromSnapshot(uid, walletSnap);
         return;
       }
@@ -736,7 +817,7 @@ export const tokenRefund = functions.https.onCall(
 
       const amount = data?.amount && data.amount > 0 ? data.amount : reservation.amount;
 
-      const walletRef = db.doc(`tokenWallets/${reservation.uid}`);
+      const walletRef = db.doc(`${collections.wallets}/${reservation.uid}`);
       const walletSnap = await tx.get(walletRef);
       const current = walletFromSnapshot(reservation.uid, walletSnap);
 
@@ -766,6 +847,7 @@ export const tokenRefund = functions.https.onCall(
 
       tx.set(txRef, {
         uid: reservation.uid,
+        walletType,
         type: 'refund',
         actorType: isAdmin ? 'admin' : 'courier',
         action: reservation.action,
@@ -780,6 +862,7 @@ export const tokenRefund = functions.https.onCall(
 
     return {
       reservationId,
+      walletType,
       wallet: walletResult,
     };
   },

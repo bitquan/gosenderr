@@ -253,6 +253,10 @@ function CheckoutForm({
   item: MarketplaceItem;
   onSummaryChange: (summary: CheckoutSummary) => void;
 }) {
+  const [searchParams] = useSearchParams();
+  const requestedRail = (searchParams.get('paymentRail') || searchParams.get('externalProvider') || '').toLowerCase();
+  const requiresTokenPayoutOptIn =
+    requestedRail === 'external' || requestedRail.startsWith('external_') || requestedRail === 'token';
   const { user } = useAuth();
   const navigate = useNavigate();
   const { flags } = useFeatureFlags();
@@ -394,6 +398,9 @@ function CheckoutForm({
             : workModes?.packagesEnabled ?? true;
 
           if (!workModeEnabled) return;
+          if (requiresTokenPayoutOptIn && courier.courierProfile.acceptTokenPayoutJobs === false) {
+            return;
+          }
           if (!courier.courierProfile.currentLocation) return;
 
           const courierToPickup = calcMiles(
@@ -468,6 +475,7 @@ function CheckoutForm({
     courierEtaMinutes,
     pickupLat,
     pickupLng,
+    requiresTokenPayoutOptIn,
     isFoodItem,
     item,
     platformSettings,

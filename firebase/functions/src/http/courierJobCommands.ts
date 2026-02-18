@@ -153,6 +153,47 @@ function getExpectedNextStatus(currentStatus: JobStatus): JobStatus | null {
   return transitions[currentStatus] ?? null;
 }
 
+function isExternalRailValue(value: unknown): boolean {
+  const normalized = String(value || "").trim().toLowerCase();
+  if (!normalized) return false;
+  if (normalized === "external" || normalized.startsWith("external_")) return true;
+  return ["cash", "cash_app", "cashapp", "venmo", "zelle", "paypal", "apple_cash"].includes(normalized);
+}
+
+function requiresTokenPayoutOptIn(
+  jobData: Record<string, unknown>,
+  marketplaceOrderData?: Record<string, unknown>,
+): boolean {
+  if (jobData.tokenPayoutRequired === true) return true;
+  if (marketplaceOrderData?.tokenPayoutRequired === true) return true;
+
+  const directRailSignals = [
+    jobData.paymentRail,
+    jobData.externalPaymentProvider,
+    jobData.paymentMethodId,
+    jobData.deliveryFeeRail,
+    jobData.payoutRail,
+    marketplaceOrderData?.paymentRail,
+    marketplaceOrderData?.externalPaymentProvider,
+    marketplaceOrderData?.paymentMethodId,
+    marketplaceOrderData?.deliveryFeeRail,
+    marketplaceOrderData?.payoutRail,
+  ];
+
+  if (directRailSignals.some((value) => isExternalRailValue(value))) {
+    return true;
+  }
+
+  const tokensCharged = Number(
+    jobData.tokensCharged ||
+      marketplaceOrderData?.tokensCharged ||
+      marketplaceOrderData?.deliveryFeeTokensCharged ||
+      0,
+  );
+
+  return Number.isFinite(tokensCharged) && tokensCharged > 0;
+}
+
 async function isAdminCaller(uid: string, token: Record<string, unknown> = {}): Promise<boolean> {
   if (token.admin === true || token.role === "admin") {
     return true;
@@ -330,7 +371,11 @@ export const claimCourierJob = functions.https.onCall(
           throw new functions.https.HttpsError("failed-precondition", "Courier profile not found");
         }
 
-        const jobData = jobSnap.data() as { status?: JobStatus; courierUid?: string | null };
+        const jobData = jobSnap.data() as {
+          status?: JobStatus;
+          courierUid?: string | null;
+          marketplaceOrderId?: string;
+        } & Record<string, unknown>;
         const status = jobData?.status;
 
         if (!status || !(status === "open" || status === "pending")) {
@@ -347,7 +392,10 @@ export const claimCourierJob = functions.https.onCall(
           );
         }
 
-        const userData = userSnap.data() as { role?: string; courierProfile?: { status?: string } };
+        const userData = userSnap.data() as {
+          role?: string;
+          courierProfile?: { status?: string; acceptTokenPayoutJobs?: boolean };
+        };
         const isCourierRole = userData?.role === "courier" || context.auth?.token?.courier === true;
         const isApprovedCourier = userData?.courierProfile?.status === "approved";
 
@@ -355,6 +403,30 @@ export const claimCourierJob = functions.https.onCall(
           throw new functions.https.HttpsError(
             "permission-denied",
             "Courier approval required to claim jobs",
+          );
+        }
+
+        const marketplaceOrderId =
+          typeof jobData.marketplaceOrderId === "string"
+            ? jobData.marketplaceOrderId
+            : "";
+        const marketplaceOrderData = marketplaceOrderId
+          ? ((await tx.get(db.doc(`marketplaceOrders/${marketplaceOrderId}`))).data() as
+              | Record<string, unknown>
+              | undefined)
+          : undefined;
+
+        const jobRequiresTokenPayoutOptIn = requiresTokenPayoutOptIn(
+          jobData,
+          marketplaceOrderData,
+        );
+        const allowsTokenPayoutJobs =
+          userData?.courierProfile?.acceptTokenPayoutJobs !== false;
+
+        if (jobRequiresTokenPayoutOptIn && !allowsTokenPayoutJobs) {
+          throw new functions.https.HttpsError(
+            "failed-precondition",
+            "This job requires token payout settlement. Enable token-payout jobs in Settings to claim it.",
           );
         }
 

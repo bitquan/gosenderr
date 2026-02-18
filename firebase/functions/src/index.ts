@@ -37,6 +37,7 @@ export {
 } from "./http/courierJobCommands";
 export {
 	getTokenPolicy,
+	getPayoutTokenWalletSummary,
 	tokenReserve,
 	tokenCommit,
 	tokenRelease,
