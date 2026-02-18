@@ -107,6 +107,28 @@ async function seedAdminData() {
       orderStatusEmail: true,
       vendorNewOrderEmail: true,
       courierJobAssignedEmail: true
+    },
+    // Token policy for token wallet / packs (seeded for local dev & emulators)
+    tokenPolicy: {
+      enabled: true,
+      finalSale: true,
+      tokenValueUsd: 1,
+      costs: {
+        jobUnlockStandard: 1,
+        jobUnlockPriority: 2,
+        jobUnlockHeavy: 3,
+        listingPublish: 2,
+        cashFee: 1,
+        adBoost24h: 5,
+        adBoost7d: 25,
+        adBoost30d: 80,
+        adFeatured7d: 120,
+      },
+      packs: [
+        { id: 'starter_10', tokens: 10, priceUsd: 10 },
+        { id: 'starter_100', name: 'Starter 100', tokens: 100, priceUsd: 10, active: true },
+        { id: 'pro_250', name: 'Pro 250', tokens: 250, priceUsd: 25, active: true }
+      ]
     }
   };
 
