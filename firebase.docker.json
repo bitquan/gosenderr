@@ -5,6 +5,11 @@
   "storage": {
     "rules": "firebase/storage.rules"
   },
+  "functions": {
+    "source": "firebase/functions",
+    "codebase": "default",
+    "runtime": "nodejs20"
+  },
   "emulators": {
     "auth": { "host": "0.0.0.0", "port": 9099 },
     "firestore": { "host": "0.0.0.0", "port": 8080 },

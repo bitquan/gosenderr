@@ -192,6 +192,18 @@ jobs:
       - name: Verify docs
         run: pnpm verify:docs
 
+  ios-canonical:
+    name: iOS Canonical Guard
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate canonical iOS app layout
+        run: bash scripts/check-ios-canonical.sh
+
   typecheck:
     name: Type Check
     needs: [changes]

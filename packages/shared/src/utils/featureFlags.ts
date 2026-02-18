@@ -4,6 +4,10 @@ type UnknownRecord = Record<string, unknown>;
 
 import { DEFAULT_FEATURE_FLAGS } from "../types/firestore";
 
+// Note: `DEFAULT_FEATURE_FLAGS` is defined in `types/firestore.ts` as the
+// canonical source of truth for feature flag defaults. We import it here so
+// utility normalization uses the same shape and avoids duplicate exports.
+
 function asRecord(input: unknown): UnknownRecord {
   if (!input || typeof input !== "object") {
     return {};
@@ -60,10 +64,11 @@ export function normalizeFeatureFlags(
   options: NormalizeOptions = {},
 ): FeatureFlags {
   const root = asRecord(rawFlags);
-  const senderrplaceSeed = asRecord(
-    root.senderrplaceV2 ?? root.senderrplace ?? {},
-  );
+  // Support both modern `senderrplaceV2` and older `senderrplace` namespaces.
+  const senderrplaceSeed = asRecord(root.senderrplaceV2 ?? root.senderrplace ?? {});
 
+  // Backfill legacy flat aliases into the nested senderrplace namespace
+  // (handles either `senderrplace.` or `senderrplaceV2.` mapped paths).
   for (const [legacyKey, mappedPath] of Object.entries(
     FEATURE_FLAG_DEPRECATED_ALIASES,
   )) {
@@ -95,6 +100,7 @@ export function normalizeFeatureFlags(
     admin: normalizeSection(root.admin, DEFAULT_FEATURE_FLAGS.admin),
     advanced: normalizeSection(root.advanced, DEFAULT_FEATURE_FLAGS.advanced),
     ui: normalizeSection(root.ui, DEFAULT_FEATURE_FLAGS.ui),
+    // Use modern senderrplaceV2 namespace which is defined in types/firestore
     senderrplaceV2: normalizeSection(
       senderrplaceSeed,
       DEFAULT_FEATURE_FLAGS.senderrplaceV2,

@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../../hooks/useAuth'
 import { doc, getDoc, updateDoc, setDoc, serverTimestamp } from 'firebase/firestore'
-import { db } from '../../../lib/firebase/client'
+import { db, storage } from '../../../lib/firebase/client'
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { SellerBadge, SellerBadgeList } from '../../../components/marketplace/SellerBadge'
 import { SellerBadge as BadgeType } from '../../../types/marketplace'
 
@@ -17,7 +18,17 @@ export default function SellerSettingsPage() {
     instantPayoutEnabled: false,
     returnsAccepted: false,
     returnWindowDays: 7 as 7 | 14 | 30,
-    shippingGuarantee: undefined as '24h' | '48h' | '3-5days' | undefined
+    shareExactPickupLocation: false,
+    shippingGuarantee: undefined as '24h' | '48h' | '3-5days' | undefined,
+    paymentLinks: {
+      cashApp: '',
+      venmo: '',
+      zelle: '',
+      paypal: '',
+      cashAppQrUrl: '',
+      venmoQrUrl: '',
+      paypalQrUrl: '',
+    }
   })
   const [badges, setBadges] = useState<BadgeType[]>([])
   const [sellerScore, setSellerScore] = useState(0)
@@ -64,7 +75,19 @@ export default function SellerSettingsPage() {
             instantPayoutEnabled: sellerProfile.instantPayoutEnabled || false,
             returnsAccepted: sellerProfile.returnsAccepted || false,
             returnWindowDays: sellerProfile.returnWindowDays || 7,
-            shippingGuarantee: sellerProfile.shippingGuarantee
+            shareExactPickupLocation:
+              sellerProfile.shareExactPickupLocation === true ||
+              sellerProfile?.localSellingConfig?.shareExactPickupLocation === true,
+            shippingGuarantee: sellerProfile.shippingGuarantee,
+            paymentLinks: {
+              cashApp: sellerProfile.paymentLinks?.cashApp || '',
+              venmo: sellerProfile.paymentLinks?.venmo || '',
+              zelle: sellerProfile.paymentLinks?.zelle || '',
+              paypal: sellerProfile.paymentLinks?.paypal || '',
+              cashAppQrUrl: sellerProfile.paymentLinks?.cashAppQrUrl || '',
+              venmoQrUrl: sellerProfile.paymentLinks?.venmoQrUrl || '',
+              paypalQrUrl: sellerProfile.paymentLinks?.paypalQrUrl || '',
+            }
           })
           setBadges(sellerProfile.badges || [])
           setSellerScore(sellerProfile.sellerScore || 0)
@@ -104,8 +127,11 @@ export default function SellerSettingsPage() {
         'sellerProfile.instantPayoutEnabled': settings.instantPayoutEnabled,
         'sellerProfile.returnsAccepted': settings.returnsAccepted,
         'sellerProfile.returnWindowDays': settings.returnWindowDays,
+        'sellerProfile.shareExactPickupLocation': settings.shareExactPickupLocation,
+        'sellerProfile.localSellingConfig.shareExactPickupLocation': settings.shareExactPickupLocation,
         'sellerProfile.shippingGuarantee': settings.shippingGuarantee || null,
-        'sellerProfile.badges': earnedBadges // Save the calculated badges array
+        'sellerProfile.badges': earnedBadges, // Save the calculated badges array
+        'sellerProfile.paymentLinks': settings.paymentLinks || null,
       })
       
       alert('Settings saved successfully!')
@@ -190,6 +216,42 @@ export default function SellerSettingsPage() {
 
         {/* Settings Cards */}
         <div className="space-y-6">
+          {/* Pickup Privacy */}
+          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">📍 Pickup Address Privacy</h3>
+                <p className="text-sm text-gray-600 mb-3">
+                  Control how much of your pickup location customers can see before booking.
+                </p>
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm text-gray-700">
+                  {settings.shareExactPickupLocation ? (
+                    <p>
+                      Customers can see your full pickup address on listing delivery flows.
+                    </p>
+                  ) : (
+                    <p>
+                      Customers only see approximate location (city + ZIP). Your exact address stays private.
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="ml-4">
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={settings.shareExactPickupLocation}
+                    onChange={(e) =>
+                      setSettings({ ...settings, shareExactPickupLocation: e.target.checked })
+                    }
+                    className="sr-only peer"
+                  />
+                  <div className="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-purple-600"></div>
+                </label>
+              </div>
+            </div>
+          </div>
+
           {/* Buyer Protection */}
           <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
             <div className="flex items-start justify-between mb-4">
@@ -369,7 +431,116 @@ export default function SellerSettingsPage() {
             </div>
           </div>
         </div>
+          {/* Payment Links & QR */}
+          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200 mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">💸 Payment Links & QR</h3>
+            <p className="text-sm text-gray-600 mb-4">Add external payment handles (Cash App, Venmo, Zelle, PayPal) and optional QR images for buyers.</p>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Cash App Handle</label>
+                <input
+                  value={settings.paymentLinks.cashApp}
+                  onChange={(e) => setSettings({ ...settings, paymentLinks: { ...settings.paymentLinks, cashApp: e.target.value } })}
+                  placeholder="$yourhandle or cash.app/$handle"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                />
+                {settings.paymentLinks.cashAppQrUrl && (
+                  <img src={settings.paymentLinks.cashAppQrUrl} alt="Cash App QR" className="h-20 mt-2 rounded-md border" />
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file || !user) return;
+                    const storageRef = ref(storage, `sellerPaymentQrs/${user.uid}/${Date.now()}_${file.name}`);
+                    try {
+                      await uploadBytes(storageRef, file);
+                      const url = await getDownloadURL(storageRef);
+                      setSettings({ ...settings, paymentLinks: { ...settings.paymentLinks, cashAppQrUrl: url } });
+                    } catch (err) {
+                      console.error('Failed to upload Cash App QR:', err);
+                      alert('Upload failed');
+                    }
+                  }}
+                  className="mt-2"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Venmo URL</label>
+                <input
+                  value={settings.paymentLinks.venmo}
+                  onChange={(e) => setSettings({ ...settings, paymentLinks: { ...settings.paymentLinks, venmo: e.target.value } })}
+                  placeholder="https://venmo.com/username"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                />
+                {settings.paymentLinks.venmoQrUrl && (
+                  <img src={settings.paymentLinks.venmoQrUrl} alt="Venmo QR" className="h-20 mt-2 rounded-md border" />
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file || !user) return;
+                    const storageRef = ref(storage, `sellerPaymentQrs/${user.uid}/${Date.now()}_${file.name}`);
+                    try {
+                      await uploadBytes(storageRef, file);
+                      const url = await getDownloadURL(storageRef);
+                      setSettings({ ...settings, paymentLinks: { ...settings.paymentLinks, venmoQrUrl: url } });
+                    } catch (err) {
+                      console.error('Failed to upload Venmo QR:', err);
+                      alert('Upload failed');
+                    }
+                  }}
+                  className="mt-2"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Zelle Instructions</label>
+                <input
+                  value={settings.paymentLinks.zelle}
+                  onChange={(e) => setSettings({ ...settings, paymentLinks: { ...settings.paymentLinks, zelle: e.target.value } })}
+                  placeholder="Email or phone for Zelle"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">PayPal / PayPal.me</label>
+                <input
+                  value={settings.paymentLinks.paypal}
+                  onChange={(e) => setSettings({ ...settings, paymentLinks: { ...settings.paymentLinks, paypal: e.target.value } })}
+                  placeholder="https://paypal.me/username or PayPal link"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                />
+                {settings.paymentLinks.paypalQrUrl && (
+                  <img src={settings.paymentLinks.paypalQrUrl} alt="PayPal QR" className="h-20 mt-2 rounded-md border" />
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file || !user) return;
+                    const storageRef = ref(storage, `sellerPaymentQrs/${user.uid}/${Date.now()}_${file.name}`);
+                    try {
+                      await uploadBytes(storageRef, file);
+                      const url = await getDownloadURL(storageRef);
+                      setSettings({ ...settings, paymentLinks: { ...settings.paymentLinks, paypalQrUrl: url } });
+                    } catch (err) {
+                      console.error('Failed to upload PayPal QR:', err);
+                      alert('Upload failed');
+                    }
+                  }}
+                  className="mt-2"
+                />
+              </div>
+            </div>
+          </div>
         {/* Save Button */}
         <div className="mt-8 flex justify-end">
           <button

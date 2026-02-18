@@ -6,8 +6,12 @@ export interface GeocodedAddress {
 }
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || '';
+const MAPBOX_TOKEN_PLACEHOLDER = 'your_mapbox_token';
+const HAS_MAPBOX_TOKEN =
+  MAPBOX_TOKEN.trim().length > 0 &&
+  MAPBOX_TOKEN.trim() !== MAPBOX_TOKEN_PLACEHOLDER;
 
-if (!MAPBOX_TOKEN) {
+if (!HAS_MAPBOX_TOKEN) {
   console.warn('VITE_MAPBOX_TOKEN is not set');
 }
 
@@ -22,7 +26,7 @@ export async function geocodeAddress(
     return [];
   }
 
-  if (!MAPBOX_TOKEN) {
+  if (!HAS_MAPBOX_TOKEN) {
     console.error("Mapbox token not configured");
     return [];
   }

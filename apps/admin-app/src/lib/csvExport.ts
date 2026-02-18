@@ -19,7 +19,7 @@ export function exportToCSV(data: any[], filename: string) {
         const stringValue = String(value ?? '')
         const escaped = stringValue.replace(/"/g, '""')
         // Wrap in quotes if contains comma, newline, or quotes
-        return /[,\n"]/.test(escaped) ? `"${escaped}"` : escaped
+        return /[,\n"]/.test(escaped) ? `"${escaped}"` : escaped;
       }).join(',')
     )
   ].join('\n')
