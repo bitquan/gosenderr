@@ -2,6 +2,8 @@ import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import { verifyAdmin } from "../utils/adminUtils";
 
+const IOS_APNS_TOPIC = process.env.IOS_APNS_TOPIC || "com.gosenderr.courier";
+
 interface SendTestPushRequest {
   token?: string;
   userId?: string;
@@ -55,7 +57,7 @@ export const sendTestPush = functions.https.onCall(
 
     const title = data?.title?.trim() || "GoSenderr Test";
     const body = data?.body?.trim() || "Admin test push";
-    const apnsTopic = data?.apnsTopic?.trim();
+    const apnsTopic = data?.apnsTopic?.trim() || IOS_APNS_TOPIC;
 
     try {
       const baseMessage: admin.messaging.Message = {

@@ -2,6 +2,7 @@ import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 
 const db = admin.firestore();
+const IOS_APNS_TOPIC = process.env.IOS_APNS_TOPIC || "com.gosenderr.courier";
 
 /**
  * Auto-cancel jobs that have been open for too long without being claimed
@@ -76,7 +77,7 @@ async function sendCancellationNotification(jobId: string, customerUid: string) 
   try {
     // Get customer's FCM token
     const userDoc = await db.collection("users").doc(customerUid).get();
-    const fcmToken = userDoc.data()?.fcmToken;
+    const fcmToken = userDoc.data()?.courierProfile?.fcmToken || userDoc.data()?.fcmToken;
 
     if (!fcmToken) {
       console.log(`No FCM token for customer ${customerUid}`);
@@ -84,7 +85,7 @@ async function sendCancellationNotification(jobId: string, customerUid: string) 
     }
 
     // Send notification
-    const message = {
+    const message: admin.messaging.Message = {
       notification: {
         title: "Delivery Cancelled",
         body: "Your delivery was cancelled because no courier was available. Please try again.",
@@ -94,6 +95,19 @@ async function sendCancellationNotification(jobId: string, customerUid: string) 
         jobId,
       },
       token: fcmToken,
+      apns: {
+        headers: {
+          "apns-push-type": "alert",
+          "apns-priority": "10",
+          "apns-topic": IOS_APNS_TOPIC,
+        },
+        payload: {
+          aps: {
+            sound: "default",
+            badge: 1,
+          },
+        },
+      },
     };
 
     await admin.messaging().send(message);

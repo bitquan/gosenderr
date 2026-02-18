@@ -2,6 +2,7 @@ import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 
 const db = admin.firestore();
+const IOS_APNS_TOPIC = process.env.IOS_APNS_TOPIC || "com.gosenderr.courier";
 
 /**
  * Send notifications when job status changes
@@ -170,14 +171,29 @@ async function sendNotification(uid: string, message: {
       return;
     }
 
-    await admin.messaging().send({
+    const payload: admin.messaging.Message = {
       notification: {
         title: message.title,
         body: message.body,
       },
       data: message.data,
       token: fcmToken,
-    });
+      apns: {
+        headers: {
+          "apns-push-type": "alert",
+          "apns-priority": "10",
+          "apns-topic": IOS_APNS_TOPIC,
+        },
+        payload: {
+          aps: {
+            sound: "default",
+            badge: 1,
+          },
+        },
+      },
+    };
+
+    await admin.messaging().send(payload);
 
     console.log(`Sent notification to ${uid}: ${message.title}`);
   } catch (error) {
