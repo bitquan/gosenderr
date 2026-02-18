@@ -25,9 +25,11 @@ import { useFeatureFlags } from '../hooks/useFeatureFlags';
 import type { Job } from '../types/job';
 import {
   claimJob,
+  getRequiredTokensForJob,
   getTokenPolicy,
   tokenFinalizeCheckoutSession,
   getTokenWalletSummary,
+  reserveJobClaimTokens,
   tokenCreateCheckoutSession,
   updateJobStatus,
 } from '../lib/jobs';
@@ -163,6 +165,8 @@ export function MapShell({ onSignOut }: MapShellProps) {
   const [tokenWalletLoading, setTokenWalletLoading] = useState(false);
   const [tokenWalletError, setTokenWalletError] = useState<string | null>(null);
   const [tokenCheckoutBusy, setTokenCheckoutBusy] = useState(false);
+  const [jobUnlockBusyId, setJobUnlockBusyId] = useState<string | null>(null);
+  const [unlockedJobReservations, setUnlockedJobReservations] = useState<Record<string, string>>({});
   const tokenCheckoutFinalizeBusyRef = useRef(false);
   const appStateStatusRef = useRef<AppStateStatus>((AppState?.currentState as AppStateStatus) || 'active');
   const [profileSaving, setProfileSaving] = useState(false);
@@ -788,7 +792,7 @@ export function MapShell({ onSignOut }: MapShellProps) {
     return status !== 'completed' && status !== 'cancelled';
   };
   const isAssignedToMe = (job: Job) => !!user?.uid && job.courierUid === user.uid;
-  const canRevealDetails = (job: Job) => isAssignedToMe(job);
+  const canRevealDetails = (job: Job) => isAssignedToMe(job) || Boolean(unlockedJobReservations[job.id]);
   const getVisibleJobTitle = (job: Job) =>
     canRevealDetails(job)
       ? (job.title || 'Delivery job')
@@ -1760,8 +1764,21 @@ export function MapShell({ onSignOut }: MapShellProps) {
     if (!user?.uid) return;
     setError(null);
     setBusyJobId(job.id);
+    const unlockedReservationId = unlockedJobReservations[job.id];
     try {
-      await claimJob(job, user.uid, job.agreedFee ?? undefined);
+      await claimJob(
+        job,
+        user.uid,
+        job.agreedFee ?? undefined,
+        unlockedReservationId ? { reservationId: unlockedReservationId } : undefined,
+      );
+      if (unlockedReservationId) {
+        setUnlockedJobReservations((prev) => {
+          const next = { ...prev };
+          delete next[job.id];
+          return next;
+        });
+      }
       await logCourierEvent({
         courierUid: user.uid,
         event: 'job_claimed',
@@ -1771,6 +1788,38 @@ export function MapShell({ onSignOut }: MapShellProps) {
       setError(err?.message ?? 'Failed to claim job');
     } finally {
       setBusyJobId(null);
+    }
+  };
+
+  const handleUnlockJobDetails = async (job: Job) => {
+    if (!user?.uid || isAssignedToMe(job) || unlockedJobReservations[job.id]) return;
+    setError(null);
+    setJobUnlockBusyId(job.id);
+    try {
+      let policy = tokenPolicy;
+      if (!policy) {
+        policy = await getTokenPolicy();
+        setTokenPolicy(policy);
+      }
+
+      const requiredTokens = Math.max(getRequiredTokensForJob(job, policy || {}), 0);
+      if (requiredTokens <= 0 || policy?.enabled === false) {
+        setUnlockedJobReservations((prev) => ({ ...prev, [job.id]: '' }));
+        return;
+      }
+
+      const reservation = await reserveJobClaimTokens(job.id, requiredTokens);
+      setUnlockedJobReservations((prev) => ({ ...prev, [job.id]: reservation.reservationId }));
+      if (reservation.wallet) {
+        setTokenWallet({
+          available: reservation.wallet.available,
+          reserved: reservation.wallet.reserved,
+        });
+      }
+    } catch (err: any) {
+      setError(err?.message ?? 'Unable to unlock job details');
+    } finally {
+      setJobUnlockBusyId(null);
     }
   };
 
@@ -1942,6 +1991,22 @@ export function MapShell({ onSignOut }: MapShellProps) {
       setJobsView('jobs');
     }
   }, [hasActiveJob]);
+
+  useEffect(() => {
+    setUnlockedJobReservations((prev) => {
+      const liveJobIds = new Set(jobs.map((job) => job.id));
+      const next: Record<string, string> = {};
+      let changed = false;
+      Object.entries(prev).forEach(([jobId, reservationId]) => {
+        if (liveJobIds.has(jobId)) {
+          next[jobId] = reservationId;
+        } else {
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
+    });
+  }, [jobs]);
 
   const showPickupProofButton = !!liveActiveJob && needsPickupProof(liveActiveJob);
   const showDropoffProofButton = !!liveActiveJob && needsDropoffProof(liveActiveJob);
@@ -3168,6 +3233,21 @@ export function MapShell({ onSignOut }: MapShellProps) {
                       </View>
                     )}
                     <View style={styles.jobActions}>
+                      {!isAssignedToMe(job) && !canRevealDetails(job) && isClaimable(job) && (
+                        <Pressable
+                          style={[styles.actionButton, styles.actionButtonSecondary]}
+                          onPress={() => void handleUnlockJobDetails(job)}
+                          disabled={jobUnlockBusyId === job.id}
+                        >
+                          {jobUnlockBusyId === job.id ? (
+                            <ActivityIndicator color="#fff" />
+                          ) : (
+                            <Text style={[styles.actionButtonText, styles.actionButtonTextSecondary]}>
+                              Unlock details with token
+                            </Text>
+                          )}
+                        </Pressable>
+                      )}
                       {isClaimable(job) && (
                         <Pressable
                           style={styles.actionButton}

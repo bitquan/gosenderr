@@ -163,7 +163,12 @@ async function callSubmitCourierJobProof(payload: SubmitCourierJobProofCallableR
   await callable(payload);
 }
 
-export async function claimJob(job: Job, _courierUid: string, agreedFee?: number): Promise<LifecycleCommandResult> {
+export async function claimJob(
+  job: Job,
+  _courierUid: string,
+  agreedFee?: number,
+  options?: { reservationId?: string },
+): Promise<LifecycleCommandResult> {
   const resolvedFee = Number(agreedFee ?? job.agreedFee ?? 0);
   if (!Number.isFinite(resolvedFee) || resolvedFee <= 0) {
     throw new Error('Cannot claim job: agreed fee is missing.');
@@ -172,8 +177,8 @@ export async function claimJob(job: Job, _courierUid: string, agreedFee?: number
   const tokenPolicy = await getTokenPolicy();
   const requiredTokens = getRequiredTokensForJob(job, tokenPolicy);
 
-  let reservationId: string | undefined;
-  if (requiredTokens > 0 && tokenPolicy.enabled !== false) {
+  let reservationId: string | undefined = options?.reservationId?.trim() || undefined;
+  if (!reservationId && requiredTokens > 0 && tokenPolicy.enabled !== false) {
     const reserveResult = await reserveJobClaimTokens(job.id, requiredTokens);
     reservationId = reserveResult.reservationId;
   }

@@ -47,9 +47,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     if Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") != nil {
       FirebaseApp.configure()
     } else {
+#if DEBUG
       NSLog(
         "Firebase disabled: GoogleService-Info.plist is missing from app bundle for target Senderr."
       )
+#else
+      assertionFailure("GoogleService-Info.plist is required for production/TestFlight builds")
+      NSLog("Firebase disabled in production build because GoogleService-Info.plist is missing")
+#endif
     }
   }
 
@@ -58,7 +63,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     willPresent notification: UNNotification,
     withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
   ) {
-    completionHandler([])
+    if #available(iOS 14.0, *) {
+      completionHandler([.banner, .list, .sound, .badge])
+    } else {
+      completionHandler([.alert, .sound, .badge])
+    }
   }
 
   // MARK: - RCTBridgeDelegate
