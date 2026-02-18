@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   addDoc,
   collection,
@@ -16,7 +15,6 @@ import { db, storage } from "@/lib/firebase";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { useUserDoc } from "@/hooks/v2/useUserDoc";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
-import { StatCard } from "@/components/ui/StatCard";
 
 interface PayoutRecord {
   id: string;
@@ -27,15 +25,7 @@ interface PayoutRecord {
   stripePayoutId?: string;
 }
 
-interface CourierStripeProfile {
-  stripeConnectAccountId?: string;
-  stripeChargesEnabled?: boolean;
-  stripePayoutsEnabled?: boolean;
-  stripeRequirementsDue?: string[];
-  stripeRequirementsPastDue?: string[];
-  stripeAccountStatus?: string;
-  taxState?: string;
-}
+type EarningsTab = "overview" | "payouts" | "taxes";
 
 const DEFAULT_FALLBACK_RATE = 0.05;
 
@@ -149,12 +139,10 @@ const STATE_OPTIONS = [
 ];
 
 export default function EarningsPage() {
-  const navigate = useNavigate();
   const { uid } = useAuthUser();
   const { userDoc } = useUserDoc();
-  const courierProfile =
-    (userDoc?.courierProfile as CourierStripeProfile | undefined) ?? null;
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<EarningsTab>("overview");
   const [payouts, setPayouts] = useState<PayoutRecord[]>([]);
   const [completedJobs, setCompletedJobs] = useState<any[]>([]);
   const [stats, setStats] = useState({
@@ -174,15 +162,7 @@ export default function EarningsPage() {
   const [uploadingReceipt, setUploadingReceipt] = useState(false);
   const [receipts, setReceipts] = useState<any[]>([]);
   const [selectedState, setSelectedState] = useState<string>("");
-  const [stateTaxRates, setStateTaxRates] = useState<Record<string, number>>(
-    {},
-  );
-  const [payoutAmount, setPayoutAmount] = useState("");
-  const [rechargeAmount, setRechargeAmount] = useState("");
-  const [requestingPayout, setRequestingPayout] = useState(false);
-  const [requestingRecharge, setRequestingRecharge] = useState(false);
-  const [requestError, setRequestError] = useState<string | null>(null);
-  const [requestSuccess, setRequestSuccess] = useState<string | null>(null);
+  const [stateTaxRates, setStateTaxRates] = useState<Record<string, number>>({});
 
   useEffect(() => {
     if (!uid) return;
@@ -191,12 +171,14 @@ export default function EarningsPage() {
 
   useEffect(() => {
     if (!uid) return;
-    const userRoot = userDoc as { taxState?: string } | null;
-    const taxState = courierProfile?.taxState || userRoot?.taxState || "";
+    const taxState =
+      (userDoc as any)?.courierProfile?.taxState ||
+      (userDoc as any)?.taxState ||
+      "";
     if (!selectedState && taxState) {
       setSelectedState(taxState);
     }
-  }, [uid, userDoc, selectedState, courierProfile?.taxState]);
+  }, [uid, userDoc, selectedState]);
 
   const loadEarnings = () => {
     if (!uid) return;
@@ -235,12 +217,7 @@ export default function EarningsPage() {
       }, 0);
       const completedCount = completed.length;
       const avgPerJob = completedCount > 0 ? totalEarnings / completedCount : 0;
-      return {
-        totalEarnings,
-        completedCount,
-        avgPerJob,
-        completedJobs: completed,
-      };
+      return { totalEarnings, completedCount, avgPerJob, completedJobs: completed };
     };
 
     const updateState = (merged: any[]) => {
@@ -394,23 +371,10 @@ export default function EarningsPage() {
     return taxable * stateRate;
   }, [stateRate, taxYearTotal, receiptsTotal]);
 
-  const availableBalance = useMemo(() => {
-    return Math.max(0, stats.totalEarnings - stats.pendingPayout);
-  }, [stats.totalEarnings, stats.pendingPayout]);
-
-  const hasStripeAccount = Boolean(courierProfile?.stripeConnectAccountId);
-  const payoutsEnabled = Boolean(courierProfile?.stripePayoutsEnabled);
-  const chargesEnabled = Boolean(courierProfile?.stripeChargesEnabled);
-  const stripeRequirementsDue = courierProfile?.stripeRequirementsDue || [];
-  const stripeRequirementsPastDue =
-    courierProfile?.stripeRequirementsPastDue || [];
-
   const downloadCsv = (filename: string, rows: string[][]) => {
-    const csvContent = rows
-      .map((row) =>
-        row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","),
-      )
-      .join("\n");
+    const csvContent = rows.map((row) => row.map((cell) =>
+      `"${String(cell).replace(/"/g, '""')}"`
+    ).join(",")).join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -466,9 +430,7 @@ export default function EarningsPage() {
       const parsedAmount = Number(receiptAmount || 0);
       const expenseDate = receiptDate ? new Date(receiptDate) : new Date();
       const year = expenseDate.getFullYear();
-      const storagePath = `courier-expenses/${uid}/${year}/${Date.now()}_${
-        receiptFile.name
-      }`;
+      const storagePath = `courier-expenses/${uid}/${year}/${Date.now()}_${receiptFile.name}`;
       const storageRef = ref(storage, storagePath);
       await uploadBytes(storageRef, receiptFile);
       const receiptUrl = await getDownloadURL(storageRef);
@@ -512,109 +474,14 @@ export default function EarningsPage() {
     }
   };
 
-  const parseAmount = (value: string) => {
-    const amount = Number(value);
-    return Number.isFinite(amount) && amount > 0 ? amount : null;
-  };
-
-  const handleConnectStripe = () => {
-    navigate("/onboarding/stripe");
-  };
-
-  const handleRequestPayout = async () => {
-    if (!uid || requestingPayout) return;
-    const amount = parseAmount(payoutAmount);
-    setRequestError(null);
-    setRequestSuccess(null);
-
-    if (!amount) {
-      setRequestError("Enter a valid payout amount.");
-      return;
-    }
-    if (amount > availableBalance) {
-      setRequestError("Amount exceeds available balance.");
-      return;
-    }
-    if (!hasStripeAccount) {
-      setRequestError("Connect Stripe to request payouts.");
-      return;
-    }
-    if (!payoutsEnabled) {
-      setRequestError("Stripe payouts are not enabled yet.");
-      return;
-    }
-
-    setRequestingPayout(true);
-    try {
-      await addDoc(collection(db, "payoutRequests"), {
-        courierUid: uid,
-        amount,
-        requestType: "payout",
-        payoutMethod: "standard",
-        status: "pending",
-        balanceSnapshot: stats.totalEarnings,
-        pendingSnapshot: stats.pendingPayout,
-        requestedAt: serverTimestamp(),
-      });
-      setPayoutAmount("");
-      setRequestSuccess("Payout request submitted.");
-    } catch (error) {
-      console.error("Failed to request payout:", error);
-      setRequestError("Failed to submit payout request.");
-    } finally {
-      setRequestingPayout(false);
-    }
-  };
-
-  const handleRequestRecharge = async () => {
-    if (!uid || requestingRecharge) return;
-    const amount = parseAmount(rechargeAmount);
-    setRequestError(null);
-    setRequestSuccess(null);
-
-    if (!amount) {
-      setRequestError("Enter a valid recharge amount.");
-      return;
-    }
-    if (!hasStripeAccount) {
-      setRequestError("Connect Stripe to request recharges.");
-      return;
-    }
-    if (!chargesEnabled) {
-      setRequestError("Stripe charges are not enabled yet.");
-      return;
-    }
-
-    setRequestingRecharge(true);
-    try {
-      await addDoc(collection(db, "payoutRequests"), {
-        courierUid: uid,
-        amount,
-        requestType: "recharge",
-        payoutMethod: "instant",
-        status: "pending",
-        balanceSnapshot: stats.totalEarnings,
-        pendingSnapshot: stats.pendingPayout,
-        requestedAt: serverTimestamp(),
-      });
-      setRechargeAmount("");
-      setRequestSuccess("Recharge request submitted.");
-    } catch (error) {
-      console.error("Failed to request recharge:", error);
-      setRequestError("Failed to submit recharge request.");
-    } finally {
-      setRequestingRecharge(false);
-    }
-  };
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F8F9FF] p-6">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-purple-950/90 p-6">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">Earnings</h1>
+          <h1 className="text-2xl font-bold text-white mb-6">Earnings</h1>
           <div className="animate-pulse space-y-4">
-            <div className="h-24 bg-gray-200 rounded-xl"></div>
-            <div className="h-24 bg-gray-200 rounded-xl"></div>
+            <div className="h-24 bg-white/20 rounded-xl"></div>
+            <div className="h-24 bg-white/15 rounded-xl"></div>
           </div>
         </div>
       </div>
@@ -622,169 +489,92 @@ export default function EarningsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8F9FF]">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-purple-950/90 text-white">
       <div className="max-w-4xl mx-auto p-4 sm:p-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">💰 Earnings</h1>
+        <h1 className="text-2xl font-bold text-white mb-6">💰 Earnings</h1>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-4 mb-8">
-          <StatCard
-            icon="💵"
-            title="Total Earned"
-            value={`$${stats.totalEarnings.toFixed(2)}`}
-          />
-          <StatCard
-            icon="📦"
-            title="Completed Jobs"
-            value={stats.completedJobs.toString()}
-          />
-          <StatCard
-            icon="⏳"
-            title="Pending Payout"
-            value={`$${stats.pendingPayout.toFixed(2)}`}
-          />
-          <StatCard
-            icon="📊"
-            title="Avg per Job"
-            value={`$${stats.avgPerJob.toFixed(2)}`}
-          />
+        <div className="bg-slate-950/70 border border-white/15 rounded-2xl shadow-lg p-2 mb-6 grid grid-cols-3 gap-2 backdrop-blur">
+          <button
+            onClick={() => setActiveTab("overview")}
+            className={`rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${
+              activeTab === "overview"
+                ? "bg-gradient-to-r from-blue-700 via-blue-600 to-purple-600 text-white"
+                : "text-blue-100 hover:bg-white/10"
+            }`}
+          >
+            Overview
+          </button>
+          <button
+            onClick={() => setActiveTab("payouts")}
+            className={`rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${
+              activeTab === "payouts"
+                ? "bg-gradient-to-r from-blue-700 via-blue-600 to-purple-600 text-white"
+                : "text-blue-100 hover:bg-white/10"
+            }`}
+          >
+            Payouts
+          </button>
+          <button
+            onClick={() => setActiveTab("taxes")}
+            className={`rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${
+              activeTab === "taxes"
+                ? "bg-gradient-to-r from-blue-700 via-blue-600 to-purple-600 text-white"
+                : "text-blue-100 hover:bg-white/10"
+            }`}
+          >
+            Taxes
+          </button>
         </div>
 
-        {/* Payouts & Recharging */}
-        <Card variant="elevated" className="mb-8">
-          <CardHeader>
-            <CardTitle>💳 Payouts & Recharging</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-sm font-semibold text-gray-900">
-                      Stripe Connect
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      Required for payouts and instant recharges.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleConnectStripe}
-                    className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-700"
-                  >
-                    {hasStripeAccount ? "Manage Stripe" : "Connect Stripe"}
-                  </button>
-                </div>
-                <div className="mt-3 text-xs text-gray-600">
-                  <span className="mr-3">
-                    Charges: {chargesEnabled ? "Enabled" : "Pending"}
-                  </span>
-                  <span className="mr-3">
-                    Payouts: {payoutsEnabled ? "Enabled" : "Pending"}
-                  </span>
-                  <span>
-                    Requirements due: {stripeRequirementsDue.length} • Past due: {stripeRequirementsPastDue.length}
-                  </span>
-                </div>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="rounded-xl border border-gray-200 p-4">
-                  <p className="text-sm font-semibold text-gray-900 mb-2">
-                    Standard Payout
-                  </p>
-                  <p className="text-xs text-gray-500 mb-3">
-                    Transfer your available balance to Stripe payouts.
-                  </p>
-                  <p className="text-xs text-gray-600 mb-2">
-                    Available: ${availableBalance.toFixed(2)}
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      min="0"
-                      value={payoutAmount}
-                      onChange={(e) => setPayoutAmount(e.target.value)}
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
-                      placeholder="Amount"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleRequestPayout}
-                      disabled={requestingPayout}
-                      className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"
-                    >
-                      {requestingPayout ? "Submitting..." : "Request"}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="rounded-xl border border-gray-200 p-4">
-                  <p className="text-sm font-semibold text-gray-900 mb-2">
-                    Instant Recharge
-                  </p>
-                  <p className="text-xs text-gray-500 mb-3">
-                    Request an instant payout advance (fees may apply).
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      min="0"
-                      value={rechargeAmount}
-                      onChange={(e) => setRechargeAmount(e.target.value)}
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
-                      placeholder="Amount"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleRequestRecharge}
-                      disabled={requestingRecharge}
-                      className="rounded-lg bg-purple-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"
-                    >
-                      {requestingRecharge ? "Submitting..." : "Recharge"}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {requestError && (
-                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
-                  {requestError}
-                </div>
-              )}
-              {requestSuccess && (
-                <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-700">
-                  {requestSuccess}
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        {/* Stats Grid */}
+        {(activeTab === "overview" || activeTab === "payouts") && (
+        <div className="grid grid-cols-2 gap-4 mb-8">
+          <div className="rounded-xl border border-white/15 bg-white/10 p-4">
+            <p className="text-xs text-blue-100">💵 Total Earned</p>
+            <p className="text-2xl font-bold text-white mt-1">${stats.totalEarnings.toFixed(2)}</p>
+          </div>
+          <div className="rounded-xl border border-white/15 bg-white/10 p-4">
+            <p className="text-xs text-blue-100">📦 Completed Jobs</p>
+            <p className="text-2xl font-bold text-white mt-1">{stats.completedJobs}</p>
+          </div>
+          <div className="rounded-xl border border-white/15 bg-white/10 p-4">
+            <p className="text-xs text-blue-100">⏳ Pending Payout</p>
+            <p className="text-2xl font-bold text-white mt-1">${stats.pendingPayout.toFixed(2)}</p>
+          </div>
+          <div className="rounded-xl border border-white/15 bg-white/10 p-4">
+            <p className="text-xs text-blue-100">📊 Avg per Job</p>
+            <p className="text-2xl font-bold text-white mt-1">${stats.avgPerJob.toFixed(2)}</p>
+          </div>
+        </div>
+        )}
 
         {/* Payout History */}
-        <Card variant="elevated">
+        {(activeTab === "overview" || activeTab === "payouts") && (
+        <Card variant="elevated" className="bg-white/10 border border-white/15 text-white">
           <CardHeader>
             <CardTitle>Payout History</CardTitle>
           </CardHeader>
           <CardContent>
             {payouts.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-blue-100">
                 <p className="text-4xl mb-3">💸</p>
                 <p>No payouts yet</p>
-                <p className="text-sm mt-2">Complete jobs to start earning!</p>
+                <p className="text-sm mt-2">
+                  Complete jobs to start earning!
+                </p>
               </div>
             ) : (
               <div className="space-y-3">
                 {payouts.map((payout) => (
                   <div
                     key={payout.id}
-                    className="flex justify-between items-center p-4 bg-gray-50 rounded-lg"
+                    className="flex justify-between items-center p-4 bg-white/10 border border-white/10 rounded-lg"
                   >
                     <div>
-                      <p className="font-medium text-gray-900">
+                      <p className="font-medium text-white">
                         ${payout.amount.toFixed(2)}
                       </p>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-blue-100">
                         {payout.date?.toDate?.()?.toLocaleDateString() || "—"}
                       </p>
                     </div>
@@ -794,8 +584,8 @@ export default function EarningsPage() {
                           payout.status === "paid"
                             ? "bg-emerald-100 text-emerald-700"
                             : payout.status === "pending"
-                            ? "bg-yellow-100 text-yellow-700"
-                            : "bg-gray-100 text-gray-700"
+                              ? "bg-yellow-100 text-yellow-700"
+                              : "bg-gray-100 text-gray-700"
                         }`}
                       >
                         {payout.status}
@@ -807,21 +597,21 @@ export default function EarningsPage() {
             )}
           </CardContent>
         </Card>
+        )}
 
         {/* Taxes & Receipts */}
-        <Card variant="elevated" className="mt-8">
+        {(activeTab === "overview" || activeTab === "taxes") && (
+        <Card variant="elevated" className="mt-8 bg-white/10 border border-white/15 text-white">
           <CardHeader>
             <CardTitle>🧾 Taxes & Expenses</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
-              <label className="text-sm font-medium text-gray-700">
-                Tax Year
-              </label>
+              <label className="text-sm font-medium text-blue-100">Tax Year</label>
               <select
                 value={taxYear}
                 onChange={(e) => setTaxYear(Number(e.target.value))}
-                className="px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                className="px-3 py-2 border border-white/20 bg-slate-950/40 text-white rounded-lg text-sm"
               >
                 {availableYears.map((year) => (
                   <option key={year} value={year}>
@@ -832,12 +622,12 @@ export default function EarningsPage() {
             </div>
 
             <div className="grid md:grid-cols-3 gap-4 mb-6">
-              <div className="p-4 bg-white border border-gray-200 rounded-xl">
-                <p className="text-xs text-gray-500">State</p>
+              <div className="p-4 bg-white/10 border border-white/15 rounded-xl">
+                <p className="text-xs text-blue-100">State</p>
                 <select
                   value={selectedState}
                   onChange={(e) => handleStateChange(e.target.value)}
-                  className="mt-2 w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                  className="mt-2 w-full px-3 py-2 border border-white/20 bg-slate-950/40 text-white rounded-lg text-sm"
                 >
                   <option value="">Select state</option>
                   {STATE_OPTIONS.map((state) => (
@@ -846,97 +636,89 @@ export default function EarningsPage() {
                     </option>
                   ))}
                 </select>
-                <p className="text-[11px] text-gray-400 mt-2">
-                  Top marginal rates. Override in Firestore at
-                  platformSettings/stateTaxRates.
+                <p className="text-[11px] text-blue-100 mt-2">
+                  Top marginal rates. Override in Firestore at platformSettings/stateTaxRates.
                 </p>
               </div>
-              <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl">
-                <p className="text-xs text-gray-500">Estimated State Tax</p>
+              <div className="p-4 bg-amber-500/15 border border-amber-300/30 rounded-xl">
+                <p className="text-xs text-blue-100">Estimated State Tax</p>
                 <p className="text-2xl font-bold text-amber-600">
-                  {estimatedStateTax == null
-                    ? "—"
-                    : `$${estimatedStateTax.toFixed(2)}`}
+                  {estimatedStateTax == null ? "—" : `$${estimatedStateTax.toFixed(2)}`}
                 </p>
-                <p className="text-[11px] text-gray-400">
+                <p className="text-[11px] text-blue-100">
                   {stateRate == null
                     ? "Select a state"
                     : `Rate: ${(stateRate * 100).toFixed(2)}% (top marginal)`}
                 </p>
               </div>
-              <div className="p-4 bg-gray-50 border border-gray-100 rounded-xl">
-                <p className="text-xs text-gray-500">Disclaimer</p>
-                <p className="text-xs text-gray-500 mt-2">
-                  Estimates are not tax advice. Always consult a tax
-                  professional.
+              <div className="p-4 bg-white/10 border border-white/15 rounded-xl">
+                <p className="text-xs text-blue-100">Disclaimer</p>
+                <p className="text-xs text-blue-100 mt-2">
+                  Estimates are not tax advice. Always consult a tax professional.
                 </p>
               </div>
             </div>
 
             <div className="grid md:grid-cols-3 gap-4 mb-6">
-              <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-xl">
-                <p className="text-xs text-gray-500">Gross Earnings</p>
+              <div className="p-4 bg-emerald-500/15 border border-emerald-300/30 rounded-xl">
+                <p className="text-xs text-blue-100">Gross Earnings</p>
                 <p className="text-2xl font-bold text-emerald-600">
                   ${taxYearTotal.toFixed(2)}
                 </p>
-                <p className="text-xs text-gray-400">
-                  {taxYearJobs.length} jobs
-                </p>
+                <p className="text-xs text-blue-100">{taxYearJobs.length} jobs</p>
               </div>
-              <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl">
-                <p className="text-xs text-gray-500">Expenses</p>
+              <div className="p-4 bg-blue-500/15 border border-blue-300/30 rounded-xl">
+                <p className="text-xs text-blue-100">Expenses</p>
                 <p className="text-2xl font-bold text-blue-600">
                   ${receiptsTotal.toFixed(2)}
                 </p>
-                <p className="text-xs text-gray-400">
-                  {receipts.length} receipts
-                </p>
+                <p className="text-xs text-blue-100">{receipts.length} receipts</p>
               </div>
-              <div className="p-4 bg-purple-50 border border-purple-100 rounded-xl">
-                <p className="text-xs text-gray-500">Net (est.)</p>
+              <div className="p-4 bg-purple-500/15 border border-purple-300/30 rounded-xl">
+                <p className="text-xs text-blue-100">Net (est.)</p>
                 <p className="text-2xl font-bold text-purple-600">
                   ${(taxYearTotal - receiptsTotal).toFixed(2)}
                 </p>
-                <p className="text-xs text-gray-400">Before taxes</p>
+                <p className="text-xs text-blue-100">Before taxes</p>
               </div>
             </div>
 
             <div className="flex flex-wrap gap-3 mb-6">
               <button
                 onClick={handleDownloadEarningsCsv}
-                className="px-4 py-2 rounded-lg bg-gray-100 text-sm font-semibold"
+                className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-sm font-semibold text-blue-100"
               >
                 Download Earnings CSV
               </button>
               <button
                 onClick={handleDownloadExpensesCsv}
-                className="px-4 py-2 rounded-lg bg-gray-100 text-sm font-semibold"
+                className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-sm font-semibold text-blue-100"
               >
                 Download Expenses CSV
               </button>
             </div>
 
-            <div className="border-t border-gray-200 pt-6">
-              <h3 className="text-sm font-semibold text-gray-900 mb-3">
+            <div className="border-t border-white/15 pt-6">
+              <h3 className="text-sm font-semibold text-white mb-3">
                 Upload Expense Receipt
               </h3>
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs text-gray-500">Amount</label>
+                  <label className="text-xs text-blue-100">Amount</label>
                   <input
                     type="number"
                     value={receiptAmount}
                     onChange={(e) => setReceiptAmount(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+                    className="w-full px-3 py-2 border border-white/20 bg-slate-950/40 text-white rounded-lg"
                     placeholder="0.00"
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500">Category</label>
+                  <label className="text-xs text-blue-100">Category</label>
                   <select
                     value={receiptCategory}
                     onChange={(e) => setReceiptCategory(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+                    className="w-full px-3 py-2 border border-white/20 bg-slate-950/40 text-white rounded-lg"
                   >
                     <option value="fuel">Fuel</option>
                     <option value="maintenance">Maintenance</option>
@@ -947,32 +729,30 @@ export default function EarningsPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500">Date</label>
+                  <label className="text-xs text-blue-100">Date</label>
                   <input
                     type="date"
                     value={receiptDate}
                     onChange={(e) => setReceiptDate(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+                    className="w-full px-3 py-2 border border-white/20 bg-slate-950/40 text-white rounded-lg"
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500">Receipt File</label>
+                  <label className="text-xs text-blue-100">Receipt File</label>
                   <input
                     type="file"
                     accept="image/*,application/pdf"
-                    onChange={(e) =>
-                      setReceiptFile(e.target.files?.[0] || null)
-                    }
-                    className="w-full text-sm"
+                    onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
+                    className="w-full text-sm text-blue-100"
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="text-xs text-gray-500">Notes</label>
+                  <label className="text-xs text-blue-100">Notes</label>
                   <input
                     type="text"
                     value={receiptNotes}
                     onChange={(e) => setReceiptNotes(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+                    className="w-full px-3 py-2 border border-white/20 bg-slate-950/40 text-white rounded-lg"
                     placeholder="Oil change, tires, tolls, etc."
                   />
                 </div>
@@ -989,26 +769,21 @@ export default function EarningsPage() {
             </div>
 
             <div className="mt-6">
-              <h3 className="text-sm font-semibold text-gray-900 mb-3">
-                Receipts
-              </h3>
+              <h3 className="text-sm font-semibold text-white mb-3">Receipts</h3>
               {receipts.length === 0 ? (
-                <div className="text-sm text-gray-500">
-                  No receipts uploaded yet.
-                </div>
+                <div className="text-sm text-blue-100">No receipts uploaded yet.</div>
               ) : (
                 <div className="space-y-3">
                   {receipts.map((item) => (
                     <div
                       key={item.id}
-                      className="flex items-center justify-between gap-3 p-3 bg-gray-50 rounded-lg"
+                      className="flex items-center justify-between gap-3 p-3 bg-white/10 border border-white/10 rounded-lg"
                     >
                       <div>
-                        <p className="text-sm font-medium text-gray-900">
-                          {item.category || "Expense"} • $
-                          {Number(item.amount || 0).toFixed(2)}
+                        <p className="text-sm font-medium text-white">
+                          {item.category || "Expense"} • ${Number(item.amount || 0).toFixed(2)}
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-blue-100">
                           {item.date?.toDate?.()?.toLocaleDateString() || "—"}
                           {item.notes ? ` • ${item.notes}` : ""}
                         </p>
@@ -1028,14 +803,17 @@ export default function EarningsPage() {
             </div>
           </CardContent>
         </Card>
+        )}
 
         {/* Info Box */}
-        <div className="mt-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
-          <p className="text-sm text-emerald-800">
-            <strong>💡 Tip:</strong> Payouts are processed weekly via Stripe
-            Connect. Make sure your account is set up in Settings.
+        {(activeTab === "overview" || activeTab === "payouts") && (
+        <div className="mt-6 p-4 bg-emerald-500/15 border border-emerald-300/30 rounded-xl">
+          <p className="text-sm text-emerald-100">
+            <strong>💡 Tip:</strong> Payouts are processed weekly via Stripe Connect.
+            Make sure your account is set up in Settings.
           </p>
         </div>
+        )}
       </div>
     </div>
   );

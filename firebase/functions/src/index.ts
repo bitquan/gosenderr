@@ -26,6 +26,13 @@ export { getPublicConfigHttp } from "./http/getPublicConfigHttp";
 export { createPaymentIntentHttp } from "./http/createPaymentIntentHttp";
 export { simulateRule } from "./http/simulateRule";
 export { runSystemSimulation } from "./http/runSystemSimulation";
+export { logCommandFailure } from "./http/logCommandFailure";
+export {
+	claimCourierJob,
+	advanceCourierJobStatus,
+	cancelCourierJob,
+	declineCourierJobOffer,
+} from "./http/courierJobCommands";
 export {
 	getTokenPolicy,
 	tokenReserve,

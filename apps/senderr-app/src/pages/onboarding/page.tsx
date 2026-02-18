@@ -161,6 +161,32 @@ const OnboardingPage = () => {
     return null;
   }
 
+  const getInsuranceStepError = (): string | null => {
+    const missingFields: string[] = [];
+
+    if (!insuranceProvider.trim()) missingFields.push("insurance provider");
+    if (!policyNumber.trim()) missingFields.push("policy number");
+    if (!policyExpiresAt.trim()) {
+      missingFields.push("policy expiration date");
+    } else {
+      const expiresAt = new Date(`${policyExpiresAt}T00:00:00`);
+      if (Number.isNaN(expiresAt.getTime())) {
+        return "Please enter a valid policy expiration date.";
+      }
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (expiresAt < today) {
+        return "Policy expiration date must be today or later.";
+      }
+    }
+
+    if (!documents.insurance) missingFields.push("proof of insurance file");
+
+    if (missingFields.length === 0) return null;
+    return `Please provide: ${missingFields.join(", ")}.`;
+  };
+
   const handleNext = () => {
     if (step === 2) {
       if (!legalName.trim() || !phone.trim() || !documents.governmentId) {
@@ -188,15 +214,9 @@ const OnboardingPage = () => {
     }
 
     if (step === 4) {
-      if (
-        !insuranceProvider.trim() ||
-        !policyNumber.trim() ||
-        !policyExpiresAt.trim() ||
-        !documents.insurance
-      ) {
-        alert(
-          "Please provide your insurance details and upload proof of insurance.",
-        );
+      const insuranceError = getInsuranceStepError();
+      if (insuranceError) {
+        alert(insuranceError);
         return;
       }
     }

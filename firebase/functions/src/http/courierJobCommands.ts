@@ -21,11 +21,13 @@ type JobStatus =
 interface ClaimCourierJobRequest {
   jobId: string;
   agreedFee: number;
+  idempotencyKey?: string;
 }
 
 interface AdvanceCourierJobStatusRequest {
   jobId: string;
   nextStatus: JobStatus;
+  idempotencyKey?: string;
 }
 
 interface SubmitCourierJobProofRequest {
@@ -60,6 +62,7 @@ interface CancelCourierJobAdminRequest {
 
 interface CancelCourierJobRequest {
   jobId: string;
+  idempotencyKey?: string;
 }
 
 interface SubmitCourierJobDisputeRequest {
@@ -77,6 +80,34 @@ interface RejectRunnerJobRequest {
   jobId: string;
   reasonLabel: string;
   notes?: string;
+}
+
+const IDEMPOTENCY_KEY_PATTERN = /^[a-zA-Z0-9:_-]{8,120}$/;
+
+function sanitizeIdPart(value: string): string {
+  return value.replace(/[^a-zA-Z0-9_-]/g, "_");
+}
+
+function normalizeIdempotencyKey(raw?: string): string | null {
+  const candidate = typeof raw === "string" ? raw.trim() : "";
+  if (!candidate) return null;
+  if (!IDEMPOTENCY_KEY_PATTERN.test(candidate)) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "idempotencyKey must be 8-120 chars using letters, numbers, colons, underscores, or hyphens",
+    );
+  }
+  return candidate;
+}
+
+function commandReceiptRef(
+  uid: string,
+  command: string,
+  jobId: string,
+  idempotencyKey: string,
+): admin.firestore.DocumentReference {
+  const docId = `${sanitizeIdPart(uid)}_${sanitizeIdPart(command)}_${sanitizeIdPart(jobId)}_${sanitizeIdPart(idempotencyKey)}`;
+  return admin.firestore().doc(`courierCommandReceipts/${docId}`);
 }
 
 function toRad(value: number): number {
@@ -234,6 +265,7 @@ export const claimCourierJob = functions.https.onCall(
     }
 
     const { jobId, agreedFee } = data || ({} as ClaimCourierJobRequest);
+    const idempotencyKey = normalizeIdempotencyKey(data?.idempotencyKey);
 
     if (!jobId || typeof jobId !== "string") {
       throw new functions.https.HttpsError(
@@ -253,6 +285,35 @@ export const claimCourierJob = functions.https.onCall(
     const db = admin.firestore();
     const jobRef = db.doc(`jobs/${jobId}`);
     const userRef = db.doc(`users/${courierUid}`);
+    const receiptRef =
+      idempotencyKey
+        ? commandReceiptRef(courierUid, "claim", jobId, idempotencyKey)
+        : null;
+
+    if (receiptRef) {
+      const receiptSnap = await receiptRef.get();
+      if (receiptSnap.exists) {
+        const receiptData = receiptSnap.data() as
+          | {
+              result?: {
+                success?: boolean;
+                jobId?: string;
+                courierUid?: string;
+                status?: JobStatus;
+              };
+            }
+          | undefined;
+        if (receiptData?.result?.success) {
+          return {
+            success: true,
+            jobId: receiptData.result.jobId || jobId,
+            courierUid: receiptData.result.courierUid || courierUid,
+            status: receiptData.result.status || "assigned",
+            idempotentReplay: true,
+          };
+        }
+      }
+    }
 
     try {
       await db.runTransaction(async (tx) => {
@@ -305,12 +366,29 @@ export const claimCourierJob = functions.https.onCall(
         });
       });
 
-      return {
+      const result = {
         success: true,
         jobId,
         courierUid,
         status: "assigned",
       };
+
+      if (receiptRef && idempotencyKey) {
+        await receiptRef.set(
+          {
+            uid: courierUid,
+            command: "claim",
+            jobId,
+            idempotencyKey,
+            result,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          },
+          { merge: true },
+        );
+      }
+
+      return result;
     } catch (error) {
       if (error instanceof functions.https.HttpsError) {
         throw error;
@@ -332,6 +410,7 @@ export const advanceCourierJobStatus = functions.https.onCall(
     }
 
     const { jobId, nextStatus } = data || ({} as AdvanceCourierJobStatusRequest);
+    const idempotencyKey = normalizeIdempotencyKey(data?.idempotencyKey);
 
     if (!jobId || typeof jobId !== "string") {
       throw new functions.https.HttpsError(
@@ -350,6 +429,33 @@ export const advanceCourierJobStatus = functions.https.onCall(
     const courierUid = context.auth.uid;
     const db = admin.firestore();
     const jobRef = db.doc(`jobs/${jobId}`);
+    const receiptRef =
+      idempotencyKey
+        ? commandReceiptRef(courierUid, "advance", jobId, idempotencyKey)
+        : null;
+
+    if (receiptRef) {
+      const receiptSnap = await receiptRef.get();
+      if (receiptSnap.exists) {
+        const receiptData = receiptSnap.data() as
+          | {
+              result?: {
+                success?: boolean;
+                jobId?: string;
+                status?: JobStatus;
+              };
+            }
+          | undefined;
+        if (receiptData?.result?.success) {
+          return {
+            success: true,
+            jobId: receiptData.result.jobId || jobId,
+            status: receiptData.result.status || nextStatus,
+            idempotentReplay: true,
+          };
+        }
+      }
+    }
 
     try {
       await db.runTransaction(async (tx) => {
@@ -391,11 +497,28 @@ export const advanceCourierJobStatus = functions.https.onCall(
         });
       });
 
-      return {
+      const result = {
         success: true,
         jobId,
         status: nextStatus,
       };
+
+      if (receiptRef && idempotencyKey) {
+        await receiptRef.set(
+          {
+            uid: courierUid,
+            command: "advance",
+            jobId,
+            idempotencyKey,
+            result,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          },
+          { merge: true },
+        );
+      }
+
+      return result;
     } catch (error) {
       if (error instanceof functions.https.HttpsError) {
         throw error;
@@ -721,6 +844,7 @@ export const cancelCourierJob = functions.https.onCall(
     }
 
     const { jobId } = data || ({} as CancelCourierJobRequest);
+    const idempotencyKey = normalizeIdempotencyKey(data?.idempotencyKey);
     if (!jobId || typeof jobId !== "string") {
       throw new functions.https.HttpsError("invalid-argument", "jobId is required");
     }
@@ -728,6 +852,33 @@ export const cancelCourierJob = functions.https.onCall(
     const callerUid = context.auth.uid;
     const db = admin.firestore();
     const jobRef = db.doc(`jobs/${jobId}`);
+    const receiptRef =
+      idempotencyKey
+        ? commandReceiptRef(callerUid, "cancel", jobId, idempotencyKey)
+        : null;
+
+    if (receiptRef) {
+      const receiptSnap = await receiptRef.get();
+      if (receiptSnap.exists) {
+        const receiptData = receiptSnap.data() as
+          | {
+              result?: {
+                success?: boolean;
+                jobId?: string;
+                status?: JobStatus;
+              };
+            }
+          | undefined;
+        if (receiptData?.result?.success) {
+          return {
+            success: true,
+            jobId: receiptData.result.jobId || jobId,
+            status: receiptData.result.status || "cancelled",
+            idempotentReplay: true,
+          };
+        }
+      }
+    }
 
     await db.runTransaction(async (tx) => {
       const jobSnap = await tx.get(jobRef);
@@ -763,6 +914,25 @@ export const cancelCourierJob = functions.https.onCall(
     });
 
     await refundTokenCommitForJob(jobId, "job_cancelled", callerUid);
+
+    if (receiptRef && idempotencyKey) {
+      await receiptRef.set(
+        {
+          uid: callerUid,
+          command: "cancel",
+          jobId,
+          idempotencyKey,
+          result: {
+            success: true,
+            jobId,
+            status: "cancelled",
+          },
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      );
+    }
 
     return { success: true, jobId, status: "cancelled" };
   },

@@ -7,6 +7,7 @@ import {
 } from "react";
 import { GeoPoint, CourierLocation } from "@/lib/v2/types";
 import type { RouteSegment } from "@/lib/navigation/types";
+import { fetchDirections } from "@/lib/navigation/directions";
 import type {
   Map as MapboxMapInstance,
   Marker as MapboxMarker,
@@ -24,10 +25,18 @@ interface MapboxMapProps {
   courierLocation?: CourierLocation | null;
   height?: string;
   routeSegments?: RouteSegment[];
+  jobMarkers?: Array<{
+    id: string;
+    location: { lat: number; lng: number };
+    label?: string;
+    isSelected?: boolean;
+  }>;
+  onJobMarkerClick?: (jobId: string) => void;
   onMapLoad?: (map: MapboxMapInstance) => void;
   showLabels?: boolean;
   showPopups?: boolean;
   interactive?: boolean;
+  autoFit?: boolean;
 }
 
 export interface MapboxMapHandle {
@@ -42,10 +51,13 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(
       courierLocation,
       height = "400px",
       routeSegments = [],
+      jobMarkers = [],
+      onJobMarkerClick,
       onMapLoad,
       showLabels = true,
       showPopups = true,
       interactive = true,
+      autoFit = true,
     },
     ref,
   ) => {
@@ -60,12 +72,23 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(
     const mapRef = useRef<MapboxMapInstance | null>(null);
     const fitRetryCountRef = useRef(0);
     const fitRetryTimeoutRef = useRef<number | null>(null);
+    const routeAnimationFrameRef = useRef<number | null>(null);
+    const lastFitSignatureRef = useRef<string>("");
     const markersRef = useRef<{
       pickup?: MapboxMarker | null;
       dropoff?: MapboxMarker | null;
       courier?: MapboxMarker | null;
+      jobs?: Record<string, MapboxMarker>;
     }>({});
     const [mapReady, setMapReady] = useState(false);
+    const [fallbackRouteCoordinates, setFallbackRouteCoordinates] = useState<
+      [number, number][]
+    >([]);
+
+    const PURPLE_ROUTE_COLOR = "#7C3AED";
+  const ROUTE_SOURCE_ID = "route-navigation";
+  const ROUTE_BASE_LAYER_ID = "route-navigation-base";
+  const ROUTE_ANIMATED_LAYER_ID = "route-navigation-animated";
 
     useImperativeHandle(
       ref,
@@ -112,9 +135,13 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(
             ? [pickup!.lng, pickup!.lat]
             : [-77.4182, 38.9493]; // Default to DC area
 
+          const mapStyle =
+            import.meta.env.VITE_MAPBOX_STYLE_URL ||
+            "mapbox://styles/mapbox/dark-v11";
+
           const map = new mapboxgl.Map({
             container: mapContainer.current,
-            style: "mapbox://styles/mapbox/streets-v12",
+            style: mapStyle,
             center: initialCenter as [number, number],
             zoom: 12,
           });
@@ -177,6 +204,14 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(
       loadMapbox();
 
       return () => {
+        if (routeAnimationFrameRef.current) {
+          window.cancelAnimationFrame(routeAnimationFrameRef.current);
+          routeAnimationFrameRef.current = null;
+        }
+        if (markersRef.current.jobs) {
+          Object.values(markersRef.current.jobs).forEach((marker) => marker.remove());
+          markersRef.current.jobs = {};
+        }
         if (fitRetryTimeoutRef.current) {
           window.clearTimeout(fitRetryTimeoutRef.current);
           fitRetryTimeoutRef.current = null;
@@ -188,19 +223,102 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(
       };
     }, [onMapLoad]);
 
+    useEffect(() => {
+      if (routeSegments.length > 0) {
+        setFallbackRouteCoordinates([]);
+        return;
+      }
+
+      if (
+        !pickup ||
+        !dropoff ||
+        !isValidLngLat(pickup.lng, pickup.lat) ||
+        !isValidLngLat(dropoff.lng, dropoff.lat)
+      ) {
+        setFallbackRouteCoordinates([]);
+        return;
+      }
+
+      let cancelled = false;
+
+      const loadFallbackRoute = async () => {
+        try {
+          const response = await fetchDirections(
+            [
+              [pickup.lng, pickup.lat],
+              [dropoff.lng, dropoff.lat],
+            ],
+            {
+              profile: "driving-traffic",
+              geometries: "geojson",
+              overview: "full",
+              steps: false,
+              bannerInstructions: false,
+              voiceInstructions: false,
+            },
+          );
+
+          const routeCoords =
+            response.routes?.[0]?.geometry?.coordinates?.filter(isValidCoord) ||
+            [];
+
+          if (!cancelled) {
+            if (routeCoords.length >= 2) {
+              setFallbackRouteCoordinates(routeCoords);
+            } else {
+              setFallbackRouteCoordinates([
+                [pickup.lng, pickup.lat],
+                [dropoff.lng, dropoff.lat],
+              ]);
+            }
+          }
+        } catch (error) {
+          console.warn("Failed to load fallback route; using straight line", error);
+          if (!cancelled) {
+            setFallbackRouteCoordinates([
+              [pickup.lng, pickup.lat],
+              [dropoff.lng, dropoff.lat],
+            ]);
+          }
+        }
+      };
+
+      loadFallbackRoute();
+
+      return () => {
+        cancelled = true;
+      };
+    }, [pickup?.lng, pickup?.lat, dropoff?.lng, dropoff?.lat, routeSegments]);
+
     const fitMapToRoute = () => {
-      if (!mapReady || !mapRef.current) return;
+      if (!autoFit || !mapReady || !mapRef.current) return;
 
       const map = mapRef.current;
       const mapboxgl = window.mapboxgl;
       if (!mapboxgl) return;
 
-      const routeCoordinates = routeSegments
-        .flatMap((segment) => segment.coordinates || [])
-        .filter(isValidCoord);
+      const directLineCoordinates: [number, number][] =
+        pickup &&
+        dropoff &&
+        isValidLngLat(pickup.lng, pickup.lat) &&
+        isValidLngLat(dropoff.lng, dropoff.lat)
+          ? [
+              [pickup.lng, pickup.lat],
+              [dropoff.lng, dropoff.lat],
+            ]
+          : [];
+
+      const routeCoordinates =
+        routeSegments.length > 0
+          ? routeSegments.flatMap((segment) => segment.coordinates || [])
+          : fallbackRouteCoordinates.length >= 2
+            ? fallbackRouteCoordinates
+            : directLineCoordinates;
+
+      const validRouteCoordinates = routeCoordinates.filter(isValidCoord);
 
       const coordinates = [
-        ...routeCoordinates,
+        ...validRouteCoordinates,
         ...(pickup && isValidLngLat(pickup.lng, pickup.lat)
           ? [[pickup.lng, pickup.lat] as [number, number]]
           : []),
@@ -210,6 +328,14 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(
       ];
 
       if (coordinates.length < 2) return;
+
+      const first = coordinates[0];
+      const last = coordinates[coordinates.length - 1];
+      const fitSignature = `${coordinates.length}:${first?.[0]?.toFixed(5)},${first?.[1]?.toFixed(5)}:${last?.[0]?.toFixed(5)},${last?.[1]?.toFixed(5)}`;
+      if (lastFitSignatureRef.current === fitSignature) {
+        return;
+      }
+      lastFitSignatureRef.current = fitSignature;
 
       const seed = coordinates.find(isValidCoord);
       if (!seed) return;
@@ -252,7 +378,7 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(
             left: paddingValue,
           },
           maxZoom: 15,
-          duration: interactive ? 800 : 0,
+          duration: interactive ? 350 : 0,
         });
       } catch (error) {
         console.warn("Failed to fit map bounds", error);
@@ -269,7 +395,7 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(
 
     useEffect(() => {
       fitMapToRoute();
-    }, [mapReady, pickup, dropoff, routeSegments]);
+    }, [autoFit, mapReady, pickup, dropoff, routeSegments, fallbackRouteCoordinates]);
 
     useEffect(() => {
       if (!mapReady || !mapRef.current) {
@@ -376,6 +502,71 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(
       }
     }, [courierLocation, mapReady]);
 
+    useEffect(() => {
+      if (!mapReady || !mapRef.current) return;
+
+      const map = mapRef.current;
+      const mapboxgl = window.mapboxgl;
+      if (!mapboxgl) return;
+
+      const existingMarkers = markersRef.current.jobs || {};
+      const nextById = new Map(jobMarkers.map((marker) => [marker.id, marker]));
+
+      Object.entries(existingMarkers).forEach(([jobId, marker]) => {
+        if (!nextById.has(jobId)) {
+          marker.remove();
+          delete existingMarkers[jobId];
+        }
+      });
+
+      jobMarkers.forEach((jobMarker) => {
+        if (!isValidLngLat(jobMarker.location.lng, jobMarker.location.lat)) return;
+
+        const existing = existingMarkers[jobMarker.id];
+        if (existing) {
+          existing.setLngLat([jobMarker.location.lng, jobMarker.location.lat]);
+          const el = existing.getElement() as HTMLElement;
+          el.style.background = jobMarker.isSelected ? "#a78bfa" : "#7c3aed";
+          el.style.width = jobMarker.isSelected ? "20px" : "16px";
+          el.style.height = jobMarker.isSelected ? "20px" : "16px";
+          el.style.boxShadow = jobMarker.isSelected
+            ? "0 0 0 5px rgba(124,58,237,0.35), 0 6px 10px rgba(0,0,0,0.4)"
+            : "0 0 0 4px rgba(124,58,237,0.25), 0 4px 8px rgba(0,0,0,0.35)";
+          return;
+        }
+
+        const el = document.createElement("button");
+        el.type = "button";
+        el.className = "mapshell-job-pin";
+        el.style.cssText = `
+          width: 16px;
+          height: 16px;
+          border-radius: 9999px;
+          border: 2px solid rgba(255,255,255,0.95);
+          background: ${jobMarker.isSelected ? "#a78bfa" : "#7c3aed"};
+          box-shadow: ${jobMarker.isSelected ? "0 0 0 5px rgba(124,58,237,0.35), 0 6px 10px rgba(0,0,0,0.4)" : "0 0 0 4px rgba(124,58,237,0.25), 0 4px 8px rgba(0,0,0,0.35)"};
+          transition: box-shadow 120ms ease, background 120ms ease, width 120ms ease, height 120ms ease;
+          cursor: pointer;
+        `;
+        el.title = jobMarker.label || "Open offer";
+        el.onclick = (event) => {
+          event.stopPropagation();
+          onJobMarkerClick?.(jobMarker.id);
+        };
+
+        const marker = new mapboxgl.Marker({
+          element: el,
+          anchor: "center",
+        })
+          .setLngLat([jobMarker.location.lng, jobMarker.location.lat])
+          .addTo(map);
+
+        existingMarkers[jobMarker.id] = marker;
+      });
+
+      markersRef.current.jobs = existingMarkers;
+    }, [jobMarkers, mapReady, onJobMarkerClick]);
+
     // Update pickup/dropoff markers when they change
     useEffect(() => {
       if (!mapReady || !mapRef.current) return;
@@ -437,60 +628,186 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(
       }
 
       const map = mapRef.current;
-      const mapboxgl = window.mapboxgl;
-      if (!mapboxgl) return;
 
-      // Remove all existing route layers and sources
-      const routeLayerIds = [
-        "route-to-pickup",
-        "route-pickup-to-dropoff",
-        "route-navigation",
-      ];
-      routeLayerIds.forEach((layerId) => {
-        if (map.getLayer(layerId)) map.removeLayer(layerId);
-        if (map.getSource(layerId)) map.removeSource(layerId);
-      });
+      const directLineCoordinates: [number, number][] =
+        pickup &&
+        dropoff &&
+        isValidLngLat(pickup.lng, pickup.lat) &&
+        isValidLngLat(dropoff.lng, dropoff.lat)
+          ? [
+              [pickup.lng, pickup.lat],
+              [dropoff.lng, dropoff.lat],
+            ]
+          : [];
 
-      // Only add routes if we have segments
-      if (routeSegments.length === 0) return;
+      const segmentsToRender =
+        routeSegments.length > 0
+          ? routeSegments
+          : fallbackRouteCoordinates.length >= 2
+            ? [
+                {
+                  type: "navigation" as const,
+                  color: PURPLE_ROUTE_COLOR,
+                  coordinates: fallbackRouteCoordinates,
+                },
+              ]
+            : directLineCoordinates.length >= 2
+              ? [
+                  {
+                    type: "navigation" as const,
+                    color: PURPLE_ROUTE_COLOR,
+                    coordinates: directLineCoordinates,
+                  },
+                ]
+            : [];
 
-      routeSegments.forEach((segment) => {
-        const validCoordinates = (segment.coordinates || []).filter(
-          isValidCoord,
-        );
-        if (validCoordinates.length < 2) return;
+      const flattenedCoordinates = segmentsToRender
+        .flatMap((segment) => segment.coordinates || [])
+        .filter(isValidCoord);
 
-        const sourceId = `route-${segment.type}`;
-        const layerId = `route-${segment.type}`;
+      const visibleCoordinates =
+        flattenedCoordinates.length >= 2
+          ? flattenedCoordinates
+          : directLineCoordinates;
 
-        map.addSource(sourceId, {
-          type: "geojson",
-          data: {
-            type: "Feature",
-            properties: {},
-            geometry: {
-              type: "LineString",
-              coordinates: validCoordinates,
+      const routeFeature = {
+        type: "Feature" as const,
+        properties: {},
+        geometry: {
+          type: "LineString" as const,
+          coordinates:
+            visibleCoordinates.length >= 2
+              ? visibleCoordinates
+              : [[0, 0], [0, 0]],
+        },
+      };
+
+      try {
+        const existingSource = map.getSource(ROUTE_SOURCE_ID) as
+          | import("mapbox-gl").GeoJSONSource
+          | undefined;
+
+        if (existingSource) {
+          existingSource.setData(routeFeature);
+        } else {
+          map.addSource(ROUTE_SOURCE_ID, {
+            type: "geojson",
+            lineMetrics: true,
+            data: routeFeature,
+          });
+        }
+
+        if (!map.getLayer(ROUTE_BASE_LAYER_ID)) {
+          map.addLayer({
+            id: ROUTE_BASE_LAYER_ID,
+            type: "line",
+            source: ROUTE_SOURCE_ID,
+            layout: {
+              "line-join": "round",
+              "line-cap": "round",
             },
-          },
-        });
+            paint: {
+              "line-color": PURPLE_ROUTE_COLOR,
+              "line-width": 6,
+              "line-opacity": 0.42,
+            },
+          });
+        }
 
-        map.addLayer({
-          id: layerId,
-          type: "line",
-          source: sourceId,
-          layout: {
-            "line-join": "round",
-            "line-cap": "round",
-          },
-          paint: {
-            "line-color": segment.color,
-            "line-width": 6,
-            "line-opacity": 0.9,
-          },
-        });
-      });
-    }, [routeSegments, mapReady]);
+        if (!map.getLayer(ROUTE_ANIMATED_LAYER_ID)) {
+          map.addLayer({
+            id: ROUTE_ANIMATED_LAYER_ID,
+            type: "line",
+            source: ROUTE_SOURCE_ID,
+            layout: {
+              "line-join": "round",
+              "line-cap": "round",
+            },
+            paint: {
+              "line-width": 7,
+              "line-opacity": 0.95,
+              "line-gradient": [
+                "interpolate",
+                ["linear"],
+                ["line-progress"],
+                0,
+                "rgba(124,58,237,0.16)",
+                0.45,
+                "rgba(124,58,237,0.16)",
+                0.5,
+                "rgba(196,181,253,1)",
+                0.55,
+                "rgba(124,58,237,0.16)",
+                1,
+                "rgba(124,58,237,0.16)",
+              ],
+            },
+          });
+        }
+
+        const visibleOpacity = visibleCoordinates.length >= 2 ? 1 : 0;
+        map.setPaintProperty(
+          ROUTE_BASE_LAYER_ID,
+          "line-opacity",
+          visibleOpacity === 1 ? 0.42 : 0,
+        );
+        map.setPaintProperty(
+          ROUTE_ANIMATED_LAYER_ID,
+          "line-opacity",
+          visibleOpacity === 1 ? 0.95 : 0,
+        );
+      } catch (error) {
+        console.warn("Failed to render route", error);
+      }
+
+      const animateRouteFlow = () => {
+        const activeMap = mapRef.current;
+        if (!activeMap) return;
+
+        if (!activeMap.getLayer(ROUTE_ANIMATED_LAYER_ID)) {
+          routeAnimationFrameRef.current = null;
+          return;
+        }
+
+        const t = performance.now();
+        const progress = (t % 3200) / 3200;
+        const start = Math.max(0, progress - 0.2);
+        const end = Math.min(1, progress + 0.2);
+
+        activeMap.setPaintProperty(ROUTE_ANIMATED_LAYER_ID, "line-gradient", [
+          "interpolate",
+          ["linear"],
+          ["line-progress"],
+          0,
+          "rgba(124,58,237,0.16)",
+          start,
+          "rgba(124,58,237,0.16)",
+          progress,
+          "rgba(196,181,253,1)",
+          end,
+          "rgba(124,58,237,0.16)",
+          1,
+          "rgba(124,58,237,0.16)",
+        ]);
+
+        routeAnimationFrameRef.current = window.requestAnimationFrame(
+          animateRouteFlow,
+        );
+      };
+
+      if (!routeAnimationFrameRef.current) {
+        routeAnimationFrameRef.current = window.requestAnimationFrame(
+          animateRouteFlow,
+        );
+      }
+
+      return () => {
+        if (routeAnimationFrameRef.current) {
+          window.cancelAnimationFrame(routeAnimationFrameRef.current);
+          routeAnimationFrameRef.current = null;
+        }
+      };
+    }, [routeSegments, mapReady, fallbackRouteCoordinates, pickup, dropoff]);
 
     const token = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -550,6 +867,8 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(
           height,
           borderRadius: "8px",
           pointerEvents: interactive ? "auto" : "none",
+          touchAction: interactive ? "none" : "auto",
+          cursor: interactive ? "grab" : "default",
         }}
       />
     );

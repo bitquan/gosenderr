@@ -10,6 +10,13 @@ service firebase.storage {
       return request.auth.uid;
     }
 
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.get('admin', false) == true
+        || request.auth.token.get('role', '') == 'admin'
+      );
+    }
+
     function jobExists(jobId) {
       return exists(/databases/(default)/documents/jobs/$(jobId));
     }
@@ -101,7 +108,7 @@ service firebase.storage {
       // Admins can read any insurance documents (check via Firestore)
       allow read: if isSignedIn() && (
         uid() == userId
-        || get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin'
+        || isAdmin()
       );
     }
 
@@ -113,7 +120,7 @@ service firebase.storage {
       // User can read their own documents; admins can read all
       allow read: if isSignedIn() && (
         uid() == userId
-        || get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin'
+        || isAdmin()
       );
     }
 
@@ -125,7 +132,7 @@ service firebase.storage {
       // User can read their own documents; admins can read all
       allow read: if isSignedIn() && (
         uid() == userId
-        || get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin'
+        || isAdmin()
       );
     }
 
@@ -141,7 +148,7 @@ service firebase.storage {
         uid() == courierId
         || isJobCreator(jobId)
         || isAssignedCourier(jobId)
-        || get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin'
+        || isAdmin()
       );
     }
 
@@ -153,7 +160,7 @@ service firebase.storage {
 
       allow read: if isSignedIn() && (
         uid() == courierId
-        || get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin'
+        || isAdmin()
       );
     }
 

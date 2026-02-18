@@ -2,6 +2,7 @@
 import "@testing-library/jest-dom/vitest";
 import { describe, it, expect, vi } from "vitest";
 import { render, within, fireEvent, waitFor } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 
 // Mock MapboxMap to avoid DOM/mapbox dependency in unit tests
 vi.mock("@/components/v2/MapboxMap", () => ({
@@ -50,7 +51,11 @@ import { claimJob } from "@/lib/v2/jobs";
 
 describe("MapShellScreen dev-mode actions", () => {
   it("does not call backend actions when devPreview is true", async () => {
-    const { container } = render(<MapShellScreen devPreview={true} />);
+    const { container } = render(
+      <MemoryRouter>
+        <MapShellScreen devPreview={true} />
+      </MemoryRouter>,
+    );
 
     const overlay = within(container).getByTestId("active-overlay");
     const btn = within(overlay).getByRole("button", { name: /Accept Job/i });

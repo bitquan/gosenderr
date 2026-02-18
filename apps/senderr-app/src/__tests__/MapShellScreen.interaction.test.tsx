@@ -2,6 +2,7 @@
 import "@testing-library/jest-dom/vitest";
 import { describe, it, expect, vi } from "vitest";
 import { render } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 
 // Mock MapboxMap to avoid DOM/mapbox dependency in unit tests
 vi.mock("@/components/v2/MapboxMap", () => ({
@@ -59,7 +60,11 @@ import { fireEvent, waitFor, within } from "@testing-library/react";
 
 describe("MapShellScreen interactions", () => {
   it("invokes claimJob when Accept Job is clicked (dev) and handles error", async () => {
-    const { container, unmount } = render(<MapShellScreen />);
+    const { container, unmount } = render(
+      <MemoryRouter>
+        <MapShellScreen />
+      </MemoryRouter>,
+    );
 
     const overlay = within(container).getByTestId("active-overlay");
     const btn = within(overlay).getByRole("button", { name: /Accept Job/i });
@@ -86,7 +91,9 @@ describe("MapShellScreen interactions", () => {
     } as unknown as MapShellOverlayModel;
 
     const { container: c2, unmount: u2 } = render(
-      <MapShellScreen devOverlayModel={acceptedModel} />,
+      <MemoryRouter>
+        <MapShellScreen devOverlayModel={acceptedModel} />
+      </MemoryRouter>,
     );
     const accOverlay = within(c2).getByTestId("active-overlay");
     const accBtn = within(accOverlay).getByRole("button", {
@@ -118,7 +125,9 @@ describe("MapShellScreen interactions", () => {
       primaryAction: "start_tracking",
     } as unknown as MapShellOverlayModel;
     const { container: c3, unmount: u3 } = render(
-      <MapShellScreen devOverlayModel={acceptedModel2} />,
+      <MemoryRouter>
+        <MapShellScreen devOverlayModel={acceptedModel2} />
+      </MemoryRouter>,
     );
     const accOverlay2 = within(c3).getByTestId("active-overlay");
     const accBtn2 = within(accOverlay2).getByRole("button", {
