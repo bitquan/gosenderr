@@ -586,6 +586,12 @@ export default function CourierDashboardMapShell() {
               Available Offers ({availableJobs.length})
             </p>
 
+            {tokenPolicy?.enabled && !tokenReservation && (
+              <div className="rounded-xl border border-amber-300/30 bg-amber-500/15 p-3 text-sm text-amber-100">
+                Use tokens to unlock an offer before viewing its details and claiming it.
+              </div>
+            )}
+
             {isIdle && !selectedJobId && (
               <div className="rounded-xl border border-amber-300/30 bg-amber-500/15 p-3 text-sm text-amber-100">
                 Idle mode is on. Pan freely and tap any purple job pin on the map to open its offer here.
@@ -606,6 +612,7 @@ export default function CourierDashboardMapShell() {
               const hasUnlockedSelectedOffer =
                 requiredTokens <= 0 ||
                 (tokenReservation?.jobId === job.id && tokenReservation.amount >= requiredTokens);
+              const lockedByToken = requiredTokens > 0 && !hasUnlockedSelectedOffer;
 
               return (
                 <div
@@ -620,14 +627,20 @@ export default function CourierDashboardMapShell() {
                   >
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-sm font-semibold text-white">
-                        {job.package?.size ? `${job.package.size} package` : "Delivery offer"}
+                        {lockedByToken
+                          ? "Locked offer"
+                          : (job.package?.size ? `${job.package.size} package` : "Delivery offer")}
                       </p>
                       <span className="text-xs font-semibold text-emerald-300">
-                        ${(job.agreedFee || 0).toFixed(2)}
+                        {lockedByToken
+                          ? `${requiredTokens} token${requiredTokens === 1 ? "" : "s"}`
+                          : `$${(job.agreedFee || 0).toFixed(2)}`}
                       </span>
                     </div>
                     <p className="text-xs text-blue-100 mt-1">
-                      {job.pickup?.label || "Pickup"} → {job.dropoff?.label || "Dropoff"}
+                      {lockedByToken
+                        ? "Use tokens to reveal pickup and dropoff"
+                        : `${job.pickup?.label || "Pickup"} → ${job.dropoff?.label || "Dropoff"}`}
                     </p>
                   </button>
 
