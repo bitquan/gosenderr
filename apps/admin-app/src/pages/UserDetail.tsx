@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { doc, getDoc, updateDoc, collection, query, where, getDocs, addDoc, deleteDoc, Timestamp, orderBy } from 'firebase/firestore'
+import { doc, getDoc, updateDoc, collection, query, where, getDocs, addDoc, Timestamp } from 'firebase/firestore'
 import { db } from '../lib/firebase'
+import { deleteUserForAdmin } from '../lib/cloudFunctions'
 import { Card, CardHeader, CardTitle, CardContent } from '../components/Card'
 import EditRoleModal from '../components/EditRoleModal'
 import BanUserModal from '../components/BanUserModal'
@@ -116,14 +117,19 @@ export default function UserDetailPage() {
       setLogsLoading(true)
       const logsQuery = query(
         collection(db, 'adminLogs'),
-        where('userId', '==', userId),
-        orderBy('timestamp', 'desc')
+        where('userId', '==', userId)
       )
       const logsSnap = await getDocs(logsQuery)
-      const logs = logsSnap.docs.map(docSnap => ({
-        id: docSnap.id,
-        ...docSnap.data()
-      })) as AdminLog[]
+      const logs = logsSnap.docs
+        .map(docSnap => ({
+          id: docSnap.id,
+          ...docSnap.data(),
+        }) as AdminLog)
+        .sort((a, b) => {
+          const aMillis = a.timestamp?.toMillis?.() ?? 0
+          const bMillis = b.timestamp?.toMillis?.() ?? 0
+          return bMillis - aMillis
+        })
       setActivityLogs(logs)
     } catch (error) {
       console.error('Error loading activity logs:', error)
@@ -241,19 +247,11 @@ export default function UserDetailPage() {
   const handleDeleteUser = async () => {
     if (!user) return
     try {
-      await deleteDoc(doc(db, 'users', user.id))
-      // Log action
-      await addDoc(collection(db, 'adminLogs'), {
-        adminId: 'current-admin',
-        userId: user.id,
-        action: 'DELETE_USER',
-        description: `Permanently deleted user account`,
-        timestamp: Timestamp.now(),
-        changes: { deleted: true }
-      })
+      await deleteUserForAdmin({ targetUserId: user.id })
       navigate('/users')
     } catch (error) {
       console.error('Error deleting user:', error)
+      alert('Failed to delete user')
     }
   }
 

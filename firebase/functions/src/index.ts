@@ -20,6 +20,7 @@ export { onAuthUserCreate } from "./triggers/onAuthUserCreate";
 export { setPackageRunnerClaim } from "./http/setPackageRunnerClaim";
 export { setAdminClaim } from "./http/setAdminClaim";
 export { banUser } from "./http/banUser";
+export { deleteUserForAdmin } from "./http/deleteUserForAdmin";
 export { createUserForAdmin } from "./http/createUserForAdmin";
 export { createAdminJob } from "./http/createAdminJob";
 export { runTestFlow } from "./http/runTestFlow";

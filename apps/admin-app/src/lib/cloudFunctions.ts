@@ -75,6 +75,15 @@ interface CreateUserResult {
   uid?: string
 }
 
+interface DeleteUserForAdminRequest {
+  targetUserId: string
+}
+
+interface DeleteUserForAdminResult {
+  success: boolean
+  targetUserId: string
+}
+
 interface RunTestFlowRequest {
   targetUserId: string
   steps?: string[]
@@ -111,6 +120,7 @@ interface CreateAdminJobResult {
 }
 
 const createUserForAdminFn = httpsCallable<CreateUserRequest, CreateUserResult>(functions, 'createUserForAdmin')
+const deleteUserForAdminFn = httpsCallable<DeleteUserForAdminRequest, DeleteUserForAdminResult>(functions, 'deleteUserForAdmin')
 const diagnoseCreateUserCallFn = httpsCallable<Record<string, unknown>, any>(functions, 'diagnoseCreateUserCall')
 const runTestFlowFn = httpsCallable<RunTestFlowRequest, RunTestFlowResult>(functions, 'runTestFlow')
 const createAdminJobFn = httpsCallable<CreateAdminJobRequest, CreateAdminJobResult>(functions, 'createAdminJob')
@@ -271,6 +281,16 @@ export async function createUserForAdmin(data: CreateUserRequest): Promise<Creat
   } catch (error: any) {
     console.error('createUserForAdmin error', error)
     throw new Error(error.message || 'Failed to create user')
+  }
+}
+
+export async function deleteUserForAdmin(data: DeleteUserForAdminRequest): Promise<DeleteUserForAdminResult> {
+  try {
+    const res = await deleteUserForAdminFn(data)
+    return res.data
+  } catch (error: any) {
+    console.error('deleteUserForAdmin error', error)
+    throw new Error(error.message || 'Failed to delete user')
   }
 }
 
