@@ -332,6 +332,8 @@ export function MapShell({ onSignOut }: MapShellProps) {
       if (!isMounted || !token) return;
       addPushLog(`APNs device token registered: ${token.slice(0, 12)}…`);
       void updateCourierProfile({
+        pushToken: token,
+        pushTokenUpdatedAt: serverTimestamp(),
         'courierProfile.pushToken': token,
         'courierProfile.pushTokenUpdatedAt': serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -378,6 +380,8 @@ export function MapShell({ onSignOut }: MapShellProps) {
 
         addPushLog(`FCM APNs token: ${apnsToken.slice(0, 12)}…`);
         await updateCourierProfile({
+          apnsToken,
+          apnsTokenUpdatedAt: serverTimestamp(),
           'courierProfile.apnsToken': apnsToken,
           'courierProfile.apnsTokenUpdatedAt': serverTimestamp(),
           updatedAt: serverTimestamp(),
@@ -399,6 +403,8 @@ export function MapShell({ onSignOut }: MapShellProps) {
         if (token) {
           addPushLog(`FCM token: ${token.slice(0, 12)}…`);
           await updateCourierProfile({
+            fcmToken: token,
+            fcmTokenUpdatedAt: serverTimestamp(),
             'courierProfile.fcmToken': token,
             'courierProfile.fcmTokenUpdatedAt': serverTimestamp(),
             updatedAt: serverTimestamp(),
@@ -412,6 +418,8 @@ export function MapShell({ onSignOut }: MapShellProps) {
         unsubscribe = messaging().onTokenRefresh(async (nextToken) => {
           addPushLog(`FCM token refreshed: ${nextToken.slice(0, 12)}…`);
           await updateCourierProfile({
+            fcmToken: nextToken,
+            fcmTokenUpdatedAt: serverTimestamp(),
             'courierProfile.fcmToken': nextToken,
             'courierProfile.fcmTokenUpdatedAt': serverTimestamp(),
             updatedAt: serverTimestamp(),

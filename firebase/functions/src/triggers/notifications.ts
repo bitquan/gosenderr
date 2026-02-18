@@ -151,7 +151,7 @@ async function sendNotification(uid: string, message: {
       return;
     }
 
-    const fcmToken = userData.fcmToken;
+    const fcmToken = userData.fcmToken || userData.courierProfile?.fcmToken;
 
     if (!fcmToken) {
       console.log(`No FCM token for user ${uid}`);
