@@ -5,7 +5,6 @@ import {
   where,
   onSnapshot,
   or,
-  and,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Job } from "@/lib/v2/types";
@@ -35,15 +34,12 @@ export function useOpenJobs() {
     }
 
     const jobsRef = collection(db, "jobs");
-    // Show both open jobs AND jobs accepted by this courier
+    // Show open jobs plus jobs assigned to this courier.
+    // Offer-targeting is filtered client-side so docs missing offerCourierUid are still visible.
     const q = query(
       jobsRef,
       or(
-        and(where("status", "==", "open"), where("offerCourierUid", "==", uid)),
-        and(
-          where("status", "==", "open"),
-          where("offerCourierUid", "==", null),
-        ),
+        where("status", "==", "open"),
         where("courierUid", "==", uid),
       ),
     );
@@ -53,10 +49,20 @@ export function useOpenJobs() {
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
-        const jobsList: Job[] = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as Job[];
+        const mappedJobs = snapshot.docs
+          .map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          })) as Job[];
+
+        const jobsList: Job[] = mappedJobs
+          .filter((job) => {
+            if (job.courierUid === uid) return true;
+            if (job.status !== "open") return false;
+
+            const offerCourierUid = (job as any).offerCourierUid;
+            return offerCourierUid == null || offerCourierUid === uid;
+          });
         setJobs(jobsList);
         setLoading(false);
         setSyncState({ status: snapshot.metadata.fromCache ? "stale" : "ok" });

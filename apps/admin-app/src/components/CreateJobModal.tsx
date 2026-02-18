@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
-import { addDoc, collection } from 'firebase/firestore'
-import { db } from '../lib/firebase'
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
+import { auth, db } from '../lib/firebase'
 
 interface LocationSuggestion {
   name: string
@@ -137,6 +137,11 @@ export function CreateJobModal({ isOpen, onClose, onJobCreated }: CreateJobModal
 
     setLoading(true)
     try {
+      const currentUser = auth.currentUser
+      if (!currentUser?.uid) {
+        throw new Error('You must be signed in to create a test job')
+      }
+
       const jobData = {
         type: jobType,
         status: 'open',
@@ -159,7 +164,13 @@ export function CreateJobModal({ isOpen, onClose, onJobCreated }: CreateJobModal
         estimatedFee: parseFloat(estimatedFee),
         vehicleType: jobType === 'package' ? 'car' : 'scooter',
         description: description || '',
-        createdAt: new Date(),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        createdByUid: currentUser.uid,
+        createdByEmail: currentUser.email || '',
+        createdByName: currentUser.displayName || 'Admin',
+        courierUid: null,
+        offerCourierUid: null,
         testRecord: true,
         createdByAdmin: true,
       }
