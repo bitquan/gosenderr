@@ -33,6 +33,8 @@ export {
 	tokenRelease,
 	tokenRefund,
 	tokenCreateCheckoutSession,
+	getTokenWalletSummary,
+	adjustTokenWalletBalance,
 } from "./http/tokenWalletCommands";
 
 // Stripe Functions
