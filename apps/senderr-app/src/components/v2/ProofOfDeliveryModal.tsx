@@ -2,8 +2,7 @@
 import { useState, useRef } from "react";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage } from "@/lib/firebase";
-import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { submitLegacyDeliveryProof } from "@/lib/v2/jobs";
 
 interface ProofOfDeliveryModalProps {
   jobId: string;
@@ -60,16 +59,11 @@ export function ProofOfDeliveryModal({
       await uploadBytes(storageRef, photoFile);
       const photoURL = await getDownloadURL(storageRef);
 
-      // Update job with proof of delivery
-      await updateDoc(doc(db, "jobs", jobId), {
-        proofOfDelivery: {
-          photoURL,
-          notes: selectedNote || notes || "Delivery completed",
-          timestamp: serverTimestamp(),
-        },
-        status: "delivered",
-        deliveredAt: serverTimestamp(),
-      });
+      await submitLegacyDeliveryProof(
+        jobId,
+        photoURL,
+        selectedNote || notes || "Delivery completed",
+      );
 
       onComplete();
     } catch (error) {

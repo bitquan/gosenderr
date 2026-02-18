@@ -1,5 +1,4 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
-import { BottomNav, marketplaceNavItems } from '../components/BottomNav'
 import { Header } from '../components/layout/Header'
 import { Footer } from '../components/layout/Footer'
 import { useEffect, useMemo, useState } from 'react'
@@ -74,8 +73,6 @@ export default function CustomerLayout() {
           <span className="text-sm font-semibold">Status</span>
         </button>
       )}
-      <BottomNav items={marketplaceNavItems} />
-
       <Overlay
         isOpen={showSendModal}
         onClose={() => setShowSendModal(false)}

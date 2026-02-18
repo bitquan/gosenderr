@@ -18,8 +18,12 @@ export async function fetchDirections(
   options: DirectionsOptions = {}
 ): Promise<DirectionsResponse> {
   const token = import.meta.env.VITE_MAPBOX_TOKEN
+  const hasToken =
+    typeof token === 'string' &&
+    token.trim().length > 0 &&
+    token.trim() !== 'your_mapbox_token'
 
-  if (!token) {
+  if (!hasToken) {
     throw new Error('VITE_MAPBOX_TOKEN not configured')
   }
 
