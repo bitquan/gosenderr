@@ -774,21 +774,43 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(
         const start = Math.max(0, progress - 0.2);
         const end = Math.min(1, progress + 0.2);
 
-        activeMap.setPaintProperty(ROUTE_ANIMATED_LAYER_ID, "line-gradient", [
+        const gradientStops: Array<[number, string]> = [
+          [0, "rgba(124,58,237,0.16)"],
+          [start, "rgba(124,58,237,0.16)"],
+          [progress, "rgba(196,181,253,1)"],
+          [end, "rgba(124,58,237,0.16)"],
+          [1, "rgba(124,58,237,0.16)"],
+        ];
+
+        const strictAscendingStops = gradientStops.reduce(
+          (accumulator, [input, output]) => {
+            const clampedInput = Math.min(1, Math.max(0, input));
+            const lastInput = accumulator[accumulator.length - 1]?.[0];
+
+            if (lastInput === undefined || clampedInput > lastInput + 1e-6) {
+              accumulator.push([clampedInput, output]);
+            }
+
+            return accumulator;
+          },
+          [] as Array<[number, string]>,
+        );
+
+        const lineGradient: Array<number | string | unknown[]> = [
           "interpolate",
           ["linear"],
           ["line-progress"],
-          0,
-          "rgba(124,58,237,0.16)",
-          start,
-          "rgba(124,58,237,0.16)",
-          progress,
-          "rgba(196,181,253,1)",
-          end,
-          "rgba(124,58,237,0.16)",
-          1,
-          "rgba(124,58,237,0.16)",
-        ]);
+        ];
+
+        strictAscendingStops.forEach(([input, output]) => {
+          lineGradient.push(input, output);
+        });
+
+        activeMap.setPaintProperty(
+          ROUTE_ANIMATED_LAYER_ID,
+          "line-gradient",
+          lineGradient,
+        );
 
         routeAnimationFrameRef.current = window.requestAnimationFrame(
           animateRouteFlow,
