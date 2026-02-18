@@ -684,7 +684,7 @@ service cloud.firestore {
     // ========== MARKETPLACE ITEMS ==========
     match /marketplaceItems/{itemId} {
       // Public can read active items (including legacy "available" status)
-      allow read: if resource.data.isActive == true
+      allow read: if (!('isActive' in resource.data) || resource.data.isActive == true)
         && (resource.data.status == 'active' || resource.data.status == 'available');
 
       // Sellers can read their own items (including draft/inactive)
