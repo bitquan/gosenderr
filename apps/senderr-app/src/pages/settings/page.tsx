@@ -761,6 +761,9 @@ export default function CourierSettingsPage() {
                             </p>
                           </div>
                         </div>
+                        <p className="mt-2 text-[11px] text-emerald-100/90">
+                          Linked UID: <span className="font-mono text-white">{user?.uid || "—"}</span>
+                        </p>
                         <div className="mt-3">
                           <label className="text-xs font-medium text-emerald-100">Token Pack</label>
                           <select

@@ -525,6 +525,9 @@ export default function CourierDashboardMapShell() {
               <p className="text-xs mt-1">
                 Available: {tokenWallet?.available ?? 0} • Reserved: {tokenWallet?.reserved ?? 0}
               </p>
+              <p className="text-[11px] mt-1 text-blue-100/90">
+                Linked UID: <span className="font-mono text-white">{uid}</span>
+              </p>
               <div className="mt-2">
                 <Link
                   to="/settings"
