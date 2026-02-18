@@ -8,6 +8,10 @@ const db = admin.firestore();
 export const stripeWebhook = functions.https.onRequest(
   { 
     cors: true,
+    minInstances: 0,
+    maxInstances: 10,
+    memory: '256MiB',
+    cpu: 'gcf_gen1',
     // secrets: ['STRIPE_WEBHOOK_SECRET']
   },
   async (req, res) => {

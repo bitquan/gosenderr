@@ -27,7 +27,10 @@ interface CreatePaymentIntentBody {
 export const createPaymentIntentHttp = functions.https.onRequest(
   {
     cors: allowedOrigins,
-    minInstances: 1,
+    minInstances: 0,
+    maxInstances: 10,
+    memory: "256MiB",
+    cpu: "gcf_gen1",
   },
   async (req, res) => {
     const origin = req.headers.origin || "";
