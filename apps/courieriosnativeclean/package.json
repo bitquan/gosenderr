@@ -24,6 +24,7 @@
     "react-native": "0.76.5",
     "react-native-maps": "^1.18.0"
   },
+  "devDependencies": {
     "@babel/core": "^7.25.2",
     "@babel/preset-env": "^7.25.3",
     "@react-native-community/cli": "15.0.1",
