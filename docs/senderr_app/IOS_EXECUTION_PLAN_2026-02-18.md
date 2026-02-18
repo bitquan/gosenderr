@@ -1,7 +1,9 @@
 # Senderr iOS Execution Plan (System-Aligned)
 
 Date: 2026-02-18
-System references:
+
+## Canonical System Inputs
+
 - `SYSTEMS/SENDERR_IOS_SYSTEM.md`
 - `SYSTEMS/BACKEND_FUNCTIONS_SYSTEM.md`
 - `SYSTEMS/SHARED_CONTRACTS_SYSTEM.md`
@@ -10,87 +12,119 @@ System references:
 
 ## Goal
 
-Ship Senderr iOS completion to production-ready parity with the stabilized command-driven backend behavior and token wallet model, with no direct status mutation and no drift from shared contracts.
+Deliver Senderr iOS parity with the command-driven backend and shared contracts, using the existing iOS app stack and existing QA docs/checklists as the execution baseline.
 
-## Scope Boundaries (from SYSTEMS)
+## Non-Negotiable Rules
 
-In-scope:
+1. Command-driven transitions only (no direct protected status mutation from iOS UI paths).
+2. Shared contracts first, app implementation second.
+3. One BAT wave at a time with evidence per BAT.
+4. Release gate must pass before TestFlight promotion.
+
+## Reuse-First Asset Map (What We Already Have)
+
+Implementation base:
+- `apps/courieriosnativeclean`
+
+Current parity/tracking docs:
+- `COURIER_SPEC_IMPLEMENTATION_CHECKLIST.md`
+- `COURIER_EXPERIENCE_SPEC.md`
+- `docs/senderr_app/MAP_SHELL_ACCEPTANCE_MATRIX.md`
+- `docs/senderr_app/SMOKE_CHECKLIST.md`
+- `docs/senderr_app/DEVICE_TEST_MATRIX.md`
+- `docs/senderr_app/TESTFLIGHT_QA_CHECKLIST.md`
+
+Governance/release controls:
+- `BASELINE_CHANGE_WORKFLOW.md`
+- `BASELINE_DRIFT_AUDIT_CHECKLIST.md`
+- `LAUNCH_READINESS_DASHBOARD.md`
+
+## Scope (This Wave)
+
+In scope:
 1. Courier auth/session reliability.
-2. Job feed visibility + claim eligibility parity.
-3. Lifecycle action reliability (`accept -> pickup -> dropoff -> complete`).
-4. Proof capture flow.
-5. Settings/profile payout + token-aware UX.
+2. Feed and claim eligibility parity.
+3. Lifecycle progression parity (`accept -> enroute_pickup -> arrived_pickup -> picked_up -> enroute_dropoff -> arrived_dropoff -> completed`).
+4. Payment lock and proof capture enforcement.
+5. Settings/profile parity needed for operational readiness.
 
-Out-of-scope for this wave:
-- New monetization models.
-- Net-new role/surface expansion.
-- Redesign work not required for lifecycle reliability.
+Out of scope:
+- New feature families unrelated to lifecycle reliability.
+- Design-only refresh work.
+- New role models beyond existing courier system boundaries.
 
-## Delivery Tracks
+## Execution Tracks
 
-### Track A — Contract & Command Parity
-- Verify iOS uses callable command pathways for claim/advance/cancel/decline only.
-- Remove/guard any direct Firestore status writes from iOS action paths.
-- Validate status vocabulary strictly matches shared contracts.
+### Track A — Contract and Lifecycle Command Parity
 
-### Track B — Token Wallet & Offer Gating Parity
-- iOS wallet reads must use canonical utility wallet summary callable.
-- Enforce unlock-before-claim behavior for token-priced offers.
-- Add reject/release semantics parity (safe no-op for stale queue race).
-- Add linked UID debug visibility in non-production debug panel.
+- Audit all iOS lifecycle action entrypoints.
+- Confirm each protected transition goes through callable command pathways.
+- Remove or hard-guard any direct write path that can mutate protected lifecycle state.
+- Verify status vocabulary exactly matches shared contracts.
 
-### Track C — Feed, Queue, and Map Shell Reliability
-- Ensure selected offer state persists across map/sheet interactions.
-- Handle queue churn gracefully (offer removed/switch race).
-- Confirm fallback messaging is actionable (not generic failure).
+### Track B — Feed, Eligibility, and Token Policy Parity
 
-### Track D — Evidence, QA, and Release
-- Simulator + physical-device smoke across `SMOKE_CHECKLIST.md` and `TESTFLIGHT_QA_CHECKLIST.md`.
-- Capture logs/screenshots per BAT evidence rules.
-- Run release gate checks before TestFlight/production promote.
+- Align open/offered/assigned feed behavior with source rules.
+- Validate eligibility gates: mode, radius, status, rate card, capability/equipment checks.
+- Ensure token wallet reads use canonical callable summary and UI reflects unlock requirements.
 
-## BAT-Style Work Plan (Ordered)
+### Track C — Map Shell and Active Job Reliability
 
-1. **BAT-IOS-001: Command Path Audit + Fixes**
-   - Inventory iOS lifecycle mutations.
-   - Route all lifecycle writes through callables.
+- Stabilize selected-offer behavior through queue churn and screen transitions.
+- Validate panel state behavior against map-shell acceptance matrix.
+- Keep one primary CTA visible/accurate with reliable unlock on async failure.
 
-2. **BAT-IOS-002: Token Wallet Source Unification**
-   - Confirm iOS wallet UI reads canonical callable output.
-   - Add fallback/retry and visible sync states.
+### Track D — Proof, Completion, and Recovery
 
-3. **BAT-IOS-003: Offer Unlock/Reject Reliability**
-   - Enforce token unlock requirement before claim.
-   - Implement queue-race-safe reject behavior.
+- Enforce pickup/dropoff proof requirements and payload persistence.
+- Validate payment authorization lock behavior.
+- Add deterministic recovery UX for upload/action failures.
 
-4. **BAT-IOS-004: Map Shell Lifecycle Stability**
-   - Validate active/idle/online state transitions and selected offer behavior.
-   - Ensure no state desync on navigation/background/foreground.
+### Track E — Release Evidence and Gate
 
-5. **BAT-IOS-005: Proof Capture + Completion Reliability**
-   - Validate pickup/dropoff proof capture and upload paths.
-   - Ensure completion guards and error recovery are deterministic.
+- Run simulator and physical-device smoke lanes.
+- Capture artifacts per BAT: logs, screenshots, and command outputs.
+- Complete release gate and rollback readiness before TestFlight promote.
 
-6. **BAT-IOS-006: Release Gate + Rollback Readiness**
-   - Complete smoke + checklist evidence.
-   - Prepare rollback toggles / known-good baseline reference.
+## Ordered BAT Plan
 
-## Acceptance Criteria
+1. **BAT-IOS-001: Lifecycle Command Audit and Closure**
+   - Output: action-path inventory + direct-write closure PR.
 
-- All lifecycle transitions are callable-driven and contract-valid.
-- Token balance and eligibility in iOS matches admin ledger for same UID.
-- Reject/unlock flows do not dead-end courier due to offer queue races.
-- Smoke checklist pass recorded for simulator + at least one physical device lane.
-- Release readiness documented with explicit rollback path.
+2. **BAT-IOS-002: Feed and Eligibility Contract Parity**
+   - Output: verified query/eligibility behavior with evidence.
 
-## Evidence Requirements
+3. **BAT-IOS-003: Token Wallet and Unlock Gating Reliability**
+   - Output: canonical wallet-source parity + unlock/reject resilience.
 
-For each BAT:
-- Changed files list.
-- Command/test output.
-- Manual smoke outcome.
-- Screenshots/log snippets for critical flows.
+4. **BAT-IOS-004: Map Shell Action Stability**
+   - Output: no CTA lock/desync across state transitions and queue updates.
 
-## Next Action
+5. **BAT-IOS-005: Proof + Completion Guard Enforcement**
+   - Output: required proof + payment lock behavior validated end-to-end.
 
-Start BAT-IOS-001 in `apps/courieriosnativeclean` and open a paired execution log doc for daily evidence capture.
+6. **BAT-IOS-006: Release Gate and Rollback Readiness**
+   - Output: full evidence pack + launch/rollback signoff.
+
+## Definition of Done (Wave)
+
+- Lifecycle transitions are callable-driven and contract-valid.
+- Eligibility and token unlock behavior in iOS matches backend/admin reality for same UID.
+- Proof and payment locks are enforced without dead-end UX.
+- Smoke checklists pass on simulator plus at least one physical device lane.
+- Release gate artifacts are complete and linked in launch docs.
+
+## Evidence Template (Per BAT)
+
+For each BAT capture:
+1. Changed files.
+2. Automated test output.
+3. Manual smoke results.
+4. Screenshots/log evidence.
+5. Known risks and rollback note.
+
+## Immediate Next Steps
+
+1. Start BAT-IOS-001 in `apps/courieriosnativeclean`.
+2. Open/update a daily execution log in `docs/senderr_app` for BAT-IOS-001 evidence.
+3. Run branch save/checkpoint after each BAT with conventional commit summaries.
