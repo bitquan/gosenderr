@@ -36,6 +36,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               role: 'courier',
               createdAt: serverTimestamp(),
               courierProfile: {
+                onboardingCompleted: false,
+                status: null,
                 isOnline: false,
                 workModes: {
                   packagesEnabled: false,

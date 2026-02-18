@@ -5,10 +5,11 @@
  * @format
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
+  ScrollView,
   StatusBar,
   StyleSheet,
   Text,
@@ -20,10 +21,12 @@ import {
   SafeAreaProvider,
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { AuthProvider } from './src/contexts/AuthContext';
+import { CourierOnboarding } from './src/components/CourierOnboarding';
 import { useAuth } from './src/hooks/useAuth';
 import { useFeatureFlags } from './src/hooks/useFeatureFlags';
-import { isFirebaseReady } from './src/lib/firebase';
+import { db, isFirebaseReady } from './src/lib/firebase';
 import { MapShell } from './src/screens/MapShell';
 
 function App() {
@@ -43,6 +46,8 @@ function AppContent() {
   const safeAreaInsets = useSafeAreaInsets();
   const { user, loading: authLoading, signIn, signOut } = useAuth();
   const { flags, loading: flagsLoading } = useFeatureFlags();
+  const [userDoc, setUserDoc] = useState<Record<string, any> | null>(null);
+  const [userDocLoading, setUserDocLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -50,6 +55,59 @@ function AppContent() {
 
   const firebaseReady = isFirebaseReady();
   const isNativeEnabled = Boolean(flags?.courier?.nativeV2) || (__DEV__ && devOverride);
+
+  useEffect(() => {
+    if (!firebaseReady || !user?.uid) {
+      setUserDoc(null);
+      setUserDocLoading(false);
+      return;
+    }
+
+    setUserDocLoading(true);
+    const unsubscribe = onSnapshot(
+      doc(db, 'users', user.uid),
+      (snapshot) => {
+        setUserDoc(snapshot.exists() ? (snapshot.data() as Record<string, any>) : null);
+        setUserDocLoading(false);
+      },
+      () => setUserDocLoading(false),
+    );
+
+    return unsubscribe;
+  }, [firebaseReady, user?.uid]);
+
+  const courierProfile = userDoc?.courierProfile || {};
+  const courierStatus = String(courierProfile?.status || '').toLowerCase();
+  const onboardingCompleted = Boolean(courierProfile?.onboardingCompleted);
+  const rejectionReason =
+    typeof courierProfile?.rejectionReason === 'string' ? courierProfile.rejectionReason : '';
+
+  const canEnterMapShell =
+    firebaseReady &&
+    !authLoading &&
+    !!user &&
+    !flagsLoading &&
+    !userDocLoading &&
+    isNativeEnabled &&
+    (courierStatus === 'approved' || (__DEV__ && devOverride));
+
+  const showOnboarding =
+    firebaseReady &&
+    !authLoading &&
+    !!user &&
+    !flagsLoading &&
+    !userDocLoading &&
+    isNativeEnabled &&
+    (courierStatus === 'rejected' || !onboardingCompleted);
+
+  const showPendingReview =
+    firebaseReady &&
+    !authLoading &&
+    !!user &&
+    !flagsLoading &&
+    !userDocLoading &&
+    isNativeEnabled &&
+    courierStatus === 'pending';
 
   const handleSignIn = async () => {
     setError(null);
@@ -60,7 +118,7 @@ function AppContent() {
     }
   };
 
-  if (firebaseReady && !authLoading && user && !flagsLoading && isNativeEnabled) {
+  if (canEnterMapShell) {
     return (
       <View style={styles.fullScreen}>
         <MapShell onSignOut={signOut} />
@@ -68,10 +126,23 @@ function AppContent() {
     );
   }
 
+  if (showOnboarding && user?.uid) {
+    return (
+      <View style={styles.fullScreen}>
+        <CourierOnboarding
+          uid={user.uid}
+          initialProfile={courierProfile}
+          rejectionReason={rejectionReason || undefined}
+          onSignOut={signOut}
+        />
+      </View>
+    );
+  }
+
   return (
     <View style={[styles.container, { paddingTop: safeAreaInsets.top + 24 }]}> 
       <Text style={styles.title}>GoSenderr Courier V2</Text>
-      <Text style={styles.subtitle}>Native iOS app (Plan D)</Text>
+      <Text style={styles.subtitle}>Native courier app</Text>
 
       {!firebaseReady && (
         <View style={styles.card}>
@@ -119,6 +190,27 @@ function AppContent() {
           <ActivityIndicator color="#ffffff" />
           <Text style={styles.item}>Loading feature flags…</Text>
         </View>
+      )}
+
+      {firebaseReady && !authLoading && user && !flagsLoading && isNativeEnabled && userDocLoading && (
+        <View style={styles.centered}>
+          <ActivityIndicator color="#ffffff" />
+          <Text style={styles.item}>Loading courier profile…</Text>
+        </View>
+      )}
+
+      {showPendingReview && (
+        <ScrollView style={styles.pendingWrap} contentContainerStyle={styles.pendingContent}>
+          <View style={styles.pendingCard}>
+            <Text style={styles.pendingTitle}>Application Under Review</Text>
+            <Text style={styles.pendingText}>
+              Your onboarding is submitted and pending approval. You’ll be able to go online once approved.
+            </Text>
+            <Pressable style={styles.ghostButton} onPress={signOut}>
+              <Text style={styles.ghostButtonText}>Sign Out</Text>
+            </Pressable>
+          </View>
+        </ScrollView>
       )}
 
       {firebaseReady && !authLoading && user && !flagsLoading && !isNativeEnabled && (
@@ -186,6 +278,30 @@ const styles = StyleSheet.create({
     marginTop: 24,
     alignItems: 'center',
     gap: 8,
+  },
+  pendingWrap: {
+    marginTop: 16,
+  },
+  pendingContent: {
+    paddingBottom: 28,
+  },
+  pendingCard: {
+    backgroundColor: '#111827',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#1f2937',
+  },
+  pendingTitle: {
+    color: '#f8fafc',
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 10,
+  },
+  pendingText: {
+    color: '#cbd5e1',
+    fontSize: 14,
+    lineHeight: 20,
   },
   input: {
     borderWidth: 1,
