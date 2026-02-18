@@ -217,6 +217,7 @@ export function MapShell({ onSignOut }: MapShellProps) {
   const [routeLoading, setRouteLoading] = useState(false);
   const lastRouteRef = useRef<{ key: string; at: number }>({ key: '', at: 0 });
   const pulseAnim = useRef(new Animated.Value(0)).current;
+  const courierWriteDeniedRef = useRef(false);
   const [pulseValue, setPulseValue] = useState(0.6);
   const proofEnabled = Boolean(flags?.customer?.proofPhotos);
   const jobDetailsEnabled = Boolean(flags?.courier?.jobDetails ?? true);
@@ -244,6 +245,39 @@ export function MapShell({ onSignOut }: MapShellProps) {
       return next.slice(0, 8);
     });
   }, []);
+
+  const isPermissionDeniedError = (err: any) => {
+    const code = String(err?.code || '');
+    const message = String(err?.message || '').toLowerCase();
+    return code.includes('permission-denied') || message.includes('missing or insufficient permissions');
+  };
+
+  const updateCourierProfile = useCallback(
+    async (
+      payload: Record<string, any>,
+      options?: { warnLabel?: string; notifyUser?: boolean },
+    ) => {
+      if (!user?.uid || courierWriteDeniedRef.current) return false;
+      try {
+        await updateDoc(doc(db, 'users', user.uid), payload);
+        return true;
+      } catch (err: any) {
+        if (isPermissionDeniedError(err)) {
+          courierWriteDeniedRef.current = true;
+          addPushLog('Firestore write denied for courier profile updates');
+          if (options?.notifyUser) {
+            setError('Your account cannot update courier settings yet. Please complete courier approval.');
+          }
+          return false;
+        }
+        if (options?.warnLabel) {
+          console.warn(options.warnLabel, err);
+        }
+        return false;
+      }
+    },
+    [user?.uid, addPushLog],
+  );
 
   const addInboxItem = useCallback((title: string, body: string) => {
     const createdAt = Date.now();
@@ -297,7 +331,7 @@ export function MapShell({ onSignOut }: MapShellProps) {
     const onRegister = (token: string) => {
       if (!isMounted || !token) return;
       addPushLog(`APNs device token registered: ${token.slice(0, 12)}…`);
-      void updateDoc(doc(db, 'users', user.uid), {
+      void updateCourierProfile({
         'courierProfile.pushToken': token,
         'courierProfile.pushTokenUpdatedAt': serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -329,7 +363,6 @@ export function MapShell({ onSignOut }: MapShellProps) {
     const initMessaging = async () => {
       try {
         await messaging().setAutoInitEnabled(true);
-        await messaging().registerDeviceForRemoteMessages();
         const authStatus = await messaging().requestPermission();
         addPushLog(`FCM permission status: ${authStatus}`);
         const enabled =
@@ -338,18 +371,21 @@ export function MapShell({ onSignOut }: MapShellProps) {
         if (!enabled) return;
 
         const apnsToken = await messaging().getAPNSToken();
-        if (apnsToken) {
-          addPushLog(`FCM APNs token: ${apnsToken.slice(0, 12)}…`);
-          await updateDoc(doc(db, 'users', user.uid), {
-            'courierProfile.apnsToken': apnsToken,
-            'courierProfile.apnsTokenUpdatedAt': serverTimestamp(),
-            updatedAt: serverTimestamp(),
-          });
-          await logCourierEvent({
-            courierUid: user.uid,
-            event: 'apns_token_registered',
-          });
+        if (!apnsToken) {
+          addPushLog('APNS token not ready; skipping FCM token fetch');
+          return;
         }
+
+        addPushLog(`FCM APNs token: ${apnsToken.slice(0, 12)}…`);
+        await updateCourierProfile({
+          'courierProfile.apnsToken': apnsToken,
+          'courierProfile.apnsTokenUpdatedAt': serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+        await logCourierEvent({
+          courierUid: user.uid,
+          event: 'apns_token_registered',
+        });
 
         if (__DEV__) {
           try {
@@ -362,7 +398,7 @@ export function MapShell({ onSignOut }: MapShellProps) {
         const token = await messaging().getToken();
         if (token) {
           addPushLog(`FCM token: ${token.slice(0, 12)}…`);
-          await updateDoc(doc(db, 'users', user.uid), {
+          await updateCourierProfile({
             'courierProfile.fcmToken': token,
             'courierProfile.fcmTokenUpdatedAt': serverTimestamp(),
             updatedAt: serverTimestamp(),
@@ -375,7 +411,7 @@ export function MapShell({ onSignOut }: MapShellProps) {
 
         unsubscribe = messaging().onTokenRefresh(async (nextToken) => {
           addPushLog(`FCM token refreshed: ${nextToken.slice(0, 12)}…`);
-          await updateDoc(doc(db, 'users', user.uid), {
+          await updateCourierProfile({
             'courierProfile.fcmToken': nextToken,
             'courierProfile.fcmTokenUpdatedAt': serverTimestamp(),
             updatedAt: serverTimestamp(),
@@ -391,7 +427,7 @@ export function MapShell({ onSignOut }: MapShellProps) {
     return () => {
       if (unsubscribe) unsubscribe();
     };
-  }, [pushEnabled, user?.uid, addPushLog]);
+  }, [pushEnabled, user?.uid, addPushLog, updateCourierProfile]);
 
   useEffect(() => {
     if (!pushEnabled) return;
@@ -1492,11 +1528,14 @@ export function MapShell({ onSignOut }: MapShellProps) {
     if (!user?.uid || onlineBusy) return;
     setOnlineBusy(true);
     try {
-      const userRef = doc(db, 'users', user.uid);
-      await updateDoc(userRef, {
+      const updated = await updateCourierProfile(
+        {
         'courierProfile.isOnline': !isOnline,
         updatedAt: serverTimestamp(),
-      });
+        },
+        { warnLabel: 'Failed to update online status', notifyUser: true },
+      );
+      if (!updated) return;
       await logCourierEvent({
         courierUid: user.uid,
         event: 'courier_online_toggle',
