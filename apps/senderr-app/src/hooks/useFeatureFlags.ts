@@ -2,7 +2,11 @@
 import { useState, useEffect } from "react";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+<<<<<<< HEAD
 import { DEFAULT_FEATURE_FLAGS, normalizeFeatureFlags } from "@gosenderr/shared";
+=======
+import { DEFAULT_FEATURE_FLAGS } from "@gosenderr/shared";
+>>>>>>> senderr_app
 import type { FeatureFlags } from "@gosenderr/shared";
 
 export function useFeatureFlags() {
@@ -15,10 +19,17 @@ export function useFeatureFlags() {
       doc(db, "featureFlags", "config"),
       (snapshot) => {
         if (snapshot.exists()) {
+<<<<<<< HEAD
           setFlags(normalizeFeatureFlags(snapshot.data()));
         } else {
           // Return canonical defaults if document doesn't exist.
           setFlags(DEFAULT_FEATURE_FLAGS as unknown as FeatureFlags);
+=======
+          setFlags(snapshot.data() as FeatureFlags);
+        } else {
+          // Return default flags if document doesn't exist.
+          setFlags(DEFAULT_FEATURE_FLAGS);
+>>>>>>> senderr_app
         }
         setLoading(false);
       },

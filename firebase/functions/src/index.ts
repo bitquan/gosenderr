@@ -34,6 +34,18 @@ export {
 	tokenRefund,
 	tokenCreateCheckoutSession,
 } from "./http/tokenWalletCommands";
+export {
+  upsertMerchantDirectoryEntry,
+  createSellerBookingLink,
+  revokeSellerBookingLink,
+  validateSellerBookingLink,
+} from "./senderrplace/domainContract";
+export {
+  evaluateSenderrplaceAvailability,
+  createSenderrplaceBookingHold,
+  releaseSenderrplaceBookingHold,
+  finalizeSenderrplaceBookingWithHold,
+} from "./senderrplace/availabilityGate";
 
 // Stripe Functions
 export * from "./stripe";

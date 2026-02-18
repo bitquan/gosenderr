@@ -17,7 +17,6 @@
     "preview:marketplace": "pnpm --filter @gosenderr/marketplace-app preview",
     "deploy:marketplace": "pnpm build:marketplace && firebase deploy --only hosting:gosenderr-marketplace --project gosenderr-6773f --non-interactive",
     "dev:senderr": "pnpm --filter @gosenderr/senderr-app dev",
-    "dev:senderr:background": "pnpm --filter @gosenderr/senderr-app dev",
     "build:senderr": "pnpm --filter @gosenderr/senderr-app build",
     "preview:senderr": "pnpm --filter @gosenderr/senderr-app preview",
     "deploy:senderr": "pnpm build:senderr && firebase deploy --only hosting:gosenderr-courier --project gosenderr-6773f --non-interactive",
@@ -45,6 +44,7 @@
     "dev:docker": "bash scripts/dev-docker-up.sh",
     "dev:docker:down": "bash scripts/dev-docker-down.sh",
     "smoke:docker": "sh ./scripts/smoke-tests.sh",
+<<<<<<< HEAD
     "emu:wait": "bash scripts/wait-for-emulator-ready.sh gosenderr-6773f 60",
     "emu:up-and-test": "pnpm dev:docker && pnpm -C firebase/functions test:integration",
     "dev:check": "sh ./scripts/dev-checks.sh",
@@ -57,6 +57,19 @@
     "ios:pods:install": "bash scripts/bootstrap-senderr-ios.sh",
     "ios:clean:install": "bash scripts/ios-clean-install.sh",
     "ios:clean:build:debug": "bash scripts/ios-clean-install.sh && (cd apps/courieriosnativeclean/ios && xcodebuild -workspace Senderrappios.xcworkspace -scheme Senderr -configuration Debug -sdk iphoneos -destination 'generic/platform=iOS' clean build)"
+=======
+    "dev:check": "sh ./scripts/dev-checks.sh",
+    "clean:env": "bash scripts/clean-environment.sh",
+    "bootstrap:minimal": "bash scripts/bootstrap-minimal.sh",
+    "ios:senderr": "bash scripts/ios-senderr.sh",
+    "ios:clean:install": "bash scripts/ios-senderr.sh clean-install",
+    "ios:build:verify": "bash scripts/ios-senderr.sh build-verify",
+    "ios:testflight:archive": "bash scripts/ios-testflight.sh archive",
+    "ios:testflight:upload": "bash scripts/ios-testflight.sh upload",
+    "ios:audit:deps": "bash scripts/ios-dependency-audit.sh",
+    "ios:audit:deps:check": "bash scripts/ios-dependency-audit.sh check",
+    "ios:smoke": "bash scripts/ios-smoke-checks.sh"
+>>>>>>> senderr_app
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "2.0.7",

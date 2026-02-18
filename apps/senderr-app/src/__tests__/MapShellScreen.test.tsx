@@ -11,12 +11,42 @@ vi.mock("@/components/v2/MapboxMap", () => ({
   },
 }));
 
+<<<<<<< HEAD
+=======
+vi.mock("@/hooks/v2/useOpenJobs", () => ({
+  useOpenJobs: () => ({
+    jobs: [],
+    loading: false,
+    syncState: { status: "ok" },
+  }),
+}));
+
+vi.mock("@/hooks/v2/useUserDoc", () => ({
+  useUserDoc: () => ({ userDoc: null, loading: false }),
+}));
+
+vi.mock("@/hooks/v2/useCourierLocationWriter", () => ({
+  useCourierLocationWriter: () => ({
+    isTracking: false,
+    permissionDenied: false,
+  }),
+}));
+
+vi.mock("@/hooks/v2/useAuthUser", () => ({
+  useAuthUser: () => ({ uid: null, loading: false }),
+}));
+
+>>>>>>> senderr_app
 import MapShellScreen from "@/screens/MapShellScreen";
 
 describe("MapShellScreen", () => {
   it("renders without crashing and shows children and overlay slots", () => {
     render(
+<<<<<<< HEAD
       <MapShellScreen>
+=======
+      <MapShellScreen devPreview={true}>
+>>>>>>> senderr_app
         <div>child content</div>
       </MapShellScreen>,
     );

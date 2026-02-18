@@ -38,15 +38,28 @@ export default function SignupPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password)
       const user = userCredential.user
 
-      // Create user document in Firestore with unified marketplace roles
+      // Create user document in Firestore with unified marketplace roles.
+      // Users start as customers and can later add the seller role.
       await setDoc(doc(db, 'users', user.uid), {
         email: user.email,
         displayName: displayName || user.email?.split('@')[0],
         role: 'customer', // single role used by security rules
-        roles: ['buyer', 'seller'], // Backwards-compatible array for UI
+        primaryRole: 'customer',
+        roles: ['customer', 'buyer'],
         profilePhotoUrl: '',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
+        onboarding: {
+          customer: {
+            status: 'completed',
+            completedAt: serverTimestamp(),
+          },
+          seller: {
+            status: 'not_started',
+            currentStep: 'business',
+            lastSavedAt: null,
+          },
+        },
         // Buyer profile (active by default)
         buyerProfile: {
           favoriteItems: [],

@@ -30,6 +30,7 @@ interface Stats {
 
 export default function AdminDashboardPage() {
   const { user } = useAuth()
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [stats, setStats] = useState<Stats>({
     totalUsers: 0,
     totalJobs: 0,
@@ -55,6 +56,7 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     const loadStats = async () => {
       try {
+        setLoadError(null)
         // Load users
         const usersSnap = await getDocs(collection(db, 'users'))
         const users = usersSnap.docs.map(doc => doc.data())
@@ -253,7 +255,14 @@ export default function AdminDashboardPage() {
           topCategories
         })
       } catch (error) {
-        console.error('Error loading stats:', error)
+        const code = (error as { code?: string } | null)?.code
+        if (code === 'permission-denied') {
+          setLoadError('Admin permissions are required to load dashboard stats.')
+          console.warn('Dashboard stats blocked by Firestore rules (permission-denied).')
+        } else {
+          setLoadError('Failed to load dashboard stats.')
+          console.error('Error loading stats:', error)
+        }
       } finally {
         setLoading(false)
       }
@@ -272,6 +281,14 @@ export default function AdminDashboardPage() {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 -mt-8 space-y-6">
+        {loadError && (
+          <Card variant="elevated">
+            <CardContent className="p-4">
+              <p className="text-sm font-semibold text-red-700">{loadError}</p>
+            </CardContent>
+          </Card>
+        )}
+
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           <Card variant="elevated">
             <CardContent className="p-6 text-center">

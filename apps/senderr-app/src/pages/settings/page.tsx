@@ -1,6 +1,11 @@
+<<<<<<< HEAD
 
 import { LoadingState } from "@gosenderr/ui";
 import { useNavigate, useSearchParams } from "react-router-dom";
+=======
+import { LoadingState } from "@gosenderr/ui";
+import { useNavigate } from "react-router-dom";
+>>>>>>> senderr_app
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { Link } from "react-router-dom";
 import { getAuthSafe } from "@/lib/firebase";
@@ -8,11 +13,14 @@ import { useEffect, useState } from "react";
 import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db, storage } from "@/lib/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+<<<<<<< HEAD
 import {
   getTokenPolicy,
   getTokenWalletSummary,
   tokenCreateCheckoutSession,
 } from "@/lib/v2/jobs";
+=======
+>>>>>>> senderr_app
 
 const STATE_OPTIONS = [
   { code: "AL", name: "Alabama" },
@@ -68,6 +76,7 @@ const STATE_OPTIONS = [
   { code: "DC", name: "District of Columbia" },
 ];
 
+<<<<<<< HEAD
 type SettingsTab =
   | "account"
   | "delivery"
@@ -87,12 +96,52 @@ export default function CourierSettingsPage() {
   const [availability, setAvailability] = useState(false);
   const [serviceRadius, setServiceRadius] = useState(10);
   const [taxState, setTaxState] = useState('');
+=======
+export default function CourierSettingsPage() {
+  const navigate = useNavigate();
+  const { user, loading } = useAuthUser();
+  // Local minimal types for settings page to avoid missing module issues during tsc checks
+  type DocItem = {
+    label: string;
+    url: string;
+    name: string;
+    contentType?: string;
+    uploadedAt?: Date;
+  };
+  type CourierProfile = {
+    isOnline?: boolean;
+    serviceRadius?: number;
+    taxState?: string;
+    notificationPrefs?: {
+      jobOffers?: boolean;
+      payoutUpdates?: boolean;
+      reminders?: boolean;
+    };
+    completedJobs?: number;
+    todayJobs?: number;
+    documents?: DocItem[];
+    status?: string;
+    rejectionReason?: string | null;
+  };
+  type CourierData = {
+    role?: string;
+    courierProfile?: CourierProfile;
+    taxState?: string;
+  };
+  const [courierData, setCourierData] = useState<CourierData | null>(null);
+  const [dataLoading, setDataLoading] = useState(true);
+  const [signingOut, setSigningOut] = useState(false);
+  const [availability, setAvailability] = useState(false);
+  const [serviceRadius, setServiceRadius] = useState(10);
+  const [taxState, setTaxState] = useState("");
+>>>>>>> senderr_app
   const [notificationPrefs, setNotificationPrefs] = useState({
     jobOffers: true,
     payoutUpdates: true,
     reminders: true,
   });
   const [savingPreferences, setSavingPreferences] = useState(false);
+<<<<<<< HEAD
   const [payoutMode, setPayoutMode] = useState<"cash" | "token">("cash");
   const [tokenLoading, setTokenLoading] = useState(false);
   const [tokenTopUpLoading, setTokenTopUpLoading] = useState(false);
@@ -106,6 +155,8 @@ export default function CourierSettingsPage() {
     available: number;
     reserved: number;
   } | null>(null);
+=======
+>>>>>>> senderr_app
   const [uploadingDocs, setUploadingDocs] = useState(false);
   const [documents, setDocuments] = useState<{
     governmentId: File | null;
@@ -117,6 +168,7 @@ export default function CourierSettingsPage() {
     insurance: null,
   });
 
+<<<<<<< HEAD
   // --- External / manual payout methods (Cash App, Zelle, QR uploads)
   const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
   const [pmLoading, setPmLoading] = useState(false);
@@ -144,19 +196,29 @@ export default function CourierSettingsPage() {
     if (user) fetchPaymentMethods(user.uid);
   }, [user]);
 
+=======
+>>>>>>> senderr_app
   useEffect(() => {
     if (user) {
       const loadCourierData = async () => {
         try {
+<<<<<<< HEAD
           const userDoc = await getDoc(doc(db, 'users', user.uid));
+=======
+          const userDoc = await getDoc(doc(db, "users", user.uid));
+>>>>>>> senderr_app
           if (userDoc.exists()) {
             setCourierData(userDoc.data());
             const profile = userDoc.data().courierProfile;
             if (profile) {
               setAvailability(Boolean(profile.isOnline));
               setServiceRadius(Number(profile.serviceRadius || 10));
+<<<<<<< HEAD
               setTaxState(profile.taxState || userDoc.data().taxState || '');
               setPayoutMode(profile.payoutMode === "token" ? "token" : "cash");
+=======
+              setTaxState(profile.taxState || userDoc.data().taxState || "");
+>>>>>>> senderr_app
               setNotificationPrefs({
                 jobOffers: profile.notificationPrefs?.jobOffers ?? true,
                 payoutUpdates: profile.notificationPrefs?.payoutUpdates ?? true,
@@ -164,6 +226,7 @@ export default function CourierSettingsPage() {
               });
             }
           }
+<<<<<<< HEAD
 
           setTokenLoading(true);
           try {
@@ -191,6 +254,8 @@ export default function CourierSettingsPage() {
           } finally {
             setTokenLoading(false);
           }
+=======
+>>>>>>> senderr_app
         } finally {
           setDataLoading(false);
         }
@@ -202,6 +267,7 @@ export default function CourierSettingsPage() {
     }
   }, [user]);
 
+<<<<<<< HEAD
   useEffect(() => {
     const topupStatus = searchParams.get("tokenTopup");
     if (!topupStatus) return;
@@ -241,6 +307,8 @@ export default function CourierSettingsPage() {
     setSearchParams(nextParams, { replace: true });
   }, [searchParams, setSearchParams]);
 
+=======
+>>>>>>> senderr_app
   const handleSignOut = async () => {
     setSigningOut(true);
     try {
@@ -260,6 +328,7 @@ export default function CourierSettingsPage() {
 
     setSavingPreferences(true);
     try {
+<<<<<<< HEAD
       await updateDoc(doc(db, 'users', user.uid), {
         'courierProfile.isOnline': availability,
         'courierProfile.serviceRadius': serviceRadius,
@@ -282,6 +351,15 @@ export default function CourierSettingsPage() {
           updatedAt: new Date(),
         },
       }));
+=======
+      await updateDoc(doc(db, "users", user.uid), {
+        "courierProfile.isOnline": availability,
+        "courierProfile.serviceRadius": serviceRadius,
+        "courierProfile.taxState": taxState,
+        "courierProfile.notificationPrefs": notificationPrefs,
+        updatedAt: serverTimestamp(),
+      });
+>>>>>>> senderr_app
     } catch (error) {
       console.error("Error saving courier preferences:", error);
     } finally {
@@ -296,7 +374,14 @@ export default function CourierSettingsPage() {
       { label: "Government ID", file: documents.governmentId },
       { label: "Vehicle Registration", file: documents.vehicleRegistration },
       { label: "Insurance", file: documents.insurance },
+<<<<<<< HEAD
     ].filter((item) => Boolean(item.file)) as Array<{ label: string; file: File }>;
+=======
+    ].filter((item) => Boolean(item.file)) as Array<{
+      label: string;
+      file: File;
+    }>;
+>>>>>>> senderr_app
 
     if (files.length === 0) {
       alert("Select at least one document to upload.");
@@ -305,6 +390,7 @@ export default function CourierSettingsPage() {
 
     setUploadingDocs(true);
     try {
+<<<<<<< HEAD
       const uploads: Array<{
         label: string;
         url: string;
@@ -312,11 +398,25 @@ export default function CourierSettingsPage() {
         contentType: string;
         uploadedAt: any;
       }> = [];
+=======
+      type DocItem = {
+        label: string;
+        url: string;
+        name: string;
+        contentType?: string;
+        uploadedAt?: Date;
+      };
+      const uploads: DocItem[] = [];
+>>>>>>> senderr_app
 
       for (const item of files) {
         const storageRef = ref(
           storage,
+<<<<<<< HEAD
           `courierDocuments/${user.uid}/${Date.now()}_${item.file.name}`
+=======
+          `courierDocuments/${user.uid}/${Date.now()}_${item.file.name}`,
+>>>>>>> senderr_app
         );
         await uploadBytes(storageRef, item.file);
         const url = await getDownloadURL(storageRef);
@@ -334,7 +434,12 @@ export default function CourierSettingsPage() {
         : [];
 
       const currentStatus = courierData?.courierProfile?.status;
+<<<<<<< HEAD
       const shouldResetStatus = currentStatus === "rejected" || currentStatus === "pending";
+=======
+      const shouldResetStatus =
+        currentStatus === "rejected" || currentStatus === "pending";
+>>>>>>> senderr_app
 
       await updateDoc(doc(db, "users", user.uid), {
         "courierProfile.documents": [...existingDocs, ...uploads],
@@ -348,7 +453,11 @@ export default function CourierSettingsPage() {
         updatedAt: serverTimestamp(),
       });
 
+<<<<<<< HEAD
       setCourierData((prev: any) => ({
+=======
+      setCourierData((prev: CourierData | null) => ({
+>>>>>>> senderr_app
         ...prev,
         courierProfile: {
           ...prev?.courierProfile,
@@ -359,7 +468,15 @@ export default function CourierSettingsPage() {
         },
       }));
 
+<<<<<<< HEAD
       setDocuments({ governmentId: null, vehicleRegistration: null, insurance: null });
+=======
+      setDocuments({
+        governmentId: null,
+        vehicleRegistration: null,
+        insurance: null,
+      });
+>>>>>>> senderr_app
       alert("Documents uploaded successfully.");
     } catch (error) {
       console.error("Error uploading documents:", error);
@@ -369,6 +486,7 @@ export default function CourierSettingsPage() {
     }
   };
 
+<<<<<<< HEAD
   const handleTokenTopUp = async () => {
     if (!tokenPolicy?.enabled || !tokenPolicy.packs.length) {
       alert("Token top-up is currently unavailable.");
@@ -406,6 +524,8 @@ export default function CourierSettingsPage() {
     }
   };
 
+=======
+>>>>>>> senderr_app
   if (loading || dataLoading) {
     return <LoadingState fullPage message="Loading settings..." />;
   }
@@ -416,6 +536,7 @@ export default function CourierSettingsPage() {
   }
 
   return (
+<<<<<<< HEAD
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-purple-950/90">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-6">
         {/* Header */}
@@ -461,17 +582,39 @@ export default function CourierSettingsPage() {
         <div className="bg-slate-950/70 rounded-2xl border border-white/15 overflow-hidden text-white backdrop-blur">
           <div className="p-6 sm:p-8 border-b border-white/10">
             <h2 className="text-2xl font-bold text-white mb-6">
+=======
+    <div className="min-h-screen bg-[#F8F9FF]">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-6">
+        {/* Header */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">
+              ⚙️ Settings & Preferences
+            </h1>
+          </div>
+        </div>
+
+        {/* Account Section */}
+        <div className="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden">
+          <div className="p-6 sm:p-8 border-b border-gray-200">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+>>>>>>> senderr_app
               👤 Account
             </h2>
             <div className="space-y-4">
               <Link
                 to="/profile"
+<<<<<<< HEAD
                 className="flex items-center justify-between rounded-xl bg-white/10 border border-white/15 px-4 py-3 text-sm font-semibold text-blue-100 hover:bg-white/20"
+=======
+                className="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-100"
+>>>>>>> senderr_app
               >
                 <div className="flex items-center gap-3">
                   <span className="text-lg">🧾</span>
                   <span>Profile</span>
                 </div>
+<<<<<<< HEAD
                 <span className="text-blue-200">→</span>
               </Link>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -485,11 +628,33 @@ export default function CourierSettingsPage() {
                   <p className="text-xs text-blue-100 font-medium mb-1">Account Type</p>
                   <p className="text-lg font-semibold text-white">
                     {courierData?.role === 'courier' ? '📦 Courier' : '⚙️ Admin'}
+=======
+                <span className="text-gray-400">→</span>
+              </Link>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <p className="text-xs text-gray-600 font-medium mb-1">
+                    Email
+                  </p>
+                  <p className="text-lg font-semibold text-gray-900 break-all">
+                    {user.email || "N/A"}
+                  </p>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <p className="text-xs text-gray-600 font-medium mb-1">
+                    Account Type
+                  </p>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {courierData?.role === "courier"
+                      ? "📦 Courier"
+                      : "⚙️ Admin"}
+>>>>>>> senderr_app
                   </p>
                 </div>
               </div>
               {courierData?.courierProfile && (
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+<<<<<<< HEAD
                   <div className="bg-blue-600/20 rounded-xl p-4 border border-blue-300/30">
                     <p className="text-xs text-blue-100 font-medium mb-1">Status</p>
                     <p className="text-lg font-bold text-white">
@@ -505,6 +670,31 @@ export default function CourierSettingsPage() {
                   <div className="bg-purple-600/20 rounded-xl p-4 border border-purple-300/30">
                     <p className="text-xs text-purple-100 font-medium mb-1">Today's Deliveries</p>
                     <p className="text-lg font-bold text-white">
+=======
+                  <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+                    <p className="text-xs text-blue-600 font-medium mb-1">
+                      Status
+                    </p>
+                    <p className="text-lg font-bold text-blue-900">
+                      {courierData.courierProfile.isOnline
+                        ? "🟢 Online"
+                        : "⚪ Offline"}
+                    </p>
+                  </div>
+                  <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-200">
+                    <p className="text-xs text-emerald-600 font-medium mb-1">
+                      Completed Deliveries
+                    </p>
+                    <p className="text-lg font-bold text-emerald-900">
+                      {courierData.courierProfile.completedJobs || 0}
+                    </p>
+                  </div>
+                  <div className="bg-purple-50 rounded-xl p-4 border border-purple-200">
+                    <p className="text-xs text-purple-600 font-medium mb-1">
+                      Today's Deliveries
+                    </p>
+                    <p className="text-lg font-bold text-purple-900">
+>>>>>>> senderr_app
                       {courierData.courierProfile.todayJobs || 0}
                     </p>
                   </div>
@@ -513,6 +703,7 @@ export default function CourierSettingsPage() {
             </div>
           </div>
         </div>
+<<<<<<< HEAD
         )}
 
         {/* Delivery Settings Section */}
@@ -527,6 +718,22 @@ export default function CourierSettingsPage() {
                 <div>
                   <p className="text-sm font-semibold text-white">Availability</p>
                   <p className="text-xs text-blue-100">
+=======
+
+        {/* Delivery Settings Section */}
+        <div className="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden">
+          <div className="p-6 sm:p-8 border-b border-gray-200">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              🚚 Delivery Settings
+            </h2>
+            <div className="space-y-5 mb-6">
+              <div className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3">
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">
+                    Availability
+                  </p>
+                  <p className="text-xs text-gray-500">
+>>>>>>> senderr_app
                     Toggle whether you are accepting new deliveries.
                   </p>
                 </div>
@@ -545,6 +752,7 @@ export default function CourierSettingsPage() {
                 </button>
               </div>
 
+<<<<<<< HEAD
               <div className="rounded-xl border border-white/15 bg-white/10 px-4 py-3">
                 <div className="flex items-center justify-between">
                   <div>
@@ -554,6 +762,19 @@ export default function CourierSettingsPage() {
                     </p>
                   </div>
                   <span className="text-sm font-semibold text-white">
+=======
+              <div className="rounded-xl border border-gray-200 px-4 py-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">
+                      Service radius
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      How far you are willing to drive for pickups.
+                    </p>
+                  </div>
+                  <span className="text-sm font-semibold text-gray-900">
+>>>>>>> senderr_app
                     {serviceRadius} mi
                   </span>
                 </div>
@@ -563,10 +784,19 @@ export default function CourierSettingsPage() {
                   max={50}
                   step={1}
                   value={serviceRadius}
+<<<<<<< HEAD
                   onChange={(event) => setServiceRadius(Number(event.target.value))}
                   className="mt-3 w-full"
                 />
                 <div className="mt-2 flex justify-between text-xs text-blue-100">
+=======
+                  onChange={(event) =>
+                    setServiceRadius(Number(event.target.value))
+                  }
+                  className="mt-3 w-full"
+                />
+                <div className="mt-2 flex justify-between text-xs text-gray-400">
+>>>>>>> senderr_app
                   <span>1 mi</span>
                   <span>50 mi</span>
                 </div>
@@ -575,7 +805,11 @@ export default function CourierSettingsPage() {
               <button
                 onClick={handleSavePreferences}
                 disabled={savingPreferences}
+<<<<<<< HEAD
                 className="w-full rounded-xl bg-gradient-to-r from-blue-700 via-blue-600 to-purple-600 px-4 py-3 text-sm font-semibold text-white hover:opacity-95 disabled:opacity-60"
+=======
+                className="w-full rounded-xl bg-purple-600 px-4 py-3 text-sm font-semibold text-white hover:bg-purple-700 disabled:opacity-60"
+>>>>>>> senderr_app
               >
                 {savingPreferences ? "Saving..." : "Save Delivery Preferences"}
               </button>
@@ -583,34 +817,65 @@ export default function CourierSettingsPage() {
             <div className="space-y-3">
               <Link
                 to="/rate-cards"
+<<<<<<< HEAD
                 className="flex items-center justify-between rounded-xl bg-gradient-to-br from-slate-900 via-purple-900 to-purple-950/90 text-white border border-white/10 px-6 py-4 font-semibold transition-all group"
+=======
+                className="flex items-center justify-between rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 px-6 py-4 font-semibold text-gray-900 hover:border-blue-300 hover:from-blue-100 hover:to-indigo-100 transition-all group"
+>>>>>>> senderr_app
               >
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">💰</span>
                   <div className="text-left">
                     <p className="font-bold">Rate Cards & Pricing</p>
+<<<<<<< HEAD
                     <p className="text-xs text-blue-100">Set your delivery rates</p>
                   </div>
                 </div>
                 <span className="text-2xl group-hover:translate-x-1 transition-transform">→</span>
+=======
+                    <p className="text-xs text-gray-600">
+                      Set your delivery rates
+                    </p>
+                  </div>
+                </div>
+                <span className="text-2xl group-hover:translate-x-1 transition-transform">
+                  →
+                </span>
+>>>>>>> senderr_app
               </Link>
 
               <Link
                 to="/equipment"
+<<<<<<< HEAD
                 className="flex items-center justify-between rounded-xl bg-gradient-to-br from-slate-900 via-purple-900 to-purple-950/90 text-white border border-white/10 px-6 py-4 font-semibold transition-all group"
+=======
+                className="flex items-center justify-between rounded-xl bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200 px-6 py-4 font-semibold text-gray-900 hover:border-purple-300 hover:from-purple-100 hover:to-pink-100 transition-all group"
+>>>>>>> senderr_app
               >
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">🎒</span>
                   <div className="text-left">
                     <p className="font-bold">Equipment & Vehicle</p>
+<<<<<<< HEAD
                     <p className="text-xs text-blue-100">Manage your delivery equipment</p>
                   </div>
                 </div>
                 <span className="text-2xl group-hover:translate-x-1 transition-transform">→</span>
+=======
+                    <p className="text-xs text-gray-600">
+                      Manage your delivery equipment
+                    </p>
+                  </div>
+                </div>
+                <span className="text-2xl group-hover:translate-x-1 transition-transform">
+                  →
+                </span>
+>>>>>>> senderr_app
               </Link>
             </div>
           </div>
         </div>
+<<<<<<< HEAD
         )}
 
         {/* Tax & Payout Settings */}
@@ -628,6 +893,24 @@ export default function CourierSettingsPage() {
                   value={taxState}
                   onChange={(e) => setTaxState(e.target.value)}
                   className="w-full px-3 py-2 border border-white/20 bg-slate-950/40 text-white rounded-lg text-sm"
+=======
+
+        {/* Tax & Payout Settings */}
+        <div className="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden">
+          <div className="p-6 sm:p-8 border-b border-gray-200">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              🧾 Taxes & Payouts
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="bg-gray-50 rounded-xl p-4">
+                <p className="text-xs text-gray-600 font-medium mb-1">
+                  Tax State
+                </p>
+                <select
+                  value={taxState}
+                  onChange={(e) => setTaxState(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+>>>>>>> senderr_app
                 >
                   <option value="">Select state</option>
                   {STATE_OPTIONS.map((state) => (
@@ -636,6 +919,7 @@ export default function CourierSettingsPage() {
                     </option>
                   ))}
                 </select>
+<<<<<<< HEAD
                 <p className="text-xs text-blue-100 mt-2">
                   Used for tax estimates in Earnings.
                 </p>
@@ -735,10 +1019,30 @@ export default function CourierSettingsPage() {
                     {savingPreferences ? "Saving..." : "Save Payout Preferences"}
                   </button>
                 </div>
+=======
+                <p className="text-xs text-gray-500 mt-2">
+                  Used for tax estimates in Earnings.
+                </p>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-4">
+                <p className="text-xs text-gray-600 font-medium mb-1">
+                  Payouts
+                </p>
+                <Link
+                  to="/earnings"
+                  className="inline-flex items-center gap-2 mt-1 text-sm font-semibold text-indigo-600"
+                >
+                  View earnings & payouts →
+                </Link>
+                <p className="text-xs text-gray-500 mt-2">
+                  Update your Stripe Connect details in Earnings.
+                </p>
+>>>>>>> senderr_app
               </div>
             </div>
           </div>
         </div>
+<<<<<<< HEAD
         
 
         {/* Payments Section */}
@@ -906,6 +1210,24 @@ export default function CourierSettingsPage() {
                 <div>
                   <p className="text-sm font-semibold text-white">Job Offers</p>
                   <p className="text-xs text-blue-100">Get notified when new jobs are available.</p>
+=======
+
+        {/* Notification Preferences */}
+        <div className="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden">
+          <div className="p-6 sm:p-8 border-b border-gray-200">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              🔔 Notifications
+            </h2>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3">
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">
+                    Job Offers
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Get notified when new jobs are available.
+                  </p>
+>>>>>>> senderr_app
                 </div>
                 <button
                   onClick={() =>
@@ -916,18 +1238,34 @@ export default function CourierSettingsPage() {
                   }
                   className={`px-4 py-2 rounded-full text-xs font-semibold border transition-colors ${
                     notificationPrefs.jobOffers
+<<<<<<< HEAD
                       ? "bg-emerald-600/20 text-emerald-100 border-emerald-300/30"
                       : "bg-slate-950/40 text-blue-100 border-white/20"
+=======
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      : "bg-white text-gray-600 border-gray-200"
+>>>>>>> senderr_app
                   }`}
                 >
                   {notificationPrefs.jobOffers ? "On" : "Off"}
                 </button>
               </div>
 
+<<<<<<< HEAD
               <div className="flex items-center justify-between rounded-xl border border-white/15 bg-white/10 px-4 py-3">
                 <div>
                   <p className="text-sm font-semibold text-white">Payout Updates</p>
                   <p className="text-xs text-blue-100">Get notified about payout status.</p>
+=======
+              <div className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3">
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">
+                    Payout Updates
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Get notified about payout status.
+                  </p>
+>>>>>>> senderr_app
                 </div>
                 <button
                   onClick={() =>
@@ -938,18 +1276,34 @@ export default function CourierSettingsPage() {
                   }
                   className={`px-4 py-2 rounded-full text-xs font-semibold border transition-colors ${
                     notificationPrefs.payoutUpdates
+<<<<<<< HEAD
                       ? "bg-emerald-600/20 text-emerald-100 border-emerald-300/30"
                       : "bg-slate-950/40 text-blue-100 border-white/20"
+=======
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      : "bg-white text-gray-600 border-gray-200"
+>>>>>>> senderr_app
                   }`}
                 >
                   {notificationPrefs.payoutUpdates ? "On" : "Off"}
                 </button>
               </div>
 
+<<<<<<< HEAD
               <div className="flex items-center justify-between rounded-xl border border-white/15 bg-white/10 px-4 py-3">
                 <div>
                   <p className="text-sm font-semibold text-white">Reminders</p>
                   <p className="text-xs text-blue-100">Get reminders for documents and tasks.</p>
+=======
+              <div className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3">
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">
+                    Reminders
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Get reminders for documents and tasks.
+                  </p>
+>>>>>>> senderr_app
                 </div>
                 <button
                   onClick={() =>
@@ -960,8 +1314,13 @@ export default function CourierSettingsPage() {
                   }
                   className={`px-4 py-2 rounded-full text-xs font-semibold border transition-colors ${
                     notificationPrefs.reminders
+<<<<<<< HEAD
                       ? "bg-emerald-600/20 text-emerald-100 border-emerald-300/30"
                       : "bg-slate-950/40 text-blue-100 border-white/20"
+=======
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      : "bg-white text-gray-600 border-gray-200"
+>>>>>>> senderr_app
                   }`}
                 >
                   {notificationPrefs.reminders ? "On" : "Off"}
@@ -970,6 +1329,7 @@ export default function CourierSettingsPage() {
             </div>
           </div>
         </div>
+<<<<<<< HEAD
         )}
 
         {/* Verification Documents */}
@@ -981,10 +1341,23 @@ export default function CourierSettingsPage() {
             </h2>
             <p className="text-sm text-blue-100 mb-6">
               Upload updated documents if your details have changed or if your application was rejected.
+=======
+
+        {/* Verification Documents */}
+        <div className="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden">
+          <div className="p-6 sm:p-8 border-b border-gray-200">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              🧾 Verification Documents
+            </h2>
+            <p className="text-sm text-gray-600 mb-6">
+              Upload updated documents if your details have changed or if your
+              application was rejected.
+>>>>>>> senderr_app
             </p>
 
             {Array.isArray(courierData?.courierProfile?.documents) &&
               courierData.courierProfile.documents.length > 0 && (
+<<<<<<< HEAD
                 <div className="bg-white/10 border border-white/15 rounded-xl p-4 mb-6">
                   <p className="text-xs text-blue-100 mb-2">Current Documents</p>
                   <div className="space-y-2">
@@ -1003,13 +1376,44 @@ export default function CourierSettingsPage() {
                         </a>
                       </div>
                     ))}
+=======
+                <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6">
+                  <p className="text-xs text-gray-500 mb-2">
+                    Current Documents
+                  </p>
+                  <div className="space-y-2">
+                    {courierData.courierProfile.documents.map(
+                      (docItem: DocItem) => (
+                        <div
+                          key={docItem.url}
+                          className="flex items-center justify-between text-sm"
+                        >
+                          <span className="text-gray-700">
+                            {docItem.label}: {docItem.name}
+                          </span>
+                          <a
+                            href={docItem.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-indigo-600 hover:underline"
+                          >
+                            View
+                          </a>
+                        </div>
+                      ),
+                    )}
+>>>>>>> senderr_app
                   </div>
                 </div>
               )}
 
             <div className="space-y-4">
               <div>
+<<<<<<< HEAD
                 <label className="block text-sm font-semibold text-blue-100 mb-2">
+=======
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+>>>>>>> senderr_app
                   Government ID
                 </label>
                 <input
@@ -1021,17 +1425,28 @@ export default function CourierSettingsPage() {
                       governmentId: e.target.files?.[0] || null,
                     })
                   }
+<<<<<<< HEAD
                   className="block w-full text-sm text-blue-100 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-700 file:text-white hover:file:bg-blue-600"
                 />
                 {documents.governmentId && (
                   <p className="text-xs text-blue-100 mt-2">
+=======
+                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                />
+                {documents.governmentId && (
+                  <p className="text-xs text-gray-500 mt-2">
+>>>>>>> senderr_app
                     Selected: {documents.governmentId.name}
                   </p>
                 )}
               </div>
 
               <div>
+<<<<<<< HEAD
                 <label className="block text-sm font-semibold text-blue-100 mb-2">
+=======
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+>>>>>>> senderr_app
                   Vehicle Registration
                 </label>
                 <input
@@ -1043,17 +1458,28 @@ export default function CourierSettingsPage() {
                       vehicleRegistration: e.target.files?.[0] || null,
                     })
                   }
+<<<<<<< HEAD
                   className="block w-full text-sm text-blue-100 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-700 file:text-white hover:file:bg-blue-600"
                 />
                 {documents.vehicleRegistration && (
                   <p className="text-xs text-blue-100 mt-2">
+=======
+                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                />
+                {documents.vehicleRegistration && (
+                  <p className="text-xs text-gray-500 mt-2">
+>>>>>>> senderr_app
                     Selected: {documents.vehicleRegistration.name}
                   </p>
                 )}
               </div>
 
               <div>
+<<<<<<< HEAD
                 <label className="block text-sm font-semibold text-blue-100 mb-2">
+=======
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+>>>>>>> senderr_app
                   Proof of Insurance
                 </label>
                 <input
@@ -1065,16 +1491,27 @@ export default function CourierSettingsPage() {
                       insurance: e.target.files?.[0] || null,
                     })
                   }
+<<<<<<< HEAD
                   className="block w-full text-sm text-blue-100 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-700 file:text-white hover:file:bg-blue-600"
                 />
                 {documents.insurance && (
                   <p className="text-xs text-blue-100 mt-2">
+=======
+                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                />
+                {documents.insurance && (
+                  <p className="text-xs text-gray-500 mt-2">
+>>>>>>> senderr_app
                     Selected: {documents.insurance.name}
                   </p>
                 )}
               </div>
 
+<<<<<<< HEAD
               <div className="text-xs text-blue-100">
+=======
+              <div className="text-xs text-gray-500">
+>>>>>>> senderr_app
                 Accepted formats: JPG, PNG, WEBP, PDF. Max size 15MB.
               </div>
 
@@ -1088,6 +1525,7 @@ export default function CourierSettingsPage() {
             </div>
           </div>
         </div>
+<<<<<<< HEAD
         )}
 
         {/* Support Section */}
@@ -1096,28 +1534,102 @@ export default function CourierSettingsPage() {
         <div className="bg-slate-950/70 rounded-2xl border border-white/15 overflow-hidden text-white backdrop-blur">
           <div className="p-6 sm:p-8 border-b border-white/10">
             <h2 className="text-2xl font-bold text-white mb-6">
+=======
+
+        {/* Payments Section */}
+        <div className="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden">
+          <div className="p-6 sm:p-8 border-b border-gray-200">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              💳 Payments
+            </h2>
+            <div className="space-y-3">
+              <Link
+                to="/earnings"
+                className="flex items-center justify-between rounded-xl bg-gradient-to-r from-emerald-50 to-green-50 border-2 border-emerald-200 px-6 py-4 font-semibold text-gray-900 hover:border-emerald-300 hover:from-emerald-100 hover:to-green-100 transition-all group"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">💵</span>
+                  <div className="text-left">
+                    <p className="font-bold">Earnings & Payouts</p>
+                    <p className="text-xs text-gray-600">
+                      View your earnings history
+                    </p>
+                  </div>
+                </div>
+                <span className="text-2xl group-hover:translate-x-1 transition-transform">
+                  →
+                </span>
+              </Link>
+
+              <Link
+                to="/onboarding/stripe"
+                className="flex items-center justify-between rounded-xl bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-200 px-6 py-4 font-semibold text-gray-900 hover:border-blue-300 hover:from-blue-100 hover:to-cyan-100 transition-all group"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">🏦</span>
+                  <div className="text-left">
+                    <p className="font-bold">Stripe Connect Setup</p>
+                    <p className="text-xs text-gray-600">
+                      Connect your bank account
+                    </p>
+                  </div>
+                </div>
+                <span className="text-2xl group-hover:translate-x-1 transition-transform">
+                  →
+                </span>
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* Support Section */}
+        <div className="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden">
+          <div className="p-6 sm:p-8 border-b border-gray-200">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+>>>>>>> senderr_app
               ❓ Help & Support
             </h2>
             <Link
               to="/support"
+<<<<<<< HEAD
               className="flex items-center justify-between rounded-xl bg-gradient-to-r from-amber-600/20 to-orange-600/20 border border-amber-300/30 px-6 py-4 font-semibold text-white hover:bg-amber-600/30 transition-all group"
+=======
+              className="flex items-center justify-between rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 px-6 py-4 font-semibold text-gray-900 hover:border-amber-300 hover:from-amber-100 hover:to-orange-100 transition-all group"
+>>>>>>> senderr_app
             >
               <div className="flex items-center gap-3">
                 <span className="text-2xl">💬</span>
                 <div className="text-left">
                   <p className="font-bold">Contact Support</p>
+<<<<<<< HEAD
                   <p className="text-xs text-blue-100">Get help with your account</p>
                 </div>
               </div>
               <span className="text-2xl group-hover:translate-x-1 transition-transform">→</span>
+=======
+                  <p className="text-xs text-gray-600">
+                    Get help with your account
+                  </p>
+                </div>
+              </div>
+              <span className="text-2xl group-hover:translate-x-1 transition-transform">
+                →
+              </span>
+>>>>>>> senderr_app
             </Link>
           </div>
         </div>
 
         {/* Danger Zone */}
+<<<<<<< HEAD
         <div className="bg-red-500/15 rounded-2xl border border-red-300/30 overflow-hidden text-white backdrop-blur">
           <div className="p-6 sm:p-8">
             <h2 className="text-2xl font-bold text-red-100 mb-6">
+=======
+        <div className="bg-white rounded-2xl border-2 border-red-200 overflow-hidden">
+          <div className="p-6 sm:p-8">
+            <h2 className="text-2xl font-bold text-red-900 mb-6">
+>>>>>>> senderr_app
               🚪 Danger Zone
             </h2>
             <button
@@ -1126,15 +1638,24 @@ export default function CourierSettingsPage() {
               className="w-full flex items-center justify-center gap-3 rounded-xl bg-red-500 text-white px-6 py-4 font-bold text-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg hover:shadow-xl"
             >
               <span className="text-2xl">🚪</span>
+<<<<<<< HEAD
               <span>{signingOut ? 'Signing out...' : 'Sign Out'}</span>
             </button>
             <p className="text-xs text-red-100 mt-3 text-center">
+=======
+              <span>{signingOut ? "Signing out..." : "Sign Out"}</span>
+            </button>
+            <p className="text-xs text-gray-500 mt-3 text-center">
+>>>>>>> senderr_app
               You'll be logged out and returned to the login screen
             </p>
           </div>
         </div>
+<<<<<<< HEAD
         </>
         )}
+=======
+>>>>>>> senderr_app
       </div>
     </div>
   );

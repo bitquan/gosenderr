@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { calcMiles, calcFee } from "@/lib/v2/pricing";
 import { getEligibilityReason } from "@/lib/v2/eligibility";
@@ -66,7 +65,10 @@ export function CourierJobPreview({
   useEffect(() => {
     if (!enableRoute) return;
     if (!job.pickup || !job.dropoff) return;
-    fetchRoute([job.pickup.lng, job.pickup.lat], [job.dropoff.lng, job.dropoff.lat]);
+    fetchRoute(
+      [job.pickup.lng, job.pickup.lat],
+      [job.dropoff.lng, job.dropoff.lat],
+    );
   }, [job.pickup, job.dropoff, fetchRoute, enableRoute]);
 
   const hasRateCard = !!rateCard;
@@ -78,11 +80,16 @@ export function CourierJobPreview({
 
   const eligible = hasRateCard ? eligibilityResult.eligible : false;
   const reason = eligibilityResult.reason;
-  const fee = hasRateCard ? calcFee(rateCard, jobMiles, pickupMiles, transportMode) : 0;
+  const fee = hasRateCard
+    ? calcFee(rateCard, jobMiles, pickupMiles, transportMode)
+    : 0;
   const displayFee = job.agreedFee ?? fee;
 
   // Courier viewing open job gets limited visibility
-  const viewer: JobViewer = { uid: viewerUid || "courier-preview", role: "courier" };
+  const viewer: JobViewer = {
+    uid: viewerUid || "courier-preview",
+    role: "courier",
+  };
   const visibility = getJobVisibility(job, viewer);
   const isAssignedToViewer = viewerUid && job.courierUid === viewerUid;
 
@@ -98,7 +105,8 @@ export function CourierJobPreview({
           </h3>
           <p className="text-xs text-gray-500">
             {jobMiles.toFixed(1)} mi route
-            {pickupMiles !== undefined && ` • ${pickupMiles.toFixed(1)} mi to pickup`}
+            {pickupMiles !== undefined &&
+              ` • ${pickupMiles.toFixed(1)} mi to pickup`}
           </p>
           {job.paymentStatus !== "authorized" && (
             <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-amber-100 text-amber-800 px-2.5 py-0.5 text-[11px] font-semibold">
@@ -110,6 +118,7 @@ export function CourierJobPreview({
           <p className="text-xs text-gray-500">
             {isAssignedToViewer ? "Agreed Earnings" : "Est. Earnings"}
           </p>
+<<<<<<< HEAD
           <p className="text-lg font-bold text-emerald-600">${displayFee.toFixed(2)}</p>
           {tokenModeEnabled && (
             <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5">
@@ -119,6 +128,11 @@ export function CourierJobPreview({
               </span>
             </div>
           )}
+=======
+          <p className="text-lg font-bold text-emerald-600">
+            ${displayFee.toFixed(2)}
+          </p>
+>>>>>>> senderr_app
         </div>
       </div>
 
@@ -140,14 +154,20 @@ export function CourierJobPreview({
             label="Pickup"
             location={job.pickup}
             canSeeExact={visibility.canSeeExactAddresses}
-            addressOverride={(job as any).pickupAddress || job.pickup?.label}
+            addressOverride={
+              (job as unknown as { pickupAddress?: string }).pickupAddress ||
+              job.pickup?.label
+            }
           />
           <AddressBlock
             label="Dropoff"
             location={job.dropoff}
             canSeeExact={visibility.canSeeExactAddresses}
             icon="🎯"
-            addressOverride={(job as any).deliveryAddress || job.dropoff?.label}
+            addressOverride={
+              (job as unknown as { deliveryAddress?: string })
+                .deliveryAddress || job.dropoff?.label
+            }
           />
           {!visibility.canSeeExactAddresses && (
             <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5">
@@ -221,10 +241,10 @@ export function CourierJobPreview({
                     : tokenModeEnabled
                       ? `Accept (${tokenClaimCost} token${tokenClaimCost === 1 ? "" : "s"})`
                     : !hasRateCard
-                      ? "Set Rate Card"
-                      : !eligible
-                        ? "Cannot Accept"
-                        : "Accept Offer"}
+                    ? "Set Rate Card"
+                    : !eligible
+                    ? "Cannot Accept"
+                    : "Accept Offer"}
                 </button>
                 <button
                   onClick={() => onDecline(job)}
@@ -249,10 +269,10 @@ export function CourierJobPreview({
                   : insufficientTokens
                     ? "Insufficient Tokens"
                   : !hasRateCard
-                    ? "Set Rate Card to Accept"
-                    : !eligible
-                      ? "Cannot Accept"
-                      : "Accept Job"}
+                  ? "Set Rate Card to Accept"
+                  : !eligible
+                  ? "Cannot Accept"
+                  : "Accept Job"}
               </button>
             )}
           </div>

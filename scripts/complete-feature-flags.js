@@ -53,6 +53,13 @@ const completeFlags = {
     darkMode: false,
     animations: true,
   },
+  senderrplaceV2: {
+    enabled: false,
+    ads: false,
+    badges: false,
+    bookingLinks: false,
+    adminControls: false,
+  },
 };
 
 (async () => {

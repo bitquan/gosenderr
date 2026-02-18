@@ -1,10 +1,22 @@
 const fs = require('fs');
 const path = require('path');
 
+<<<<<<< HEAD
 const admin = require(path.join(
   __dirname,
   '../firebase/functions/node_modules/firebase-admin'
 ));
+=======
+let admin;
+try {
+  admin = require('firebase-admin');
+} catch (_error) {
+  admin = require(path.join(
+    __dirname,
+    '../firebase/functions/node_modules/firebase-admin'
+  ));
+}
+>>>>>>> senderr_app
 
 const PROJECT_ID =
   process.env.FIREBASE_PROJECT_ID ||
@@ -59,9 +71,23 @@ if (admin.apps.length === 0) {
   }
 }
 
+<<<<<<< HEAD
 const message = {
   token,
   data,
+=======
+const baseMessage = {
+  token,
+  data,
+};
+
+if (!dataOnly) {
+  baseMessage.notification = { title, body };
+}
+
+const messageWithApns = {
+  ...baseMessage,
+>>>>>>> senderr_app
   apns: {
     headers: {
       'apns-push-type': dataOnly ? 'background' : 'alert',
@@ -78,6 +104,7 @@ const message = {
   },
 };
 
+<<<<<<< HEAD
 if (!dataOnly) {
   message.notification = { title, body };
 }
@@ -96,3 +123,37 @@ admin
     }
     process.exit(1);
   });
+=======
+const send = async () => {
+  try {
+    const response = await admin.messaging().send(messageWithApns);
+    console.log('Push sent:', response);
+    process.exit(0);
+  } catch (primaryError) {
+    if (apnsTopic) {
+      console.warn(
+        'Primary send with APNs headers failed; retrying without APNs overrides...',
+        primaryError?.errorInfo || primaryError?.message || primaryError
+      );
+      try {
+        const fallbackResponse = await admin.messaging().send(baseMessage);
+        console.log('Push sent (fallback):', fallbackResponse);
+        process.exit(0);
+      } catch (fallbackError) {
+        console.error('Push failed (fallback):', fallbackError?.message || fallbackError);
+        if (fallbackError?.errorInfo) {
+          console.error('Fallback error info:', fallbackError.errorInfo);
+        }
+        process.exit(1);
+      }
+    }
+    console.error('Push failed:', primaryError?.message || primaryError);
+    if (primaryError?.errorInfo) {
+      console.error('Error info:', primaryError.errorInfo);
+    }
+    process.exit(1);
+  }
+};
+
+send();
+>>>>>>> senderr_app

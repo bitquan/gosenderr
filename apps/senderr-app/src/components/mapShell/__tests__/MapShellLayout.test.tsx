@@ -1,6 +1,10 @@
 /* @vitest-environment jsdom */
 import "@testing-library/jest-dom/vitest";
+<<<<<<< HEAD
 import { render, screen, within } from "@testing-library/react";
+=======
+import { render, within } from "@testing-library/react";
+>>>>>>> senderr_app
 import { describe, it, expect } from "vitest";
 import MapShellLayout from "@/components/mapShell/MapShellLayout";
 import { Slot } from "@/components/mapShell/slots";

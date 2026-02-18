@@ -16,6 +16,7 @@ export default defineConfig({
     sourcemap: true,
     rollupOptions: {
       output: {
+<<<<<<< HEAD
         manualChunks(id) {
           if (!id.includes('node_modules')) {
             if (
@@ -44,6 +45,13 @@ export default defineConfig({
           }
 
           return undefined
+=======
+        manualChunks: {
+          'seller': ['react', 'react-dom', 'react-router-dom'],
+          'firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
+          'stripe': ['@stripe/stripe-js', '@stripe/react-stripe-js'],
+          'maps': ['mapbox-gl']
+>>>>>>> senderr_app
         }
       }
     }

@@ -1,46 +1,82 @@
 {
   "images" : [
     {
+<<<<<<< HEAD
+=======
+      "filename" : "icon-20@2x.png",
+>>>>>>> senderr_app
       "idiom" : "iphone",
       "scale" : "2x",
       "size" : "20x20"
     },
     {
+<<<<<<< HEAD
+=======
+      "filename" : "icon-20@3x.png",
+>>>>>>> senderr_app
       "idiom" : "iphone",
       "scale" : "3x",
       "size" : "20x20"
     },
     {
+<<<<<<< HEAD
+=======
+      "filename" : "icon-29@2x.png",
+>>>>>>> senderr_app
       "idiom" : "iphone",
       "scale" : "2x",
       "size" : "29x29"
     },
     {
+<<<<<<< HEAD
+=======
+      "filename" : "icon-29@3x.png",
+>>>>>>> senderr_app
       "idiom" : "iphone",
       "scale" : "3x",
       "size" : "29x29"
     },
     {
+<<<<<<< HEAD
+=======
+      "filename" : "icon-40@2x.png",
+>>>>>>> senderr_app
       "idiom" : "iphone",
       "scale" : "2x",
       "size" : "40x40"
     },
     {
+<<<<<<< HEAD
+=======
+      "filename" : "icon-40@3x.png",
+>>>>>>> senderr_app
       "idiom" : "iphone",
       "scale" : "3x",
       "size" : "40x40"
     },
     {
+<<<<<<< HEAD
+=======
+      "filename" : "icon-60@2x.png",
+>>>>>>> senderr_app
       "idiom" : "iphone",
       "scale" : "2x",
       "size" : "60x60"
     },
     {
+<<<<<<< HEAD
+=======
+      "filename" : "icon-60@3x.png",
+>>>>>>> senderr_app
       "idiom" : "iphone",
       "scale" : "3x",
       "size" : "60x60"
     },
     {
+<<<<<<< HEAD
+=======
+      "filename" : "icon-1024.png",
+>>>>>>> senderr_app
       "idiom" : "ios-marketing",
       "scale" : "1x",
       "size" : "1024x1024"

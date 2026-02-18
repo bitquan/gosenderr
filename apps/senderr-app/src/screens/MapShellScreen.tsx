@@ -1,24 +1,52 @@
 import React from "react";
 import { MapboxMap } from "@/components/v2/MapboxMap";
+<<<<<<< HEAD
 import { useMemo, useEffect, useState } from "react";
 import { buildMapShellOverlayModel } from "@/lib/mapShell/overlayController";
+=======
+import { useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import { buildMapShellOverlayModel } from "@/lib/mapShell/overlayController";
+import type {
+  Job as MapShellJob,
+  JobsSyncState,
+  LocationSnapshot,
+  MapShellOverlayModel,
+} from "@/lib/mapShell/overlayController";
+>>>>>>> senderr_app
 import ActiveJobOverlay from "@/components/mapShell/ActiveJobOverlay";
 import SettingsOverlay from "@/components/mapShell/SettingsOverlay";
 import MapShellLayout from "@/components/mapShell/MapShellLayout";
 import { Slot } from "@/components/mapShell/slots";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
+<<<<<<< HEAD
 import {
   claimJob,
   getTokenClaimReadiness,
   type TokenClaimReadiness,
   updateJobStatus,
 } from "@/lib/v2/jobs";
+=======
+import { claimJob, updateJobStatus } from "@/lib/v2/jobs";
+import { useOpenJobs } from "@/hooks/v2/useOpenJobs";
+import { useUserDoc } from "@/hooks/v2/useUserDoc";
+import { useCourierLocationWriter } from "@/hooks/v2/useCourierLocationWriter";
+import type { Job, JobStatus } from "@/lib/v2/types";
+import { calcFee, calcMiles } from "@/lib/v2/pricing";
+import { requestLocation } from "@/lib/location";
+import { doc, updateDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+>>>>>>> senderr_app
 
 export type MapShellScreenProps = {
   className?: string;
   children?: React.ReactNode;
   // Optional dev injection for overlay model so tests and previews can simulate states
+<<<<<<< HEAD
   devOverlayModel?: any;
+=======
+  devOverlayModel?: MapShellOverlayModel;
+>>>>>>> senderr_app
   // Whether this render is using the dev preview bypass (from ?dev_preview=1)
   devPreview?: boolean;
 };
@@ -29,10 +57,85 @@ export default function MapShellScreen({
   devOverlayModel,
   devPreview = false,
 }: MapShellScreenProps) {
+<<<<<<< HEAD
+=======
+  const navigate = useNavigate();
+  const { uid } = useAuthUser();
+  const { jobs, syncState } = useOpenJobs();
+  const { userDoc } = useUserDoc();
+  const { isTracking, permissionDenied } = useCourierLocationWriter();
+
+  const courierLocation: LocationSnapshot = userDoc?.courierProfile
+    ?.currentLocation
+    ? {
+        latitude: userDoc.courierProfile.currentLocation.lat,
+        longitude: userDoc.courierProfile.currentLocation.lng,
+      }
+    : null;
+
+  const isTerminalStatus = (status: JobStatus): boolean =>
+    ["completed", "cancelled", "failed", "expired", "disputed"].includes(
+      status,
+    );
+
+  const activeJob = useMemo(() => {
+    if (!uid) return null;
+    return (
+      jobs.find(
+        (job) => job.courierUid === uid && !isTerminalStatus(job.status),
+      ) ?? null
+    );
+  }, [jobs, uid]);
+
+  const latestJob = useMemo(() => {
+    if (activeJob) return null;
+    return jobs.find((job) => job.status === "open") ?? null;
+  }, [activeJob, jobs]);
+
+  const mapToOverlayJob = (job: Job | null): MapShellJob | null => {
+    if (!job) return null;
+    return {
+      id: job.id,
+      status: job.status,
+      pickupLocation: job.pickup
+        ? { latitude: job.pickup.lat, longitude: job.pickup.lng }
+        : null,
+      dropoffLocation: job.dropoff
+        ? { latitude: job.dropoff.lat, longitude: job.dropoff.lng }
+        : null,
+      notes: job.package?.notes ?? null,
+    };
+  };
+
+  const computeAgreedFee = (job: Job): number | null => {
+    const courierLocation = userDoc?.courierProfile?.currentLocation;
+    if (!courierLocation) return null;
+    if (!job.pickup || !job.dropoff) return null;
+
+    const jobWithFood = job as Job & { isFoodItem?: boolean };
+    const isFoodJob = Boolean(jobWithFood.isFoodItem);
+    const rateCard = isFoodJob
+      ? userDoc?.courierProfile?.foodRateCard
+      : userDoc?.courierProfile?.packageRateCard;
+
+    if (!rateCard) return null;
+
+    const pickupMiles = calcMiles(courierLocation, job.pickup);
+    const jobMiles = calcMiles(job.pickup, job.dropoff);
+    return calcFee(
+      rateCard,
+      jobMiles,
+      pickupMiles,
+      userDoc?.courierProfile?.vehicleType,
+    );
+  };
+
+>>>>>>> senderr_app
   // Dev placeholder state for overlay preview
   const overlayModel = useMemo(() => {
     if (devOverlayModel) return devOverlayModel;
 
+<<<<<<< HEAD
     const pendingJob = {
       id: "dev_job_1",
       status: "pending",
@@ -88,6 +191,44 @@ export default function MapShellScreen({
       tone: tokenClaimReadiness.canClaim ? overlayModel.tone : "error",
     };
   }, [overlayModel, tokenClaimReadiness]);
+=======
+    if (devPreview) {
+      const pendingJob: MapShellJob = {
+        id: "dev_job_1",
+        status: "open",
+        pickupLocation: { latitude: 37.7901, longitude: -122.4002 },
+        dropoffLocation: { latitude: 37.7911, longitude: -122.4012 },
+      };
+
+      return buildMapShellOverlayModel({
+        activeJob: pendingJob,
+        latestJob: null,
+        jobsSyncState: { status: "ok" } as JobsSyncState,
+        courierLocation: null as LocationSnapshot,
+        tracking: false,
+        hasPermission: false,
+      });
+    }
+
+    return buildMapShellOverlayModel({
+      activeJob: mapToOverlayJob(activeJob),
+      latestJob: mapToOverlayJob(latestJob),
+      jobsSyncState: syncState as JobsSyncState,
+      courierLocation,
+      tracking: isTracking,
+      hasPermission: !permissionDenied,
+    });
+  }, [
+    activeJob,
+    courierLocation,
+    devOverlayModel,
+    devPreview,
+    isTracking,
+    latestJob,
+    permissionDenied,
+    syncState,
+  ]);
+>>>>>>> senderr_app
 
   const handlePrimaryAction = async (
     action: string,
@@ -99,15 +240,32 @@ export default function MapShellScreen({
         return;
       }
 
+<<<<<<< HEAD
       // Placeholder until real active job wiring is connected
       const jobId = "dev_job_1";
 
       // Dev preview should never call backend resources
       if (devPreview) {
+=======
+      const actionJob = devPreview
+        ? ({ id: "dev_job_1" } as Job)
+        : activeJob ?? latestJob;
+
+      if (!actionJob) {
+        alert("No active job available for this action");
+        return;
+      }
+
+      const jobId = actionJob.id;
+
+      // Dev placeholders should not call real backend resources — skip in demo mode
+      if (devPreview || jobId.startsWith("dev_")) {
+>>>>>>> senderr_app
         alert("Demo mode: action skipped (no backend calls in dev preview)");
         return;
       }
 
+<<<<<<< HEAD
       if (action === "update_status" && nextStatus === "accepted") {
         if (tokenClaimReadiness?.useTokenMode && !tokenClaimReadiness.canClaim) {
           alert(
@@ -120,12 +278,29 @@ export default function MapShellScreen({
         // Claim the job (uses agreedFee=0 for demo)
         await claimJob(jobId, uid, 0);
         alert("Job claimed (dev)");
+=======
+      if (action === "update_status" && nextStatus === "assigned") {
+        const agreedFee = computeAgreedFee(actionJob);
+        if (agreedFee === null) {
+          alert(
+            "Unable to calculate agreed fee. Check rate cards and location.",
+          );
+          return;
+        }
+        await claimJob(jobId, uid, agreedFee);
+        alert("Job claimed");
+>>>>>>> senderr_app
         return;
       }
 
       if (action === "update_status" && nextStatus) {
+<<<<<<< HEAD
         await updateJobStatus(jobId, nextStatus as any, uid);
         alert("Job status updated (dev)");
+=======
+        await updateJobStatus(jobId, nextStatus as JobStatus, uid);
+        alert("Job status updated");
+>>>>>>> senderr_app
         return;
       }
 
@@ -134,6 +309,7 @@ export default function MapShellScreen({
         action === "request_location_permission"
       ) {
         try {
+<<<<<<< HEAD
           await import("@/lib/location").then(async (mod) => {
             try {
               await mod.requestLocation();
@@ -146,10 +322,30 @@ export default function MapShellScreen({
         } catch (err) {
           console.error("Location helper failed", err);
           alert("Please enable location permission in your browser (dev)");
+=======
+          await requestLocation();
+          if (action === "start_tracking") {
+            await updateDoc(doc(db, "users", uid), {
+              "courierProfile.isOnline": true,
+            });
+          }
+          alert("Location permissions updated");
+        } catch (err) {
+          console.error("Location helper failed", err);
+          alert("Please enable location permission in your browser");
+>>>>>>> senderr_app
         }
         return;
       }
 
+<<<<<<< HEAD
+=======
+      if (action === "open_job_detail") {
+        navigate(`/jobs/${jobId}`);
+        return;
+      }
+
+>>>>>>> senderr_app
       console.log("Unhandled action", action, nextStatus);
     } catch (err) {
       console.error("Action failed", err);
@@ -197,7 +393,11 @@ export default function MapShellScreen({
           <Slot name="topRight">
             <div data-testid="active-overlay" className="pointer-events-auto">
               <ActiveJobOverlay
+<<<<<<< HEAD
                 model={resolvedOverlayModel}
+=======
+                model={overlayModel}
+>>>>>>> senderr_app
                 onPrimaryAction={handlePrimaryAction}
               />
             </div>

@@ -58,6 +58,13 @@ const flags = {
     onboarding: false,
     routeAcceptance: false,
   },
+  senderrplaceV2: {
+    enabled: false,
+    ads: false,
+    badges: false,
+    bookingLinks: false,
+    adminControls: false,
+  },
 };
 
 try {

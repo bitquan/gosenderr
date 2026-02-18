@@ -120,7 +120,11 @@ services:
       - HOST=0.0.0.0
       - PORT=5174
       - DEBUG=vite:server
+<<<<<<< HEAD
     command: sh -lc "bash ./scripts/docker-pnpm-install.sh && pnpm --filter @gosenderr/senderr-app dev -- --host 0.0.0.0"
+=======
+    command: sh -lc "pnpm install --frozen-lockfile && pnpm --filter @gosenderr/senderr-app dev -- --host 0.0.0.0"
+>>>>>>> senderr_app
     healthcheck:
       test: ["CMD", "sh", "-c", "curl -sSf http://localhost:5174/ || exit 1"]
       interval: 10s

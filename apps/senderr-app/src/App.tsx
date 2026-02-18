@@ -1,9 +1,16 @@
+<<<<<<< HEAD
 import { Suspense, lazy, useEffect } from "react";
+=======
+>>>>>>> senderr_app
 import { Routes, Route, Navigate, useLocation, Outlet } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { NavigationProvider } from "./contexts/NavigationContext";
 import { useAuth } from "./hooks/useAuth";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+<<<<<<< HEAD
+=======
+import { useEffect } from "react";
+>>>>>>> senderr_app
 import { debugLogger } from "./utils/debugLogger";
 
 // Layouts
@@ -14,6 +21,11 @@ import DashboardPage from "./pages/dashboard/page";
 import LoginPage from "./pages/Login";
 import SignupPage from "./pages/Signup";
 import JobsPage from "./pages/Jobs";
+<<<<<<< HEAD
+=======
+import JobDetailPage from "./pages/jobs/[jobId]/page";
+import ActiveNavigationPage from "./pages/navigation/active";
+>>>>>>> senderr_app
 import RoutesPage from "./pages/routes/page";
 import ActiveRoutePage from "./pages/active-route/page";
 import SettingsPage from "./pages/settings/page";
@@ -28,9 +40,12 @@ import ProfilePage from "./pages/Profile";
 import MapShellPage from "./pages/map-shell";
 import { StripeModeBanner } from "./components/StripeModeBanner";
 
+<<<<<<< HEAD
 const JobDetailPage = lazy(() => import("./pages/jobs/[jobId]/page"));
 const ActiveNavigationPage = lazy(() => import("./pages/navigation/active"));
 
+=======
+>>>>>>> senderr_app
 function ProtectedRoute() {
   const { user, loading } = useAuth();
   const location = useLocation();
@@ -98,6 +113,7 @@ function App() {
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/routes" element={<RoutesPage />} />
                 <Route path="/active-route" element={<ActiveRoutePage />} />
+<<<<<<< HEAD
                 <Route
                   path="/jobs/:jobId"
                   element={
@@ -114,6 +130,13 @@ function App() {
                       <ActiveNavigationPage />
                     </Suspense>
                   }
+=======
+                <Route path="/jobs/:jobId" element={<JobDetailPage />} />
+                <Route path="/jobs" element={<JobsPage />} />
+                <Route
+                  path="/navigation/active"
+                  element={<ActiveNavigationPage />}
+>>>>>>> senderr_app
                 />
                 <Route path="/earnings" element={<EarningsPage />} />
                 <Route path="/rate-cards" element={<RateCardsPage />} />
