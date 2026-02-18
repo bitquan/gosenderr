@@ -29,6 +29,7 @@ export function useFeatureFlags() {
               routes: true,
               longRoutes: false,
               longHaul: false,
+              mapShell: false,
             },
             courier: {
               rateCards: true,
@@ -66,6 +67,13 @@ export function useFeatureFlags() {
               ratingEnforcement: true,
               autoCancel: true,
               refunds: true,
+            },
+            senderrplaceV2: {
+              enabled: false,
+              ads: false,
+              badges: false,
+              bookingLinks: false,
+              adminControls: false,
             },
             ui: {
               modernStyling: true,
