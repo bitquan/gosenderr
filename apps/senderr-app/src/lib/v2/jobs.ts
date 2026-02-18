@@ -492,6 +492,26 @@ type TokenCheckoutSessionRequest = {
   idempotencyKey: string;
 };
 
+type TokenFinalizeCheckoutSessionRequest = {
+  idempotencyKey?: string;
+  sessionId?: string;
+};
+
+type TokenFinalizeCheckoutSessionResponse = {
+  finalized: boolean;
+  credited: boolean;
+  paymentStatus: string;
+  sessionId: string;
+  wallet?: {
+    uid: string;
+    available: number;
+    reserved: number;
+    lifetimePurchased: number;
+    lifetimeSpent: number;
+    lifetimeAdjusted: number;
+  };
+};
+
 export async function getTokenPolicy(): Promise<TokenPolicyResponse> {
   if (!functions) {
     throw new Error("Firebase Functions not initialized");
@@ -540,6 +560,22 @@ export async function tokenCreateCheckoutSession(
     idempotencyKey,
   });
 
+  return result.data;
+}
+
+export async function tokenFinalizeCheckoutSession(
+  request: TokenFinalizeCheckoutSessionRequest,
+): Promise<TokenFinalizeCheckoutSessionResponse> {
+  if (!functions) {
+    throw new Error("Firebase Functions not initialized");
+  }
+
+  const callable = httpsCallable<
+    TokenFinalizeCheckoutSessionRequest,
+    TokenFinalizeCheckoutSessionResponse
+  >(functions, "tokenFinalizeCheckoutSession");
+
+  const result = await callable(request);
   return result.data;
 }
 

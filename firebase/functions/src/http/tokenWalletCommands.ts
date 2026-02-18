@@ -1,6 +1,7 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import { getStripeClient } from "../stripe/stripeSecrets";
+import { creditTokensFromCheckoutSession } from "../stripe/tokenWallet";
 import { logAdminAction, verifyAdmin } from "../utils/adminUtils";
 
 const serverTimestamp = (): Date => new Date();
@@ -84,6 +85,11 @@ interface TokenCreateCheckoutSessionRequest {
   successUrl?: string;
   cancelUrl?: string;
   idempotencyKey?: string;
+}
+
+interface TokenFinalizeCheckoutSessionRequest {
+  idempotencyKey?: string;
+  sessionId?: string;
 }
 
 interface AdminGetTokenWalletViewRequest {
@@ -984,6 +990,132 @@ export const tokenCreateCheckoutSession = functions.https.onCall(
         url: emulatedUrl,
       };
     }
+  },
+);
+
+export const tokenFinalizeCheckoutSession = functions.https.onCall(
+  async (data: TokenFinalizeCheckoutSessionRequest, context) => {
+    if (!context.auth?.uid) {
+      throw new functions.https.HttpsError("unauthenticated", "Authentication required");
+    }
+
+    const uid = context.auth.uid;
+    const idempotencyKey = typeof data?.idempotencyKey === "string" ? data.idempotencyKey.trim() : "";
+    const directSessionId = typeof data?.sessionId === "string" ? data.sessionId.trim() : "";
+
+    if (!idempotencyKey && !directSessionId) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "idempotencyKey or sessionId is required",
+      );
+    }
+
+    const db = admin.firestore();
+    let sessionRef: FirebaseFirestore.DocumentReference | null = null;
+    let sessionSnap: FirebaseFirestore.DocumentSnapshot | null = null;
+
+    if (idempotencyKey) {
+      sessionRef = db.doc(`tokenCheckoutSessions/${idempotencyKey}`);
+      sessionSnap = await sessionRef.get();
+    }
+
+    if ((!sessionSnap || !sessionSnap.exists) && directSessionId) {
+      const querySnap = await db
+        .collection("tokenCheckoutSessions")
+        .where("stripeSessionId", "==", directSessionId)
+        .limit(1)
+        .get();
+      if (!querySnap.empty) {
+        sessionSnap = querySnap.docs[0];
+        sessionRef = querySnap.docs[0].ref;
+      }
+    }
+
+    if (!sessionSnap || !sessionSnap.exists || !sessionRef) {
+      throw new functions.https.HttpsError("not-found", "Checkout session not found");
+    }
+
+    const checkoutData = sessionSnap.data() as {
+      uid?: string;
+      stripeSessionId?: string;
+      paymentStatus?: string;
+    };
+
+    if (checkoutData.uid !== uid) {
+      throw new functions.https.HttpsError("permission-denied", "Checkout session owner mismatch");
+    }
+
+    const stripeSessionId = String(checkoutData.stripeSessionId || directSessionId || "").trim();
+    if (!stripeSessionId) {
+      throw new functions.https.HttpsError("failed-precondition", "Stripe session id missing");
+    }
+
+    if (checkoutData.paymentStatus === "paid") {
+      const walletSnap = await db.doc(`tokenWallets/${uid}`).get();
+      const wallet = walletFromSnapshot(uid, walletSnap);
+      return {
+        finalized: true,
+        credited: true,
+        paymentStatus: "paid",
+        sessionId: stripeSessionId,
+        wallet,
+      };
+    }
+
+    const stripe = await getStripeClient();
+    const stripeSession = await stripe.checkout.sessions.retrieve(stripeSessionId, {
+      expand: ["payment_intent"],
+    });
+
+    const isPaid =
+      stripeSession.payment_status === "paid" ||
+      (stripeSession.status === "complete" && !!stripeSession.payment_intent);
+
+    if (!isPaid) {
+      await sessionRef.set(
+        {
+          paymentStatus: "pending",
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true },
+      );
+
+      return {
+        finalized: false,
+        credited: false,
+        paymentStatus: stripeSession.payment_status || "pending",
+        sessionId: stripeSession.id,
+      };
+    }
+
+    await creditTokensFromCheckoutSession({
+      id: stripeSession.id,
+      metadata: (stripeSession.metadata || {}) as Record<string, unknown>,
+      payment_intent:
+        typeof stripeSession.payment_intent === "string"
+          ? stripeSession.payment_intent
+          : stripeSession.payment_intent?.id || null,
+    });
+
+    await sessionRef.set(
+      {
+        paymentStatus: "paid",
+        paidAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    );
+
+    const walletSnap = await db.doc(`tokenWallets/${uid}`).get();
+    const wallet = walletFromSnapshot(uid, walletSnap);
+
+    return {
+      finalized: true,
+      credited: true,
+      paymentStatus: "paid",
+      sessionId: stripeSession.id,
+      wallet,
+    };
   },
 );
 

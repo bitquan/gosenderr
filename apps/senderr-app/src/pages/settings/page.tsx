@@ -11,6 +11,7 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import {
   getTokenPolicy,
   getTokenWalletSummary,
+  tokenFinalizeCheckoutSession,
   tokenCreateCheckoutSession,
 } from "@/lib/v2/jobs";
 
@@ -207,18 +208,39 @@ export default function CourierSettingsPage() {
     const topupStatus = searchParams.get("tokenTopup");
     if (!topupStatus) return;
 
+    const checkoutKey = searchParams.get("checkoutKey");
+
     if (topupStatus === "success") {
-      setTokenCheckoutMessage("Token top-up completed. Your wallet will refresh shortly.");
-      getTokenWalletSummary()
-        .then((wallet) => {
+      setTokenCheckoutMessage("Token payment succeeded. Finalizing token credit...");
+
+      const finalize = async () => {
+        try {
+          if (checkoutKey) {
+            const finalized = await tokenFinalizeCheckoutSession({ idempotencyKey: checkoutKey });
+            if (finalized.credited) {
+              const available = finalized.wallet?.available ?? 0;
+              setTokenWallet((prev) => ({
+                available,
+                reserved: finalized.wallet?.reserved ?? prev?.reserved ?? 0,
+              }));
+              setTokenCheckoutMessage("Token top-up completed and credited.");
+              return;
+            }
+          }
+
+          const wallet = await getTokenWalletSummary();
           setTokenWallet({
             available: wallet.available,
             reserved: wallet.reserved,
           });
-        })
-        .catch((error) => {
-          console.error("Error refreshing token wallet after top-up:", error);
-        });
+          setTokenCheckoutMessage("Token top-up completed. Your wallet has been refreshed.");
+        } catch (error) {
+          console.error("Error finalizing token wallet after top-up:", error);
+          setTokenCheckoutMessage("Payment succeeded but token credit is still processing. It will post shortly.");
+        }
+      };
+
+      void finalize();
     } else if (topupStatus === "cancel") {
       setTokenCheckoutMessage("Token top-up was canceled.");
     }
@@ -226,6 +248,7 @@ export default function CourierSettingsPage() {
     const nextParams = new URLSearchParams(searchParams);
     nextParams.delete("tokenTopup");
     nextParams.delete("tokenCheckout");
+    nextParams.delete("checkoutKey");
     setSearchParams(nextParams, { replace: true });
   }, [searchParams, setSearchParams]);
 
@@ -409,7 +432,7 @@ export default function CourierSettingsPage() {
 
     setTokenTopUpLoading(true);
     try {
-      const successUrl = `${window.location.origin}/settings?tokenTopup=success`;
+      const successUrl = `${window.location.origin}/settings?tokenTopup=success&checkoutKey=${encodeURIComponent(idempotencyKey)}`;
       const cancelUrl = `${window.location.origin}/settings?tokenTopup=cancel`;
       const session = await tokenCreateCheckoutSession(
         selectedPack.id,

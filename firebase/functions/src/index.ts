@@ -44,6 +44,7 @@ export {
 	tokenRelease,
 	tokenRefund,
 	tokenCreateCheckoutSession,
+	tokenFinalizeCheckoutSession,
 	adminGetTokenWalletView,
 	adminListTokenLedger,
 } from "./http/tokenWalletCommands";
