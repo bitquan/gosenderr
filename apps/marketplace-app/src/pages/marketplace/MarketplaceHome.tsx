@@ -149,7 +149,7 @@ export default function MarketplaceHome() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-purple-950 to-slate-950 text-white">
       {/* Hero Section */}
-      <div className="mx-auto w-full max-w-3xl bg-gradient-to-r from-blue-700 via-blue-600 to-purple-600 text-white rounded-b-3xl shadow-2xl border-b border-white/20">
+      <div className="mx-auto w-full max-w-[560px] md:max-w-4xl lg:max-w-6xl bg-gradient-to-r from-blue-700 via-blue-600 to-purple-600 text-white rounded-b-3xl shadow-2xl border-b border-white/20">
         <div className="px-4 py-8 sm:px-6">
           <h1 className="text-3xl md:text-4xl font-bold mb-3">
             GoSenderr Marketplace
@@ -203,7 +203,7 @@ export default function MarketplaceHome() {
       />
 
       {/* Main Content */}
-      <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6">
+      <div className="mx-auto w-full max-w-[560px] md:max-w-4xl lg:max-w-6xl px-4 py-6 sm:px-6">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Filters - Desktop */}
           <aside className="hidden lg:block w-64 flex-shrink-0">

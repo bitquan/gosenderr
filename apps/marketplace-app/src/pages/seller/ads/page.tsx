@@ -149,7 +149,7 @@ export default function SellerAdsPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-3xl rounded-3xl border border-white/10 bg-slate-950/70 p-4 text-white shadow-2xl backdrop-blur md:p-6">
+    <div className="mx-auto w-full max-w-[560px] md:max-w-4xl lg:max-w-6xl rounded-3xl border border-white/10 bg-slate-950/70 p-4 text-white shadow-2xl backdrop-blur md:p-6">
       <div className="mb-5 flex items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">Ad Dashboard</h1>

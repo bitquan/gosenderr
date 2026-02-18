@@ -151,7 +151,7 @@ export function SenderrplaceShell({ children, floatingControls }: Props) {
           <div className="absolute inset-x-0 top-0 h-96 bg-gradient-to-b from-blue-700/70 via-purple-800/50 to-transparent blur-3xl opacity-90 pointer-events-none" />
           <div className="relative flex-1 overflow-y-auto">
             <div className="flex-1 min-h-[calc(100vh-5rem)] px-3 pb-28 pt-4 sm:px-4">
-              <div className="mx-auto w-full max-w-[560px]">
+              <div className="mx-auto w-full max-w-[560px] md:max-w-4xl lg:max-w-6xl xl:max-w-7xl">
                 {children}
               </div>
             </div>

@@ -179,7 +179,7 @@ export default function SellerDashboard() {
   return (
     <div className="min-h-screen bg-slate-950 pb-24 text-white">
       {/* Header */}
-      <div className="mx-auto w-full max-w-4xl rounded-b-3xl bg-gradient-to-br from-blue-600 to-purple-600 p-6 text-white shadow-2xl">
+      <div className="mx-auto w-full max-w-[560px] md:max-w-4xl lg:max-w-6xl rounded-b-3xl bg-gradient-to-br from-blue-600 to-purple-600 p-6 text-white shadow-2xl">
         <div>
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -254,7 +254,7 @@ export default function SellerDashboard() {
         </div>
       </div>
 
-      <div className="mx-auto w-full max-w-4xl px-4 py-6">
+      <div className="mx-auto w-full max-w-[560px] md:max-w-4xl lg:max-w-6xl px-4 py-6">
         {/* Low Stock Alert */}
         {lowStockItems.length > 0 && (
           <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded-r">
