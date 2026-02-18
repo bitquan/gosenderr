@@ -62,13 +62,21 @@ export default function CourierDashboardMapShell() {
     reservationId: string;
     amount: number;
   } | null>(null);
+  const [tokenWalletError, setTokenWalletError] = useState<string | null>(null);
+  const [locallyRejectedOfferIds, setLocallyRejectedOfferIds] = useState<Set<string>>(new Set());
   const [unlockingJobId, setUnlockingJobId] = useState<string | null>(null);
   const [releasingReservation, setReleasingReservation] = useState(false);
 
   const refreshTokenWallet = useCallback(async () => {
-    const wallet = await getTokenWalletSummary();
-    setTokenWallet({ available: wallet.available, reserved: wallet.reserved });
-    return wallet;
+    try {
+      const wallet = await getTokenWalletSummary();
+      setTokenWallet({ available: wallet.available, reserved: wallet.reserved });
+      setTokenWalletError(null);
+      return wallet;
+    } catch (error) {
+      setTokenWalletError("Unable to sync token balance. Tap Refresh tokens.");
+      throw error;
+    }
   }, []);
 
   const transportMode =
@@ -107,11 +115,12 @@ export default function CourierDashboardMapShell() {
     () =>
       jobs.filter(
         (job) =>
+          !locallyRejectedOfferIds.has(job.id) &&
           (job.status === "open" || job.status === "pending") &&
           (!job.courierUid || job.courierUid === uid) &&
           (!(job as any).offerCourierUid || (job as any).offerCourierUid === uid),
       ),
-    [jobs, uid],
+    [jobs, uid, locallyRejectedOfferIds],
   );
 
   const activeJob = activeJobs[0] || null;
@@ -175,24 +184,36 @@ export default function CourierDashboardMapShell() {
     if (!uid) {
       setTokenPolicy(null);
       setTokenWallet(null);
+      setTokenWalletError(null);
       return;
     }
 
     let mounted = true;
-    Promise.all([getTokenPolicy(), getTokenWalletSummary()])
-      .then(([policy, wallet]) => {
+    const loadPolicy = async () => {
+      try {
+        const policy = await getTokenPolicy();
         if (!mounted) return;
         setTokenPolicy(policy);
-        setTokenWallet({ available: wallet.available, reserved: wallet.reserved });
-      })
-      .catch((error) => {
-        console.error("Failed to load token policy/wallet", error);
-      });
+      } catch (error) {
+        console.error("Failed to load token policy", error);
+      }
+    };
+
+    const loadWallet = async () => {
+      try {
+        await refreshTokenWallet();
+      } catch (error) {
+        console.error("Failed to load token wallet", error);
+      }
+    };
+
+    void loadPolicy();
+    void loadWallet();
 
     return () => {
       mounted = false;
     };
-  }, [uid]);
+  }, [uid, refreshTokenWallet]);
 
   useEffect(() => {
     if (!uid) return;
@@ -231,8 +252,7 @@ export default function CourierDashboardMapShell() {
       setTokenReservation(null);
       setReleasingReservation(false);
       try {
-        const wallet = await getTokenWalletSummary();
-        setTokenWallet({ available: wallet.available, reserved: wallet.reserved });
+        await refreshTokenWallet();
       } catch (error) {
         console.error("Failed to refresh token wallet after release", error);
       }
@@ -364,8 +384,7 @@ export default function CourierDashboardMapShell() {
         setTokenReservation(null);
       }
       try {
-        const wallet = await getTokenWalletSummary();
-        setTokenWallet({ available: wallet.available, reserved: wallet.reserved });
+        await refreshTokenWallet();
       } catch (error) {
         console.error("Failed to refresh wallet after claim", error);
       }
@@ -385,9 +404,25 @@ export default function CourierDashboardMapShell() {
         await releaseReservation("preview_declined");
       }
       await declineCourierJobOffer(job.id);
+      setLocallyRejectedOfferIds((prev) => {
+        const next = new Set(prev);
+        next.add(job.id);
+        return next;
+      });
     } catch (error) {
       console.error("Failed to decline job", error);
-      alert("Unable to decline job right now.");
+      setLocallyRejectedOfferIds((prev) => {
+        const next = new Set(prev);
+        next.add(job.id);
+        return next;
+      });
+
+      if (selectedJobId === job.id) {
+        const nextOffer = availableJobs.find((offer) => offer.id !== job.id);
+        setSelectedJobId(nextOffer?.id || null);
+      }
+
+      alert("Reject fallback applied locally. Any reserved tokens were released.");
     } finally {
       setDecliningJobId(null);
     }
@@ -565,13 +600,29 @@ export default function CourierDashboardMapShell() {
               <p className="text-[11px] mt-1 text-blue-100/90">
                 Linked UID: <span className="font-mono text-white">{uid}</span>
               </p>
+              {tokenWalletError && (
+                <p className="text-[11px] mt-1 text-amber-200">{tokenWalletError}</p>
+              )}
               <div className="mt-2">
-                <Link
-                  to="/settings"
-                  className="inline-flex items-center rounded-md border border-blue-200/40 bg-slate-950/40 px-2 py-1 text-[11px] font-semibold text-blue-100"
-                >
-                  Top up tokens
-                </Link>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void refreshTokenWallet().catch((error) => {
+                        console.error("Failed to refresh token wallet manually", error);
+                      });
+                    }}
+                    className="inline-flex items-center rounded-md border border-blue-200/40 bg-slate-950/40 px-2 py-1 text-[11px] font-semibold text-blue-100"
+                  >
+                    Refresh tokens
+                  </button>
+                  <Link
+                    to="/settings"
+                    className="inline-flex items-center rounded-md border border-blue-200/40 bg-slate-950/40 px-2 py-1 text-[11px] font-semibold text-blue-100"
+                  >
+                    Top up tokens
+                  </Link>
+                </div>
               </div>
             </div>
           )}
@@ -726,7 +777,7 @@ export default function CourierDashboardMapShell() {
                             : "bg-transparent text-blue-100 border-white/25 hover:bg-white/10"
                         }`}
                       >
-                        {decliningJobId === job.id ? "Declining..." : "Decline"}
+                        {decliningJobId === job.id ? "Rejecting..." : "Reject job"}
                       </button>
                     </div>
                   )}

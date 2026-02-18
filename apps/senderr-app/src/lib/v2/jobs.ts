@@ -530,11 +530,11 @@ export async function getTokenWalletSummary(): Promise<TokenWalletSummaryRespons
     throw new Error("Firebase Functions not initialized");
   }
 
-  const callable = httpsCallable<unknown, TokenWalletSummaryResponse>(
+  const callable = httpsCallable<{ walletType: "utility" }, TokenWalletSummaryResponse>(
     functions,
     "getTokenWalletSummary",
   );
-  const result = await callable({});
+  const result = await callable({ walletType: "utility" });
   return result.data;
 }
 
