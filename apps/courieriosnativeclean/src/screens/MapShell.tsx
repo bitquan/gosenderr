@@ -2670,7 +2670,7 @@ export function MapShell({ onSignOut }: MapShellProps) {
                           style={[styles.actionButton, styles.actionButtonSecondary]}
                           onPress={() => handleStartNavigation(liveActiveJob)}
                         >
-                          <Text style={styles.actionButtonText}>Start navigation</Text>
+                          <Text style={[styles.actionButtonText, styles.actionButtonTextSecondary]}>Start navigation</Text>
                         </Pressable>
                       )}
                       {getNextStatus(getEffectiveStatus(liveActiveJob)) &&
@@ -2734,7 +2734,7 @@ export function MapShell({ onSignOut }: MapShellProps) {
                             }
                           }}
                         >
-                          <Text style={styles.actionButtonText}>View details</Text>
+                          <Text style={[styles.actionButtonText, styles.actionButtonTextSecondary]}>View details</Text>
                         </Pressable>
                       )}
                     </View>
@@ -2900,7 +2900,7 @@ export function MapShell({ onSignOut }: MapShellProps) {
                               }
                             }}
                           >
-                            <Text style={styles.actionButtonText}>Details</Text>
+                            <Text style={[styles.actionButtonText, styles.actionButtonTextSecondary]}>Details</Text>
                           </Pressable>
                         )}
                       </View>
@@ -3568,7 +3568,7 @@ const styles = StyleSheet.create({
   receiptRowItem: {
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#1f2937',
+    borderBottomColor: '#E5E7EB',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -3582,17 +3582,17 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 8,
-    backgroundColor: '#0b1220',
+    backgroundColor: '#F8FAFC',
   },
   receiptThumbPlaceholder: {
     width: 36,
     height: 36,
     borderRadius: 8,
-    backgroundColor: '#0b1220',
+    backgroundColor: '#F8FAFC',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#1f2937',
+    borderColor: '#E5E7EB',
   },
   historyHeader: {
     flexDirection: 'row',
@@ -3609,14 +3609,14 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#1f2937',
+    borderColor: '#CBD5E1',
   },
   historyChipActive: {
-    backgroundColor: '#1e3a8a',
-    borderColor: '#3b82f6',
+    backgroundColor: '#DBEAFE',
+    borderColor: '#93C5FD',
   },
   historyChipText: {
-    color: '#e2e8f0',
+    color: '#334155',
     fontSize: 10,
     fontWeight: '600',
   },
@@ -3626,7 +3626,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(15, 23, 42, 0.85)',
+    backgroundColor: 'rgba(15, 23, 42, 0.45)',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 16,
@@ -3634,7 +3634,7 @@ const styles = StyleSheet.create({
   receiptModalCard: {
     width: '100%',
     borderRadius: 16,
-    backgroundColor: '#0b1220',
+    backgroundColor: '#ffffff',
     padding: 16,
   },
   receiptModalImage: {
@@ -3643,14 +3643,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginTop: 8,
     marginBottom: 12,
-    backgroundColor: '#0f172a',
+    backgroundColor: '#F8FAFC',
   },
   identityPreview: {
     width: '100%',
     height: 160,
     borderRadius: 12,
     marginTop: 8,
-    backgroundColor: '#0b1220',
+    backgroundColor: '#F8FAFC',
   },
   payoutsTitle: {
     color: '#0F172A',
@@ -3669,7 +3669,7 @@ const styles = StyleSheet.create({
   payoutRow: {
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#1f2937',
+    borderBottomColor: '#E5E7EB',
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
@@ -3690,7 +3690,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: '#111827',
+    borderColor: '#ffffff',
   },
   markerFood: {
     backgroundColor: '#F59E0B',
@@ -3776,15 +3776,15 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   statusPillProof: {
-    backgroundColor: '#1e3a8a',
+    backgroundColor: '#EFF6FF',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: '#3b82f6',
+    borderColor: '#BFDBFE',
   },
   statusPillProofText: {
-    color: '#dbeafe',
+    color: '#1D4ED8',
     fontSize: 10,
     fontWeight: '700',
   },
@@ -4153,7 +4153,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     backgroundColor: '#38bdf8',
     borderWidth: 2,
-    borderColor: '#0f172a',
+    borderColor: '#ffffff',
   },
   previewMarkerDotAlt: {
     backgroundColor: '#a78bfa',
@@ -4227,7 +4227,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     backgroundColor: '#38bdf8',
     borderWidth: 2,
-    borderColor: '#0f172a',
+    borderColor: '#ffffff',
   },
   routeTargetLabel: {
     position: 'absolute',
@@ -4339,11 +4339,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#2563eb',
   },
   actionButtonSecondary: {
-    backgroundColor: '#1f2937',
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
   },
   actionButtonText: {
     color: '#ffffff',
     fontSize: 12,
     fontWeight: '600',
+  },
+  actionButtonTextSecondary: {
+    color: '#334155',
   },
 });
