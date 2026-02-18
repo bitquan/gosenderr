@@ -981,10 +981,7 @@ export const declineCourierJobOffer = functions.https.onCall(
       const isInQueue = offerQueue.includes(courierUid);
       const isCurrentOffer = jobData?.offerCourierUid === courierUid;
       if (!isInQueue && !isCurrentOffer) {
-        throw new functions.https.HttpsError(
-          "permission-denied",
-          "Courier is not part of this offer queue",
-        );
+        return;
       }
 
       const remaining = offerQueue.filter((uid) => uid !== courierUid);

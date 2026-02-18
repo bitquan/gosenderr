@@ -321,8 +321,19 @@ export const getTokenWalletSummary = functions.https.onCall(async (data: WalletS
   const collections = getWalletCollections(walletType);
   const walletRef = admin.firestore().doc(`${collections.wallets}/${uid}`);
   const walletSnap = await walletRef.get();
+  const wallet = walletFromSnapshot(uid, walletSnap);
+
+  console.log("getTokenWalletSummary resolved", {
+    uid,
+    walletType,
+    walletPath: `${collections.wallets}/${uid}`,
+    available: wallet.available,
+    reserved: wallet.reserved,
+    lifetimePurchased: wallet.lifetimePurchased,
+  });
+
   return {
-    ...walletFromSnapshot(uid, walletSnap),
+    ...wallet,
     walletType,
   };
 });
@@ -364,6 +375,16 @@ export const adminGetTokenWalletView = functions.https.onCall(
     const collections = getWalletCollections(walletType);
     const walletSnap = await admin.firestore().doc(`${collections.wallets}/${target.uid}`).get();
     const wallet = walletFromSnapshot(target.uid, walletSnap);
+
+    console.log("adminGetTokenWalletView resolved", {
+      adminUid: context.auth.uid,
+      targetUid: target.uid,
+      walletType,
+      walletPath: `${collections.wallets}/${target.uid}`,
+      available: wallet.available,
+      reserved: wallet.reserved,
+      lifetimePurchased: wallet.lifetimePurchased,
+    });
 
     return {
       user: target,
