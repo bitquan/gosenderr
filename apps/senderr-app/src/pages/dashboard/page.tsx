@@ -266,7 +266,11 @@ export default function CourierDashboardMapShell() {
 
     setAcceptingJobId(job.id);
     try {
-      await claimJob(job.id, uid, agreedFee);
+      const result = await claimJob(job.id, uid, agreedFee);
+      if (result.queued) {
+        alert("Job claim queued while offline. It will be submitted when connection returns.");
+        return;
+      }
       navigate(`/jobs/${job.id}`);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to claim job";

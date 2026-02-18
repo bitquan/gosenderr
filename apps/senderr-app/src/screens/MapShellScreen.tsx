@@ -186,14 +186,14 @@ export default function MapShellScreen({
           );
           return;
         }
-        await claimJob(jobId, uid, agreedFee);
-        alert("Job claimed");
+        const result = await claimJob(jobId, uid, agreedFee);
+        alert(result.queued ? "Job claim queued (offline). It will sync automatically." : "Job claimed");
         return;
       }
 
       if (action === "update_status" && nextStatus) {
-        await updateJobStatus(jobId, nextStatus as JobStatus, uid);
-        alert("Job status updated");
+        const result = await updateJobStatus(jobId, nextStatus as JobStatus, uid);
+        alert(result.queued ? "Status update queued (offline). It will sync automatically." : "Job status updated");
         return;
       }
 

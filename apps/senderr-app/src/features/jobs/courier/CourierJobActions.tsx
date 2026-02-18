@@ -48,8 +48,8 @@ export function CourierJobActions({ job, courierUid, estimatedFee, onJobUpdated 
     }
 
     try {
-      await claimJob(job.id, courierUid, estimatedFee);
-      alert('Job accepted successfully!');
+      const result = await claimJob(job.id, courierUid, estimatedFee);
+      alert(result.queued ? 'Job accept queued (offline). It will sync automatically.' : 'Job accepted successfully!');
       onJobUpdated?.();
     } catch (error) {
       console.error('Failed to accept job:', error);
@@ -74,7 +74,10 @@ export function CourierJobActions({ job, courierUid, estimatedFee, onJobUpdated 
         await handleProofCapture('dropoff');
       }
 
-      await updateJobStatus(job.id, nextStatus);
+      const result = await updateJobStatus(job.id, nextStatus);
+      if (result.queued) {
+        alert('Status update queued (offline). It will sync automatically.');
+      }
       onJobUpdated?.();
     } catch (error) {
       console.error('Failed to update job status:', error);
