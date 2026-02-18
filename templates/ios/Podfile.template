@@ -33,9 +33,6 @@ target 'Senderrappios' do
   # AppDelegate imports FirebaseCore directly.
   pod 'FirebaseCore', :modular_headers => true
   pod 'FirebaseCoreInternal', :modular_headers => true
-  pod 'FirebaseCoreExtension', :modular_headers => true
-  pod 'FirebaseFirestore', :modular_headers => true
-  pod 'FirebaseFirestoreInternal', :modular_headers => true
   pod 'GoogleUtilities', :modular_headers => true
 
   post_install do |installer|
