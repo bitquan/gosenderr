@@ -134,6 +134,7 @@ Rules:
 - Signing/provisioning: `docs/senderr_app/IOS_SIGNING.md`
 - TestFlight release + QA checklist: `docs/senderr_app/TESTFLIGHT_QA_CHECKLIST.md`
 - App Store release checklist + metadata: `docs/senderr_app/APP_STORE_RELEASE.md`
+- System-aligned iOS execution plan: `docs/senderr_app/IOS_EXECUTION_PLAN_2026-02-18.md`
 - Flow audit guide: `docs/senderr_app/AUDIT.md`
 - Jobs schema migration: `docs/senderr_app/JOBS_SCHEMA_MIGRATION.md`
 - Profile schema migration: `docs/senderr_app/PROFILE_SCHEMA_MIGRATION.md`
