@@ -23,6 +23,7 @@ export default function ItemDetailPage() {
   const [quantity, setQuantity] = useState(1)
   const [sellerRating, setSellerRating] = useState<{ average: number; count: number } | null>(null)
   const [sellerLatestReview, setSellerLatestReview] = useState<string | null>(null)
+  const [sellerPaymentLinks, setSellerPaymentLinks] = useState<any | null>(null)
 
   useEffect(() => {
     if (itemId) {
@@ -45,8 +46,9 @@ export default function ItemDetailPage() {
           }
           if (typeof sellerProfile.latestReview === 'string') {
             setSellerLatestReview(sellerProfile.latestReview)
-          }
-        }
+          }          if (sellerProfile.paymentLinks) {
+            setSellerPaymentLinks(sellerProfile.paymentLinks)
+          }        }
       } catch (error) {
         console.error('Error fetching seller profile:', error)
       }
@@ -322,7 +324,48 @@ export default function ItemDetailPage() {
                 💬
               </button>
             </div>
-          </div>
+            {/* Seller Payment Links (external) */}
+            {sellerPaymentLinks && (
+              <div className="mt-6 border-t pt-6">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-gray-700">Payment options from seller</h3>
+                  <Link to={`/payment-methods?userId=${item.sellerId}`} className="text-sm text-blue-600 hover:underline">View all payment methods</Link>
+                </div>
+                <div className="flex items-center gap-4 flex-wrap">
+                  {sellerPaymentLinks.cashApp && (
+                    <a href={sellerPaymentLinks.cashApp.startsWith('http') ? sellerPaymentLinks.cashApp : `https://cash.app/${sellerPaymentLinks.cashApp.replace(/^\$/,'')}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-3 py-2 border rounded-lg text-sm bg-white/80">
+                      <span>💸 Cash App</span>
+                    </a>
+                  )}
+                  {sellerPaymentLinks.venmo && (
+                    <a href={sellerPaymentLinks.venmo} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-3 py-2 border rounded-lg text-sm bg-white/80">
+                      <span>📲 Venmo</span>
+                    </a>
+                  )}
+                  {sellerPaymentLinks.zelle && (
+                    <div className="inline-flex items-center gap-2 px-3 py-2 border rounded-lg text-sm bg-white/80">
+                      <span>🏦 Zelle</span>
+                      <small className="text-xs text-gray-600">{sellerPaymentLinks.zelle}</small>
+                    </div>
+                  )}
+                  {sellerPaymentLinks.paypal && (
+                    <a href={sellerPaymentLinks.paypal} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-3 py-2 border rounded-lg text-sm bg-white/80">
+                      <span>💳 PayPal</span>
+                    </a>
+                  )}
+
+                  {sellerPaymentLinks.cashAppQrUrl && (
+                    <img src={sellerPaymentLinks.cashAppQrUrl} alt="CashApp QR" className="h-20 rounded-md border" />
+                  )}
+                  {sellerPaymentLinks.venmoQrUrl && (
+                    <img src={sellerPaymentLinks.venmoQrUrl} alt="Venmo QR" className="h-20 rounded-md border" />
+                  )}
+                  {sellerPaymentLinks.paypalQrUrl && (
+                    <img src={sellerPaymentLinks.paypalQrUrl} alt="PayPal QR" className="h-20 rounded-md border" />
+                  )}
+                </div>
+              </div>
+            )}          </div>
 
           {/* Seller Profile Card */}
           <div className="border rounded-lg p-6 bg-gray-50">

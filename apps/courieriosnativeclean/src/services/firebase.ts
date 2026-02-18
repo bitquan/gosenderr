@@ -19,7 +19,8 @@ export const getFirebaseServices = (): {app: FirebaseApp; auth: Auth; db: Firest
 
   if (!app) {
     const config = runtimeConfig.firebase;
-    app = getApps().length > 0 ? getApp() : initializeApp(config);
+    const existingApps = getApps();
+    app = existingApps.length > 0 ? existingApps[0] : initializeApp(config);
   }
 
   if (!auth && app) {

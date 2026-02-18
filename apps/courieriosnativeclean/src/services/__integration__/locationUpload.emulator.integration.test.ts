@@ -25,6 +25,7 @@ import {
   getFirestore,
   type Firestore,
 } from 'firebase/firestore';
+import {connectAuthEmulator, signInAnonymously} from 'firebase/auth';
 import {
   initializeApp as initializeAdminApp,
   getApps as getAdminApps,
@@ -33,16 +34,21 @@ import {getFirestore as getAdminFirestore} from 'firebase-admin/firestore';
 
 import {configureRuntime} from '../../config/runtime';
 import * as sut from '../locationUploadService';
+import {getFirebaseServices} from '../firebase';
 
 const FIRESTORE_HOST = process.env.FIRESTORE_EMULATOR_HOST ?? '';
 const [firestoreHost, firestorePortText] = FIRESTORE_HOST.split(':');
 const firestorePort = Number(firestorePortText);
 const hasEmulator = Boolean(firestoreHost) && Number.isFinite(firestorePort);
+const AUTH_HOST = process.env.FIREBASE_AUTH_EMULATOR_HOST ?? '';
+const authHost = AUTH_HOST ? AUTH_HOST.split(':')[0] : '';
+const authPortText = AUTH_HOST ? AUTH_HOST.split(':')[1] : '';
+const authPort = Number(authPortText);
 
 describe('locationUploadService integration (Firestore emulator)', () => {
   let app: FirebaseApp | null = null;
   let db: Firestore | null = null;
-  const uid = `int-user-${Date.now()}`;
+  let uid = `int-user-${Date.now()}`;
 
   beforeAll(async () => {
     if (!hasEmulator) return;
@@ -74,6 +80,18 @@ describe('locationUploadService integration (Firestore emulator)', () => {
     if (getAdminApps().length === 0) {
       initializeAdminApp({projectId: 'demo-senderr'});
     }
+
+    const services = getFirebaseServices();
+    if (!services) {
+      throw new Error('Firebase services failed to initialize for integration test');
+    }
+
+    if (authHost && Number.isFinite(authPort)) {
+      connectAuthEmulator(services.auth, `http://${authHost}:${authPort}`);
+    }
+
+    const credential = await signInAnonymously(services.auth);
+    uid = credential.user.uid;
   });
 
   afterAll(async () => {
@@ -87,6 +105,11 @@ describe('locationUploadService integration (Firestore emulator)', () => {
   maybeIt(
     'enqueue + flush updates user document and clears queue',
     async () => {
+      const adminDb = getAdminFirestore();
+      await adminDb.collection('users').doc(uid).set({
+        createdAt: Date.now(),
+      });
+
       // Enqueue a location for the uid
       const snapshot = {
         latitude: 37.42,
@@ -101,7 +124,6 @@ describe('locationUploadService integration (Firestore emulator)', () => {
       expect(res.flushed).toBe(1);
 
       // Verify via admin firestore that the user doc was updated
-      const adminDb = getAdminFirestore();
       const docRef = adminDb.collection('users').doc(uid);
       const snap = await docRef.get();
       expect(snap.exists).toBe(true);

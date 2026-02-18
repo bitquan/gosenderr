@@ -1,10 +1,8 @@
 
 import { Job } from '../shared/types';
-import { claimJob, updateJobStatus } from '@/lib/v2/jobs';
+import { claimJob, updateJobStatus, submitCourierJobProof } from '@/lib/v2/jobs';
 import { captureGPSPhoto } from '@/lib/gpsPhoto';
 import { calcMiles } from '@/lib/v2/pricing';
-import { db } from '@/lib/firebase';
-import { doc, updateDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import type { JobStatus } from '../shared/types';
 
 interface CourierJobActionsProps {
@@ -100,19 +98,14 @@ export function CourierJobActions({ job, courierUid, estimatedFee, onJobUpdated 
       throw new Error('You must be at the delivery location to take this photo.');
     }
 
-    const proofPayload = {
-      url: proof.url,
-      location: {
-        lat: proof.coordinates.latitude,
-        lng: proof.coordinates.longitude,
+    await submitCourierJobProof(job.id, {
+      type,
+      photoUrl: proof.url,
+      coordinates: {
+        latitude: proof.coordinates.latitude,
+        longitude: proof.coordinates.longitude,
+        accuracy: proof.coordinates.accuracy,
       },
-      accuracy: proof.coordinates.accuracy,
-      timestamp: Timestamp.fromDate(proof.timestamp),
-    };
-
-    await updateDoc(doc(db, 'jobs', job.id), {
-      ...(type === 'pickup' ? { pickupProof: proofPayload } : { dropoffProof: proofPayload }),
-      updatedAt: serverTimestamp(),
     });
   };
 

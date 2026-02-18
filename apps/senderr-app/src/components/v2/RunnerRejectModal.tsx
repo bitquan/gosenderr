@@ -1,13 +1,6 @@
 
 import { useState } from "react";
-import {
-  collection,
-  doc,
-  updateDoc,
-  serverTimestamp,
-  addDoc,
-} from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { rejectRunnerJob } from "@/lib/v2/jobs";
 
 interface RunnerRejectModalProps {
   jobId: string;
@@ -53,27 +46,8 @@ export default function RunnerRejectModal({
     setError("");
 
     try {
-      const jobRef = doc(db, "jobs", jobId);
-
-      // Update job status to rejected_by_runner
-      await updateDoc(jobRef, {
-        status: "pending", // Back to pending so another runner can take it
-        rejectedBy: runnerId,
-        rejectedAt: serverTimestamp(),
-        rejectionReason: REJECTION_REASONS.find((r) => r.id === selectedReason)?.label,
-        rejectionNotes: notes,
-        updatedAt: serverTimestamp(),
-      });
-
-      // Log rejection event
-      await addDoc(collection(db, "jobEvents"), {
-        jobId,
-        runnerId,
-        eventType: "rejection",
-        reason: selectedReason,
-        notes,
-        timestamp: serverTimestamp(),
-      });
+      const reasonLabel = REJECTION_REASONS.find((r) => r.id === selectedReason)?.label;
+      await rejectRunnerJob(jobId, reasonLabel || "Rejected by runner", notes);
 
       onSubmit();
       onClose();

@@ -24,6 +24,16 @@ export { runTestFlow } from "./http/runTestFlow";
 export { getPublicConfig } from "./http/getPublicConfig";
 export { getPublicConfigHttp } from "./http/getPublicConfigHttp";
 export { createPaymentIntentHttp } from "./http/createPaymentIntentHttp";
+export { simulateRule } from "./http/simulateRule";
+export { runSystemSimulation } from "./http/runSystemSimulation";
+export {
+	getTokenPolicy,
+	tokenReserve,
+	tokenCommit,
+	tokenRelease,
+	tokenRefund,
+	tokenCreateCheckoutSession,
+} from "./http/tokenWalletCommands";
 export {
   upsertMerchantDirectoryEntry,
   createSellerBookingLink,

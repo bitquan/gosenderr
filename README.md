@@ -31,6 +31,9 @@ A modern on-demand delivery platform with web apps (Vite + React + TypeScript) t
 
 **Note**: All web apps can be packaged as native iOS and Android apps using Capacitor.
 
+Native iOS source of truth: `apps/courieriosnativeclean` (workspace: `apps/courieriosnativeclean/ios/Senderrappios.xcworkspace`, scheme: `Senderr`).
+Bootstrap and validate canonical iOS setup with `pnpm run ios:bootstrap` and `pnpm run ios:check`.
+
 ## ✅ Testing & Deployment
 
 See the rollout checklist in [docs/project-plan/09-DAILY-CHECKLIST.md](docs/project-plan/09-DAILY-CHECKLIST.md).
@@ -181,6 +184,45 @@ pnpm dev:docker   # or bash scripts/dev-docker-up.sh
 ```
 
 See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for details and troubleshooting.
+
+---
+
+### 🐳 Docker emulator + automatic branch-switch (recommended)
+
+We run the Firebase emulator + Vite dev servers inside Docker so the emulator acts like the "master emu" and all dev servers stay available across branch switches. Changes you make locally (including branch checkouts) are reflected automatically in the running containers because the workspace is bind-mounted.
+
+Quick commands:
+
+- Start Docker emulators + dev servers:
+  - pnpm dev:docker
+- Wait for emulators to be ready before running integration tests:
+  - pnpm emu:wait
+- Start emu + run functions integration tests:
+  - pnpm emu:up-and-test
+
+Enable automatic restart of dev servers when you switch branches:
+
+1. Install the repo git hooks (one-time per clone):
+
+   bash scripts/install-git-hooks.sh
+
+2. From now on, whenever you `git checkout` a branch the post-checkout hook will restart any running Docker compose stacks in the known worktrees so dev servers pick up the new branch automatically. You only need to stop/restart the emulator manually when you change emulator seeds, add new Functions, or change native packages.
+
+Notes & tips:
+- To disable the hook for a single checkout run: `SKIP_GIT_HOOKS=1 git checkout <branch>`
+- If package.json or new node modules were added, run `pnpm -w install` in the worktree and restart containers (`docker compose -f <worktree>/docker-compose.yml restart`).
+- Use `docker compose -f V1-senderrplace-local/docker-compose.yml logs -f firebase-emulator` to follow emulator logs.
+
+This makes the Docker emu behave like the master emulator so you don't have to stop it when switching branches unless you change seeds or Functions.
+
+Stopping Docker emulators (if things get stuck)
+
+- Manually stop all known Docker dev stacks:
+  - bash scripts/stop-docker-worktrees.sh
+- Or stop a single worktree's compose stack:
+  - cd V1-senderrplace-local && bash scripts/dev-docker-down.sh
+
+If Docker Desktop shows "Cannot connect to the Docker daemon", start Docker Desktop and re-run the stop command above.
 
 Apps will be available at:
 - Marketplace: http://localhost:5173

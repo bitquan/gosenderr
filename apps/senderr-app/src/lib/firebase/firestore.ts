@@ -11,9 +11,8 @@ import {
   addDoc,
   serverTimestamp,
   onSnapshot,
-  runTransaction,
-  Timestamp,
 } from 'firebase/firestore';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import { db as clientDb } from './client';
 import { 
   UserDoc, 
@@ -26,6 +25,7 @@ import {
 } from '@gosenderr/shared';
 
 export const db = clientDb;
+const functions = getFunctions();
 
 /**
  * User operations
@@ -179,39 +179,32 @@ export async function claimJob(
   agreedFee: number,
   courierSnapshot?: { displayName?: string; transportMode?: TransportMode }
 ): Promise<void> {
-  const jobRef = doc(db, 'jobs', jobId);
-  
-  await runTransaction(db, async (transaction) => {
-    const jobDoc = await transaction.get(jobRef);
-    
-    if (!jobDoc.exists()) {
-      throw new Error('Job does not exist');
-    }
-    
-    const jobData = jobDoc.data() as JobDoc;
-    
-    if (jobData.status !== JobStatus.OPEN || jobData.courierUid !== null) {
-      throw new Error('Job is no longer available');
-    }
-    
-    transaction.update(jobRef, {
-      courierUid,
-      agreedFee,
-      status: JobStatus.ASSIGNED,
-      ...(courierSnapshot && { courierSnapshot }),
-      updatedAt: serverTimestamp(),
-    });
-  });
+  const claimCourierJobCallable = httpsCallable<
+    { jobId: string; agreedFee: number },
+    { success: boolean }
+  >(functions, 'claimCourierJob');
+
+  await claimCourierJobCallable({ jobId, agreedFee });
 }
 
 export async function updateJobStatus(
   jobId: string,
   status: JobStatus
 ): Promise<void> {
-  const jobRef = doc(db, 'jobs', jobId);
-  await updateDoc(jobRef, {
-    status,
-    updatedAt: serverTimestamp(),
+  const normalizedStatus = String(status);
+
+  if (normalizedStatus !== 'in_progress' && normalizedStatus !== 'completed') {
+    throw new Error('Unsupported status transition in legacy helper');
+  }
+
+  const updateLegacyCourierJobStatusCallable = httpsCallable<
+    { jobId: string; status: 'in_progress' | 'completed' },
+    { success: boolean }
+  >(functions, 'updateLegacyCourierJobStatus');
+
+  await updateLegacyCourierJobStatusCallable({
+    jobId,
+    status: normalizedStatus as 'in_progress' | 'completed',
   });
 }
 

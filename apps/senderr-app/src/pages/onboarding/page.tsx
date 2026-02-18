@@ -52,8 +52,8 @@ type UploadedDocument = {
 
 const OnboardingPage = () => {
   const navigate = useNavigate();
-  const { uid, authLoading } = useAuthUser();
-  const { userDoc, userLoading } = useUserDoc(uid);
+  const { uid, loading: authLoading } = useAuthUser();
+  const { userDoc, loading: userLoading } = useUserDoc();
   const [step, setStep] = useState<Step>(1);
   const [submitting, setSubmitting] = useState(false);
   const [statusLoading, setStatusLoading] = useState(true);
