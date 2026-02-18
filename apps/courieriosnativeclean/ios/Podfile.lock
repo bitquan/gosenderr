@@ -960,9 +960,6 @@ PODS:
     - FirebaseAuth (~> 10.24.0)
   - Firebase/CoreOnly (10.24.0):
     - FirebaseCore (= 10.24.0)
-  - Firebase/Firestore (10.24.0):
-    - Firebase/CoreOnly
-    - FirebaseFirestore (~> 10.24.0)
   - Firebase/Messaging (10.24.0):
     - Firebase/CoreOnly
     - FirebaseMessaging (~> 10.24.0)
@@ -2700,11 +2697,6 @@ PODS:
     - Firebase/Auth (= 10.24.0)
     - React-Core
     - RNFBApp
-  - RNFBFirestore (19.3.0):
-    - Firebase/Firestore (= 10.24.0)
-    - nanopb (< 2.30910.0, >= 2.30908.0)
-    - React-Core
-    - RNFBApp
   - RNFBMessaging (19.3.0):
     - Firebase/Messaging (= 10.24.0)
     - FirebaseCoreExtension
@@ -2844,7 +2836,6 @@ DEPENDENCIES:
   - "RNCAsyncStorage (from `../node_modules/@react-native-async-storage/async-storage`)"
   - "RNFBApp (from `../node_modules/@react-native-firebase/app`)"
   - "RNFBAuth (from `../node_modules/@react-native-firebase/auth`)"
-  - "RNFBFirestore (from `../node_modules/@react-native-firebase/firestore`)"
   - "RNFBMessaging (from `../node_modules/@react-native-firebase/messaging`)"
   - RNGestureHandler (from `../node_modules/react-native-gesture-handler`)
   - "rnmapbox-maps (from `../node_modules/@rnmapbox/maps`)"
@@ -3018,8 +3009,6 @@ EXTERNAL SOURCES:
     :path: "../node_modules/@react-native-firebase/app"
   RNFBAuth:
     :path: "../node_modules/@react-native-firebase/auth"
-  RNFBFirestore:
-    :path: "../node_modules/@react-native-firebase/firestore"
   RNFBMessaging:
     :path: "../node_modules/@react-native-firebase/messaging"
   RNGestureHandler:
@@ -3125,7 +3114,6 @@ SPEC CHECKSUMS:
   RNCAsyncStorage: b6410dead2732b5c72a7fdb1ecb5651bbcf4674b
   RNFBApp: 4097f75673f8b42a7cd1ba17e6ea85a94b45e4d1
   RNFBAuth: f125fbb39e9e8781478f1e19602bf428b2928a19
-  RNFBFirestore: 0ffdc947fa3c44ced85ee50a6de498a00737865b
   RNFBMessaging: 92325b0d5619ac90ef023a23cfd16fd3b91d0a88
   RNGestureHandler: 27a63f2218affdf1a426d56682f9b174904838b3
   rnmapbox-maps: f530cd5c0ee9502d47878bd736c4feee8c7b7b8d

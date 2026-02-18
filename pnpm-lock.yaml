@@ -243,9 +243,6 @@ importers:
       '@react-native-firebase/auth':
         specifier: 19.3.0
         version: 19.3.0(@react-native-firebase/app@19.3.0)
-      '@react-native-firebase/firestore':
-        specifier: 19.3.0
-        version: 19.3.0(@react-native-firebase/app@19.3.0)
       '@react-native-firebase/messaging':
         specifier: 19.3.0
         version: 19.3.0(@react-native-firebase/app@19.3.0)
@@ -4093,14 +4090,6 @@ packages:
     dependencies:
       '@react-native-firebase/app': 19.3.0(react-native@0.76.5)(react@18.3.1)
       plist: 3.1.0
-    dev: false
-
-  /@react-native-firebase/firestore@19.3.0(@react-native-firebase/app@19.3.0):
-    resolution: {integrity: sha512-fWRtMTPfAQAtrN0I4YuGZqVW1CSnqt0+vF0NYQl4e5qGhZ6AyUUmsEd3sFlSQX7M4JHJL7iozgUSpEffOA8opw==}
-    peerDependencies:
-      '@react-native-firebase/app': 19.3.0
-    dependencies:
-      '@react-native-firebase/app': 19.3.0(react-native@0.76.5)(react@18.3.1)
     dev: false
 
   /@react-native-firebase/messaging@19.3.0(@react-native-firebase/app@19.3.0):
