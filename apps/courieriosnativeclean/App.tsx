@@ -489,3 +489,79 @@ function App({runtimeConfig}: AppProps): React.JSX.Element {
         <AppShell />
       </AuthProvider>
     </ServiceRegistryProvider>
+  );
+}
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: '#f4f7fb',
+  },
+  content: {
+    flex: 1,
+  },
+  loadingRoot: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f4f7fb',
+    gap: 12,
+  },
+  loadingText: {
+    color: '#4b5563',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  mapShellSettingsRoot: {
+    flex: 1,
+    backgroundColor: '#f8fafc',
+  },
+  mapShellSettingsHeader: {
+    paddingTop: 56,
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+    backgroundColor: '#0f172a',
+  },
+  mapShellSettingsBackButton: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#93c5fd',
+  },
+  mapShellSettingsBackLabel: {
+    color: '#dbeafe',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  tabBar: {
+    borderTopWidth: 1,
+    borderColor: '#dbe3f0',
+    backgroundColor: '#ffffff',
+    flexDirection: 'row',
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    gap: 8,
+  },
+  tabButton: {
+    flex: 1,
+    minHeight: 44,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#eef2ff',
+  },
+  tabButtonActive: {
+    backgroundColor: '#1453ff',
+  },
+  tabLabel: {
+    color: '#1f2937',
+    fontWeight: '700',
+  },
+  tabLabelActive: {
+    color: '#ffffff',
+  },
+});
+
+export default App;

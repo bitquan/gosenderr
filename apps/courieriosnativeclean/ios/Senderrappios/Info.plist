@@ -24,19 +24,12 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
-<<<<<<< HEAD
-	<key>LSRequiresIPhoneOS</key>
-	<true/>
-	<key>MBXAccessToken</key>
-	<string>pk.eyJ1IjoiZ29zZW5kZXJyIiwiYSI6ImNtZjFlc2pkMTJheHIya29ub251YjZjMzQifQ.Oav2gJB_Z1sSPjOzjTPCzA</string>
-=======
 	<key>FirebaseAppDelegateProxyEnabled</key>
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>MBXAccessToken</key>
 	<string>$(SENDERR_MAPBOX_ACCESS_TOKEN)</string>
->>>>>>> senderr_app
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
@@ -53,9 +46,6 @@
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Senderr needs photo library access to save delivery proof photos.</string>
 	<key>RCTNewArchEnabled</key>
-<<<<<<< HEAD
-	<true/>
-=======
 	<false/>
 	<key>SenderrApiBaseUrl</key>
 	<string>$(SENDERR_API_BASE_URL)</string>
@@ -77,7 +67,6 @@
 	<string>$(SENDERR_MAP_PROVIDER)</string>
 	<key>SenderrMapboxAccessToken</key>
 	<string>$(SENDERR_MAPBOX_ACCESS_TOKEN)</string>
->>>>>>> senderr_app
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>

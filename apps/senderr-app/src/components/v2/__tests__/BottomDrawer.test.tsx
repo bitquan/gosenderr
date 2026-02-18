@@ -65,10 +65,10 @@ describe("BottomDrawer", () => {
   test("handle pointer toggles snap and map drag collapses drawer", () => {
     const availableJobs = [makeJob("j1")];
     // mock map instance
-    const listeners: Record<string, Function[]> = {};
+    const listeners: Record<string, Array<() => void>> = {};
     const map = {
-      on: (evt: string, cb: Function) => { (listeners[evt] ||= []).push(cb); },
-      off: (evt: string, cb: Function) => { listeners[evt] = (listeners[evt] || []).filter((fn) => fn !== cb); },
+      on: (evt: string, cb: () => void) => { (listeners[evt] ||= []).push(cb); },
+      off: (evt: string, cb: () => void) => { listeners[evt] = (listeners[evt] || []).filter((fn) => fn !== cb); },
     } as any;
 
     const { getByTestId } = render(

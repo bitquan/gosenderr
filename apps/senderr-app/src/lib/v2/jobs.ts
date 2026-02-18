@@ -1,7 +1,6 @@
 import {
   collection,
   addDoc,
-<<<<<<< HEAD
   doc,
   serverTimestamp,
   getDoc,
@@ -15,27 +14,6 @@ import {
   PackageInfo,
   JobPhoto,
 } from "./types";
-=======
-  runTransaction,
-  doc,
-  serverTimestamp,
-  updateDoc,
-  Timestamp,
-  getDoc,
-} from "firebase/firestore";
-import { db } from "@/lib/firebase";
-import {
-  GeoPoint,
-  JobStatus,
-  UserDoc,
-  Job,
-  PackageInfo,
-  JobPhoto,
-} from "./types";
-import { calcMiles } from "./pricing";
-import { getEligibilityReason } from "./eligibility";
-import { getNextStatus } from "./status";
->>>>>>> senderr_app
 
 interface CreateJobPayload {
   pickup: GeoPoint;
@@ -44,7 +22,6 @@ interface CreateJobPayload {
   photos: JobPhoto[];
 }
 
-<<<<<<< HEAD
 interface JobProofPayload {
   type: "pickup" | "dropoff";
   photoUrl: string;
@@ -144,8 +121,6 @@ export async function getTokenClaimReadiness(
   };
 }
 
-=======
->>>>>>> senderr_app
 export async function createJob(
   userUid: string,
   payload: CreateJobPayload,
@@ -167,7 +142,6 @@ export async function createJob(
 }
 
 export async function cancelJob(jobId: string, userUid: string): Promise<void> {
-<<<<<<< HEAD
   if (!userUid) {
     throw new Error("User is required");
   }
@@ -178,31 +152,6 @@ export async function cancelJob(jobId: string, userUid: string): Promise<void> {
   >(functions, "cancelCourierJob");
 
   await cancelCourierJobCallable({ jobId });
-=======
-  const jobRef = doc(db, "jobs", jobId);
-  const jobSnap = await getDoc(jobRef);
-
-  if (!jobSnap.exists()) {
-    throw new Error("Job not found");
-  }
-
-  const jobData = jobSnap.data();
-
-  // Only the creator can cancel
-  if (jobData.createdByUid !== userUid) {
-    throw new Error("Only the job creator can cancel this job");
-  }
-
-  // Can only cancel if status is 'open' or 'assigned'
-  if (jobData.status !== "open" && jobData.status !== "assigned") {
-    throw new Error("Job can only be cancelled if status is open or assigned");
-  }
-
-  await updateDoc(jobRef, {
-    status: "cancelled" as JobStatus,
-    updatedAt: serverTimestamp(),
-  });
->>>>>>> senderr_app
 }
 
 export async function claimJob(
@@ -210,7 +159,6 @@ export async function claimJob(
   courierUid: string,
   agreedFee: number,
 ): Promise<void> {
-<<<<<<< HEAD
   if (!courierUid) {
     throw new Error("Courier is required");
   }
@@ -265,74 +213,6 @@ export async function claimJob(
     }
     throw error;
   }
-=======
-  const jobRef = doc(db, "jobs", jobId);
-  const courierRef = doc(db, "users", courierUid);
-
-  await runTransaction(db, async (transaction) => {
-    const jobDoc = await transaction.get(jobRef);
-    const courierDoc = await transaction.get(courierRef);
-
-    if (!jobDoc.exists()) {
-      throw new Error("Job not found");
-    }
-
-    if (!courierDoc.exists()) {
-      throw new Error("Courier not found");
-    }
-
-    const jobData = jobDoc.data();
-    const courierData = courierDoc.data() as UserDoc;
-
-    if (jobData.status !== "open" || jobData.courierUid !== null) {
-      throw new Error("Job already claimed or not available");
-    }
-
-    // Server-side eligibility check - use courierProfile
-    if (!courierData.courierProfile?.currentLocation) {
-      throw new Error("Senderr location not available");
-    }
-
-    // Determine appropriate rate card based on job type
-    const isFoodJob = jobData.isFoodItem || false;
-    const rateCard = isFoodJob
-      ? courierData.courierProfile.foodRateCard
-      : courierData.courierProfile.packageRateCard;
-
-    if (!rateCard) {
-      throw new Error(
-        `Senderr ${isFoodJob ? "food" : "package"} rate card not configured`,
-      );
-    }
-
-    const courierLocation = courierData.courierProfile.currentLocation;
-    const pickup = jobData.pickup as GeoPoint;
-    const dropoff = jobData.dropoff as GeoPoint;
-
-    const pickupMiles = calcMiles(courierLocation, pickup);
-    const jobMiles = calcMiles(pickup, dropoff);
-
-    const eligibilityResult = getEligibilityReason(
-      rateCard,
-      jobMiles,
-      pickupMiles,
-    );
-
-    if (!eligibilityResult.eligible) {
-      throw new Error(
-        `not-eligible: ${eligibilityResult.reason || "Job exceeds distance limits"}`,
-      );
-    }
-
-    // All checks passed - claim the job
-    transaction.update(jobRef, {
-      courierUid,
-      agreedFee,
-      status: "assigned" as JobStatus,
-      updatedAt: serverTimestamp(),
-    });
-  });
->>>>>>> senderr_app
 }
 
 export async function updateJobStatus(
@@ -340,7 +220,6 @@ export async function updateJobStatus(
   nextStatus: JobStatus,
   actorUid?: string,
 ): Promise<void> {
-<<<<<<< HEAD
   if (actorUid === "") {
     throw new Error("Invalid actor");
   }
@@ -546,40 +425,4 @@ export async function tokenCreateCheckoutSession(
   >(functions, "tokenCreateCheckoutSession");
   const result = await callable({ packId, successUrl, cancelUrl, idempotencyKey });
   return result.data;
-=======
-  const jobRef = doc(db, "jobs", jobId);
-
-  await runTransaction(db, async (transaction) => {
-    const jobDoc = await transaction.get(jobRef);
-
-    if (!jobDoc.exists()) {
-      throw new Error("Job not found");
-    }
-
-    const jobData = jobDoc.data() as Job;
-
-    // Server-side guard: Only assigned courier can update status
-    if (actorUid && jobData.courierUid !== actorUid) {
-      throw new Error("Only the assigned courier can update job status");
-    }
-
-    // Validate status progression
-    const expectedNextStatus = getNextStatus(jobData.status);
-    if (!expectedNextStatus) {
-      throw new Error(`Cannot advance from status: ${jobData.status}`);
-    }
-
-    if (nextStatus !== expectedNextStatus) {
-      throw new Error(
-        `Invalid status transition. Expected: ${expectedNextStatus}, Received: ${nextStatus}`,
-      );
-    }
-
-    // All checks passed - update status
-    transaction.update(jobRef, {
-      status: nextStatus,
-      updatedAt: serverTimestamp(),
-    });
-  });
->>>>>>> senderr_app
 }

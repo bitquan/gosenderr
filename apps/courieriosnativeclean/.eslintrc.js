@@ -1,8 +1,5 @@
-<<<<<<< HEAD
-=======
 /* eslint-env node */
 /* global module */
->>>>>>> senderr_app
 module.exports = {
   root: true,
   extends: '@react-native',
@@ -10,8 +7,6 @@ module.exports = {
     // Disable problematic rule until ESLint/@typescript-eslint toolchain is normalized across the mono-repo
     '@typescript-eslint/no-unused-expressions': 'off',
   },
-<<<<<<< HEAD
-=======
   overrides: [
     {
       files: ['src/**/__tests__/**', 'src/**/__integration__/**'],
@@ -21,5 +16,4 @@ module.exports = {
       },
     },
   ],
->>>>>>> senderr_app
 };

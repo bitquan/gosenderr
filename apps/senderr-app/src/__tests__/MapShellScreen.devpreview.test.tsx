@@ -9,8 +9,6 @@ vi.mock("@/components/v2/MapboxMap", () => ({
   MapboxMap: () => <div data-testid="map-placeholder">map</div>,
 }));
 
-<<<<<<< HEAD
-=======
 vi.mock("@/hooks/v2/useOpenJobs", () => ({
   useOpenJobs: () => ({
     jobs: [],
@@ -34,7 +32,6 @@ vi.mock("@/hooks/v2/useAuthUser", () => ({
   useAuthUser: () => ({ uid: null, loading: false }),
 }));
 
->>>>>>> senderr_app
 describe("MapShellScreen dev preview", () => {
   it("shows dev banner and center overlay when devPreview=true", () => {
     render(<MapShellScreen devPreview={true} />);

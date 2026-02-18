@@ -27,11 +27,17 @@ const stripePromise = getStripePromise();
 
 interface PaymentMethod {
   id: string;
-  brand: string;
-  last4: string;
-  expiryMonth: number;
-  expiryYear: number;
-  isDefault: boolean;
+  brand?: string;
+  last4?: string;
+  expiryMonth?: number;
+  expiryYear?: number;
+  isDefault?: boolean;
+  stripePaymentMethodId?: string;
+  type?: string;
+  label?: string;
+  identifier?: string;
+  enabled?: boolean;
+  qrUrl?: string;
   createdAt: any;
 }
 

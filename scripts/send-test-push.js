@@ -1,12 +1,6 @@
 const fs = require('fs');
 const path = require('path');
 
-<<<<<<< HEAD
-const admin = require(path.join(
-  __dirname,
-  '../firebase/functions/node_modules/firebase-admin'
-));
-=======
 let admin;
 try {
   admin = require('firebase-admin');
@@ -16,7 +10,6 @@ try {
     '../firebase/functions/node_modules/firebase-admin'
   ));
 }
->>>>>>> senderr_app
 
 const PROJECT_ID =
   process.env.FIREBASE_PROJECT_ID ||
@@ -71,11 +64,6 @@ if (admin.apps.length === 0) {
   }
 }
 
-<<<<<<< HEAD
-const message = {
-  token,
-  data,
-=======
 const baseMessage = {
   token,
   data,
@@ -87,7 +75,6 @@ if (!dataOnly) {
 
 const messageWithApns = {
   ...baseMessage,
->>>>>>> senderr_app
   apns: {
     headers: {
       'apns-push-type': dataOnly ? 'background' : 'alert',
@@ -104,26 +91,6 @@ const messageWithApns = {
   },
 };
 
-<<<<<<< HEAD
-if (!dataOnly) {
-  message.notification = { title, body };
-}
-
-admin
-  .messaging()
-  .send(message)
-  .then((response) => {
-    console.log('Push sent:', response);
-    process.exit(0);
-  })
-  .catch((error) => {
-    console.error('Push failed:', error?.message || error);
-    if (error?.errorInfo) {
-      console.error('Error info:', error.errorInfo);
-    }
-    process.exit(1);
-  });
-=======
 const send = async () => {
   try {
     const response = await admin.messaging().send(messageWithApns);
@@ -156,4 +123,3 @@ const send = async () => {
 };
 
 send();
->>>>>>> senderr_app

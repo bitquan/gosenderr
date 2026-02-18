@@ -19,7 +19,16 @@ export default function SellerSettingsPage() {
     returnsAccepted: false,
     returnWindowDays: 7 as 7 | 14 | 30,
     shareExactPickupLocation: false,
-    shippingGuarantee: undefined as '24h' | '48h' | '3-5days' | undefined
+    shippingGuarantee: undefined as '24h' | '48h' | '3-5days' | undefined,
+    paymentLinks: {
+      cashApp: '',
+      venmo: '',
+      zelle: '',
+      paypal: '',
+      cashAppQrUrl: '',
+      venmoQrUrl: '',
+      paypalQrUrl: '',
+    }
   })
   const [badges, setBadges] = useState<BadgeType[]>([])
   const [sellerScore, setSellerScore] = useState(0)
@@ -69,7 +78,16 @@ export default function SellerSettingsPage() {
             shareExactPickupLocation:
               sellerProfile.shareExactPickupLocation === true ||
               sellerProfile?.localSellingConfig?.shareExactPickupLocation === true,
-            shippingGuarantee: sellerProfile.shippingGuarantee
+            shippingGuarantee: sellerProfile.shippingGuarantee,
+            paymentLinks: {
+              cashApp: sellerProfile.paymentLinks?.cashApp || '',
+              venmo: sellerProfile.paymentLinks?.venmo || '',
+              zelle: sellerProfile.paymentLinks?.zelle || '',
+              paypal: sellerProfile.paymentLinks?.paypal || '',
+              cashAppQrUrl: sellerProfile.paymentLinks?.cashAppQrUrl || '',
+              venmoQrUrl: sellerProfile.paymentLinks?.venmoQrUrl || '',
+              paypalQrUrl: sellerProfile.paymentLinks?.paypalQrUrl || '',
+            }
           })
           setBadges(sellerProfile.badges || [])
           setSellerScore(sellerProfile.sellerScore || 0)

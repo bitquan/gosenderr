@@ -69,10 +69,7 @@ echo ""
 echo "👤 Demo Users:"
 echo "   customer@example.com / DemoPass123!"
 echo "   seller@example.com / DemoPass123!"
-<<<<<<< HEAD
-=======
 echo "   admin@example.com / DemoPass123!"
->>>>>>> senderr_app
 echo ""
 
 # Wait for emulator process

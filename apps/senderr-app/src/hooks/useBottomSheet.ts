@@ -19,9 +19,13 @@ export function useBottomSheet(options?: { initialSnap?: DrawerSnap; initialTab?
   useEffect(() => {
     if (!mapInstance) return;
     const onMapDragStart = () => setDrawerSnap("collapsed");
-    mapInstance.on && mapInstance.on("dragstart", onMapDragStart);
+    if (typeof mapInstance.on === "function") {
+      mapInstance.on("dragstart", onMapDragStart);
+    }
     return () => {
-      mapInstance.off && mapInstance.off("dragstart", onMapDragStart);
+      if (typeof mapInstance.off === "function") {
+        mapInstance.off("dragstart", onMapDragStart);
+      }
     };
   }, [mapInstance]);
 

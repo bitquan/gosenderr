@@ -43,15 +43,6 @@ if [[ "$CLEAN_POD_CACHE" == "1" ]]; then
   rm -rf "$HOME/Library/Caches/CocoaPods" || true
 fi
 
-<<<<<<< HEAD
-# 4) Install pods deterministically when lockfile exists.
-cd "$IOS_DIR"
-if [[ -f "Podfile.lock" ]]; then
-  pod install --deployment
-else
-  pod install
-fi
-=======
 # 4) Install pods with retry for intermittent CocoaPods null-byte bug.
 cd "$IOS_DIR"
 attempt=1
@@ -75,7 +66,6 @@ while true; do
   echo "warning: CocoaPods null-byte path bug hit (attempt $attempt/$max_attempts); retrying pod install..."
   attempt=$((attempt + 1))
 done
->>>>>>> senderr_app
 
 # 5) Guardrail: Podfile.lock and Manifest.lock must match.
 if [[ -f "Podfile.lock" && -f "Pods/Manifest.lock" ]]; then

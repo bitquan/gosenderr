@@ -1,10 +1,7 @@
 import UIKit
 import UserNotifications
 import FirebaseCore
-<<<<<<< HEAD
-=======
 import FirebaseMessaging
->>>>>>> senderr_app
 import React
 import React_RCTAppDelegate
 #if canImport(ReactAppDependencyProvider)
@@ -12,15 +9,10 @@ import ReactAppDependencyProvider
 #endif
 
 @main
-<<<<<<< HEAD
-class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate, RCTBridgeDelegate {
-  var window: UIWindow?
-=======
 class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate, MessagingDelegate, RCTBridgeDelegate {
   var window: UIWindow?
   private let pushTokenDefaultsKey = "SenderrPushDeviceToken"
   private let fcmTokenDefaultsKey = "SenderrFCMToken"
->>>>>>> senderr_app
 
   override init() {
     super.init()
@@ -32,14 +24,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
   ) -> Bool {
     configureFirebaseIfAvailable()
-<<<<<<< HEAD
-    UNUserNotificationCenter.current().delegate = self
-    application.registerForRemoteNotifications()
-=======
     Messaging.messaging().delegate = self
     UNUserNotificationCenter.current().delegate = self
     requestPushNotificationAuthorization(application: application)
->>>>>>> senderr_app
 
     window = UIWindow(frame: UIScreen.main.bounds)
 
@@ -47,15 +34,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
       return false
     }
 
-<<<<<<< HEAD
-    let rootView = RCTRootView(bridge: bridge, moduleName: "Senderr", initialProperties: nil)
-=======
     let rootView = RCTRootView(
       bridge: bridge,
       moduleName: "Senderrappios",
       initialProperties: buildRuntimeInitialProperties()
     )
->>>>>>> senderr_app
     let rootViewController = UIViewController()
     rootViewController.view = rootView
     window?.rootViewController = rootViewController
@@ -64,8 +47,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     return true
   }
 
-<<<<<<< HEAD
-=======
   private func requestPushNotificationAuthorization(application: UIApplication) {
     UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) {
       granted,
@@ -86,7 +67,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     }
   }
 
->>>>>>> senderr_app
   private func configureFirebaseIfAvailable() {
     guard FirebaseApp.app() == nil else {
       return
@@ -94,22 +74,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
 
     if Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") != nil {
       FirebaseApp.configure()
-<<<<<<< HEAD
-    } else {
-      NSLog(
-        "Firebase disabled: GoogleService-Info.plist is missing from app bundle for target Senderr."
-=======
       Messaging.messaging().delegate = self
     } else {
       NSLog(
         "Firebase disabled: GoogleService-Info.plist is missing from app bundle for target Senderrappios."
->>>>>>> senderr_app
       )
     }
   }
 
-<<<<<<< HEAD
-=======
   private func buildRuntimeInitialProperties() -> [String: Any] {
     let isDebugBuild = _isDebugAssertConfiguration()
     let envName = readInfoValue("SenderrEnvName") ?? (isDebugBuild ? "dev" : "prod")
@@ -227,15 +199,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     return value
   }
 
->>>>>>> senderr_app
   func userNotificationCenter(
     _ center: UNUserNotificationCenter,
     willPresent notification: UNNotification,
     withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
   ) {
-<<<<<<< HEAD
-    completionHandler([])
-=======
     completionHandler([.banner, .sound, .badge])
   }
 
@@ -262,7 +230,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     }
     UserDefaults.standard.set(fcmToken, forKey: fcmTokenDefaultsKey)
     NSLog("FCM token refreshed.")
->>>>>>> senderr_app
   }
 
   // MARK: - RCTBridgeDelegate

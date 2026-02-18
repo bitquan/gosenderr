@@ -25,15 +25,9 @@ const demoUsers = [
     displayName: "Demo Seller",
   },
   {
-<<<<<<< HEAD
-    email: "courier@example.com",
-    role: "courier",
-    displayName: "Demo Courier",
-=======
     email: "admin@example.com",
     role: "admin",
     displayName: "Demo Admin",
->>>>>>> senderr_app
   },
 ];
 
@@ -339,32 +333,8 @@ async function run() {
       console.log(`✅ ${user.role} ready: ${user.email}`);
     }
 
-<<<<<<< HEAD
-    // Ensure tokenPolicy is available in emulator seeds (used by payments/wallet tests)
-    await db.doc('platformSettings/tokenPolicy').set({
-      enabled: true,
-      finalSale: true,
-      tokenValueUsd: 1,
-      costs: {
-        jobUnlockStandard: 1,
-        jobUnlockPriority: 2,
-        jobUnlockHeavy: 3,
-        listingPublish: 2,
-        cashFee: 1,
-        adBoost24h: 5,
-        adBoost7d: 25,
-        adBoost30d: 80,
-        adFeatured7d: 120
-      },
-      packs: [
-        { id: 'starter_10', tokens: 10, priceUsd: 10 },
-        { id: 'starter_100', tokens: 100, priceUsd: 90 }
-      ]
-    }, { merge: true });
-=======
     await ensureFeatureFlagsConfig();
     console.log("✅ feature flags ready: featureFlags/config (admin.webPortalEnabled=true)");
->>>>>>> senderr_app
 
     const itemId = await createDemoItem(userRecords.seller.uid);
     const orderId = await createDemoOrder({
@@ -374,52 +344,6 @@ async function run() {
       buyerEmail: userRecords.customer.email,
     });
     const jobId = await createDemoJob(userRecords.customer.uid);
-
-    // Seed demo courier external payout methods (Cash App + Zelle)
-    if (userRecords.courier && userRecords.courier.uid) {
-      await db.collection('paymentMethods').add({
-        userId: userRecords.courier.uid,
-        type: 'cash_app',
-        label: 'Cash App — $demo_cash',
-        identifier: '$demo_cash',
-        qrUrl: '',
-        enabled: true,
-        createdAt: FieldValue.serverTimestamp(),
-      });
-      await db.collection('paymentMethods').add({
-        userId: userRecords.courier.uid,
-        type: 'zelle',
-        label: 'Zelle — (555) 555-0100',
-        identifier: '(555) 555-0100',
-        qrUrl: '',
-        enabled: true,
-        createdAt: FieldValue.serverTimestamp(),
-      });
-      console.log('✅ Seeded demo courier external payout methods');
-    }
-
-    // Seed demo seller external payout methods (so marketplace buyers can view seller options)
-    if (userRecords.seller && userRecords.seller.uid) {
-      await db.collection('paymentMethods').add({
-        userId: userRecords.seller.uid,
-        type: 'cash_app',
-        label: 'Cash App — $seller_demo',
-        identifier: '$seller_demo',
-        qrUrl: '',
-        enabled: true,
-        createdAt: FieldValue.serverTimestamp(),
-      });
-      await db.collection('paymentMethods').add({
-        userId: userRecords.seller.uid,
-        type: 'zelle',
-        label: 'Zelle — (555) 555-0200',
-        identifier: '(555) 555-0200',
-        qrUrl: '',
-        enabled: true,
-        createdAt: FieldValue.serverTimestamp(),
-      });
-      console.log('✅ Seeded demo seller external payout methods');
-    }
 
     console.log("\n🎯 Demo artifacts created:");
     console.log(JSON.stringify({ itemId, orderId, jobId }, null, 2));
