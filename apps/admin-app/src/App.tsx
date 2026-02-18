@@ -23,6 +23,7 @@ import MarketplacePage from './pages/Marketplace'
 import MarketplaceOrdersPage from './pages/MarketplaceOrders'
 import OrderDetailPage from './pages/OrderDetail'
 import UserDetailPage from './pages/UserDetail'
+import JobDetailPage from './pages/JobDetail'
 import ItemDetailPage from './pages/ItemDetail'
 import FlaggedContentPage from './pages/FlaggedContent'
 import CategoriesPage from './pages/Categories'
@@ -75,6 +76,7 @@ function App() {
                       <Route path="/users" element={<UsersPage />} />
                       <Route path="/users/:userId" element={<UserDetailPage />} />
                       <Route path="/jobs" element={<JobsPage />} />
+                      <Route path="/jobs/:jobId" element={<JobDetailPage />} />
                       <Route path="/rate-cards-comparison" element={<RateCardsComparison />} />
                       <Route path="/disputes" element={<DisputesPage />} />
                       <Route path="/courier-approval" element={<CourierApprovalPage />} />
