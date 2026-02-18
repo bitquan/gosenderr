@@ -2453,106 +2453,133 @@ export function MapShell({ onSignOut }: MapShellProps) {
               </Pressable>
             </View>
 
-            <View style={styles.avatarRow}>
-              {profileForm.avatarUrl ? (
-                <Image source={{ uri: profileForm.avatarUrl }} style={styles.avatarImage} />
-              ) : (
-                <View style={styles.avatarPlaceholder}>
-                  <Text style={styles.avatarPlaceholderText}>👤</Text>
+            <View style={styles.settingsSectionCard}>
+              <Text style={styles.settingsSectionTitle}>Profile</Text>
+              <View style={styles.avatarRow}>
+                {profileForm.avatarUrl ? (
+                  <Image source={{ uri: profileForm.avatarUrl }} style={styles.avatarImage} />
+                ) : (
+                  <View style={styles.avatarPlaceholder}>
+                    <Text style={styles.avatarPlaceholderText}>👤</Text>
+                  </View>
+                )}
+                <View style={styles.avatarActions}>
+                  <Pressable style={styles.avatarButton} onPress={handlePickAvatar} disabled={avatarUploading}>
+                    <Text style={styles.avatarButtonText}>{avatarUploading ? 'Uploading…' : 'Upload Avatar'}</Text>
+                  </Pressable>
+                  {avatarError && <Text style={styles.avatarError}>{avatarError}</Text>}
                 </View>
-              )}
-              <View style={styles.avatarActions}>
-                <Pressable style={styles.avatarButton} onPress={handlePickAvatar} disabled={avatarUploading}>
-                  <Text style={styles.avatarButtonText}>{avatarUploading ? 'Uploading…' : 'Upload Avatar'}</Text>
-                </Pressable>
-                {avatarError && <Text style={styles.avatarError}>{avatarError}</Text>}
+              </View>
+              <View style={styles.settingsFieldStack}>
+                <TextInput
+                  style={styles.settingsInput}
+                  placeholder="Full name"
+                  placeholderTextColor="#64748b"
+                  value={profileForm.fullName}
+                  onChangeText={(value: string) => setProfileForm((prev) => ({ ...prev, fullName: value }))}
+                />
+                <TextInput
+                  style={styles.settingsInput}
+                  placeholder="Service radius (miles)"
+                  placeholderTextColor="#64748b"
+                  keyboardType="number-pad"
+                  value={profileForm.serviceRadius}
+                  onChangeText={(value: string) => setProfileForm((prev) => ({ ...prev, serviceRadius: value }))}
+                />
               </View>
             </View>
 
-            <Text style={styles.payoutsTitle}>Profile</Text>
-            <TextInput
-              style={styles.receiptInput}
-              placeholder="Full name"
-              placeholderTextColor="#64748b"
-              value={profileForm.fullName}
-              onChangeText={(value: string) => setProfileForm((prev) => ({ ...prev, fullName: value }))}
-            />
-            <TextInput
-              style={styles.receiptInput}
-              placeholder="Service radius (miles)"
-              placeholderTextColor="#64748b"
-              keyboardType="number-pad"
-              value={profileForm.serviceRadius}
-              onChangeText={(value: string) => setProfileForm((prev) => ({ ...prev, serviceRadius: value }))}
-            />
+            <View style={styles.settingsSectionCard}>
+              <Text style={styles.settingsSectionTitle}>Vehicle</Text>
+              <View style={styles.settingsOptionsWrap}>
+                {['bike', 'car', 'suv', 'van', 'truck'].map((type) => (
+                  <Pressable
+                    key={type}
+                    style={[
+                      styles.settingsOptionButton,
+                      styles.settingsOptionThird,
+                      profileForm.vehicleType === type && styles.settingsOptionButtonActive,
+                    ]}
+                    onPress={() => setProfileForm((prev) => ({ ...prev, vehicleType: type }))}
+                  >
+                    <Text style={styles.settingsOptionText}>{type}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
 
-            <Text style={styles.payoutsTitle}>Vehicle</Text>
-            <View style={styles.receiptActions}>
-              {['bike', 'car', 'suv', 'van', 'truck'].map((type) => (
+            <View style={styles.settingsSectionCard}>
+              <Text style={styles.settingsSectionTitle}>Work Modes</Text>
+              <View style={styles.settingsOptionsWrap}>
                 <Pressable
-                  key={type}
                   style={[
-                    styles.receiptButton,
-                    profileForm.vehicleType === type && styles.receiptButtonPrimary,
+                    styles.settingsOptionButton,
+                    styles.settingsOptionHalf,
+                    profileForm.packagesEnabled && styles.settingsOptionButtonActive,
                   ]}
-                  onPress={() => setProfileForm((prev) => ({ ...prev, vehicleType: type }))}
+                  onPress={() => setProfileForm((prev) => ({ ...prev, packagesEnabled: !prev.packagesEnabled }))}
                 >
-                  <Text style={styles.receiptButtonText}>{type}</Text>
+                  <Text style={styles.settingsOptionText}>Packages</Text>
                 </Pressable>
-              ))}
+                <Pressable
+                  style={[
+                    styles.settingsOptionButton,
+                    styles.settingsOptionHalf,
+                    profileForm.foodEnabled && styles.settingsOptionButtonActive,
+                  ]}
+                  onPress={() => setProfileForm((prev) => ({ ...prev, foodEnabled: !prev.foodEnabled }))}
+                >
+                  <Text style={styles.settingsOptionText}>Food</Text>
+                </Pressable>
+              </View>
             </View>
 
-            <Text style={styles.payoutsTitle}>Work Modes</Text>
-            <View style={styles.receiptActions}>
-              <Pressable
-                style={[styles.receiptButton, profileForm.packagesEnabled && styles.receiptButtonPrimary]}
-                onPress={() => setProfileForm((prev) => ({ ...prev, packagesEnabled: !prev.packagesEnabled }))}
-              >
-                <Text style={styles.receiptButtonText}>Packages</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.receiptButton, profileForm.foodEnabled && styles.receiptButtonPrimary]}
-                onPress={() => setProfileForm((prev) => ({ ...prev, foodEnabled: !prev.foodEnabled }))}
-              >
-                <Text style={styles.receiptButtonText}>Food</Text>
-              </Pressable>
-            </View>
-
-            <Text style={styles.payoutsTitle}>Payout Mode</Text>
-            <View style={styles.receiptActions}>
-              <Pressable
-                style={[styles.receiptButton, profileForm.payoutMode === 'cash' && styles.receiptButtonPrimary]}
-                onPress={() => setProfileForm((prev) => ({ ...prev, payoutMode: 'cash' }))}
-              >
-                <Text style={styles.receiptButtonText}>Cash</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.receiptButton, profileForm.payoutMode === 'token' && styles.receiptButtonPrimary]}
-                onPress={() => setProfileForm((prev) => ({ ...prev, payoutMode: 'token' }))}
-              >
-                <Text style={styles.receiptButtonText}>Token Wallet</Text>
-              </Pressable>
-            </View>
-
-            <View style={styles.receiptActions}>
-              <Pressable
-                style={[styles.receiptButton, profileForm.acceptTokenPayoutJobs && styles.receiptButtonPrimary]}
-                onPress={() =>
-                  setProfileForm((prev) => ({
-                    ...prev,
-                    acceptTokenPayoutJobs: !prev.acceptTokenPayoutJobs,
-                  }))
-                }
-              >
-                <Text style={styles.receiptButtonText}>
-                  {profileForm.acceptTokenPayoutJobs ? 'Token payout jobs: On' : 'Token payout jobs: Off'}
-                </Text>
-              </Pressable>
+            <View style={styles.settingsSectionCard}>
+              <Text style={styles.settingsSectionTitle}>Payout Mode</Text>
+              <View style={styles.settingsOptionsWrap}>
+                <Pressable
+                  style={[
+                    styles.settingsOptionButton,
+                    styles.settingsOptionHalf,
+                    profileForm.payoutMode === 'cash' && styles.settingsOptionButtonActive,
+                  ]}
+                  onPress={() => setProfileForm((prev) => ({ ...prev, payoutMode: 'cash' }))}
+                >
+                  <Text style={styles.settingsOptionText}>Cash</Text>
+                </Pressable>
+                <Pressable
+                  style={[
+                    styles.settingsOptionButton,
+                    styles.settingsOptionHalf,
+                    profileForm.payoutMode === 'token' && styles.settingsOptionButtonActive,
+                  ]}
+                  onPress={() => setProfileForm((prev) => ({ ...prev, payoutMode: 'token' }))}
+                >
+                  <Text style={styles.settingsOptionText}>Token Wallet</Text>
+                </Pressable>
+                <Pressable
+                  style={[
+                    styles.settingsOptionButton,
+                    styles.settingsOptionFull,
+                    profileForm.acceptTokenPayoutJobs && styles.settingsOptionButtonActive,
+                  ]}
+                  onPress={() =>
+                    setProfileForm((prev) => ({
+                      ...prev,
+                      acceptTokenPayoutJobs: !prev.acceptTokenPayoutJobs,
+                    }))
+                  }
+                >
+                  <Text style={styles.settingsOptionText}>
+                    {profileForm.acceptTokenPayoutJobs ? 'Token payout jobs: On' : 'Token payout jobs: Off'}
+                  </Text>
+                </Pressable>
+              </View>
             </View>
 
             {profileForm.payoutMode === 'token' && (
-              <View style={styles.receiptCard}>
-                <Text style={styles.payoutsTitle}>Token Wallet</Text>
+              <View style={styles.settingsSectionCard}>
+                <Text style={styles.settingsSectionTitle}>Token Wallet</Text>
                 {tokenWalletLoading ? (
                   <Text style={styles.stripeStatus}>Loading wallet…</Text>
                 ) : (
@@ -2561,16 +2588,23 @@ export function MapShell({ onSignOut }: MapShellProps) {
                   </Text>
                 )}
                 {tokenWalletError && <Text style={styles.receiptError}>{tokenWalletError}</Text>}
-                <View style={styles.receiptActions}>
-                  <Pressable style={styles.receiptButton} onPress={() => void refreshTokenWallet()}>
-                    <Text style={styles.receiptButtonText}>Refresh Wallet</Text>
+                <View style={styles.settingsOptionsWrap}>
+                  <Pressable
+                    style={[styles.settingsOptionButton, styles.settingsOptionHalf]}
+                    onPress={() => void refreshTokenWallet()}
+                  >
+                    <Text style={styles.settingsOptionText}>Refresh Wallet</Text>
                   </Pressable>
                   <Pressable
-                    style={[styles.receiptButton, styles.receiptButtonPrimary]}
+                    style={[
+                      styles.settingsOptionButton,
+                      styles.settingsOptionHalf,
+                      styles.settingsOptionButtonActive,
+                    ]}
                     onPress={handleTokenTopUp}
                     disabled={tokenCheckoutBusy}
                   >
-                    <Text style={styles.receiptButtonText}>
+                    <Text style={styles.settingsOptionText}>
                       {tokenCheckoutBusy ? 'Opening…' : 'Buy Tokens'}
                     </Text>
                   </Pressable>
@@ -2578,46 +2612,64 @@ export function MapShell({ onSignOut }: MapShellProps) {
               </View>
             )}
 
-            <Text style={styles.payoutsTitle}>Notifications</Text>
-            <View style={styles.receiptActions}>
-              <Pressable
-                style={[styles.receiptButton, notificationPrefs.jobOffers && styles.receiptButtonPrimary]}
-                onPress={() => setNotificationPrefs((prev) => ({ ...prev, jobOffers: !prev.jobOffers }))}
-              >
-                <Text style={styles.receiptButtonText}>Job Offers {notificationPrefs.jobOffers ? 'On' : 'Off'}</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.receiptButton, notificationPrefs.payoutUpdates && styles.receiptButtonPrimary]}
-                onPress={() => setNotificationPrefs((prev) => ({ ...prev, payoutUpdates: !prev.payoutUpdates }))}
-              >
-                <Text style={styles.receiptButtonText}>Payout Updates {notificationPrefs.payoutUpdates ? 'On' : 'Off'}</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.receiptButton, notificationPrefs.reminders && styles.receiptButtonPrimary]}
-                onPress={() => setNotificationPrefs((prev) => ({ ...prev, reminders: !prev.reminders }))}
-              >
-                <Text style={styles.receiptButtonText}>Reminders {notificationPrefs.reminders ? 'On' : 'Off'}</Text>
-              </Pressable>
+            <View style={styles.settingsSectionCard}>
+              <Text style={styles.settingsSectionTitle}>Notifications</Text>
+              <View style={styles.settingsOptionsWrap}>
+                <Pressable
+                  style={[
+                    styles.settingsOptionButton,
+                    styles.settingsOptionThird,
+                    notificationPrefs.jobOffers && styles.settingsOptionButtonActive,
+                  ]}
+                  onPress={() => setNotificationPrefs((prev) => ({ ...prev, jobOffers: !prev.jobOffers }))}
+                >
+                  <Text style={styles.settingsOptionText}>Job Offers {notificationPrefs.jobOffers ? 'On' : 'Off'}</Text>
+                </Pressable>
+                <Pressable
+                  style={[
+                    styles.settingsOptionButton,
+                    styles.settingsOptionThird,
+                    notificationPrefs.payoutUpdates && styles.settingsOptionButtonActive,
+                  ]}
+                  onPress={() => setNotificationPrefs((prev) => ({ ...prev, payoutUpdates: !prev.payoutUpdates }))}
+                >
+                  <Text style={styles.settingsOptionText}>Payout Updates {notificationPrefs.payoutUpdates ? 'On' : 'Off'}</Text>
+                </Pressable>
+                <Pressable
+                  style={[
+                    styles.settingsOptionButton,
+                    styles.settingsOptionThird,
+                    notificationPrefs.reminders && styles.settingsOptionButtonActive,
+                  ]}
+                  onPress={() => setNotificationPrefs((prev) => ({ ...prev, reminders: !prev.reminders }))}
+                >
+                  <Text style={styles.settingsOptionText}>Reminders {notificationPrefs.reminders ? 'On' : 'Off'}</Text>
+                </Pressable>
+              </View>
             </View>
 
-            <Text style={styles.payoutsTitle}>Identity</Text>
-            <View style={styles.receiptCard}>
+            <View style={styles.settingsSectionCard}>
+              <Text style={styles.settingsSectionTitle}>Identity</Text>
               <Text style={styles.stripeStatus}>Status: {profileForm.identityStatus}</Text>
               {profileForm.identityDocUrl ? (
                 <Image source={{ uri: profileForm.identityDocUrl }} style={styles.identityPreview} />
               ) : (
                 <Text style={styles.payoutsEmpty}>No ID uploaded.</Text>
               )}
-              <View style={styles.receiptActions}>
-                <Pressable style={styles.receiptButton} onPress={handlePickIdentity}>
-                  <Text style={styles.receiptButtonText}>Upload ID</Text>
+              <View style={styles.settingsOptionsWrap}>
+                <Pressable style={[styles.settingsOptionButton, styles.settingsOptionHalf]} onPress={handlePickIdentity}>
+                  <Text style={styles.settingsOptionText}>Upload ID</Text>
                 </Pressable>
                 <Pressable
-                  style={[styles.receiptButton, styles.receiptButtonPrimary]}
+                  style={[
+                    styles.settingsOptionButton,
+                    styles.settingsOptionHalf,
+                    styles.settingsOptionButtonActive,
+                  ]}
                   onPress={handleSaveProfile}
                   disabled={profileSaving}
                 >
-                  <Text style={styles.receiptButtonText}>
+                  <Text style={styles.settingsOptionText}>
                     {profileSaving ? 'Saving…' : 'Save Profile'}
                   </Text>
                 </Pressable>
@@ -3638,6 +3690,70 @@ const styles = StyleSheet.create({
   avatarError: {
     color: '#fca5a5',
     fontSize: 11,
+  },
+  settingsSectionCard: {
+    marginTop: 10,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: '#111827',
+    borderWidth: 1,
+    borderColor: '#273349',
+  },
+  settingsSectionTitle: {
+    color: '#E2E8F0',
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  settingsFieldStack: {
+    gap: 8,
+  },
+  settingsInput: {
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#334155',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    color: '#E2E8F0',
+    fontSize: 12,
+    backgroundColor: '#0B1220',
+  },
+  settingsOptionsWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 4,
+  },
+  settingsOptionButton: {
+    borderWidth: 1,
+    borderColor: '#334155',
+    borderRadius: 10,
+    backgroundColor: '#0B1220',
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  settingsOptionButtonActive: {
+    backgroundColor: '#2563EB',
+    borderColor: '#3B82F6',
+  },
+  settingsOptionHalf: {
+    flexBasis: '48%',
+    flexGrow: 1,
+  },
+  settingsOptionThird: {
+    flexBasis: '31%',
+    flexGrow: 1,
+  },
+  settingsOptionFull: {
+    flexBasis: '100%',
+  },
+  settingsOptionText: {
+    color: '#E2E8F0',
+    fontSize: 11,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   earningsGrid: {
     flexDirection: 'row',
