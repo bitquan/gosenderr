@@ -54,6 +54,7 @@ import FoodPickupOrderPage from './pages/food-pickups/[restaurantId]/order'
 // Seller pages
 import SellerApplicationPage from './pages/seller/apply/page'
 import SellerDashboard from './pages/seller/dashboard/page'
+import SellerAdsPage from './pages/seller/ads/page'
 import NewSellerItem from './pages/seller/items/new/page'
 import EditSellerItem from './pages/seller/items/[itemId]/edit/page'
 import SellerOrders from './pages/seller/orders/page'
@@ -245,6 +246,11 @@ function App() {
             <Route path="/seller/dashboard" element={
               <RoleGuard allowedRoles={['admin', 'seller']}>
                 <SellerDashboard />
+              </RoleGuard>
+            } />
+            <Route path="/seller/ads" element={
+              <RoleGuard allowedRoles={['admin', 'seller']}>
+                <SellerAdsPage />
               </RoleGuard>
             } />
             <Route path="/seller/items/new" element={

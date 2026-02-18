@@ -20,6 +20,12 @@ import {
   QueryConstraint
 } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
+import {
+  commitUtilityTokens,
+  getTokenPolicyForMarketplace,
+  releaseUtilityTokens,
+  reserveUtilityTokens,
+} from '@/services/tokenAds.service';
 import type {
   MarketplaceItem,
   CreateListingInput,
@@ -157,6 +163,25 @@ export class MarketplaceService {
       throw new Error('Seller application must be approved before creating listings');
     }
     
+    const policy = await getTokenPolicyForMarketplace();
+    const listingPublishCost = policy.enabled
+      ? Math.max(Number(policy.costs?.listingPublish ?? 0), 0)
+      : 0;
+
+    let reservationId: string | null = null;
+
+    if (listingPublishCost > 0) {
+      const reservation = await reserveUtilityTokens({
+        action: 'listingPublish',
+        amount: listingPublishCost,
+        metadata: {
+          title: input.title,
+          category: input.category,
+        },
+      });
+      reservationId = reservation.reservationId;
+    }
+
     // Create listing
     const normalizeUrl = (url: string) => {
       if (!url) return url;
@@ -189,12 +214,39 @@ export class MarketplaceService {
       publishedAt: Timestamp.now()
     };
     
-    const docRef = await addDoc(collection(db, 'marketplaceItems'), listing);
-    
-    // Activate seller profile if needed
-    await this.activateSellerProfile(currentUser.uid, userData);
-    
-    return docRef.id;
+    try {
+      const docRef = await addDoc(collection(db, 'marketplaceItems'), listing);
+
+      if (reservationId) {
+        await commitUtilityTokens({
+          reservationId,
+          metadata: {
+            itemId: docRef.id,
+            action: 'listingPublish',
+          },
+        });
+      }
+
+      // Activate seller profile if needed
+      await this.activateSellerProfile(currentUser.uid, userData);
+
+      return docRef.id;
+    } catch (error) {
+      if (reservationId) {
+        try {
+          await releaseUtilityTokens({
+            reservationId,
+            reason: 'listing_publish_failed',
+            metadata: {
+              title: input.title,
+            },
+          });
+        } catch {
+          // no-op: best effort release
+        }
+      }
+      throw error;
+    }
   }
   
   /**

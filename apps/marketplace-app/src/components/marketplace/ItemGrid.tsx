@@ -12,6 +12,18 @@ interface ItemGridProps {
  * ItemGrid - Display marketplace items in a responsive grid
  */
 export function ItemGrid({ items, loading, sellerBadgesMap = {}, sellerRatingsMap = {} }: ItemGridProps) {
+  const isSponsored = (item: MarketplaceItem) => {
+    const boostedUntil = item.adBoost?.boostedUntil as any
+    const boostDate = boostedUntil?.toDate?.() ?? (boostedUntil ? new Date(boostedUntil) : null)
+    return Boolean(boostDate && boostDate.getTime() > Date.now())
+  }
+
+  const sortedItems = [...items].sort((a, b) => {
+    const aSponsored = isSponsored(a) ? 1 : 0
+    const bSponsored = isSponsored(b) ? 1 : 0
+    return bSponsored - aSponsored
+  })
+
   if (loading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -43,12 +55,13 @@ export function ItemGrid({ items, loading, sellerBadgesMap = {}, sellerRatingsMa
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      {items.map((item) => (
+      {sortedItems.map((item) => (
         <ItemCard 
           key={item.id} 
           item={item} 
           sellerBadges={sellerBadgesMap[item.sellerId] || []}
           sellerRating={sellerRatingsMap[item.sellerId]}
+          isSponsored={isSponsored(item)}
         />
       ))}
     </div>
