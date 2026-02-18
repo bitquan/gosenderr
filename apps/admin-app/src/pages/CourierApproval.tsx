@@ -43,6 +43,8 @@ interface Courier {
   }
 }
 
+type CourierDocument = NonNullable<NonNullable<Courier['courierProfile']>['documents']>[number]
+
 export default function CourierApprovalPage() {
   const { user } = useAuth()
   const [couriers, setCouriers] = useState<Courier[]>([])
@@ -197,7 +199,7 @@ export default function CourierApprovalPage() {
       )
     })
 
-  const openDocument = async (docItem: NonNullable<Courier['courierProfile']>['documents'][number]) => {
+  const openDocument = async (docItem: CourierDocument) => {
     setPreviewLoading(true)
     try {
       const candidateUrl =
