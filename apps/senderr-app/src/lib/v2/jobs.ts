@@ -1,10 +1,7 @@
 import {
   collection,
   addDoc,
-  doc,
   serverTimestamp,
-  updateDoc,
-  getDoc,
 } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
 import { db } from "@/lib/firebase";
@@ -16,7 +13,7 @@ import {
   JobPhoto,
 } from "./types";
 
-type LifecycleCommandName = "claim" | "advance";
+type LifecycleCommandName = "claim" | "advance" | "cancel";
 
 type LifecycleCommandQueueItem = {
   command: LifecycleCommandName;
@@ -37,6 +34,11 @@ type ClaimCourierJobCallableRequest = {
 type AdvanceCourierJobStatusCallableRequest = {
   jobId: string;
   nextStatus: JobStatus;
+  idempotencyKey: string;
+};
+
+type CancelCourierJobCallableRequest = {
+  jobId: string;
   idempotencyKey: string;
 };
 
@@ -108,7 +110,7 @@ function isOfflineLikeError(error: unknown): boolean {
 }
 
 async function logLifecycleCommandFailure(
-  command: "accept" | "status",
+  command: "accept" | "status" | "cancel",
   jobId: string,
   error: unknown,
   isOffline: boolean,
@@ -117,7 +119,7 @@ async function logLifecycleCommandFailure(
   try {
     const callable = httpsCallable<
       {
-        command: "accept" | "status";
+        command: "accept" | "status" | "cancel";
         jobId: string;
         message: string;
         code?: string;
@@ -161,6 +163,17 @@ async function callAdvanceCourierJobStatus(
   await callable(payload);
 }
 
+async function callCancelCourierJob(
+  payload: CancelCourierJobCallableRequest,
+): Promise<void> {
+  if (!functions) throw new Error("Firebase Functions not initialized");
+  const callable = httpsCallable<CancelCourierJobCallableRequest, { success: boolean }>(
+    functions,
+    "cancelCourierJob",
+  );
+  await callable(payload);
+}
+
 export async function flushLifecycleCommandQueue(): Promise<void> {
   const queue = readLifecycleQueue();
   if (!queue.length) return;
@@ -187,6 +200,11 @@ export async function flushLifecycleCommandQueue(): Promise<void> {
           nextStatus: item.nextStatus,
           idempotencyKey: item.idempotencyKey,
         });
+      } else if (item.command === "cancel") {
+        await callCancelCourierJob({
+          jobId: item.jobId,
+          idempotencyKey: item.idempotencyKey,
+        });
       }
     } catch (error) {
       if (isOfflineLikeError(error)) {
@@ -195,7 +213,11 @@ export async function flushLifecycleCommandQueue(): Promise<void> {
       }
 
       await logLifecycleCommandFailure(
-        item.command === "claim" ? "accept" : "status",
+        item.command === "claim"
+          ? "accept"
+          : item.command === "cancel"
+            ? "cancel"
+            : "status",
         item.jobId,
         error,
         false,
@@ -245,30 +267,34 @@ export async function createJob(
   return docRef.id;
 }
 
-export async function cancelJob(jobId: string, userUid: string): Promise<void> {
-  const jobRef = doc(db, "jobs", jobId);
-  const jobSnap = await getDoc(jobRef);
-
-  if (!jobSnap.exists()) {
-    throw new Error("Job not found");
+export async function cancelJob(jobId: string, _userUid: string): Promise<LifecycleCommandResult> {
+  ensureLifecycleQueueListener();
+  if (typeof navigator !== "undefined" && navigator.onLine) {
+    await flushLifecycleCommandQueue();
   }
 
-  const jobData = jobSnap.data();
+  const idempotencyKey = createLifecycleIdempotencyKey("cancel", jobId);
 
-  // Only the creator can cancel
-  if (jobData.createdByUid !== userUid) {
-    throw new Error("Only the job creator can cancel this job");
+  try {
+    await callCancelCourierJob({ jobId, idempotencyKey });
+    return { queued: false };
+  } catch (error) {
+    const offline = isOfflineLikeError(error);
+    await logLifecycleCommandFailure("cancel", jobId, error, offline);
+
+    if (offline) {
+      enqueueLifecycleCommand({
+        command: "cancel",
+        jobId,
+        idempotencyKey,
+        createdAt: Date.now(),
+        attempts: 1,
+      });
+      return { queued: true };
+    }
+
+    throw error;
   }
-
-  // Can only cancel if status is 'open' or 'assigned'
-  if (jobData.status !== "open" && jobData.status !== "assigned") {
-    throw new Error("Job can only be cancelled if status is open or assigned");
-  }
-
-  await updateDoc(jobRef, {
-    status: "cancelled" as JobStatus,
-    updatedAt: serverTimestamp(),
-  });
 }
 
 export async function claimJob(

@@ -15,6 +15,7 @@ Harden courier lifecycle commands against duplicate submission and connectivity 
 - Added optional `idempotencyKey` support to:
   - `claimCourierJob`
   - `advanceCourierJobStatus`
+  - `cancelCourierJob`
 - Added deterministic command receipt storage in Firestore (`courierCommandReceipts`) keyed by caller + command + job + idempotency key.
 - Added replay behavior: repeated requests with same idempotency key return cached success payload (`idempotentReplay: true`).
 
@@ -22,10 +23,10 @@ Harden courier lifecycle commands against duplicate submission and connectivity 
 
 - Added lifecycle queue in senderr web (`localStorage`):
   - queue key: `senderr.lifecycle.command.queue.v1`
-  - queues claim/status commands when offline-like errors occur
+  - queues claim/status/cancel commands when offline-like errors occur
   - auto-flush on `online` event
   - explicit `flushLifecycleCommandQueue()` utility
-- Added lifecycle failure telemetry calls to `logCommandFailure` (best effort) for accept/status failures.
+- Added lifecycle failure telemetry calls to `logCommandFailure` (best effort) for accept/status/cancel failures.
 - Updated UI action handlers to show queued/offline messaging instead of generic failure where applicable.
 
 ## Evidence
@@ -35,6 +36,8 @@ Harden courier lifecycle commands against duplicate submission and connectivity 
 - `apps/senderr-app/src/screens/MapShellScreen.tsx`
 - `apps/senderr-app/src/pages/dashboard/page.tsx`
 - `apps/senderr-app/src/features/jobs/courier/CourierJobActions.tsx`
+- `apps/senderr-app/src/features/jobs/customer/CustomerJobActions.tsx`
+- `firebase/functions/src/http/logCommandFailure.ts`
 
 ## Validation
 

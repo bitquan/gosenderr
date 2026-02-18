@@ -62,6 +62,7 @@ interface CancelCourierJobAdminRequest {
 
 interface CancelCourierJobRequest {
   jobId: string;
+  idempotencyKey?: string;
 }
 
 interface SubmitCourierJobDisputeRequest {
@@ -843,6 +844,7 @@ export const cancelCourierJob = functions.https.onCall(
     }
 
     const { jobId } = data || ({} as CancelCourierJobRequest);
+    const idempotencyKey = normalizeIdempotencyKey(data?.idempotencyKey);
     if (!jobId || typeof jobId !== "string") {
       throw new functions.https.HttpsError("invalid-argument", "jobId is required");
     }
@@ -850,6 +852,33 @@ export const cancelCourierJob = functions.https.onCall(
     const callerUid = context.auth.uid;
     const db = admin.firestore();
     const jobRef = db.doc(`jobs/${jobId}`);
+    const receiptRef =
+      idempotencyKey
+        ? commandReceiptRef(callerUid, "cancel", jobId, idempotencyKey)
+        : null;
+
+    if (receiptRef) {
+      const receiptSnap = await receiptRef.get();
+      if (receiptSnap.exists) {
+        const receiptData = receiptSnap.data() as
+          | {
+              result?: {
+                success?: boolean;
+                jobId?: string;
+                status?: JobStatus;
+              };
+            }
+          | undefined;
+        if (receiptData?.result?.success) {
+          return {
+            success: true,
+            jobId: receiptData.result.jobId || jobId,
+            status: receiptData.result.status || "cancelled",
+            idempotentReplay: true,
+          };
+        }
+      }
+    }
 
     await db.runTransaction(async (tx) => {
       const jobSnap = await tx.get(jobRef);
@@ -885,6 +914,25 @@ export const cancelCourierJob = functions.https.onCall(
     });
 
     await refundTokenCommitForJob(jobId, "job_cancelled", callerUid);
+
+    if (receiptRef && idempotencyKey) {
+      await receiptRef.set(
+        {
+          uid: callerUid,
+          command: "cancel",
+          jobId,
+          idempotencyKey,
+          result: {
+            success: true,
+            jobId,
+            status: "cancelled",
+          },
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      );
+    }
 
     return { success: true, jobId, status: "cancelled" };
   },
