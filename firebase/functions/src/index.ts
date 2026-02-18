@@ -14,6 +14,7 @@ export { seedHubs } from "./triggers/seedHubs";
 export { buildLongHaulRoutes } from "./triggers/buildLongHaulRoutes";
 export { onAdminActionLog } from "./triggers/onAdminActionLog";
 export { onUserCreate } from "./triggers/onUserCreate";
+export { onAuthUserCreate } from "./triggers/onAuthUserCreate";
 
 // HTTP Callable Functions
 export { setPackageRunnerClaim } from "./http/setPackageRunnerClaim";

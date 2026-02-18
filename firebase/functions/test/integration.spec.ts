@@ -130,6 +130,38 @@ describe('Cloud Functions integration tests (emulator)', function () {
     assert.ok(ids.includes('starter_10') || ids.includes('starter_100'), 'Expected starter pack to be seeded')
   })
 
+  it('new auth users should receive a one-time signup token bonus', async function () {
+    const user = await admin.auth().createUser({ email: `signup-bonus+${Date.now()}@example.com`, password: 'password123' })
+
+    const walletRef = admin.firestore().doc(`tokenWallets/${user.uid}`)
+    const txRef = admin.firestore().doc(`tokenTransactions/signup_bonus_${user.uid}`)
+
+    let walletSnap = await walletRef.get()
+    let txSnap = await txRef.get()
+
+    for (let attempt = 0; attempt < 10 && (!walletSnap.exists || !txSnap.exists); attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 300))
+      walletSnap = await walletRef.get()
+      txSnap = await txRef.get()
+    }
+
+    assert.equal(walletSnap.exists, true, 'signup bonus should initialize token wallet')
+    const walletData = walletSnap.data() || {}
+    assert.equal(Number(walletData.available || 0), 10, 'new user should receive 10 signup bonus tokens')
+    assert.equal(Number(walletData.lifetimeAdjusted || 0), 10, 'lifetimeAdjusted should include signup bonus')
+
+    assert.equal(txSnap.exists, true, 'signup bonus ledger transaction should be written')
+    const txData = txSnap.data() || {}
+    assert.equal(txData.type, 'admin_adjustment')
+    assert.equal(txData.action, 'signup_bonus')
+    assert.equal(Number(txData.amount || 0), 10)
+
+    try { await admin.firestore().doc(`users/${user.uid}`).delete() } catch (e) {}
+    try { await walletRef.delete() } catch (e) {}
+    try { await txRef.delete() } catch (e) {}
+    try { await admin.auth().deleteUser(user.uid) } catch (e) {}
+  })
+
   it('runTestFlow should create a run log and entries', async function () {
     // Create an admin caller
     const adminUser = await admin.auth().createUser({ email: `test-admin2+${Date.now()}@example.com`, password: 'password123' })
