@@ -60,6 +60,7 @@ export type UserRole =
 // Re-export JobStatus enum values as string union type for backward compatibility
 export type JobStatus =
   | "open"
+  | "pending"
   | "assigned"
   | "enroute_pickup"
   | "arrived_pickup"

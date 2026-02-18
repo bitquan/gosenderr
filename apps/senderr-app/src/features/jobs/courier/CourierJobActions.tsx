@@ -16,13 +16,14 @@ interface CourierJobActionsProps {
 
 export function CourierJobActions({ job, courierUid, estimatedFee, onJobUpdated }: CourierJobActionsProps) {
   const isAssignedToCourier = job.courierUid === courierUid;
-  const canAccept = job.status === 'open' && !job.courierUid;
+  const canAccept = (job.status === 'open' || job.status === 'pending') && !job.courierUid;
   const MAX_DISTANCE_MILES = 0.2; // ~320 meters
   const MAX_ACCURACY_METERS = 100;
   
   // Define valid status transitions for courier
   const getNextStatus = (currentStatus: JobStatus): JobStatus | null => {
     const transitions: Record<JobStatus, JobStatus | null> = {
+      pending: null,
       open: null,
       assigned: 'enroute_pickup',
       enroute_pickup: 'arrived_pickup',
@@ -132,6 +133,7 @@ export function CourierJobActions({ job, courierUid, estimatedFee, onJobUpdated 
 
   if (nextStatus) {
     const statusLabels: Record<JobStatus, string> = {
+      pending: 'Pending',
       open: 'Open',
       assigned: '▶️ Start Heading to Pickup',
       enroute_pickup: '📍 Mark Arrived at Pickup',
@@ -147,6 +149,7 @@ export function CourierJobActions({ job, courierUid, estimatedFee, onJobUpdated 
     };
 
     const buttonColors: Record<JobStatus, string> = {
+      pending: 'bg-gray-500',
       open: 'bg-gray-500',
       assigned: 'bg-blue-600',
       enroute_pickup: 'bg-orange-600',

@@ -6,6 +6,7 @@ interface JobStatusPillProps {
 
 const statusColors: Record<JobStatus, string> = {
   open: "#808080",
+  pending: "#9ca3af",
   assigned: "#2563eb",
   enroute_pickup: "#7c3aed",
   arrived_pickup: "#a855f7",
@@ -21,6 +22,7 @@ const statusColors: Record<JobStatus, string> = {
 
 const statusLabels: Record<JobStatus, string> = {
   open: "Open",
+  pending: "Pending",
   assigned: "Assigned",
   enroute_pickup: "Heading to Pickup",
   arrived_pickup: "Arrived at Pickup",

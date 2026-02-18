@@ -39,7 +39,7 @@ export function useOpenJobs() {
     const q = query(
       jobsRef,
       or(
-        where("status", "==", "open"),
+        where("status", "in", ["open", "pending"]),
         where("courierUid", "==", uid),
       ),
     );
@@ -58,7 +58,7 @@ export function useOpenJobs() {
         const jobsList: Job[] = mappedJobs
           .filter((job) => {
             if (job.courierUid === uid) return true;
-            if (job.status !== "open") return false;
+            if (!(job.status === "open" || job.status === "pending")) return false;
 
             const offerCourierUid = (job as any).offerCourierUid;
             return offerCourierUid == null || offerCourierUid === uid;

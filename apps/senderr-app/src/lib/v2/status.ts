@@ -4,6 +4,7 @@ import { JobStatus, Job, JobDoc } from './types';
  * Ordered list of job statuses representing the delivery flow
  */
 export const JOB_STATUS_ORDER: JobStatus[] = [
+  'pending',
   'open',
   'assigned',
   'enroute_pickup',
@@ -18,6 +19,7 @@ export const JOB_STATUS_ORDER: JobStatus[] = [
  * Status flow map - defines which status comes next
  */
 export const STATUS_FLOW: Record<JobStatus, JobStatus | null> = {
+  pending: null,
   open: null, // Only customer creates, courier claims to 'assigned'
   assigned: 'enroute_pickup',
   enroute_pickup: 'arrived_pickup',
@@ -36,6 +38,7 @@ export const STATUS_FLOW: Record<JobStatus, JobStatus | null> = {
  * Button labels for each advanceable status
  */
 export const STATUS_BUTTON_LABELS: Record<JobStatus, string> = {
+  pending: '',
   open: '',
   assigned: 'Start to Pickup',
   enroute_pickup: 'Arrived at Pickup',
@@ -54,6 +57,7 @@ export const STATUS_BUTTON_LABELS: Record<JobStatus, string> = {
  * Human-readable status labels
  */
 export const STATUS_LABELS: Record<JobStatus, string> = {
+  pending: 'Pending',
   open: 'Open',
   assigned: 'Assigned',
   enroute_pickup: 'En Route to Pickup',
@@ -72,6 +76,7 @@ export const STATUS_LABELS: Record<JobStatus, string> = {
  * Status colors for UI
  */
 export const STATUS_COLORS: Record<JobStatus, string> = {
+  pending: '#9ca3af',
   open: '#808080',
   assigned: '#2563eb',
   enroute_pickup: '#7c3aed',
@@ -110,8 +115,8 @@ export function canCourierAdvance(job: JobDoc | Job, courierUid: string): boolea
     return false;
   }
 
-  // Can't advance if status is 'open' (should be 'assigned' after claiming)
-  if (job.status === 'open') {
+  // Can't advance if status is pre-claim state
+  if (job.status === 'open' || job.status === 'pending') {
     return false;
   }
 

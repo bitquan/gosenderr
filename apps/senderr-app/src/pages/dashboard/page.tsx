@@ -90,7 +90,7 @@ export default function CourierDashboardMapShell() {
     () =>
       jobs.filter(
         (job) =>
-          job.status === "open" &&
+          (job.status === "open" || job.status === "pending") &&
           (!job.courierUid || job.courierUid === uid) &&
           (!(job as any).offerCourierUid || (job as any).offerCourierUid === uid),
       ),
@@ -128,7 +128,7 @@ export default function CourierDashboardMapShell() {
   );
 
   const mapOfferJobs = useMemo(
-    () => availableJobs.filter((job) => job.status === "open"),
+    () => availableJobs.filter((job) => job.status === "open" || job.status === "pending"),
     [availableJobs],
   );
 
