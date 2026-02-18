@@ -165,7 +165,7 @@ export default function UserDetailPage() {
       user_unsuspended: 'User Unsuspended',
       user_deleted: 'User Deleted',
     }
-    return labels[action] || action.replace(/_/g, ' ').toUpperCase()
+    return labels[action] || action.replace(/_/g, ' ').toUpperCase();
   }
 
   const formatDate = (timestamp: any) => {
