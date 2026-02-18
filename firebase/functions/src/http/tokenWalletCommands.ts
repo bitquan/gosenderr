@@ -76,6 +76,20 @@ interface TokenCreateCheckoutSessionRequest {
   idempotencyKey?: string;
 }
 
+interface AdminGetTokenWalletViewRequest {
+  targetUid?: string;
+  targetEmail?: string;
+}
+
+interface AdminListTokenLedgerRequest {
+  targetUid?: string;
+  targetEmail?: string;
+  action?: string;
+  type?: string;
+  includeCashFeeOnly?: boolean;
+  limit?: number;
+}
+
 const DEFAULT_TOKEN_POLICY: TokenPolicy = {
   enabled: true,
   finalSale: true,
@@ -159,6 +173,88 @@ function ensureNonNegative(value: number, errorMessage: string): void {
   }
 }
 
+function timestampToMillis(value: unknown): number {
+  if (!value) return 0;
+
+  if (value instanceof Date) {
+    return value.getTime();
+  }
+
+  if (
+    typeof value === 'object' &&
+    value !== null &&
+    'toMillis' in (value as Record<string, unknown>) &&
+    typeof (value as { toMillis?: unknown }).toMillis === 'function'
+  ) {
+    return ((value as { toMillis: () => number }).toMillis() || 0);
+  }
+
+  if (
+    typeof value === 'object' &&
+    value !== null &&
+    'seconds' in (value as Record<string, unknown>)
+  ) {
+    const seconds = Number((value as { seconds?: unknown }).seconds || 0);
+    const nanos = Number((value as { nanoseconds?: unknown }).nanoseconds || 0);
+    return seconds * 1000 + Math.floor(nanos / 1_000_000);
+  }
+
+  const parsed = Date.parse(String(value));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+async function resolveAdminTarget(
+  targetUidRaw?: string,
+  targetEmailRaw?: string,
+): Promise<{ uid: string; email: string | null; displayName: string | null; role: string | null } | null> {
+  const targetUid = targetUidRaw?.trim();
+  const targetEmail = targetEmailRaw?.trim().toLowerCase();
+
+  if (!targetUid && !targetEmail) {
+    return null;
+  }
+
+  let uid = targetUid || '';
+  let authUser: admin.auth.UserRecord | null = null;
+
+  if (!uid && targetEmail) {
+    try {
+      authUser = await admin.auth().getUserByEmail(targetEmail);
+      uid = authUser.uid;
+    } catch (error: unknown) {
+      throw new functions.https.HttpsError('not-found', 'No user found for targetEmail');
+    }
+  }
+
+  if (!uid) {
+    throw new functions.https.HttpsError('invalid-argument', 'targetUid or targetEmail is required');
+  }
+
+  if (!authUser) {
+    try {
+      authUser = await admin.auth().getUser(uid);
+    } catch (error: unknown) {
+      throw new functions.https.HttpsError('not-found', 'No user found for targetUid');
+    }
+  }
+
+  const userDoc = await admin.firestore().doc(`users/${uid}`).get();
+  const userData = userDoc.exists ? (userDoc.data() as Record<string, unknown>) : {};
+
+  return {
+    uid,
+    email:
+      (typeof userData?.email === 'string' ? String(userData.email) : null) ||
+      authUser.email ||
+      null,
+    displayName:
+      (typeof userData?.fullName === 'string' ? String(userData.fullName) : null) ||
+      authUser.displayName ||
+      null,
+    role: typeof userData?.role === 'string' ? String(userData.role) : null,
+  };
+}
+
 export const getTokenPolicy = functions.https.onCall(async (_data, context) => {
   if (!context.auth?.uid) {
     throw new functions.https.HttpsError(
@@ -183,6 +279,98 @@ export const getTokenWalletSummary = functions.https.onCall(async (_data, contex
   const walletSnap = await walletRef.get();
   return walletFromSnapshot(uid, walletSnap);
 });
+
+export const adminGetTokenWalletView = functions.https.onCall(
+  async (data: AdminGetTokenWalletViewRequest, context) => {
+    if (!context.auth?.uid) {
+      throw new functions.https.HttpsError('unauthenticated', 'Authentication required');
+    }
+
+    const isAdmin = await verifyAdmin(context.auth.uid);
+    if (!isAdmin) {
+      throw new functions.https.HttpsError('permission-denied', 'Admin privileges required');
+    }
+
+    const target = await resolveAdminTarget(data?.targetUid, data?.targetEmail);
+    if (!target) {
+      throw new functions.https.HttpsError('invalid-argument', 'targetUid or targetEmail is required');
+    }
+
+    const walletSnap = await admin.firestore().doc(`tokenWallets/${target.uid}`).get();
+    const wallet = walletFromSnapshot(target.uid, walletSnap);
+
+    return {
+      user: target,
+      wallet,
+    };
+  },
+);
+
+export const adminListTokenLedger = functions.https.onCall(
+  async (data: AdminListTokenLedgerRequest, context) => {
+    if (!context.auth?.uid) {
+      throw new functions.https.HttpsError('unauthenticated', 'Authentication required');
+    }
+
+    const isAdmin = await verifyAdmin(context.auth.uid);
+    if (!isAdmin) {
+      throw new functions.https.HttpsError('permission-denied', 'Admin privileges required');
+    }
+
+    const requestedLimit = Math.floor(normalizeNumber(data?.limit));
+    const limitSize = Math.min(Math.max(requestedLimit || 100, 1), 300);
+    const fetchSize = Math.min(limitSize * 5, 500);
+
+    const actionFilter = typeof data?.action === 'string' ? data.action.trim() : '';
+    const typeFilter = typeof data?.type === 'string' ? data.type.trim() : '';
+    const includeCashFeeOnly = Boolean(data?.includeCashFeeOnly);
+
+    const target = await resolveAdminTarget(data?.targetUid, data?.targetEmail);
+    const db = admin.firestore();
+
+    let queryRef: FirebaseFirestore.Query = db.collection('tokenTransactions').limit(fetchSize);
+    if (target?.uid) {
+      queryRef = db
+        .collection('tokenTransactions')
+        .where('uid', '==', target.uid)
+        .limit(fetchSize);
+    }
+
+    const snap = await queryRef.get();
+    const filtered = snap.docs
+      .map((doc): Record<string, unknown> => ({ id: doc.id, ...(doc.data() as Record<string, unknown>) }))
+      .filter((row) => {
+        const rowAction = String((row as { action?: unknown }).action || '');
+        const rowType = String((row as { type?: unknown }).type || '');
+
+        if (includeCashFeeOnly && rowAction !== 'cash_fee') {
+          return false;
+        }
+
+        if (actionFilter && rowAction !== actionFilter) {
+          return false;
+        }
+
+        if (typeFilter && rowType !== typeFilter) {
+          return false;
+        }
+
+        return true;
+      })
+      .sort(
+        (left, right) =>
+          timestampToMillis((right as { createdAt?: unknown }).createdAt) -
+          timestampToMillis((left as { createdAt?: unknown }).createdAt),
+      )
+      .slice(0, limitSize);
+
+    return {
+      target: target || null,
+      count: filtered.length,
+      rows: filtered,
+    };
+  },
+);
 
 export const tokenReserve = functions.https.onCall(
   async (data: TokenReserveRequest, context) => {

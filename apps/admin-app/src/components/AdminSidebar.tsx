@@ -60,7 +60,8 @@ export default function AdminSidebar() {
     {
       title: 'Finance',
       items: [
-        { label: 'Revenue', path: '/revenue', icon: '💰' }
+        { label: 'Revenue', path: '/revenue', icon: '💰' },
+        { label: 'Tokens', path: '/tokens', icon: '🪙' }
       ]
     },
     {

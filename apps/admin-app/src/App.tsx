@@ -32,6 +32,7 @@ import SystemCheckPage from './pages/SystemCheck'
 import RateCardsComparison from './pages/RateCardsComparison'
 import AdminFlowLogsPage from './pages/AdminFlowLogs'
 import SecretsPage from './pages/Secrets'
+import TokenOperationsPage from './pages/TokenOperations'
 import { StripeModeBanner } from './components/StripeModeBanner'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -82,6 +83,7 @@ function App() {
                       <Route path="/courier-approval" element={<CourierApprovalPage />} />
                       <Route path="/seller-approval" element={<SellerApprovalPage />} />
                       <Route path="/revenue" element={<RevenuePage />} />
+                      <Route path="/tokens" element={<TokenOperationsPage />} />
                       <Route path="/messaging" element={<MessagingPage />} />
                       <Route path="/marketplace" element={<MarketplacePage />} />
                       <Route path="/marketplace/:itemId" element={<ItemDetailPage />} />

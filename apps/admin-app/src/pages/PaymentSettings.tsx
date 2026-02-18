@@ -30,6 +30,7 @@ interface TokenPolicySettings {
   enabled: boolean
   finalSale: boolean
   tokenValueUsd: number
+  signupBonusTokens: number
   costs: {
     jobUnlockStandard: number
     jobUnlockPriority: number
@@ -66,6 +67,7 @@ export default function PaymentSettingsPage() {
     enabled: true,
     finalSale: true,
     tokenValueUsd: 1,
+    signupBonusTokens: 10,
     costs: {
       jobUnlockStandard: 1,
       jobUnlockPriority: 2,
@@ -112,6 +114,7 @@ export default function PaymentSettingsPage() {
             enabled: raw.enabled ?? true,
             finalSale: raw.finalSale ?? true,
             tokenValueUsd: raw.tokenValueUsd ?? 1,
+            signupBonusTokens: raw.signupBonusTokens ?? 10,
             costs: {
               jobUnlockStandard: raw.costs?.jobUnlockStandard ?? 1,
               jobUnlockPriority: raw.costs?.jobUnlockPriority ?? 2,
@@ -404,6 +407,23 @@ export default function PaymentSettingsPage() {
                     value={tokenPolicy.tokenValueUsd}
                     onChange={(e) => setTokenPolicy({ ...tokenPolicy, tokenValueUsd: parseFloat(e.target.value || '1') })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Signup Bonus Tokens</label>
+                  <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    className="w-full rounded border border-gray-300 px-3 py-2"
+                    value={tokenPolicy.signupBonusTokens}
+                    onChange={(e) =>
+                      setTokenPolicy({
+                        ...tokenPolicy,
+                        signupBonusTokens: Math.max(0, parseInt(e.target.value || '0', 10)),
+                      })
+                    }
                   />
                 </div>
                 <div>

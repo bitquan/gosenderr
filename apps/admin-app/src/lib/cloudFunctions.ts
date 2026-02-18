@@ -116,6 +116,69 @@ interface RunSystemSimulationResult {
   created?: any
 }
 const runSystemSimulationFn = httpsCallable<RunSystemSimulationRequest, RunSystemSimulationResult>(functions, 'runSystemSimulation')
+const adminGetTokenWalletViewFn = httpsCallable<AdminGetTokenWalletViewRequest, AdminGetTokenWalletViewResult>(
+  functions,
+  'adminGetTokenWalletView',
+)
+const adminListTokenLedgerFn = httpsCallable<AdminListTokenLedgerRequest, AdminListTokenLedgerResult>(
+  functions,
+  'adminListTokenLedger',
+)
+const adjustTokenWalletBalanceFn = httpsCallable<AdjustTokenWalletBalanceRequest, AdjustTokenWalletBalanceResult>(
+  functions,
+  'adjustTokenWalletBalance',
+)
+
+interface AdminGetTokenWalletViewRequest {
+  targetUid?: string
+  targetEmail?: string
+}
+
+interface TokenWalletSummary {
+  uid: string
+  available: number
+  reserved: number
+  lifetimePurchased: number
+  lifetimeSpent: number
+  lifetimeAdjusted: number
+}
+
+interface AdminTokenTarget {
+  uid: string
+  email: string | null
+  displayName: string | null
+  role: string | null
+}
+
+interface AdminGetTokenWalletViewResult {
+  user: AdminTokenTarget
+  wallet: TokenWalletSummary
+}
+
+interface AdminListTokenLedgerRequest {
+  targetUid?: string
+  targetEmail?: string
+  action?: string
+  type?: string
+  includeCashFeeOnly?: boolean
+  limit?: number
+}
+
+interface AdminListTokenLedgerResult {
+  target: AdminTokenTarget | null
+  count: number
+  rows: Array<Record<string, unknown>>
+}
+
+interface AdjustTokenWalletBalanceRequest {
+  targetUid: string
+  delta: number
+  reason: string
+  idempotencyKey: string
+  metadata?: Record<string, unknown>
+}
+
+interface AdjustTokenWalletBalanceResult extends TokenWalletSummary {}
 
 export async function simulateRule(data: SimulateRuleRequest): Promise<SimulateRuleResult> {
   try {
@@ -134,6 +197,42 @@ export async function runSystemSimulation(data: RunSystemSimulationRequest): Pro
   } catch (error: any) {
     console.error('runSystemSimulation error', error)
     throw new Error(error.message || 'Failed to run system simulation')
+  }
+}
+
+export async function adminGetTokenWalletView(
+  data: AdminGetTokenWalletViewRequest,
+): Promise<AdminGetTokenWalletViewResult> {
+  try {
+    const res = await adminGetTokenWalletViewFn(data)
+    return res.data
+  } catch (error: any) {
+    console.error('adminGetTokenWalletView error', error)
+    throw new Error(error.message || 'Failed to fetch token wallet')
+  }
+}
+
+export async function adminListTokenLedger(
+  data: AdminListTokenLedgerRequest,
+): Promise<AdminListTokenLedgerResult> {
+  try {
+    const res = await adminListTokenLedgerFn(data)
+    return res.data
+  } catch (error: any) {
+    console.error('adminListTokenLedger error', error)
+    throw new Error(error.message || 'Failed to fetch token ledger')
+  }
+}
+
+export async function adjustTokenWalletBalance(
+  data: AdjustTokenWalletBalanceRequest,
+): Promise<AdjustTokenWalletBalanceResult> {
+  try {
+    const res = await adjustTokenWalletBalanceFn(data)
+    return res.data
+  } catch (error: any) {
+    console.error('adjustTokenWalletBalance error', error)
+    throw new Error(error.message || 'Failed to adjust token wallet')
   }
 }
 export async function createUserForAdmin(data: CreateUserRequest): Promise<CreateUserResult> {

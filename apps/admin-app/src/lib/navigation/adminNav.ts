@@ -48,7 +48,10 @@ export const adminNavGroups: AdminNavGroup[] = [
   },
   {
     title: 'Finance',
-    items: [{ label: 'Revenue', path: '/revenue', icon: '💰' }],
+    items: [
+      { label: 'Revenue', path: '/revenue', icon: '💰' },
+      { label: 'Tokens', path: '/tokens', icon: '🪙' },
+    ],
   },
   {
     title: 'System',
