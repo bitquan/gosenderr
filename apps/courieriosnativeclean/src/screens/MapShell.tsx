@@ -783,6 +783,10 @@ export function MapShell({ onSignOut }: MapShellProps) {
     return zip ? `Area ${zip}` : 'Area';
   };
   const getEffectiveStatus = (job: Job): string => job.statusDetail ?? job.status;
+  const isLiveJob = (job: Job) => {
+    const status = getEffectiveStatus(job);
+    return status !== 'completed' && status !== 'cancelled';
+  };
   const isAssignedToMe = (job: Job) => !!user?.uid && job.courierUid === user.uid;
   const canRevealDetails = (job: Job) => isAssignedToMe(job);
   const getVisiblePickupLabel = (job: Job) =>
