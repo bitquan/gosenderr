@@ -42,6 +42,17 @@ type CancelCourierJobCallableRequest = {
   idempotencyKey: string;
 };
 
+type SubmitCourierJobProofCallableRequest = {
+  jobId: string;
+  type: "pickup" | "dropoff";
+  photoUrl: string;
+  coordinates: {
+    latitude: number;
+    longitude: number;
+    accuracy: number;
+  };
+};
+
 const LIFECYCLE_QUEUE_STORAGE_KEY = "senderr.lifecycle.command.queue.v1";
 let lifecycleQueueListenerInstalled = false;
 
@@ -171,6 +182,17 @@ async function callCancelCourierJob(
     functions,
     "cancelCourierJob",
   );
+  await callable(payload);
+}
+
+export async function submitCourierJobProof(
+  payload: SubmitCourierJobProofCallableRequest,
+): Promise<void> {
+  if (!functions) throw new Error("Firebase Functions not initialized");
+  const callable = httpsCallable<
+    SubmitCourierJobProofCallableRequest,
+    { success: boolean; jobId: string; type: "pickup" | "dropoff" }
+  >(functions, "submitCourierJobProof");
   await callable(payload);
 }
 

@@ -21,6 +21,7 @@ const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || ''
 export function CreateJobModal({ isOpen, onClose, onJobCreated }: CreateJobModalProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [mode, setMode] = useState<'test' | 'manual'>('test')
   const [jobType, setJobType] = useState<'package' | 'food'>('package')
   
   const [pickupQuery, setPickupQuery] = useState('')
@@ -34,6 +35,7 @@ export function CreateJobModal({ isOpen, onClose, onJobCreated }: CreateJobModal
   const [showDropoffSuggestions, setShowDropoffSuggestions] = useState(false)
   
   const [estimatedFee, setEstimatedFee] = useState('')
+  const [manualOverrideFee, setManualOverrideFee] = useState('')
   const [description, setDescription] = useState('')
   
   const pickupRef = useRef<HTMLDivElement>(null)
@@ -142,9 +144,15 @@ export function CreateJobModal({ isOpen, onClose, onJobCreated }: CreateJobModal
         throw new Error('You must be signed in to create a test job')
       }
 
+      const defaultFee = parseFloat(estimatedFee)
+      const overrideFee = parseFloat(manualOverrideFee)
+      const agreedFee = mode === 'manual' && Number.isFinite(overrideFee) && overrideFee > 0
+        ? overrideFee
+        : defaultFee
+
       const jobData = {
         type: jobType,
-        status: 'open',
+        status: mode === 'manual' ? 'pending' : 'open',
         // Flat fields for compatibility with Jobs page
         pickupAddress: pickupSelected.address,
         deliveryAddress: dropoffSelected.address,
@@ -161,7 +169,8 @@ export function CreateJobModal({ isOpen, onClose, onJobCreated }: CreateJobModal
           lat: dropoffSelected.lat,
           lng: dropoffSelected.lng,
         },
-        estimatedFee: parseFloat(estimatedFee),
+        estimatedFee: defaultFee,
+        agreedFee,
         vehicleType: jobType === 'package' ? 'car' : 'scooter',
         description: description || '',
         createdAt: serverTimestamp(),
@@ -171,7 +180,8 @@ export function CreateJobModal({ isOpen, onClose, onJobCreated }: CreateJobModal
         createdByName: currentUser.displayName || 'Admin',
         courierUid: null,
         offerCourierUid: null,
-        testRecord: true,
+        testRecord: mode === 'test',
+        manualOrder: mode === 'manual',
         createdByAdmin: true,
       }
 
@@ -183,8 +193,10 @@ export function CreateJobModal({ isOpen, onClose, onJobCreated }: CreateJobModal
       setDropoffQuery('')
       setDropoffSelected(null)
       setEstimatedFee('')
+      setManualOverrideFee('')
       setDescription('')
       setJobType('package')
+      setMode('test')
       
       onJobCreated()
       onClose()
@@ -201,13 +213,41 @@ export function CreateJobModal({ isOpen, onClose, onJobCreated }: CreateJobModal
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-900">+ Create Test Job</h2>
+          <h2 className="text-2xl font-bold text-gray-900">{mode === 'test' ? '+ Create Test Job' : '+ Create Manual Order'}</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 text-2xl"
           >
             ✕
           </button>
+        </div>
+
+        <div className="px-6 pt-4">
+          <div className="inline-flex rounded-xl border border-gray-200 bg-gray-50 p-1">
+            <button
+              type="button"
+              onClick={() => setMode('test')}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                mode === 'test' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Create Test Job
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode('manual')}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                mode === 'manual' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Create Manual Order
+            </button>
+          </div>
+          <p className="text-xs text-gray-500 mt-2">
+            {mode === 'test'
+              ? 'Test jobs are marked as test records for QA and demo flows.'
+              : 'Manual orders are production-style jobs with optional admin price override.'}
+          </p>
         </div>
 
         <form onSubmit={handleCreate} className="p-6 space-y-6">
@@ -333,7 +373,7 @@ export function CreateJobModal({ isOpen, onClose, onJobCreated }: CreateJobModal
           {/* Estimated Fee */}
           <div className="border-t pt-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Estimated Fee ($)
+              Base Fee ($)
             </label>
             <input
               type="number"
@@ -344,6 +384,26 @@ export function CreateJobModal({ isOpen, onClose, onJobCreated }: CreateJobModal
               placeholder="20.00"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+
+            {mode === 'manual' && (
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Override Agreed Fee ($)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  value={manualOverrideFee}
+                  onChange={(e) => setManualOverrideFee(e.target.value)}
+                  placeholder="Leave empty to use base fee"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Used for manual admin orders when you need to override courier payout.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Description */}

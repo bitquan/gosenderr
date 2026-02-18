@@ -1,10 +1,8 @@
 
 import { Job } from '../shared/types';
-import { claimJob, updateJobStatus } from '@/lib/v2/jobs';
+import { claimJob, submitCourierJobProof, updateJobStatus } from '@/lib/v2/jobs';
 import { captureGPSPhoto } from '@/lib/gpsPhoto';
 import { calcMiles } from '@/lib/v2/pricing';
-import { db } from '@/lib/firebase';
-import { doc, updateDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import type { JobStatus } from '../shared/types';
 
 interface CourierJobActionsProps {
@@ -12,9 +10,16 @@ interface CourierJobActionsProps {
   courierUid: string;
   estimatedFee?: number;
   onJobUpdated?: () => void;
+  onProcessingChange?: (processing: boolean) => void;
 }
 
-export function CourierJobActions({ job, courierUid, estimatedFee, onJobUpdated }: CourierJobActionsProps) {
+export function CourierJobActions({
+  job,
+  courierUid,
+  estimatedFee,
+  onJobUpdated,
+  onProcessingChange,
+}: CourierJobActionsProps) {
   const isAssignedToCourier = job.courierUid === courierUid;
   const canAccept = (job.status === 'open' || job.status === 'pending') && !job.courierUid;
   const MAX_DISTANCE_MILES = 0.2; // ~320 meters
@@ -48,6 +53,7 @@ export function CourierJobActions({ job, courierUid, estimatedFee, onJobUpdated 
       return;
     }
 
+    onProcessingChange?.(true);
     try {
       const result = await claimJob(job.id, courierUid, estimatedFee);
       alert(result.queued ? 'Job accept queued (offline). It will sync automatically.' : 'Job accepted successfully!');
@@ -55,6 +61,8 @@ export function CourierJobActions({ job, courierUid, estimatedFee, onJobUpdated 
     } catch (error) {
       console.error('Failed to accept job:', error);
       alert('Failed to accept job. It may have been claimed by another courier.');
+    } finally {
+      onProcessingChange?.(false);
     }
   };
 
@@ -66,6 +74,7 @@ export function CourierJobActions({ job, courierUid, estimatedFee, onJobUpdated 
       return;
     }
 
+    onProcessingChange?.(true);
     try {
       if (nextStatus === 'picked_up') {
         await handleProofCapture('pickup');
@@ -84,6 +93,8 @@ export function CourierJobActions({ job, courierUid, estimatedFee, onJobUpdated 
       console.error('Failed to update job status:', error);
       const message = error instanceof Error ? error.message : 'Failed to update job status. Please try again.';
       alert(message);
+    } finally {
+      onProcessingChange?.(false);
     }
   };
 
@@ -104,19 +115,11 @@ export function CourierJobActions({ job, courierUid, estimatedFee, onJobUpdated 
       throw new Error('You must be at the delivery location to take this photo.');
     }
 
-    const proofPayload = {
-      url: proof.url,
-      location: {
-        lat: proof.coordinates.latitude,
-        lng: proof.coordinates.longitude,
-      },
-      accuracy: proof.coordinates.accuracy,
-      timestamp: Timestamp.fromDate(proof.timestamp),
-    };
-
-    await updateDoc(doc(db, 'jobs', job.id), {
-      ...(type === 'pickup' ? { pickupProof: proofPayload } : { dropoffProof: proofPayload }),
-      updatedAt: serverTimestamp(),
+    await submitCourierJobProof({
+      jobId: job.id,
+      type,
+      photoUrl: proof.url,
+      coordinates: proof.coordinates,
     });
   };
 

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { useJob } from "@/hooks/v2/useJob";
@@ -26,6 +27,7 @@ export default function CourierJobDetail() {
   const { job: jobDoc, loading: jobLoading } = useJob(jobId);
   const { userDoc } = useUserDoc();
   const { startNavigation, isNavigating } = useNavigation();
+  const [isProcessingJobAction, setIsProcessingJobAction] = useState(false);
   const profileLocation = userDoc?.courierProfile?.currentLocation;
   const courierLocation = userDoc?.location
     ? userDoc.location
@@ -111,6 +113,12 @@ export default function CourierJobDetail() {
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-4 space-y-4">
+        {isProcessingJobAction && (
+          <div className="bg-blue-50 border border-blue-200 text-blue-800 rounded-2xl p-3 flex items-center gap-2">
+            <span className="inline-block h-4 w-4 rounded-full border-2 border-blue-600 border-t-transparent animate-spin" />
+            <span className="text-sm font-medium">Processing update… please wait</span>
+          </div>
+        )}
         {isPaymentLocked && (
           <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl p-4">
             <p className="font-semibold">Awaiting customer payment</p>
@@ -129,6 +137,7 @@ export default function CourierJobDetail() {
           <CourierJobActions
             job={job}
             courierUid={uid}
+            onProcessingChange={setIsProcessingJobAction}
             onJobUpdated={() => {
               if (job.status === "arrived_dropoff") {
                 setTimeout(() => navigate("/dashboard"), 1000);
