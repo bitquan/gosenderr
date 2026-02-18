@@ -340,6 +340,7 @@ export default function TokenOperationsPage() {
             >
               <option value="all">All Actions</option>
               <option value="cash_fee">Cash-Fee Jobs</option>
+              <option value="token_purchase">Token Purchases</option>
               <option value="admin_adjustment">Admin Adjustments</option>
               <option value="reserve">Reserve</option>
               <option value="commit">Commit</option>

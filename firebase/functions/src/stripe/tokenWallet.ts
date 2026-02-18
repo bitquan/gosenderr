@@ -254,4 +254,20 @@ export async function creditTokensFromCheckoutSession(session: CheckoutSessionLi
       { merge: true },
     )
   })
+
+  const sessionMetadataForStatus = (session?.metadata || {}) as Record<string, unknown>
+  const idempotencyKey =
+    typeof sessionMetadataForStatus.idempotencyKey === 'string'
+      ? sessionMetadataForStatus.idempotencyKey.trim()
+      : ''
+  if (idempotencyKey) {
+    await db.doc(`tokenCheckoutSessions/${idempotencyKey}`).set(
+      {
+        paymentStatus: 'paid',
+        paidAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    )
+  }
 }

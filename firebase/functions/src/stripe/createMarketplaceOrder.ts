@@ -20,6 +20,7 @@ interface CreateMarketplaceOrderData {
   amount: number;
   currency: string;
   paymentMethodId: string; // 'external' = buyer will pay seller externally (cash/venmo/etc)
+  externalProvider?: string;
   shippingInfo: {
     fullName: string;
     email: string;
@@ -31,6 +32,32 @@ interface CreateMarketplaceOrderData {
     country: string;
   };
   items: MarketplaceItem[];
+}
+
+const EXTERNAL_PAYMENT_METHOD_IDS = new Set([
+  'external',
+  'cash',
+  'cash_app',
+  'cashapp',
+  'venmo',
+  'zelle',
+  'paypal',
+  'apple_cash',
+]);
+
+function resolveExternalRail(paymentMethodId: string, externalProvider?: string): { isExternal: boolean; provider: string } {
+  const normalizedPaymentMethod = String(paymentMethodId || '').trim().toLowerCase();
+  const normalizedProvider = String(externalProvider || '').trim().toLowerCase();
+
+  if (normalizedProvider) {
+    return { isExternal: true, provider: normalizedProvider };
+  }
+
+  if (EXTERNAL_PAYMENT_METHOD_IDS.has(normalizedPaymentMethod) || normalizedPaymentMethod.startsWith('external_')) {
+    return { isExternal: true, provider: normalizedPaymentMethod || 'external' };
+  }
+
+  return { isExternal: false, provider: 'stripe' };
 }
 
 export const createMarketplaceOrder = functions.https.onCall<CreateMarketplaceOrderData>(
@@ -60,17 +87,20 @@ export const createMarketplaceOrder = functions.https.onCall<CreateMarketplaceOr
     try {
       const db = admin.firestore();
 
-      const isExternal = String(paymentMethodId).toLowerCase() === 'external';
+      const externalRail = resolveExternalRail(paymentMethodId, request.data.externalProvider);
+      const isExternal = externalRail.isExternal;
 
       // Handle external (non-Stripe) payments: charge tokenPolicy.costs.cashFee from buyer's token wallet
       if (isExternal) {
         const timestamp = FieldValue.serverTimestamp();
 
-        // Read tokenPolicy.cashFee (fallback to 1)
+        // Read token policy for external rail token gate
         const policySnap = await db.doc('platformSettings/tokenPolicy').get();
-        const cashFee = policySnap.exists
-          ? Number((policySnap.data() || {}).costs?.cashFee) || 1
-          : 1;
+        const policyData = policySnap.exists ? (policySnap.data() || {}) as any : {};
+        const tokenPolicyEnabled = policyData.enabled !== false;
+        const externalRailRequiresTokens = policyData.externalRailRequiresTokens !== false;
+        const cashFee = Number(policyData.costs?.cashFee) || 1;
+        const requiredTokenCharge = tokenPolicyEnabled && externalRailRequiresTokens ? cashFee : 0;
 
         // Create order record (no Stripe intent)
         const orderData = {
@@ -98,6 +128,8 @@ export const createMarketplaceOrder = functions.https.onCall<CreateMarketplaceOr
           tax: amount / 100 - items.reduce((sum, item) => sum + (item.price * item.quantity), 0),
           total: amount / 100,
           paymentIntentId: 'external',
+          paymentRail: 'external',
+          externalPaymentProvider: externalRail.provider,
           paymentStatus: 'pending',
           status: 'pending',
           createdAt: timestamp,
@@ -117,16 +149,16 @@ export const createMarketplaceOrder = functions.https.onCall<CreateMarketplaceOr
 
           const current = walletSnap.exists ? (walletSnap.data() as any) : { available: 0, reserved: 0, lifetimePurchased: 0, lifetimeSpent: 0, lifetimeAdjusted: 0 };
           const available = Number(current.available || 0);
-          if (available < cashFee) {
+          if (available < requiredTokenCharge) {
             throw new functions.https.HttpsError('failed-precondition', 'Insufficient tokens for external payment');
           }
 
           // Update wallet: available decreases, lifetimeSpent increases (reserved remains unchanged overall)
           const nextWallet = {
-            available: available - cashFee,
+            available: available - requiredTokenCharge,
             reserved: Number(current.reserved || 0),
             lifetimePurchased: Number(current.lifetimePurchased || 0),
-            lifetimeSpent: Number(current.lifetimeSpent || 0) + cashFee,
+            lifetimeSpent: Number(current.lifetimeSpent || 0) + requiredTokenCharge,
             lifetimeAdjusted: Number(current.lifetimeAdjusted || 0),
             updatedAt: FieldValue.serverTimestamp(),
           };
@@ -138,7 +170,7 @@ export const createMarketplaceOrder = functions.https.onCall<CreateMarketplaceOr
           tx.set(reservationRef, {
             uid: request.auth!.uid,
             action: 'cash_fee',
-            amount: cashFee,
+            amount: requiredTokenCharge,
             status: 'committed',
             idempotencyKey: reservationId,
             metadata: { orderId: orderRef.id },
@@ -154,7 +186,7 @@ export const createMarketplaceOrder = functions.https.onCall<CreateMarketplaceOr
             type: 'reserve',
             actorType: 'customer',
             action: 'cash_fee',
-            amount: cashFee,
+            amount: requiredTokenCharge,
             idempotencyKey: reservationId,
             reservationId,
             metadata: { orderId: orderRef.id },
@@ -166,7 +198,7 @@ export const createMarketplaceOrder = functions.https.onCall<CreateMarketplaceOr
             type: 'commit',
             actorType: 'customer',
             action: 'cash_fee',
-            amount: cashFee,
+            amount: requiredTokenCharge,
             idempotencyKey: `commit_${reservationId}`,
             reservationId,
             metadata: { orderId: orderRef.id },
@@ -175,7 +207,7 @@ export const createMarketplaceOrder = functions.https.onCall<CreateMarketplaceOr
 
           // Annotate order with token charge info
           tx.update(orderRef, {
-            tokensCharged: cashFee,
+            tokensCharged: requiredTokenCharge,
             tokenReservationId: reservationId,
             tokenChargedAt: FieldValue.serverTimestamp(),
           });
@@ -201,12 +233,12 @@ export const createMarketplaceOrder = functions.https.onCall<CreateMarketplaceOr
           });
         }
 
-        console.log(`External order created: ${orderRef.id} (charged ${cashFee} tokens) for user ${request.auth.uid}`);
+        console.log(`External order created: ${orderRef.id} (charged ${requiredTokenCharge} tokens) for user ${request.auth.uid}`);
 
         return {
           orderId: orderRef.id,
           status: 'external_pending',
-          tokensCharged: cashFee,
+          tokensCharged: requiredTokenCharge,
         };
       }
 
