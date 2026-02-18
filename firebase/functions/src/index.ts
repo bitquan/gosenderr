@@ -38,6 +38,7 @@ export {
 } from "./http/courierJobCommands";
 export {
 	getTokenPolicy,
+	getTokenWalletSummary,
 	getPayoutTokenWalletSummary,
 	tokenReserve,
 	tokenCommit,
@@ -47,6 +48,7 @@ export {
 	tokenFinalizeCheckoutSession,
 	adminGetTokenWalletView,
 	adminListTokenLedger,
+	adjustTokenWalletBalance,
 } from "./http/tokenWalletCommands";
 
 // Stripe Functions
