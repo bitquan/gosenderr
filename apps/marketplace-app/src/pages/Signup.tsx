@@ -43,7 +43,7 @@ export default function SignupPage() {
         email: user.email,
         displayName: displayName || user.email?.split('@')[0],
         role: 'customer', // single role used by security rules
-        roles: ['buyer', 'seller'], // Backwards-compatible array for UI
+        roles: ['buyer'],
         profilePhotoUrl: '',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -53,7 +53,7 @@ export default function SignupPage() {
           savedSearches: [],
           purchaseHistory: []
         },
-        // Seller profile (activated when first item is listed)
+        // Seller profile (activated only after seller approval)
         sellerProfile: null,
         averageRating: 0,
         totalRatings: 0,

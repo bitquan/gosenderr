@@ -14,7 +14,7 @@ export const onAuthUserCreate = functions.auth.user().onCreate(async (user) => {
         email: user.email || null,
         displayName: user.displayName || (user.email ? user.email.split("@")[0] : "Customer"),
         role: "customer",
-        roles: ["buyer", "seller"],
+        roles: ["buyer"],
         profilePhotoUrl: user.photoURL || "",
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),

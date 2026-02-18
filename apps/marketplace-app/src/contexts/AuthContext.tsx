@@ -34,7 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               email: user.email || null,
               displayName: user.displayName || user.email?.split('@')[0] || 'Customer',
               role: 'customer',
-              roles: ['buyer', 'seller'],
+              roles: ['buyer'],
               profilePhotoUrl: user.photoURL || '',
               createdAt: serverTimestamp(),
               updatedAt: serverTimestamp(),
