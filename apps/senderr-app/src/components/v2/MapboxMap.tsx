@@ -796,7 +796,7 @@ export const MapboxMap = forwardRef<MapboxMapHandle, MapboxMapProps>(
           [] as Array<[number, string]>,
         );
 
-        const lineGradient: Array<number | string | unknown[]> = [
+        const lineGradient: [string, ...any[]] = [
           "interpolate",
           ["linear"],
           ["line-progress"],
