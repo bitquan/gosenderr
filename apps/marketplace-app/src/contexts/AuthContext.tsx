@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { User, onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth'
+import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
 import { auth } from '../lib/firebase'
+import { db } from '../lib/firebase/client'
 
 interface AuthContextType {
   user: User | null
@@ -20,9 +22,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return
     }
 
+    const ensureUserProfile = async (user: User) => {
+      try {
+        const userRef = doc(db, 'users', user.uid)
+        const userSnap = await getDoc(userRef)
+
+        if (!userSnap.exists()) {
+          await setDoc(
+            userRef,
+            {
+              email: user.email || null,
+              displayName: user.displayName || user.email?.split('@')[0] || 'Customer',
+              role: 'customer',
+              roles: ['buyer', 'seller'],
+              profilePhotoUrl: user.photoURL || '',
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+              buyerProfile: {
+                favoriteItems: [],
+                savedSearches: [],
+                purchaseHistory: [],
+              },
+              sellerProfile: null,
+              averageRating: 0,
+              totalRatings: 0,
+            },
+            { merge: true },
+          )
+          console.info('Created missing user profile document for signed-in user', user.uid)
+        }
+      } catch (error) {
+        console.warn('Failed to ensure user profile document', error)
+      }
+    }
+
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user)
       setLoading(false)
+
+      if (user && db) {
+        void ensureUserProfile(user)
+      }
     })
 
     return unsubscribe
