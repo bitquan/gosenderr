@@ -796,6 +796,23 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // ========== SAVED ADDRESSES ==========
+    match /savedAddresses/{addressId} {
+      // Users can manage their own saved addresses
+      allow read: if signedIn() && resource.data.userId == request.auth.uid;
+
+      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+
+      allow update: if signedIn()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == resource.data.userId;
+
+      allow delete: if signedIn() && resource.data.userId == request.auth.uid;
+
+      // Admins can view/manage for support operations
+      allow read, write: if isAdmin();
+    }
+
     // ========== SECRETS (Admin-only) ==========
     match /secrets/{docId} {
       allow read, write: if isAdmin();
