@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   Image,
   Modal,
-  NativeModules,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -72,13 +71,6 @@ export function ProofOfDeliveryModal({
 
   const handleCapture = async (useCamera: boolean) => {
     try {
-      const nativePicker =
-        (NativeModules as any)?.ImagePickerManager || (NativeModules as any)?.RNImagePicker;
-      if (!nativePicker) {
-        setError('Image picker is not available. Please rebuild the iOS app.');
-        return;
-      }
-
       const picker = useCamera ? launchCamera : launchImageLibrary;
       const result = await picker({
         mediaType: 'photo',
