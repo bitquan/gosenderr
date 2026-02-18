@@ -26,6 +26,7 @@ import type { Job } from '../types/job';
 import {
   claimJob,
   getTokenPolicy,
+  tokenFinalizeCheckoutSession,
   getTokenWalletSummary,
   tokenCreateCheckoutSession,
   updateJobStatus,
@@ -51,6 +52,7 @@ type AppStateStatus = 'active' | 'background' | 'inactive' | 'unknown' | 'extens
 export function MapShell({ onSignOut }: MapShellProps) {
   const LOCATION_QUEUE_KEY = 'courier_location_queue_v1';
   const STATUS_QUEUE_KEY = 'courier_status_queue_v1';
+  const TOKEN_CHECKOUT_PENDING_KEY = 'courier_token_checkout_pending_v1';
   const { user } = useAuth();
   const { flags } = useFeatureFlags();
   const { jobs, completedJobs, loading } = useOpenJobs(user?.uid ?? null);
@@ -161,6 +163,8 @@ export function MapShell({ onSignOut }: MapShellProps) {
   const [tokenWalletLoading, setTokenWalletLoading] = useState(false);
   const [tokenWalletError, setTokenWalletError] = useState<string | null>(null);
   const [tokenCheckoutBusy, setTokenCheckoutBusy] = useState(false);
+  const tokenCheckoutFinalizeBusyRef = useRef(false);
+  const appStateStatusRef = useRef<AppStateStatus>((AppState?.currentState as AppStateStatus) || 'active');
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
@@ -1185,6 +1189,31 @@ export function MapShell({ onSignOut }: MapShellProps) {
 
   const refreshTokenWallet = useCallback(async () => {
     if (!user?.uid) return;
+
+    if (!tokenCheckoutFinalizeBusyRef.current) {
+      try {
+        const pendingRaw = await AsyncStorage.getItem(TOKEN_CHECKOUT_PENDING_KEY);
+        if (pendingRaw) {
+          const pendingCheckout = JSON.parse(pendingRaw) as { idempotencyKey?: string; sessionId?: string };
+          const finalizeResult = await tokenFinalizeCheckoutSession({
+            idempotencyKey: pendingCheckout?.idempotencyKey,
+            sessionId: pendingCheckout?.sessionId,
+          });
+          if (finalizeResult?.paymentStatus === 'paid' || finalizeResult?.credited) {
+            await AsyncStorage.removeItem(TOKEN_CHECKOUT_PENDING_KEY);
+            if (finalizeResult?.wallet) {
+              setTokenWallet({
+                available: finalizeResult.wallet.available,
+                reserved: finalizeResult.wallet.reserved,
+              });
+            }
+          }
+        }
+      } catch {
+        // Best effort: wallet refresh still runs below.
+      }
+    }
+
     setTokenWalletLoading(true);
     try {
       const [policy, wallet] = await Promise.all([
@@ -1206,6 +1235,55 @@ export function MapShell({ onSignOut }: MapShellProps) {
     void refreshTokenWallet();
   }, [showProfile, user?.uid, refreshTokenWallet]);
 
+  useEffect(() => {
+    if (!user?.uid) return;
+    const subscription = AppState.addEventListener('change', (nextState: AppStateStatus) => {
+      const prevState = appStateStatusRef.current;
+      appStateStatusRef.current = nextState;
+      if ((prevState === 'background' || prevState === 'inactive') && nextState === 'active') {
+        if (tokenCheckoutFinalizeBusyRef.current) return;
+        tokenCheckoutFinalizeBusyRef.current = true;
+        void (async () => {
+          try {
+            const pendingRaw = await AsyncStorage.getItem(TOKEN_CHECKOUT_PENDING_KEY);
+            if (!pendingRaw) return;
+
+            const pendingCheckout = JSON.parse(pendingRaw) as { idempotencyKey?: string; sessionId?: string };
+            const finalizeResult = await tokenFinalizeCheckoutSession({
+              idempotencyKey: pendingCheckout?.idempotencyKey,
+              sessionId: pendingCheckout?.sessionId,
+            });
+
+            if (finalizeResult?.paymentStatus === 'paid' || finalizeResult?.credited) {
+              await AsyncStorage.removeItem(TOKEN_CHECKOUT_PENDING_KEY);
+              if (finalizeResult?.wallet) {
+                setTokenWallet({
+                  available: finalizeResult.wallet.available,
+                  reserved: finalizeResult.wallet.reserved,
+                });
+              }
+              setTokenWalletError(null);
+              Alert.alert('Tokens added', 'Your token wallet has been credited.');
+              return;
+            }
+
+            if (finalizeResult?.paymentStatus && finalizeResult.paymentStatus !== 'paid') {
+              setTokenWalletError('Payment is still processing. Pull to refresh in a moment.');
+            }
+          } catch (error: any) {
+            setTokenWalletError(error?.message || 'Unable to finalize token checkout yet');
+          } finally {
+            tokenCheckoutFinalizeBusyRef.current = false;
+          }
+        })();
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [user?.uid]);
+
   const handleTokenTopUp = async () => {
     if (!user?.uid || !tokenPolicy?.enabled || !Array.isArray(tokenPolicy?.packs)) return;
     const firstActivePack = tokenPolicy.packs.find((pack: any) => pack?.active !== false) || tokenPolicy.packs[0];
@@ -1221,6 +1299,14 @@ export function MapShell({ onSignOut }: MapShellProps) {
         idempotencyKey,
       );
       if (session?.url) {
+        await AsyncStorage.setItem(
+          TOKEN_CHECKOUT_PENDING_KEY,
+          JSON.stringify({
+            idempotencyKey,
+            sessionId: session.sessionId,
+            createdAt: Date.now(),
+          }),
+        );
         await Linking.openURL(session.url);
       }
     } catch (error: any) {

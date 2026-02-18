@@ -67,6 +67,19 @@ type TokenCheckoutSessionResponse = {
   url: string;
 };
 
+type TokenFinalizeCheckoutSessionRequest = {
+  idempotencyKey?: string;
+  sessionId?: string;
+};
+
+type TokenFinalizeCheckoutSessionResponse = {
+  finalized?: boolean;
+  credited?: boolean;
+  paymentStatus?: string;
+  sessionId?: string;
+  wallet?: TokenWalletSummaryResponse;
+};
+
 type TokenClaimReadiness = {
   useTokenMode: boolean;
   canClaim: boolean;
@@ -369,6 +382,18 @@ export async function tokenCreateCheckoutSession(
     idempotencyKey,
   });
 
+  return result.data;
+}
+
+export async function tokenFinalizeCheckoutSession(
+  request: TokenFinalizeCheckoutSessionRequest,
+): Promise<TokenFinalizeCheckoutSessionResponse> {
+  const callable = httpsCallable<TokenFinalizeCheckoutSessionRequest, TokenFinalizeCheckoutSessionResponse>(
+    getFunctionsInstance(),
+    'tokenFinalizeCheckoutSession',
+  );
+
+  const result = await callable(request);
   return result.data;
 }
 
