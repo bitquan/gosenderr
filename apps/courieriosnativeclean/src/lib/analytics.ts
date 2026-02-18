@@ -8,6 +8,12 @@ export interface CourierEventPayload {
   details?: Record<string, any> | null;
 }
 
+function isPermissionDeniedError(error: any): boolean {
+  const code = String(error?.code || '');
+  const message = String(error?.message || '').toLowerCase();
+  return code.includes('permission-denied') || message.includes('missing or insufficient permissions');
+}
+
 export async function logCourierEvent(payload: CourierEventPayload) {
   if (!isFirebaseReady()) return;
   const auth = getAuthSafe();
@@ -21,6 +27,7 @@ export async function logCourierEvent(payload: CourierEventPayload) {
       updatedAt: serverTimestamp(),
     });
   } catch (error) {
+    if (isPermissionDeniedError(error)) return;
     console.warn('Failed to log courier event', error);
   }
 }
