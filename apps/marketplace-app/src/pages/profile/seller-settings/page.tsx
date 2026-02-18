@@ -18,21 +18,8 @@ export default function SellerSettingsPage() {
     instantPayoutEnabled: false,
     returnsAccepted: false,
     returnWindowDays: 7 as 7 | 14 | 30,
-<<<<<<< HEAD
-    shippingGuarantee: undefined as '24h' | '48h' | '3-5days' | undefined,
-    paymentLinks: {
-      cashApp: '',
-      venmo: '',
-      zelle: '',
-      paypal: '',
-      cashAppQrUrl: '' ,
-      venmoQrUrl: '',
-      paypalQrUrl: ''
-    }
-=======
     shareExactPickupLocation: false,
     shippingGuarantee: undefined as '24h' | '48h' | '3-5days' | undefined
->>>>>>> senderr_app
   })
   const [badges, setBadges] = useState<BadgeType[]>([])
   const [sellerScore, setSellerScore] = useState(0)
@@ -79,23 +66,10 @@ export default function SellerSettingsPage() {
             instantPayoutEnabled: sellerProfile.instantPayoutEnabled || false,
             returnsAccepted: sellerProfile.returnsAccepted || false,
             returnWindowDays: sellerProfile.returnWindowDays || 7,
-<<<<<<< HEAD
-            shippingGuarantee: sellerProfile.shippingGuarantee,
-            paymentLinks: {
-              cashApp: sellerProfile.paymentLinks?.cashApp || '',
-              venmo: sellerProfile.paymentLinks?.venmo || '',
-              zelle: sellerProfile.paymentLinks?.zelle || '',
-              paypal: sellerProfile.paymentLinks?.paypal || '',
-              cashAppQrUrl: sellerProfile.paymentLinks?.cashAppQrUrl || '',
-              venmoQrUrl: sellerProfile.paymentLinks?.venmoQrUrl || '',
-              paypalQrUrl: sellerProfile.paymentLinks?.paypalQrUrl || '',
-            }
-=======
             shareExactPickupLocation:
               sellerProfile.shareExactPickupLocation === true ||
               sellerProfile?.localSellingConfig?.shareExactPickupLocation === true,
             shippingGuarantee: sellerProfile.shippingGuarantee
->>>>>>> senderr_app
           })
           setBadges(sellerProfile.badges || [])
           setSellerScore(sellerProfile.sellerScore || 0)

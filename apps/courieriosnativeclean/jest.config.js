@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-module.exports = {
-  preset: 'react-native',
-=======
 /* eslint-env node */
 /* global module */
 module.exports = {
@@ -12,5 +8,4 @@ module.exports = {
   transformIgnorePatterns: [
     'node_modules/(?!(?:\\.pnpm/)?(?:@react-native|react-native|@react-native-community|@react-navigation|@react-native-async-storage|@react-native-community\\+geolocation|firebase|@firebase))',
   ],
->>>>>>> senderr_app
 };
