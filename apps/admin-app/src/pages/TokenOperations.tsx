@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/Card'
 import {
   adminGetTokenWalletView,
@@ -35,6 +35,8 @@ type LedgerRow = Record<string, unknown> & {
   metadata?: Record<string, unknown>
   createdAt?: unknown
 }
+
+const LAST_TOKEN_TARGET_STORAGE_KEY = 'admin.tokenOperations.lastTarget'
 
 function toDisplayDate(value: unknown): string {
   if (!value) return '—'
@@ -88,6 +90,22 @@ export default function TokenOperationsPage() {
   const isEmail = targetInput.includes('@')
   const canLookup = targetInput.trim().length > 2
 
+  const saveLastTarget = (nextTarget: TokenTarget, inputValue: string) => {
+    if (typeof window === 'undefined') return
+    try {
+      window.localStorage.setItem(
+        LAST_TOKEN_TARGET_STORAGE_KEY,
+        JSON.stringify({
+          uid: nextTarget.uid,
+          email: nextTarget.email,
+          input: inputValue,
+        }),
+      )
+    } catch {
+      // Ignore persistence failures.
+    }
+  }
+
   const stats = useMemo(() => {
     const cashFeeRows = ledgerRows.filter((row) => row.action === 'cash_fee')
     const adminRows = ledgerRows.filter((row) => row.action === 'admin_adjustment')
@@ -101,22 +119,20 @@ export default function TokenOperationsPage() {
     }
   }, [ledgerRows])
 
-  const lookupWallet = async () => {
-    if (!canLookup) return
-
+  const lookupWalletByPayload = async (
+    payload: { targetUid?: string; targetEmail?: string },
+    inputValue: string,
+  ) => {
     setLoadingWallet(true)
     setError(null)
     setMessage(null)
 
     try {
-      const payload = isEmail
-        ? { targetEmail: targetInput.trim().toLowerCase() }
-        : { targetUid: targetInput.trim() }
-
       const result = await adminGetTokenWalletView(payload)
       setTarget(result.user)
       setWallet(result.wallet as TokenWallet)
       setMessage(`Loaded wallet for ${result.user.email || result.user.uid}`)
+      saveLastTarget(result.user, inputValue)
 
       await loadLedger('selected', result.user.uid, actionFilter)
     } catch (err: any) {
@@ -128,6 +144,49 @@ export default function TokenOperationsPage() {
       setLoadingWallet(false)
     }
   }
+
+  const lookupWallet = async () => {
+    if (!canLookup) return
+
+    const normalizedInput = targetInput.trim()
+    const payload = isEmail
+      ? { targetEmail: normalizedInput.toLowerCase() }
+      : { targetUid: normalizedInput }
+
+    await lookupWalletByPayload(payload, normalizedInput)
+  }
+
+  useEffect(() => {
+    if (target) return
+    if (typeof window === 'undefined') return
+
+    const stored = window.localStorage.getItem(LAST_TOKEN_TARGET_STORAGE_KEY)
+    if (!stored) return
+
+    try {
+      const parsed = JSON.parse(stored) as {
+        uid?: string
+        email?: string
+        input?: string
+      }
+
+      const uid = typeof parsed.uid === 'string' ? parsed.uid.trim() : ''
+      const email = typeof parsed.email === 'string' ? parsed.email.trim().toLowerCase() : ''
+      const inputValue =
+        typeof parsed.input === 'string' && parsed.input.trim().length > 0
+          ? parsed.input.trim()
+          : uid || email
+
+      if (!uid && !email) {
+        return
+      }
+
+      setTargetInput(inputValue)
+      void lookupWalletByPayload(uid ? { targetUid: uid } : { targetEmail: email }, inputValue)
+    } catch {
+      // Ignore malformed local state.
+    }
+  }, [target])
 
   const loadLedger = async (
     scope = ledgerScope,
@@ -364,6 +423,12 @@ export default function TokenOperationsPage() {
               Export CSV
             </button>
           </div>
+
+          {ledgerScope === 'selected' && !target?.uid && (
+            <p className="text-xs text-amber-700 bg-amber-50 rounded px-3 py-2">
+              Load an account first. The ledger stays scoped to the selected UID.
+            </p>
+          )}
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
             <div className="rounded border p-3 bg-gray-50">
