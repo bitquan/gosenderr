@@ -32,6 +32,7 @@ export {
 	advanceCourierJobStatus,
 	cancelCourierJob,
 	declineCourierJobOffer,
+	submitCourierJobProof,
 } from "./http/courierJobCommands";
 export {
 	getTokenPolicy,
