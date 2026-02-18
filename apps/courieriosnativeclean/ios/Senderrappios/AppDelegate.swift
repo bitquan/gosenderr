@@ -1,6 +1,7 @@
 import UIKit
 import UserNotifications
 import FirebaseCore
+import FirebaseMessaging
 import React
 import React_RCTAppDelegate
 #if canImport(ReactAppDependencyProvider)
@@ -8,7 +9,7 @@ import ReactAppDependencyProvider
 #endif
 
 @main
-class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate, RCTBridgeDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate, MessagingDelegate, RCTBridgeDelegate {
   var window: UIWindow?
 
   override init() {
@@ -21,6 +22,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
   ) -> Bool {
     configureFirebaseIfAvailable()
+    Messaging.messaging().delegate = self
     UNUserNotificationCenter.current().delegate = self
     application.registerForRemoteNotifications()
 
@@ -68,6 +70,33 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     } else {
       completionHandler([.alert, .sound, .badge])
     }
+  }
+
+  func application(
+    _ application: UIApplication,
+    didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
+  ) {
+    Messaging.messaging().apnsToken = deviceToken
+  }
+
+  func application(
+    _ application: UIApplication,
+    didFailToRegisterForRemoteNotificationsWithError error: Error
+  ) {
+    NSLog("APNs registration failed: \(error.localizedDescription)")
+  }
+
+  func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
+    guard let token = fcmToken, !token.isEmpty else { return }
+    NSLog("FCM registration token updated: \(token.prefix(12))…")
+  }
+
+  func application(
+    _ application: UIApplication,
+    didReceiveRemoteNotification userInfo: [AnyHashable : Any],
+    fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
+  ) {
+    completionHandler(.newData)
   }
 
   // MARK: - RCTBridgeDelegate

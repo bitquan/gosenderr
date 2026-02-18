@@ -51,6 +51,7 @@ This quick-start helps contributors get the Senderr iOS app running locally and 
 - Keep code and docs in sync: update docs in the same PR when behavior changes.
 - See `docs/senderr_app/AUDIT.md` for the flow audit checklist and cadence.
 - BAT execution log for iOS command-path kickoff: `docs/senderr_app/BAT-IOS-001-COMMAND-PATH-AUDIT-EXECUTION.md`.
+- TestFlight archive + push smoke checklist: `docs/senderr_app/BAT-IOS-002-TESTFLIGHT-PUSH-SMOKE-CHECKLIST.md`.
 
 ---
 
