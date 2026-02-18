@@ -219,7 +219,10 @@ export default function CustomerDashboardNew() {
 
     jbs.forEach((job) => {
       const dropoffLabel =
-        job.dropoff?.label || job.dropoff?.address || job.deliveryAddress || "destination";
+        job.dropoff?.label ||
+        job.dropoff?.address ||
+        job.deliveryAddress ||
+        "destination";
       allActivities.push({
         id: job.id,
         type: "job",
@@ -335,6 +338,7 @@ export default function CustomerDashboardNew() {
           </div>
         </div>
       </div>
+
       {/* Main Content */}
       <div className="max-w-6xl mx-auto px-6 -mt-8 space-y-6">
         {/* Stats Grid */}
@@ -508,9 +512,11 @@ export default function CustomerDashboardNew() {
                         </p>
                         <StatusBadge
                           status={
-                            activity.status === "delivered" || activity.status === "completed"
+                            activity.status === "delivered" ||
+                            activity.status === "completed"
                               ? "completed"
-                              : activity.status === "in_transit" || activity.status === "in_progress"
+                              : activity.status === "in_transit" ||
+                                  activity.status === "in_progress"
                                 ? "in_progress"
                                 : activity.status === "cancelled"
                                   ? "cancelled"

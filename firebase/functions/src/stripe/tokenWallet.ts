@@ -174,3 +174,84 @@ export const adjustTokenWalletBalance = functions.https.onCall(
     }
   },
 )
+
+interface CheckoutSessionLike {
+  id?: string
+  metadata?: Record<string, unknown>
+  payment_intent?: string | null
+}
+
+export async function creditTokensFromCheckoutSession(session: CheckoutSessionLike): Promise<void> {
+  const sessionId = typeof session?.id === 'string' ? session.id.trim() : ''
+  if (!sessionId) {
+    throw new functions.https.HttpsError('invalid-argument', 'checkout session id is required')
+  }
+
+  const metadata = (session?.metadata || {}) as Record<string, unknown>
+  const purchaseType = typeof metadata.purchaseType === 'string' ? metadata.purchaseType : ''
+  if (purchaseType && purchaseType !== 'token_purchase') {
+    return
+  }
+
+  const uid = typeof metadata.uid === 'string' ? metadata.uid.trim() : ''
+  if (!uid) {
+    throw new functions.https.HttpsError('invalid-argument', 'uid is required for token wallet credit')
+  }
+
+  const tokens = toNumber(metadata.tokens)
+  if (!Number.isFinite(tokens) || tokens <= 0) {
+    throw new functions.https.HttpsError('invalid-argument', 'tokens must be a positive number')
+  }
+
+  const db = admin.firestore()
+  const walletRef = db.doc(`tokenWallets/${uid}`)
+  const txRef = db.doc(`tokenTransactions/stripe_purchase_${sessionId}`)
+  const now = admin.firestore.FieldValue.serverTimestamp()
+
+  await db.runTransaction(async (tx) => {
+    const [walletSnap, txSnap] = await Promise.all([tx.get(walletRef), tx.get(txRef)])
+
+    if (txSnap.exists) {
+      return
+    }
+
+    const walletData = (walletSnap.data() || {}) as Record<string, unknown>
+    const available = toNumber(walletData.available)
+    const reserved = toNumber(walletData.reserved)
+    const lifetimePurchased = toNumber(walletData.lifetimePurchased)
+    const lifetimeSpent = toNumber(walletData.lifetimeSpent)
+    const lifetimeAdjusted = toNumber(walletData.lifetimeAdjusted)
+
+    tx.set(
+      walletRef,
+      {
+        uid,
+        available: available + tokens,
+        reserved,
+        lifetimePurchased: lifetimePurchased + tokens,
+        lifetimeSpent,
+        lifetimeAdjusted,
+        updatedAt: now,
+      },
+      { merge: true },
+    )
+
+    tx.set(
+      txRef,
+      {
+        uid,
+        type: 'purchase',
+        action: 'token_purchase',
+        amount: tokens,
+        tokens,
+        stripeSessionId: sessionId,
+        paymentIntentId: session.payment_intent || null,
+        idempotencyKey:
+          typeof metadata.idempotencyKey === 'string' ? metadata.idempotencyKey : `stripe_purchase_${sessionId}`,
+        metadata,
+        createdAt: now,
+      },
+      { merge: true },
+    )
+  })
+}

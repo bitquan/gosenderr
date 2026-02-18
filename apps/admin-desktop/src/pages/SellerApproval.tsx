@@ -191,7 +191,12 @@ export default function SellerApprovalPage() {
     .filter((app) => {
       if (!searchQuery) return true
       const q = searchQuery.toLowerCase()
-      return app.businessName?.toLowerCase().includes(q) || app.user?.email?.toLowerCase().includes(q) || app.user?.displayName?.toLowerCase().includes(q) || app.phone?.toLowerCase().includes(q);
+      return (
+        app.businessName?.toLowerCase().includes(q) ||
+        app.user?.email?.toLowerCase().includes(q) ||
+        app.user?.displayName?.toLowerCase().includes(q) ||
+        app.phone?.toLowerCase().includes(q)
+      )
     })
 
   if (loading) {
@@ -217,6 +222,7 @@ export default function SellerApprovalPage() {
           <p className="text-blue-100">{filteredApplications.length} applications</p>
         </div>
       </div>
+
       <div className="max-w-6xl mx-auto px-4 sm:px-6 -mt-6 space-y-4">
         <div className="bg-white rounded-2xl shadow-lg p-4">
           <input
@@ -386,11 +392,12 @@ export default function SellerApprovalPage() {
                     )}
                   </CardContent>
                 </Card>
-              );
+              )
             })}
           </div>
         )}
       </div>
+
       {showRejectModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
@@ -442,5 +449,5 @@ export default function SellerApprovalPage() {
         </div>
       )}
     </div>
-  );
+  )
 }

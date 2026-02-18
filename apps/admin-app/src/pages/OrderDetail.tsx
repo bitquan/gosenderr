@@ -278,6 +278,7 @@ export default function OrderDetailPage() {
           </div>
         </div>
       </div>
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 -mt-6 space-y-4">
         {/* Order Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -592,6 +593,7 @@ export default function OrderDetailPage() {
           </div>
         </div>
       </div>
+
       {/* Refund Modal */}
       {showRefundModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -653,5 +655,5 @@ export default function OrderDetailPage() {
         </div>
       )}
     </div>
-  );
+  )
 }

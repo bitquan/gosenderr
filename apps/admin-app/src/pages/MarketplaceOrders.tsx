@@ -82,7 +82,12 @@ export default function MarketplaceOrdersPage() {
 
   // Filter orders
   const filteredOrders = orders.filter(order => {
-    const matchesSearch = searchQuery === '' || order.id.toLowerCase().includes(searchQuery.toLowerCase()) || order.customerEmail.toLowerCase().includes(searchQuery.toLowerCase()) || order.sellerEmail.toLowerCase().includes(searchQuery.toLowerCase()) || order.customerName?.toLowerCase().includes(searchQuery.toLowerCase()) || order.sellerName?.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesSearch = searchQuery === '' || 
+      order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.customerEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.sellerEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.customerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.sellerName?.toLowerCase().includes(searchQuery.toLowerCase())
 
     const matchesStatus = statusFilter === 'all' || order.status === statusFilter
 
@@ -118,6 +123,7 @@ export default function MarketplaceOrdersPage() {
           <p className="text-purple-100">View and manage all marketplace orders</p>
         </div>
       </div>
+
       <div className="max-w-6xl mx-auto px-4 sm:px-6 -mt-8 space-y-6">
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -294,5 +300,5 @@ export default function MarketplaceOrdersPage() {
         </Card>
       </div>
     </div>
-  );
+  )
 }

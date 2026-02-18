@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuthUser } from "@/hooks/v2/useAuthUser";
 import { useJob } from "@/hooks/v2/useJob";
@@ -24,39 +23,21 @@ export default function CourierJobDetail() {
   const navigate = useNavigate();
   const jobId = params?.jobId as string;
   const { uid } = useAuthUser();
-  const { job: jobDoc, loading: jobLoading, error: jobError, retry: retryJob, isOffline } = useJob(jobId);
+  const { job: jobDoc, loading: jobLoading } = useJob(jobId);
   const { userDoc } = useUserDoc();
   const { startNavigation, isNavigating } = useNavigation();
+  const profileLocation = userDoc?.courierProfile?.currentLocation;
+  const courierLocation = userDoc?.location
+    ? userDoc.location
+    : profileLocation && userDoc
+    ? { ...profileLocation, updatedAt: userDoc.updatedAt }
+    : null;
+  const hasLocation = Boolean(courierLocation);
 
   if (jobLoading) {
     return (
       <div style={{ padding: "30px" }}>
         <p>Loading job...</p>
-      </div>
-    );
-  }
-
-  if (jobError) {
-    return (
-      <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center p-6">
-        <div className="bg-white rounded-2xl border border-red-200 p-6 max-w-lg w-full text-center">
-          <h2 className="text-xl font-bold text-red-700">Unable to load job</h2>
-          <p className="text-sm text-gray-600 mt-2">{jobError.message}</p>
-          {isOffline && (
-            <p className="text-sm text-amber-700 mt-2">You are offline. Reconnect and retry.</p>
-          )}
-          <div className="mt-4 flex justify-center gap-3">
-            <button
-              onClick={retryJob}
-              className="px-4 py-2 rounded-lg bg-red-600 text-white font-semibold hover:bg-red-700"
-            >
-              Retry
-            </button>
-            <Link to="/dashboard" className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 font-semibold hover:bg-gray-200">
-              Back
-            </Link>
-          </div>
-        </div>
       </div>
     );
   }
@@ -74,8 +55,6 @@ export default function CourierJobDetail() {
   }
 
   const job = convertJobDocToJob(jobDoc, jobId);
-  const fallbackFee =
-    job.agreedFee ?? (job as any)?.pricing?.courierRate ?? (job as any)?.pricing?.totalAmount ?? 0;
 
   if (job.courierUid !== uid) {
     return (
@@ -91,23 +70,27 @@ export default function CourierJobDetail() {
 
   const visibility = getJobVisibility(job, { uid, role: "courier" });
   const isPaymentLocked = job.paymentStatus !== "authorized";
-  const canNavigateToPickup = ["assigned", "enroute_pickup", "arrived_pickup"].includes(
-    job.status,
-  );
+  const canNavigateToPickup = [
+    "assigned",
+    "enroute_pickup",
+    "arrived_pickup",
+  ].includes(job.status);
   const canNavigateToDropoff = [
     "picked_up",
     "enroute_dropoff",
     "arrived_dropoff",
   ].includes(job.status);
-  
-  const handleStartNavigation = async (destination: 'pickup' | 'dropoff') => {
-    if (!userDoc?.location) {
-      alert('Unable to get your current location. Please enable location services.');
+
+  const handleStartNavigation = async (destination: "pickup" | "dropoff") => {
+    if (!courierLocation) {
+      alert(
+        "Unable to get your current location. Please enable location services.",
+      );
       return;
     }
 
-    const targetLocation = destination === 'pickup' ? job.pickup : job.dropoff;
-    await startNavigation(job, userDoc.location, targetLocation);
+    const targetLocation = destination === "pickup" ? job.pickup : job.dropoff;
+    await startNavigation(job, courierLocation, targetLocation);
   };
 
   return (
@@ -126,17 +109,15 @@ export default function CourierJobDetail() {
           Accepted: {job.updatedAt?.toDate?.()?.toLocaleString() || "Just now"}
         </p>
       </div>
+
       <div className="max-w-4xl mx-auto px-4 py-4 space-y-4">
         {isPaymentLocked && (
           <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl p-4">
             <p className="font-semibold">Awaiting customer payment</p>
-            <p className="text-sm">You can view details, but trip actions are locked until payment is authorized.</p>
-          </div>
-        )}
-        {isOffline && (
-          <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl p-4">
-            <p className="font-semibold">Offline mode</p>
-            <p className="text-sm">You can view details, but lifecycle commands require connection.</p>
+            <p className="text-sm">
+              You can view details, but trip actions are locked until payment is
+              authorized.
+            </p>
           </div>
         )}
         {/* Next Action */}
@@ -148,7 +129,6 @@ export default function CourierJobDetail() {
           <CourierJobActions
             job={job}
             courierUid={uid}
-            estimatedFee={fallbackFee}
             onJobUpdated={() => {
               if (job.status === "arrived_dropoff") {
                 setTimeout(() => navigate("/dashboard"), 1000);
@@ -159,7 +139,10 @@ export default function CourierJobDetail() {
         {/* Status Timeline */}
         <div className="bg-white rounded-2xl shadow-lg p-6">
           <h2 className="text-lg font-bold text-gray-900 mb-4">Progress</h2>
-          <StatusTimeline currentStatus={job.status} isPaymentLocked={isPaymentLocked} />
+          <StatusTimeline
+            currentStatus={job.status}
+            isPaymentLocked={isPaymentLocked}
+          />
         </div>
 
         {/* Live Map */}
@@ -170,25 +153,35 @@ export default function CourierJobDetail() {
           <MapboxMap
             pickup={job.pickup}
             dropoff={job.dropoff}
-            courierLocation={userDoc?.location || null}
+            courierLocation={courierLocation}
             height="300px"
           />
         </div>
 
         {/* Job Details Panel with Actions */}
         <div className="bg-white rounded-2xl shadow-lg p-6">
-          <JobDetailsPanel job={job} visibility={visibility} showStatus={true} />
+          <JobDetailsPanel
+            job={job}
+            visibility={visibility}
+            showStatus={true}
+          />
         </div>
 
         {/* Navigation Buttons */}
         <div className="grid grid-cols-2 gap-3">
           <button
-            onClick={() => handleStartNavigation('pickup')}
+            onClick={() => handleStartNavigation("pickup")}
             disabled={
-              isNavigating || !userDoc?.location || isPaymentLocked || !canNavigateToPickup
+              isNavigating ||
+              !hasLocation ||
+              isPaymentLocked ||
+              !canNavigateToPickup
             }
             className={`py-4 px-4 rounded-xl font-semibold text-white shadow-lg transition-all ${
-              isNavigating || !userDoc?.location || isPaymentLocked || !canNavigateToPickup
+              isNavigating ||
+              !hasLocation ||
+              isPaymentLocked ||
+              !canNavigateToPickup
                 ? "bg-gray-400 cursor-not-allowed"
                 : "bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] hover:shadow-xl active:scale-95"
             }`}
@@ -201,12 +194,18 @@ export default function CourierJobDetail() {
             </div>
           </button>
           <button
-            onClick={() => handleStartNavigation('dropoff')}
+            onClick={() => handleStartNavigation("dropoff")}
             disabled={
-              isNavigating || !userDoc?.location || isPaymentLocked || !canNavigateToDropoff
+              isNavigating ||
+              !hasLocation ||
+              isPaymentLocked ||
+              !canNavigateToDropoff
             }
             className={`py-4 px-4 rounded-xl font-semibold text-white shadow-lg transition-all ${
-              isNavigating || !userDoc?.location || isPaymentLocked || !canNavigateToDropoff
+              isNavigating ||
+              !hasLocation ||
+              isPaymentLocked ||
+              !canNavigateToDropoff
                 ? "bg-gray-400 cursor-not-allowed"
                 : "bg-gradient-to-br from-emerald-500 to-emerald-600 hover:shadow-xl active:scale-95"
             }`}

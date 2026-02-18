@@ -187,7 +187,7 @@ export default function UserDetailPage() {
       user_unsuspended: 'User Unsuspended',
       user_deleted: 'User Deleted',
     }
-    return labels[action] || action.replace(/_/g, ' ').toUpperCase();
+    return labels[action] || action.replace(/_/g, ' ').toUpperCase()
   }
 
   const formatDate = (timestamp: any) => {
@@ -214,7 +214,7 @@ export default function UserDetailPage() {
       )
       const deliveriesQuery = query(
         collection(db, 'orders'),
-        where('courierUid', '==', userId!)
+        where('courierId', '==', userId!)
       )
 
       const [
@@ -450,6 +450,7 @@ export default function UserDetailPage() {
           </div>
         </div>
       </div>
+
       <div className="max-w-6xl mx-auto px-4 sm:px-6 -mt-6 space-y-4">
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-3 justify-end">
@@ -750,6 +751,7 @@ export default function UserDetailPage() {
           </CardContent>
         </Card>
       </div>
+
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -776,12 +778,14 @@ export default function UserDetailPage() {
           </div>
         </div>
       )}
+
       {/* Run Test Flow Modal */}
       <RunTestFlowModal
         userId={user?.id}
         isOpen={runFlowOpen}
         onClose={() => setRunFlowOpen(false)}
       />
+
       {/* Suspend Modal */}
       {showSuspendModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -870,6 +874,7 @@ export default function UserDetailPage() {
           </div>
         </div>
       )}
+
       {/* Modals */}
       <EditRoleModal
         user={user}
@@ -880,6 +885,7 @@ export default function UserDetailPage() {
           setEditRoleModalOpen(false)
         }}
       />
+
       <BanUserModal
         user={user}
         isOpen={banModalOpen}
@@ -890,5 +896,5 @@ export default function UserDetailPage() {
         }}
       />
     </div>
-  );
+  )
 }

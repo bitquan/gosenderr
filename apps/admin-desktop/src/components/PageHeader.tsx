@@ -39,5 +39,5 @@ export default function PageHeader({ onOpenSearch }: { onOpenSearch: () => void 
         </button>
       </div>
     </div>
-  );
+  )
 }

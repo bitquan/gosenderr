@@ -26,6 +26,8 @@ interface Job {
 
 interface CourierProfile {
   online: boolean
+  isOnline?: boolean
+  status?: string
   vehicleType?: string
   currentLocation?: { lat: number; lng: number }
 }
@@ -67,12 +69,29 @@ export default function CourierDashboardPage() {
       (snapshot) => {
         if (snapshot.exists()) {
           const data = snapshot.data()
+          const courierStatus = data.courierProfile?.status || 'none'
+          const approved = courierStatus === 'approved'
+          const storedOnline = Boolean(data.courierProfile?.isOnline ?? data.courierProfile?.online)
+          const effectiveOnline = approved && storedOnline
+
           setProfile({
-            online: data.courierProfile?.online || false,
+            online: effectiveOnline,
+            isOnline: effectiveOnline,
+            status: courierStatus,
             vehicleType: data.courierProfile?.vehicleType,
             currentLocation: data.location
           })
-          setIsOnline(data.courierProfile?.online || false)
+          setIsOnline(effectiveOnline)
+
+          if (!approved && storedOnline) {
+            updateDoc(doc(db, 'users', user.uid), {
+              'courierProfile.isOnline': false,
+              'courierProfile.online': false,
+              'courierProfile.lastOnlineAt': new Date()
+            }).catch((error) => {
+              console.error('Failed to reset online status for unapproved courier', error)
+            })
+          }
         }
         setLoading(false)
       }
@@ -162,9 +181,14 @@ export default function CourierDashboardPage() {
   const handleToggleOnline = async () => {
     if (!user || updatingStatus) return
 
+    const newStatus = !isOnline
+    if (newStatus && profile?.status !== 'approved') {
+      alert('Your courier profile must be approved before going online')
+      return
+    }
+
     setUpdatingStatus(true)
     try {
-      const newStatus = !isOnline
       await updateDoc(doc(db, 'users', user.uid), {
         'courierProfile.online': newStatus,
         'courierProfile.lastOnlineAt': new Date()
@@ -213,12 +237,12 @@ export default function CourierDashboardPage() {
             {!isAdmin && (
               <button
                 onClick={handleToggleOnline}
-                disabled={updatingStatus}
+                disabled={updatingStatus || profile?.status !== 'approved'}
                 className={`px-6 py-3 rounded-full font-semibold text-lg transition-all duration-300 flex items-center gap-2 ${
                   isOnline
                     ? 'bg-green-500 hover:bg-green-600 shadow-lg hover:shadow-xl hover:scale-105'
                     : 'bg-gray-400 hover:bg-gray-500'
-                } ${updatingStatus ? 'opacity-50 cursor-not-allowed' : ''}`}
+                } ${updatingStatus || profile?.status !== 'approved' ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 <span className={`w-3 h-3 rounded-full ${isOnline ? 'bg-white animate-pulse' : 'bg-gray-200'}`} />
                 {updatingStatus ? 'Updating...' : isOnline ? 'Online' : 'Offline'}
@@ -245,6 +269,7 @@ export default function CourierDashboardPage() {
           )}
         </div>
       </div>
+
       {/* Main Content */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 -mt-8 space-y-4">
         {/* Admin Section */}
@@ -771,5 +796,5 @@ export default function CourierDashboardPage() {
         )}
       </div>
     </div>
-  );
+  )
 }

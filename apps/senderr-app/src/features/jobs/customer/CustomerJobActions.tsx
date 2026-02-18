@@ -17,8 +17,8 @@ export function CustomerJobActions({ job, uid, onJobUpdated }: CustomerJobAction
     }
 
     try {
-      await cancelJob(job.id, uid);
-      alert('Job cancelled successfully');
+      const result = await cancelJob(job.id, uid);
+      alert(result.queued ? 'Cancel queued (offline). It will sync automatically.' : 'Job cancelled successfully');
       onJobUpdated?.();
     } catch (error) {
       console.error('Failed to cancel job:', error);

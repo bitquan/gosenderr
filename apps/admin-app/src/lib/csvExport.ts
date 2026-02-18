@@ -19,7 +19,7 @@ export function exportToCSV(data: any[], filename: string) {
         const stringValue = String(value ?? '')
         const escaped = stringValue.replace(/"/g, '""')
         // Wrap in quotes if contains comma, newline, or quotes
-        return /[,\n"]/.test(escaped) ? `"${escaped}"` : escaped;
+        return /[,\n"]/.test(escaped) ? `"${escaped}"` : escaped
       }).join(',')
     )
   ].join('\n')
@@ -52,7 +52,7 @@ export function formatOrdersForExport(orders: any[]) {
       'N/A',
     'Created At': order.createdAt?.toDate?.()?.toLocaleString() || 'N/A',
     'Updated At': order.updatedAt?.toDate?.()?.toLocaleString() || 'N/A'
-  }));
+  }))
 }
 
 export function formatUsersForExport(users: any[]) {
@@ -69,7 +69,7 @@ export function formatUsersForExport(users: any[]) {
     'Banned': user.banned ? 'Yes' : 'No',
     'Created At': user.createdAt?.toDate?.()?.toLocaleString() || 'N/A',
     'Last Login': user.lastLoginAt?.toDate?.()?.toLocaleString() || 'N/A'
-  }));
+  }))
 }
 
 export function formatAuditLogsForExport(logs: any[]) {
@@ -84,7 +84,7 @@ export function formatAuditLogsForExport(logs: any[]) {
     'Item Title': log.itemTitle || 'N/A',
     'Details': log.details ? JSON.stringify(log.details) : 'N/A',
     'Timestamp': log.timestamp?.toDate?.()?.toLocaleString() || 'N/A'
-  }));
+  }))
 }
 
 export function formatItemsForExport(items: any[]) {
@@ -106,7 +106,7 @@ export function formatItemsForExport(items: any[]) {
     'Images Count': item.images?.length || 0,
     'Created At': item.createdAt?.toDate?.()?.toLocaleString() || 'N/A',
     'Updated At': item.updatedAt?.toDate?.()?.toLocaleString() || 'N/A'
-  }));
+  }))
 }
 
 export function formatJobsForExport(jobs: any[]) {
@@ -114,7 +114,7 @@ export function formatJobsForExport(jobs: any[]) {
     'Job ID': job.id,
     'Customer ID': job.customerId,
     'Customer Email': job.customerEmail || 'N/A',
-    'Courier ID': job.courierUid || 'N/A',
+    'Courier ID': job.courierId || 'N/A',
     'Status': job.status,
     'Pickup Address': job.pickupAddress || 'N/A',
     'Delivery Address': job.deliveryAddress || 'N/A',
@@ -123,5 +123,5 @@ export function formatJobsForExport(jobs: any[]) {
     'Distance': job.distance || 'N/A',
     'Created At': job.createdAt?.toDate?.()?.toLocaleString() || 'N/A',
     'Completed At': job.completedAt?.toDate?.()?.toLocaleString() || 'N/A'
-  }));
+  }))
 }

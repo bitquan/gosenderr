@@ -46,7 +46,7 @@ export default function CourierJobsPage() {
 
     const jobsRef = collection(db, 'jobs')
     const primaryQuery = query(jobsRef, where('courierUid', '==', user.uid))
-    const legacyQuery = query(jobsRef, where('courierUid', '==', user.uid))
+    const legacyQuery = query(jobsRef, where('courierId', '==', user.uid))
 
     const mergeJobs = (lists: Job[][]) => {
       const map = new Map<string, Job>()
@@ -134,7 +134,7 @@ export default function CourierJobsPage() {
   const activeCount = jobs.filter(job => activeStatuses.has(job.status)).length
 
   return (
-    <div className="min-h-screen bg-[#F8F9FF]">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-purple-950/90 text-white">
       {/* Header */}
       <div className="bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] rounded-b-[32px] p-6 text-white shadow-lg">
         <div className="max-w-4xl mx-auto">
@@ -165,15 +165,16 @@ export default function CourierJobsPage() {
           </div>
         </div>
       </div>
+
       {/* Filter Tabs */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 -mt-6">
-        <div className="bg-white rounded-2xl shadow-lg p-2 flex gap-2">
+        <div className="bg-slate-950/70 border border-white/15 rounded-2xl shadow-lg p-2 flex gap-2 backdrop-blur">
           <button
             onClick={() => setFilter('all')}
             className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all ${
               filter === 'all'
                 ? 'bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] text-white shadow-md'
-                : 'text-gray-600 hover:bg-gray-50'
+                : 'text-blue-100 hover:bg-white/10'
             }`}
           >
             All ({jobs.length})
@@ -183,7 +184,7 @@ export default function CourierJobsPage() {
             className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all ${
               filter === 'active'
                 ? 'bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] text-white shadow-md'
-                : 'text-gray-600 hover:bg-gray-50'
+                : 'text-blue-100 hover:bg-white/10'
             }`}
           >
             Active ({activeCount})
@@ -193,33 +194,34 @@ export default function CourierJobsPage() {
             className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all ${
               filter === 'completed'
                 ? 'bg-gradient-to-br from-[#6B4EFF] to-[#9D7FFF] text-white shadow-md'
-                : 'text-gray-600 hover:bg-gray-50'
+                : 'text-blue-100 hover:bg-white/10'
             }`}
           >
             Completed ({completedCount})
           </button>
         </div>
       </div>
+
       {/* Jobs List */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 mt-6">
         {loading ? (
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
-              <Card key={i} variant="elevated" className="animate-pulse">
+              <Card key={i} variant="elevated" className="animate-pulse bg-white/10 border border-white/15 text-white">
                 <CardContent className="p-6">
-                  <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
-                  <div className="h-4 bg-gray-200 rounded w-2/3 mb-2"></div>
-                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                  <div className="h-6 bg-white/20 rounded w-1/3 mb-4"></div>
+                  <div className="h-4 bg-white/15 rounded w-2/3 mb-2"></div>
+                  <div className="h-4 bg-white/15 rounded w-1/2"></div>
                 </CardContent>
               </Card>
             ))}
           </div>
         ) : filteredJobs.length === 0 ? (
-          <Card variant="elevated">
+          <Card variant="elevated" className="bg-white/10 border border-white/15 text-white">
             <CardContent className="text-center py-12">
               <div className="text-6xl mb-4">📦</div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">No deliveries found</h3>
-              <p className="text-gray-600 mb-6">
+              <h3 className="text-xl font-bold text-white mb-2">No deliveries found</h3>
+              <p className="text-blue-100 mb-6">
                 {filter === 'all' 
                   ? "You haven't accepted any jobs yet"
                   : filter === 'active'
@@ -240,7 +242,7 @@ export default function CourierJobsPage() {
               <Card
                 key={job.id}
                 variant="elevated"
-                className="hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer animate-slide-up"
+                className="hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer animate-slide-up bg-white/10 border border-white/15 text-white"
                 style={{ animationDelay: `${index * 50}ms` }}
                 onClick={() => navigate(`/jobs/${job.id}`)}
               >
@@ -248,7 +250,7 @@ export default function CourierJobsPage() {
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2 flex-wrap">
-                        <span className="text-sm font-mono text-gray-500">#{job.id.slice(0, 8)}</span>
+                        <span className="text-sm font-mono text-blue-100">#{job.id.slice(0, 8)}</span>
                         <StatusBadge
                           status={
                             job.status === 'completed'
@@ -262,21 +264,21 @@ export default function CourierJobsPage() {
                         />
                       </div>
                       {job.completedAt?.toDate && (
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-blue-100">
                           Delivered {formatDate(job.completedAt.toDate())}
                         </p>
                       )}
                       {job.acceptedAt?.toDate && !job.completedAt && (
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-blue-100">
                           Accepted {formatDate(job.acceptedAt.toDate())}
                         </p>
                       )}
                     </div>
                     {job.agreedFee && (
                       <div className="text-right">
-                        <p className="text-xs text-gray-500 mb-1">Fee</p>
+                        <p className="text-xs text-blue-100 mb-1">Fee</p>
                         <p className={`text-2xl font-bold ${
-                          job.status === 'completed' ? 'text-green-600' : 'text-purple-600'
+                          job.status === 'completed' ? 'text-emerald-300' : 'text-purple-200'
                         }`}>
                           {formatCurrency(job.agreedFee)}
                         </p>
@@ -287,12 +289,12 @@ export default function CourierJobsPage() {
                   <div className="space-y-3">
                     {/* Pickup */}
                     <div className="flex gap-3">
-                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-green-50 flex items-center justify-center text-xl">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-emerald-500/20 border border-emerald-300/30 flex items-center justify-center text-xl">
                         📍
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs text-gray-500 mb-1">Pickup</p>
-                        <p className="font-medium text-gray-900 text-sm break-words">
+                        <p className="text-xs text-blue-100 mb-1">Pickup</p>
+                        <p className="font-medium text-white text-sm break-words">
                           {job.pickupAddress || 'Address not provided'}
                         </p>
                       </div>
@@ -300,12 +302,12 @@ export default function CourierJobsPage() {
 
                     {/* Delivery */}
                     <div className="flex gap-3">
-                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-50 flex items-center justify-center text-xl">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-rose-500/20 border border-rose-300/30 flex items-center justify-center text-xl">
                         🎯
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs text-gray-500 mb-1">Delivery</p>
-                        <p className="font-medium text-gray-900 text-sm break-words">
+                        <p className="text-xs text-blue-100 mb-1">Delivery</p>
+                        <p className="font-medium text-white text-sm break-words">
                           {job.deliveryAddress || 'Address not provided'}
                         </p>
                       </div>
@@ -313,8 +315,8 @@ export default function CourierJobsPage() {
 
                     {/* Description */}
                     {job.description && (
-                      <div className="pt-3 border-t border-gray-100">
-                        <p className="text-sm text-gray-600 line-clamp-2">
+                      <div className="pt-3 border-t border-white/10">
+                        <p className="text-sm text-blue-100 line-clamp-2">
                           📦 {job.description}
                         </p>
                       </div>
@@ -322,8 +324,8 @@ export default function CourierJobsPage() {
                   </div>
 
                   {/* View Details Arrow */}
-                  <div className="flex justify-end mt-4 pt-4 border-t border-gray-100">
-                    <span className="text-purple-600 font-semibold text-sm flex items-center gap-1">
+                  <div className="flex justify-end mt-4 pt-4 border-t border-white/10">
+                    <span className="text-purple-200 font-semibold text-sm flex items-center gap-1">
                       View Details
                       <span className="text-lg">→</span>
                     </span>
@@ -335,5 +337,5 @@ export default function CourierJobsPage() {
         )}
       </div>
     </div>
-  );
+  )
 }

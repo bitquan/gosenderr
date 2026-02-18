@@ -43,13 +43,29 @@ if [[ "$CLEAN_POD_CACHE" == "1" ]]; then
   rm -rf "$HOME/Library/Caches/CocoaPods" || true
 fi
 
-# 4) Install pods deterministically when lockfile exists.
+# 4) Install pods with retry for intermittent CocoaPods null-byte bug.
 cd "$IOS_DIR"
-if [[ -f "Podfile.lock" ]]; then
-  pod install --deployment
-else
-  pod install
-fi
+attempt=1
+max_attempts=3
+while true; do
+  set +e
+  output="$(pod install 2>&1)"
+  exit_code=$?
+  set -e
+
+  printf '%s\n' "$output"
+
+  if [[ $exit_code -eq 0 ]]; then
+    break
+  fi
+
+  if [[ $attempt -ge $max_attempts ]] || ! grep -qi "path name contains null byte" <<<"$output"; then
+    exit $exit_code
+  fi
+
+  echo "warning: CocoaPods null-byte path bug hit (attempt $attempt/$max_attempts); retrying pod install..."
+  attempt=$((attempt + 1))
+done
 
 # 5) Guardrail: Podfile.lock and Manifest.lock must match.
 if [[ -f "Podfile.lock" && -f "Pods/Manifest.lock" ]]; then

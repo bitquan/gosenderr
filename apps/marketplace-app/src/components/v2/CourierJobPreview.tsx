@@ -57,6 +57,7 @@ export function CourierJobPreview({
   return (
     <div>
       <h3 style={{ marginTop: 0, marginBottom: "16px" }}>Job Preview</h3>
+
       {!eligible && (
         <div
           style={{
@@ -82,6 +83,7 @@ export function CourierJobPreview({
           )}
         </div>
       )}
+
       <JobDetailsPanel job={job} visibility={visibility} showStatus={false}>
         <div
           style={{

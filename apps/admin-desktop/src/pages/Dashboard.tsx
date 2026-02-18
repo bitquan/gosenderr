@@ -330,6 +330,7 @@ export default function AdminDashboardPage() {
           <p className="text-purple-100">{user?.email}</p>
         </div>
       </div>
+
       <div className="max-w-6xl mx-auto px-4 sm:px-6 -mt-8 space-y-6">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           <Card variant="elevated">
@@ -689,5 +690,5 @@ export default function AdminDashboardPage() {
         )}
       </div>
     </div>
-  );
+  )
 }

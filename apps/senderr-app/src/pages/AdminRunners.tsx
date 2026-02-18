@@ -132,12 +132,17 @@ export default function AdminRunnersPage() {
   const filteredRunners = runners
     .filter((runner) => {
       if (filter === 'all') return true
-      return runner.packageRunnerProfile?.status === `${filter}_review` || runner.packageRunnerProfile?.status === filter;
+      return runner.packageRunnerProfile?.status === `${filter}_review` || runner.packageRunnerProfile?.status === filter
     })
     .filter((runner) => {
       if (!searchQuery) return true
       const q = searchQuery.toLowerCase()
-      return runner.email?.toLowerCase().includes(q) || runner.displayName?.toLowerCase().includes(q) || runner.packageRunnerProfile?.phone?.includes(q) || runner.packageRunnerProfile?.homeHub?.name?.toLowerCase().includes(q);
+      return (
+        runner.email?.toLowerCase().includes(q) ||
+        runner.displayName?.toLowerCase().includes(q) ||
+        runner.packageRunnerProfile?.phone?.includes(q) ||
+        runner.packageRunnerProfile?.homeHub?.name?.toLowerCase().includes(q)
+      )
     })
 
   const getStatusBadge = (status: string) => {
@@ -169,6 +174,7 @@ export default function AdminRunnersPage() {
           <p className="text-purple-100">{filteredRunners.length} applications</p>
         </div>
       </div>
+
       <div className="max-w-6xl mx-auto px-4 sm:px-6 -mt-6 space-y-4">
         {/* Search Bar */}
         <div className="bg-white rounded-2xl shadow-lg p-4">
@@ -353,11 +359,12 @@ export default function AdminRunnersPage() {
                     )}
                   </CardContent>
                 </Card>
-              );
+              )
             })}
           </div>
         )}
       </div>
+
       {/* Reject Modal */}
       <RunnerRejectModal
         isOpen={showRejectModal}
@@ -377,5 +384,5 @@ export default function AdminRunnersPage() {
         }
       />
     </div>
-  );
+  )
 }

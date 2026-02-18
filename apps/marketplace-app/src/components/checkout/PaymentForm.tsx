@@ -131,6 +131,7 @@ export function PaymentForm({ amount, shippingInfo, items, onSuccess }: PaymentF
           <CardElement options={cardElementOptions} />
         </div>
       </div>
+
       {error && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
           <div className="flex items-start gap-2">
@@ -141,11 +142,13 @@ export function PaymentForm({ amount, shippingInfo, items, onSuccess }: PaymentF
           </div>
         </div>
       )}
+
       <div className="p-4 bg-gray-50 rounded-lg">
         <p className="text-sm text-gray-600">
           <strong>Test Card:</strong> Use 4242 4242 4242 4242 with any future expiry date and any 3-digit CVC.
         </p>
       </div>
+
       <button
         type="submit"
         disabled={!stripe || loading || processingPayment}
@@ -163,9 +166,10 @@ export function PaymentForm({ amount, shippingInfo, items, onSuccess }: PaymentF
           `Pay $${amount.toFixed(2)}`
         )}
       </button>
+
       <p className="text-xs text-center text-gray-500">
         By completing this purchase you agree to our Terms of Service and Privacy Policy
       </p>
     </form>
-  );
+  )
 }

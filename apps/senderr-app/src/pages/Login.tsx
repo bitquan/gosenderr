@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, Link, useLocation } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { signInWithEmail } from '../lib/firebase'
 
 export default function LoginPage() {
@@ -8,7 +8,6 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
-  const location = useLocation()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -17,13 +16,7 @@ export default function LoginPage() {
 
     try {
       await signInWithEmail(email, password)
-      const params = new URLSearchParams(location.search)
-      const redirect = params.get('redirect')
-      if (redirect && redirect.startsWith('/')) {
-        navigate(redirect, { replace: true })
-      } else {
-        navigate('/dashboard', { replace: true })
-      }
+      navigate('/dashboard')
     } catch (err: any) {
       setError(err.message || 'Failed to sign in')
     } finally {

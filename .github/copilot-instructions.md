@@ -1,285 +1,147 @@
-# Copilot Instructions for the GoSenderr Monorepo
+# Copilot Instructions for GoSenderr
 
-## Overview
+## Purpose
 
-These instructions cover the full GoSenderr monorepo: web apps, desktop app, shared packages, Firebase backend, scripts, and documentation. Use this file as the single source of truth for Copilot behavior and project scope.
+This file defines repo-wide Copilot behavior for active GoSenderr development.
 
-## Project Ownership
+Use canonical docs from `/docs/BLUEPRINT.md` as operational truth.
 
-You are the dedicated developer for the entire project and should take end-to-end ownership of implementation, cleanup, and maintenance tasks.
+## Active Repo Topology
+
+Active apps:
+
+- `apps/marketplace-app`
+- `apps/senderr-app` (Senderr web)
+- `apps/courieriosnativeclean` (Senderr iOS native)
+- `apps/admin-app`
+- `apps/admin-desktop`
+- `apps/landing`
+
+Support areas:
+
+- `packages/shared`
+- `packages/ui`
+- `firebase/`
+- `scripts/`
+- `docs/`
+
+Legacy/archive:
+
+- `apps/_archive/*`
+
+Do not modify archived paths unless explicitly requested.
 
 ## Branch-Aware Workflow (Required)
 
-Copilot and coding agents must be branch-aware at all times.
+Always detect branch first:
 
-- Always detect the current branch first: `git rev-parse --abbrev-ref HEAD`
-- Load the branch profile from: `.github/copilot/branches/<branch-name-with-slashes-replaced-by-dashes>.md`
-- Work only in the current branch unless the user explicitly asks to switch.
-- Keep changes scoped to the branch purpose (do not mix marketplace, senderr, and ios work in one branch unless requested).
-- Before finishing work, run:
-  - `bash scripts/git-branch-assist.sh status`
-  - `bash scripts/git-branch-assist.sh save "<type(scope): summary>"`
+- `git rev-parse --abbrev-ref HEAD`
 
-If a branch profile does not exist yet, initialize it with:
+Load branch profile:
+
+- `.github/copilot/branches/<branch-name-with-slashes-replaced-by-dashes>.md`
+
+If missing, initialize:
 
 - `bash scripts/setup-branch-copilot.sh`
-- `bash scripts/enable-git-hooks.sh` (one-time per clone, auto-runs setup on branch checkout)
-
-This guarantees every new branch gets the same Copilot setup.
-
-## Project Structure
-
-This is a monorepo with Vite + React apps, Electron desktop app, and Firebase backend.
-
-- **apps/marketplace-app**: Customer marketplace (browse, buy, sell)
-- **apps/senderr-app**: Senderr workflow (jobs, navigation)
-- **apps/admin-app**: Web admin portal
-- **apps/admin-desktop**: Electron admin desktop app
-- **apps/landing**: Marketing / entry point
-- **apps/vendor-app**: Vendor portal (suppliers, inventory, orders)
-- **apps/web**: Marketing / public web (legacy or alternate entry)
-- **apps/\_archive**: Archived/legacy app snapshots (do not modify on main)
-- **packages/shared**: Shared types, utils, state machine
-- **firebase/**: Functions, rules, emulators, local configs
-- **docs/**: Canonical docs, project plan, architecture, deployment
-- **scripts/**: Dev, deploy, smoke tests, migration helpers
-- **test_data/**, **test-results/**, **logs/**: Local testing artifacts
-
-## Using GitHub Copilot
-
-1. **Setup**: Ensure that GitHub Copilot is enabled in your IDE.
-2. **Context Awareness**: Write clear comments and code to provide context for Copilot.
-3. **Write Functions**: When writing functions in the User Service, for example, include comments that describe what the function is supposed to do.
-4. **Iterate**: Use Copilot suggestions as a starting point, and iterate on them to fit your specific needs.
-
-## Senderr App — Branching & PR Guidance
-
-**Quick reference for Senderr work (branching, PRs, CI)**
-
-- **Main app branch:** `senderr_app` — treat as protected and target for all Senderr PRs.
-- **Sub-branch convention:** `senderr-app/<type>/<short-desc>` (use hyphen, lowercase). Examples:
-  - `senderr-app/feature/auth-flow`
-  - `senderr-app/fix/login-crash`
-  - `senderr-app/upgrade/react-native`
-  - `senderr-app/docs/update-guides`
-- **Branch rules:**
-  - Branch from latest `senderr_app` (fetch + rebase/merge before starting work).
-  - Keep branches small, single-purpose, and short lived.
-  - Include an issue id in the branch name when available (e.g., `senderr-app/feature/123-login-flow`).
-- **PR expectations:**
-  - Target branch **must** be `senderr_app`.
-  - PRs should include a clear summary, linked issue, test instructions, and follow the PR checklist (see `.github/pull_request_template.md`).
-  - Use **Squash and merge** to keep history concise.
-- **CI & code ownership:**
-  - PRs should pass `senderr_app-ci` (lint, type-check, unit tests) before merging.
-  - `CODEOWNERS` contains owners for `docs/senderr_app/` and `apps/courieriosnativeclean/` — add reviewers accordingly.
 
-> See `docs/senderr_app/BRANCHING.md` for the full guide and exact commands.
+Keep changes scoped to current branch purpose. Do not mix app domains in one PR unless asked.
 
-## Docs & Flow Audits — keep code and docs in sync ✅
-- **Audit flows periodically:** Schedule regular audits (monthly or quarterly) for critical user flows (e.g., onboarding, job creation, payments) to find regressions or inconsistencies.
-- **Verify docs-code parity:** Always check that documentation, README steps, and code samples match actual behavior; when a change affects behavior, update docs in the same PR.
-- **Include docs verification in PRs:** Add a short ``Docs updated`` checklist item in PRs (see PR template). If docs are not updated and behavior changed, create a follow-up task and flag `CODEOWNERS`.
-- **Automate where possible:** Use `pnpm run verify:docs`, `npx -y cspell "docs/**/*.md"`, and link-checkers in CI to catch broken links and missing references.
-- **Ownership & cadence:** Assign `CODEOWNERS` to lead audits and create GitHub issues for any drift found; track audits as recurring issues or a lightweight kanban workflow.
+Before finishing work on a branch:
 
-> Tip: If Copilot suggests code changes that affect behavior, prompt it to also update or propose documentation changes so the PR includes both code and docs updates.
+- `bash scripts/git-branch-assist.sh status`
+- `bash scripts/git-branch-assist.sh save "<type(scope): summary>"`
 
-## Best Practices
+## Senderr Stream Branch Model
 
-- **Be Descriptive**: The more descriptive your comments and variable names, the better suggestions you'll receive.
-- **Review Suggestions**: Always review Copilot’s suggestions for accuracy and relevance.
-- **Contextual Use**: Copilot works best when given clear tasks within the context of your file.
+Base branch for active stream work:
 
-## Task Focus & Proactive Guidance
+- `senderr_app`
 
-- **Stay on task**: If troubleshooting is needed, keep it scoped to the current task and return to the main goal immediately after the fix.
-- **Checkpoint before detours**: Restate the goal and what will be done next before any troubleshooting steps.
-- **Catch missed steps**: Proactively verify common prerequisites (build/sync, emulator status, config URLs, signing, and feature flags) and call out anything missing.
-- **Prefer action**: If a reasonable default exists, do it; avoid asking for details unless required to proceed.
-- **Summarize outcomes**: End with a short status update and next concrete action.
+Preferred sub-branches:
 
-## iOS Simulator & Capacitor Findings (Keep in Mind)
+- `senderr-app/feature/<short-name>`
+- `senderr-app/fix/<short-name>`
+- `senderr-app/upgrade/<short-name>`
+- `senderr-app/docs/<short-name>` or `senderr-app/docs`
 
-- **Live hosting in Capacitor**: If the app must load from a live URL (no localhost/port), set `server.url` to the hosted domain in `capacitor.config.ts` and run `cap sync ios`.
-- **Xcode + SwiftPM local package conflict**: Opening two Capacitor iOS workspaces that reference local `node_modules` can cause “Missing package product” errors. To run two apps simultaneously:
-  - Keep only one Xcode workspace open at a time **or**
-  - Use a **second repo copy** so each workspace resolves local packages independently.
-- **Two simulators are fine**: You can boot iPhone 17 and iPhone 17 Pro simultaneously; the conflict is the workspace/package resolution, not the simulators.
+PR target for this stream:
 
-## Security, Quality, and CI
+- `senderr_app`
 
-- Treat security alerts as blocking for production changes.
-- Prefer deterministic, secure IDs; avoid `Math.random()` in app logic.
-- Keep build artifacts out of git; ensure `dist/` is ignored.
-- CI uses CodeQL + Trivy; Dependabot is enabled for npm and GitHub Actions.
-- Keep workflows in `.github/workflows/` up to date; do not delete active scan workflows.
+Use squash merges to keep history compact.
 
-## Delivery Targets
 
-- Web apps: Vite + Firebase Hosting
-- Backend: Firebase Functions + Firestore rules
-- Desktop: Electron (admin-desktop) with packaging + smoke tests
+## Copilot Execution Split (VS Code + Chat)
 
-## Example Usage
+Default operating model:
 
-```javascript
-// Function to create a new user
-function createUser(data) {
-  // Copilot can suggest relevant implementation here
-}
-```
+- Chat agent (this thread): planning, issue breakdown, PR strategy, reviews, merge flow.
+- VS Code Copilot agent: implementation, tests, and local iteration in the selected worktree.
 
-## Project Reorganization (v2) — Documentation & Repo Actions
+Execution rules:
 
-When adding or updating high-level project-plan documentation (e.g. `docs/project-plan/*`), follow these steps to keep the repo healthy:
+1. Pick the correct stable worktree domain first (`senderr-shell`, `senderr-settings`, `senderr-ops`, etc.).
+2. Sync before coding: `bash scripts/worktree-sync.sh`.
+3. For latest merged feature testing, always use `senderr-live`.
+4. If testing multiple unmerged branches together, stack them temporarily on `senderr-live` and record exactly which branches were stacked.
+5. After each push, append a short entry to `docs/dev/worktree-logs/<worktree>.md`.
 
-- Linkability & discoverability
-  - Add or update `docs/project-plan/README.md` and ensure it is linked from `README.md` and `docs/_sidebar.md` so teammates can find it easily.
-- Local verification
-  - Run `pnpm run verify:docs` and fix any missing canonical docs (the script checks for `ARCHITECTURE.md`, `DEVELOPMENT.md`, `DEPLOYMENT.md`, `API_REFERENCE.md`).
-  - Run `npx -y cspell "docs/**/*.md"` and whitelist new technical words in `cspell.json` when appropriate.
-  - Run a link-checker (e.g., `markdown-link-check` or `lychee`) and fix broken links.
-- Changelog & PRs
-  - Add a short `CHANGELOG.md` entry summarizing the documentation addition or change in the same PR.
-  - Include a short PR checklist: docs links added, `verify:docs` passes locally, `cspell` updated if needed, and follow-up issues created for migration tasks.
-- Governance
-  - Update `CODEOWNERS` for new docs areas if reviewer responsibilities change.
+Do not implement in random folders or stale issue worktrees when a stable domain worktree exists.
 
-**Legacy content policy**
+## Developer Command Baseline
 
-- If a file/app does not align with the current project plan, archive it on the `scrapile` branch under `scrapile/legacy/*`.
-- Keep main branch lean: only active apps and canonical docs.
+From repo root:
 
-- Phase 1 — Admin Desktop specific workflow
-  - Add a Phase 1 checklist to `docs/project-plan/03-PHASE-1-ADMIN-DESKTOP.md` (scaffold, migrate, native menus, offline storage, packaging, CI). This file should contain step-by-step dev & verification steps and explicit phase exit criteria.
-  - When scaffolding Electron, include secure defaults and a minimal CI job that builds macOS and Windows artifacts and runs packaging smoke tests.
-  - Keep admin-app PRs small and iterative; prefer multiple small PRs (scaffold, integration, packaging) and use draft PRs for larger work requiring coordination.
-  - Document Docker cross-arch caveats and smoke-test usage in `docs/DEVELOPMENT.md`.
+- Install: `pnpm install --frozen-lockfile`
+- Lint: `pnpm lint`
+- Type-check: `pnpm type-check`
+- Build: `pnpm build`
+- Docs verification: `pnpm run verify:docs`
 
-## Conclusion
+iOS Senderr setup/build:
 
-## Follow the Phase 1 Admin Desktop checklist in `docs/project-plan/03-PHASE-1-ADMIN-DESKTOP.md` and keep `docs/project-plan/*` as the single source of truth. Use Copilot to scaffold, draft docs, and propose code changes, but always run the repository verification steps (`pnpm run verify:docs`, `npx -y cspell "docs/**/*.md" --exclude "docs/archive/**"`, `pnpm smoke:docker`) and test packaging on relevant platforms before merging.
+- `pnpm run ios:senderr`
+- `pnpm run ios:clean:install`
+- `pnpm run ios:build:verify`
 
-## Feature Flags & Progressive Rollout Strategy
+Admin desktop full dev stack:
 
-### Overview
+- `pnpm dev:admin-desktop`
+- `pnpm stop:admin-desktop`
 
-All new features MUST be wrapped in feature flags to enable safe deployment, gradual rollouts, and instant rollbacks without code changes.
+## Docs and Handoff Discipline
 
-### Feature Flag Architecture
+When behavior changes, update docs in the same PR.
 
-**Storage**: Firestore collection `featureFlags`
+Persistent session memory files:
 
-- Individual flag documents for admin UI management
-- Single `config` document for app compatibility
+- `docs/dev/SESSION_STATE.md` (current state)
+- `docs/dev/WORKLOG.md` (append-only history)
 
-**Admin Interface**: `apps/admin-desktop` Feature Flags page
+Update with:
 
-- Toggle flags on/off globally
-- Add new flags via UI (no code deploy needed)
-- Real-time updates across all apps
+- `bash scripts/dev-handoff.sh --summary "<what changed>" --next "<next step>" --status in_progress --issue "#NNN" --pr "#PPP" --files "path/a,path/b"`
 
-### Implementation Pattern
+Run handoff update before branch switch, before PR, and at end of session.
 
-```typescript
-// Always check flags before showing new features
-import { useFeatureFlags } from "../hooks/useFeatureFlags";
+PR handoff requirement:
 
-export default function Dashboard() {
-  const { flags } = useFeatureFlags();
+- Choose exactly one PR template checkbox:
+  - `handoff: updated` for behavior/setup/config/process changes.
+  - `handoff: not needed` for docs-only or metadata-only changes.
 
-  // New version behind flag
-  if (flags?.["dashboard_v2"]) {
-    return <DashboardV2 />; // New experimental version
-  }
+## Guardrails
 
-  return <DashboardV1 />; // Stable fallback
-}
-```
+- Do not rewrite branch history on shared branches.
+- Do not commit generated artifacts unless explicitly required.
+- Treat security, CI, and docs drift as blocking for merge readiness.
+- Keep changes minimal and verifiable with concrete commands.
 
-### Deployment Workflow
+## Related Canonical Docs
 
-1. **Build Feature** - Create new component/feature in code
-2. **Wrap in Flag** - Add flag check (default: disabled)
-3. **Deploy Code** - Push to production (feature hidden)
-4. **Add Flag** - Create flag in admin UI (keep disabled)
-5. **Test** - Enable flag only for admin/testing
-6. **Gradual Rollout** - Enable for percentage of users
-7. **Full Launch** - Enable for everyone
-8. **Rollback** - Toggle off instantly if issues arise
-
-### Best Practices
-
-- **New features start disabled** - Add flag before merging PR
-- **No direct rollouts** - Always use flags for risky changes
-- **Kill switches** - Major features need instant disable capability
-- **Document flags** - Add clear descriptions in flag creation
-- **Clean up old flags** - Remove flags after feature is stable (2-4 weeks post-launch)
-
-### Flag Categories
-
-- `marketplace` - Item listings, checkout, vendor features
-- `delivery` - Courier, routes, tracking, package shipping
-- `payments` - Stripe, refunds, payment methods
-- `notifications` - Push, email, SMS notifications
-- `system` - Admin tools, analytics, infrastructure
-
-### Advanced Patterns (Future)
-
-When needed, implement:
-
-- **Percentage Rollouts** - `rolloutPercent: 25` (25% of users)
-- **User Targeting** - `allowedUsers: ['uid1', 'uid2']` (beta testers only)
-- **Environment Flags** - `environments: ['staging']` (not in prod)
-- **Scheduled Flags** - `enableAt: timestamp` (auto-enable at time)
-- **Flag History** - Track who changed what and when
-
-### Why This Matters
-
-- ✅ Deploy risky changes safely
-- ✅ Test in production with real users
-- ✅ Rollback without code deployment
-- ✅ A/B test new features
-- ✅ Dark launch (code in prod, invisible to users)
-- ✅ Independent release schedules (code deploy ≠ feature launch)
-
-### Example Scenarios
-
-**New Payment Provider**
-
-```typescript
-if (flags?.["stripe_payment_v2"]) {
-  // New Stripe integration
-} else {
-  // Old payment flow
-}
-```
-
-**Redesigned UI**
-
-```typescript
-if (flags?.["modern_dashboard"]) {
-  return <ModernDashboard />; // New design
-}
-return <ClassicDashboard />; // Old design
-```
-
-**Experimental Algorithm**
-
-```typescript
-const results = flags?.["smart_matching_v2"]
-  ? await newMatchingAlgorithm(params)
-  : await oldMatchingAlgorithm(params);
-```
-
-## Issues & Support Workflow
-
-Use GitHub issue templates to triage bugs by app:
-
-- Admin Desktop: `.github/ISSUE_TEMPLATE/admin-desktop-bug.yml`
-- Admin Web: `.github/ISSUE_TEMPLATE/admin-web-bug.yml`
-- Marketplace: `.github/ISSUE_TEMPLATE/marketplace-bug.yml`
-- Courier: `.github/ISSUE_TEMPLATE/courier-bug.yml`
-- Landing: `.github/ISSUE_TEMPLATE/landing-web-bug.yml`
-- General: `.github/ISSUE_TEMPLATE/bug-report.yml`
+- `/README.md`
+- `/docs/BLUEPRINT.md`
+- `/docs/apps/README.md`
+- `/docs/DEVELOPER_PLAYBOOK.md`
+- `/docs/senderr_app/BRANCHING.md`

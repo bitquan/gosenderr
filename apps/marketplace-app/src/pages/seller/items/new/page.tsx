@@ -280,6 +280,7 @@ export default function NewSellerItem() {
           <p className="text-blue-100">List a new item on the marketplace</p>
         </div>
       </div>
+
       {/* Form */}
       <div className="max-w-3xl mx-auto px-4 py-6">
         <Card>

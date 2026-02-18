@@ -68,9 +68,27 @@ service cloud.firestore {
       
       // Users can create their own document (but NOT with admin role)
       allow create: if isSelf(uid) && validNonAdminRole(request.resource.data.role);
+
+      function approvedBeforeOnline() {
+        return !(
+          (
+            request.resource.data.get('courierProfile', {}).get('isOnline', false) == true
+            && resource.data.get('courierProfile', {}).get('isOnline', false) != true
+          )
+          ||
+          (
+            request.resource.data.get('courierProfile', {}).get('online', false) == true
+            && resource.data.get('courierProfile', {}).get('online', false) != true
+          )
+        ) || request.resource.data
+          .get('courierProfile', {})
+          .get('status', resource.data.get('courierProfile', {}).get('status', '')) == 'approved';
+      }
       
       // Users can update their own document (but cannot change role to admin)
-      allow update: if isSelf(uid) && (!('role' in request.resource.data) || validNonAdminRole(request.resource.data.role));
+      allow update: if isSelf(uid)
+        && (!('role' in request.resource.data) || validNonAdminRole(request.resource.data.role))
+        && approvedBeforeOnline();
 
       // Allow rating writers to update seller rating stats only
       allow update: if signedIn()
@@ -703,6 +721,26 @@ service cloud.firestore {
       allow delete: if signedIn() && request.auth.uid == resource.data.sellerId;
     }
 
+    // ========== FOOD PICKUP RESTAURANTS ==========
+    match /foodPickupRestaurants/{restaurantId} {
+      // Public restaurants are readable by anyone; private records are owner/admin only
+      allow read: if resource.data.isPublic == true
+        || (signedIn() && (
+          isAdmin()
+          || request.auth.uid == resource.data.courierId
+        ));
+
+      // Courier can create their own restaurant records
+      allow create: if signedIn()
+        && request.resource.data.courierId == request.auth.uid;
+
+      // Courier owner or admin can update/delete
+      allow update, delete: if signedIn() && (
+        isAdmin()
+        || request.auth.uid == resource.data.courierId
+      );
+    }
+
     // ========== ORDERS ==========
     match /orders/{orderId} {
       // Buyers, sellers, couriers, and admins can read relevant orders
@@ -816,6 +854,20 @@ service cloud.firestore {
       
       // Only admins can create/update payouts
       allow create, update: if isAdmin();
+    }
+
+    // ========== PAYMENT METHODS ==========
+    match /paymentMethods/{methodId} {
+      allow read: if signedIn() && (
+        isAdmin() || request.auth.uid == resource.data.userId
+      );
+
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid;
+
+      allow update, delete: if signedIn() && (
+        isAdmin() || request.auth.uid == resource.data.userId
+      );
     }
 
 

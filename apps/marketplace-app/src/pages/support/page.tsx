@@ -87,7 +87,9 @@ export default function SupportPage() {
     const matchesCategory =
       activeCategory === "All" || faq.category === activeCategory;
     const matchesSearch =
-      searchQuery === "" || faq.question.toLowerCase().includes(searchQuery.toLowerCase()) || faq.answer.toLowerCase().includes(searchQuery.toLowerCase());
+      searchQuery === "" ||
+      faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      faq.answer.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 

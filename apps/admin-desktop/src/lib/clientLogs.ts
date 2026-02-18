@@ -8,7 +8,7 @@ type ConsoleMethod = (...args: any[]) => void
 
 const formatArg = (arg: any) => {
   if (typeof arg === 'string') return arg
-  if (arg instanceof Error) return arg.stack || arg.message;
+  if (arg instanceof Error) return arg.stack || arg.message
   try {
     return JSON.stringify(arg)
   } catch {

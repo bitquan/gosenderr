@@ -16,7 +16,9 @@ import { functions, auth } from '@/lib/firebase';
 // Development mode flag
 const USE_MOCK_FUNCTIONS = import.meta.env.DEV && !import.meta.env.VITE_USE_REAL_FUNCTIONS;
 const USING_EMULATORS = Boolean(
-  import.meta.env.VITE_FIREBASE_AUTH_EMULATOR_HOST || import.meta.env.VITE_FIRESTORE_EMULATOR_HOST || import.meta.env.VITE_FUNCTIONS_EMULATOR_HOST
+  import.meta.env.VITE_FIREBASE_AUTH_EMULATOR_HOST ||
+  import.meta.env.VITE_FIRESTORE_EMULATOR_HOST ||
+  import.meta.env.VITE_FUNCTIONS_EMULATOR_HOST
 );
 
 const buildMockPaymentIntent = (request: CreatePaymentIntentRequest): CreatePaymentIntentResponse => {

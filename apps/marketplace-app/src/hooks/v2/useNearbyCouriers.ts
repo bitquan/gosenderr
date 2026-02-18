@@ -120,7 +120,10 @@ export function useNearbyCouriers(
             );
 
             const name =
-              (data.courierProfile as any)?.displayName || (data.courierProfile as any)?.identity?.legalName || data.displayName || `Senderr ${id.slice(0, 4)}`;
+              (data.courierProfile as any)?.displayName ||
+              (data.courierProfile as any)?.identity?.legalName ||
+              data.displayName ||
+              `Senderr ${id.slice(0, 4)}`;
 
             results.push({
               uid: id,

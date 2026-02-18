@@ -182,6 +182,7 @@ export function LiveTripStatus({
           </div>
         </div>
       </div>
+
       {/* Live Map */}
       <div
         style={{
@@ -200,6 +201,7 @@ export function LiveTripStatus({
           height="400px"
         />
       </div>
+
       {/* Courier Info */}
       {courierInfo && (
         <div
@@ -322,6 +324,7 @@ export function LiveTripStatus({
           </div>
         </div>
       )}
+
       {/* Delivery Progress */}
       <div
         style={{
@@ -369,14 +372,20 @@ export function LiveTripStatus({
             icon={
               pickupPhoto
                 ? "📸"
-                : status === "picked_up" || status === "enroute_dropoff" || status === "arrived_dropoff" || status === "completed"
+                : status === "picked_up" ||
+                    status === "enroute_dropoff" ||
+                    status === "arrived_dropoff" ||
+                    status === "completed"
                   ? "✅"
                   : "⏳"
             }
             title="Picked Up"
             subtitle={pickupPhoto ? "View Pickup Photo" : undefined}
             completed={
-              status === "picked_up" || status === "enroute_dropoff" || status === "arrived_dropoff" || status === "completed"
+              status === "picked_up" ||
+              status === "enroute_dropoff" ||
+              status === "arrived_dropoff" ||
+              status === "completed"
             }
             current={status === "enroute_pickup" || status === "arrived_pickup"}
             photoUrl={pickupPhoto?.url}
@@ -386,7 +395,9 @@ export function LiveTripStatus({
           {/* In Transit */}
           <TimelineItem
             icon={
-              status === "enroute_dropoff" || status === "arrived_dropoff" || status === "completed"
+              status === "enroute_dropoff" ||
+              status === "arrived_dropoff" ||
+              status === "completed"
                 ? "🔵"
                 : "⏳"
             }
@@ -420,6 +431,7 @@ export function LiveTripStatus({
           />
         </div>
       </div>
+
       {/* Proof Photos */}
       {(pickupPhoto || dropoffPhoto) && status === "completed" && (
         <div

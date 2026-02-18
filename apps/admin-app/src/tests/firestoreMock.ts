@@ -11,7 +11,7 @@ export function mockOnSnapshotForDoc(cb: any, runDocData: any = { created: { use
     // Fallback: provide a query snapshot with a single entry
     listener({ docs: [ { id: 'e1', data: () => ({ message: 'Created buyer' }) } ] })
     return () => {}
-  };
+  }
 }
 
 export function mockOnSnapshotForQuery(cb: any, docs: any[] = []) {

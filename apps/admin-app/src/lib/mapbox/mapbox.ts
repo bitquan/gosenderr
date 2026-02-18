@@ -33,7 +33,7 @@ export async function getMapboxToken(): Promise<string> {
         console.error('Failed to load Mapbox token from secrets', error)
       }
 
-      return ENV_TOKEN || '';
+      return ENV_TOKEN || ''
     })()
   }
 

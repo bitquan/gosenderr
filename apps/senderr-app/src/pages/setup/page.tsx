@@ -7,7 +7,8 @@ export default function V2CourierSetup() {
 
   // Check if courier has already set up rate cards
   const hasRateCards =
-    userDoc?.courierProfile?.packageRateCard || userDoc?.courierProfile?.foodRateCard;
+    userDoc?.courierProfile?.packageRateCard ||
+    userDoc?.courierProfile?.foodRateCard;
 
   return (
     <div style={{ padding: "50px", maxWidth: "800px", margin: "0 auto" }}>

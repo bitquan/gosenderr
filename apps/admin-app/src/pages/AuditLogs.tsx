@@ -69,7 +69,13 @@ export default function AuditLogsPage() {
     // Filter by search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase()
-      return log.action.toLowerCase().includes(query) || log.adminEmail?.toLowerCase().includes(query) || log.userId?.toLowerCase().includes(query) || log.itemId?.toLowerCase().includes(query) || log.orderId?.toLowerCase().includes(query);
+      return (
+        log.action.toLowerCase().includes(query) ||
+        log.adminEmail?.toLowerCase().includes(query) ||
+        log.userId?.toLowerCase().includes(query) ||
+        log.itemId?.toLowerCase().includes(query) ||
+        log.orderId?.toLowerCase().includes(query)
+      )
     }
 
     return true
@@ -148,6 +154,7 @@ export default function AuditLogsPage() {
         <h1 className="text-3xl font-bold text-gray-900">Audit Logs</h1>
         <p className="text-gray-600 mt-2">Track all administrative actions and system events</p>
       </div>
+
       {/* Filters */}
       <Card>
         <CardContent className="p-4">
@@ -185,6 +192,7 @@ export default function AuditLogsPage() {
           </div>
         </CardContent>
       </Card>
+
       {/* Logs Table */}
       <Card>
         <CardHeader>
@@ -231,16 +239,17 @@ export default function AuditLogsPage() {
                       </div>
                       <span className="text-sm text-gray-400">{formatTimestamp(log.timestamp)}</span>
                     </div>
+                    
                     <p className="text-sm text-gray-600 ml-3">
                       {renderLogDetails(log)}
                     </p>
                   </div>
-                );
+                )
               })}
             </div>
           )}
         </CardContent>
       </Card>
     </div>
-  );
+  )
 }

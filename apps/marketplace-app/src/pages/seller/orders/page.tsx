@@ -108,7 +108,12 @@ export default function SellerOrders() {
   const searchedOrders = searchQuery
     ? filteredOrders.filter((order) => {
         const query = searchQuery.toLowerCase();
-        return order.id.toLowerCase().includes(query) || order.customerEmail.toLowerCase().includes(query) || order.shippingInfo.fullName.toLowerCase().includes(query) || order.items.some((item) => item.title.toLowerCase().includes(query));
+        return (
+          order.id.toLowerCase().includes(query) ||
+          order.customerEmail.toLowerCase().includes(query) ||
+          order.shippingInfo.fullName.toLowerCase().includes(query) ||
+          order.items.some((item) => item.title.toLowerCase().includes(query))
+        );
       })
     : filteredOrders;
 

@@ -64,8 +64,8 @@ case "${prefix}" in
   senderr-ios)
     product_area="Senderr iOS Native"
     primary_paths="apps/courieriosnativeclean/ios"
-    cmd_1="pnpm run ios:bootstrap"
-    cmd_2="open apps/courieriosnativeclean/ios/Senderrappios.xcworkspace"
+    cmd_1="pnpm run ios:senderr"
+    cmd_2="pnpm run ios:senderr -- open-xcode"
     ;;
 esac
 

@@ -69,5 +69,5 @@ export function Overlay({
         </div>
       </div>
     </div>
-  );
+  )
 }

@@ -107,6 +107,7 @@ export default function MessagesPage() {
           <p className="text-blue-100 mt-1">Chat with buyers and sellers</p>
         </div>
       </div>
+
       <div className="max-w-5xl mx-auto px-4 py-6">
         {startError && (
           <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">

@@ -60,6 +60,7 @@ export default function AdminJobsPage() {
           <p className="text-purple-100">{jobs.length} total jobs</p>
         </div>
       </div>
+
       <div className="max-w-6xl mx-auto px-4 sm:px-6 -mt-6 space-y-4">
         {/* Filters */}
         <div className="bg-white rounded-2xl shadow-lg p-2 flex gap-2 flex-wrap">
@@ -146,5 +147,5 @@ export default function AdminJobsPage() {
         )}
       </div>
     </div>
-  );
+  )
 }

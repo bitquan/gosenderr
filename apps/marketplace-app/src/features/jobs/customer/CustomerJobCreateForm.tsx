@@ -170,6 +170,7 @@ export function CustomerJobCreateForm({ uid }: CustomerJobCreateFormProps) {
           Fill in the details to request a courier
         </p>
       </div>
+
       <form
         onSubmit={handleSubmit}
         style={{

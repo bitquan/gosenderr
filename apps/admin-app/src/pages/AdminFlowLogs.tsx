@@ -64,6 +64,7 @@ export default function AdminFlowLogsPage() {
           </div>
         </div>
       </div>
+
       <div className="max-w-6xl mx-auto px-4 sm:px-6 -mt-6 space-y-4">
         <Card variant="elevated">
           <CardHeader>
@@ -183,5 +184,5 @@ export default function AdminFlowLogsPage() {
         )}
       </div>
     </div>
-  );
+  )
 }

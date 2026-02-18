@@ -388,12 +388,21 @@ export interface DisputeDoc {
     userBanned?: string;
     createdAt: Timestamp;
 }
+export interface SenderrplaceFeatureFlags {
+    marketplace_v2: boolean;
+    seller_portal_v2: boolean;
+    listing_create_v1: boolean;
+    checkout_v2: boolean;
+    messaging_v1: boolean;
+}
 export interface FeatureFlags {
     marketplace: {
         enabled: boolean;
         itemListings: boolean;
         combinedPayments: boolean;
         courierOffers: boolean;
+        messaging: boolean;
+        ratings: boolean;
     };
     delivery: {
         onDemand: boolean;
@@ -429,6 +438,8 @@ export interface FeatureFlags {
         analytics: boolean;
         featureFlagsControl: boolean;
         webPortalEnabled: boolean;
+        systemLogs: boolean;
+        firebaseExplorer: boolean;
     };
     advanced: {
         pushNotifications: boolean;
@@ -441,6 +452,7 @@ export interface FeatureFlags {
         darkMode: boolean;
         animations: boolean;
     };
+    senderrplace: SenderrplaceFeatureFlags;
 }
 export type RouteStatus = "building" | "available" | "claimed" | "in_progress" | "completed" | "cancelled";
 export type DeliveryType = "on_demand" | "route" | "long_route";

@@ -102,4 +102,5 @@ export const courierNavItems: NavItem[] = [
   { icon: "📦", label: "Jobs", href: "/jobs" },
   { icon: "💰", label: "Earnings", href: "/earnings" },
   { icon: "⚙️", label: "Settings", href: "/settings" },
+  { icon: "🍱", label: "Restaurants", href: "/restaurants" },
 ];

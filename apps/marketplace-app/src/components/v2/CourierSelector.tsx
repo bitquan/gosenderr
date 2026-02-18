@@ -114,9 +114,15 @@ export function CourierSelector({
         const equipment = getApprovedEquipment(courier);
         const breakdown = courier.rateBreakdown;
         const displayName =
-          (courier.courierProfile as any)?.displayName || (courier.courierProfile as any)?.identity?.legalName || courier.displayName || "Anonymous Senderr";
+          (courier.courierProfile as any)?.displayName ||
+          (courier.courierProfile as any)?.identity?.legalName ||
+          courier.displayName ||
+          "Anonymous Senderr";
         const profilePhoto =
-          (courier.courierProfile as any)?.profilePhotoUrl || courier.profilePhotoUrl || (courier as any).photoURL || "";
+          (courier.courierProfile as any)?.profilePhotoUrl ||
+          courier.profilePhotoUrl ||
+          (courier as any).photoURL ||
+          "";
 
         return (
           <div
@@ -289,6 +295,7 @@ export function CourierSelector({
                 </div>
               </div>
             </div>
+
             {/* Rate Breakdown */}
             <div
               style={{
@@ -368,6 +375,7 @@ export function CourierSelector({
                 </span>
               </div>
             </div>
+
             {/* Select Button */}
             {isSelected && (
               <div

@@ -70,11 +70,13 @@ function CheckoutForm({
         <h3 className="text-lg font-semibold mb-4">Payment Details</h3>
         <PaymentElement />
       </div>
+
       {errorMessage && (
         <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
           {errorMessage}
         </div>
       )}
+
       <button
         type="submit"
         disabled={!stripe || isProcessing}
@@ -82,6 +84,7 @@ function CheckoutForm({
       >
         {isProcessing ? 'Processing...' : `Pay $${totalAmount.toFixed(2)}`}
       </button>
+
       <p className="text-sm text-gray-600 text-center">
         Payment will be pre-authorized and captured after successful delivery.
       </p>

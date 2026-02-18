@@ -1,19 +1,14 @@
-import { defineConfig } from 'vitest/config'
+import { defineConfig } from "vitest/config";
+import { resolve } from "path";
 
 export default defineConfig({
-  test: {
-    environment: 'jsdom',
-    globals: true,
-    include: [
-      'src/**/*.{test,spec}.ts',
-      'src/**/*.{test,spec}.tsx',
-      'tests/unit/**/*.{test,spec}.ts',
-      'tests/unit/**/*.{test,spec}.tsx',
-    ],
-    exclude: [
-      'tests/e2e/**',
-      'tests/vendor-pages.spec.ts',
-      'playwright*.config.ts',
-    ],
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, 'src'),
+    },
   },
-})
+  test: {
+    include: ["tests/unit/**/*.test.{ts,tsx}", "src/**/*.{test,spec}.{ts,tsx}"],
+    exclude: ["tests/e2e/**", "node_modules/**", "dist/**", "build/**"],
+  },
+});

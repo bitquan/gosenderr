@@ -90,6 +90,7 @@ export default function AdminSidebar() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
         </svg>
       </button>
+
       {/* Mobile Overlay */}
       {isMobileOpen && (
         <div
@@ -97,6 +98,7 @@ export default function AdminSidebar() {
           onClick={() => setIsMobileOpen(false)}
         />
       )}
+
       {/* Sidebar */}
       <aside
         className={`fixed top-0 left-0 h-full w-64 bg-white border-r border-gray-200 z-40 transform transition-transform duration-300 ease-in-out flex flex-col ${
@@ -181,5 +183,5 @@ export default function AdminSidebar() {
         </div>
       </aside>
     </>
-  );
+  )
 }

@@ -158,6 +158,7 @@ export function CustomerConfirmation({
           </div>
         </div>
       </div>
+
       {!showDisputeForm && (
         <>
           <div
@@ -216,6 +217,7 @@ export function CustomerConfirmation({
           </div>
         </>
       )}
+
       {showDisputeForm && (
         <div>
           <div

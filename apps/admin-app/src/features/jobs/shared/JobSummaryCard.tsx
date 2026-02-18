@@ -53,6 +53,7 @@ export function JobSummaryCard({ job, canSeeExactAddresses, onClick }: JobSummar
           </div>
         )}
       </div>
+
       <div style={{ fontSize: '13px', color: '#666', marginBottom: '8px' }}>
         <div style={{ marginBottom: '4px' }}>
           <strong>📍 Pickup:</strong> {pickupAddress}
@@ -61,6 +62,7 @@ export function JobSummaryCard({ job, canSeeExactAddresses, onClick }: JobSummar
           <strong>📍 Dropoff:</strong> {dropoffAddress}
         </div>
       </div>
+
       {/* Package Details */}
       {(() => {
         // Normalize package data for safe rendering
@@ -78,6 +80,7 @@ export function JobSummaryCard({ job, canSeeExactAddresses, onClick }: JobSummar
                 <PackageBadges size={pkg.size} flags={pkg.flags} showNotes={false} />
               </div>
             )}
+
             {photos.length > 0 && (
               <div style={{ marginTop: '8px', fontSize: '12px', color: '#999' }}>
                 📷 {photos.length} photo{photos.length > 1 ? 's' : ''}

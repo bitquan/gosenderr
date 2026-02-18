@@ -103,7 +103,8 @@ export class MarketplaceService {
     // Client-side search (not ideal for large datasets)
     const searchLower = searchTerm.toLowerCase();
     return items.filter(item =>
-      item.title.toLowerCase().includes(searchLower) || item.description.toLowerCase().includes(searchLower)
+      item.title.toLowerCase().includes(searchLower) ||
+      item.description.toLowerCase().includes(searchLower)
     );
   }
   

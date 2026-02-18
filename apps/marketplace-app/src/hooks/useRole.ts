@@ -91,5 +91,5 @@ export function useRole(): UseRoleReturn {
     isSeller: hasRole('seller'),
     isCourier: hasRole('courier'),
     isAdmin: hasRole('admin')
-  };
+  }
 }

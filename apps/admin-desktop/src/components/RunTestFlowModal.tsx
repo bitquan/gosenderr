@@ -101,5 +101,5 @@ export default function RunTestFlowModal({ userId, isOpen, onClose }: RunTestFlo
         )}
       </div>
     </div>
-  );
+  )
 }

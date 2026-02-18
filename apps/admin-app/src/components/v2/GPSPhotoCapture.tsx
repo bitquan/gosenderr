@@ -169,6 +169,7 @@ export function GPSPhotoCapture({
       >
         📸 {label} Photo Required
       </h3>
+
       <div
         style={{
           background: '#eff6ff',
@@ -182,6 +183,7 @@ export function GPSPhotoCapture({
         ℹ️ GPS verification required. Please be within {maxDistanceMeters}m of the{' '}
         {label.toLowerCase()} location to take a photo.
       </div>
+
       {preview && (
         <div style={{ marginBottom: '16px' }}>
           <img
@@ -207,6 +209,7 @@ export function GPSPhotoCapture({
           </div>
         </div>
       )}
+
       {error && (
         <div
           style={{
@@ -221,6 +224,7 @@ export function GPSPhotoCapture({
           ⚠️ {error}
         </div>
       )}
+
       <input
         ref={fileInputRef}
         type="file"
@@ -230,6 +234,7 @@ export function GPSPhotoCapture({
         style={{ display: 'none' }}
         disabled={disabled || capturing}
       />
+
       <button
         onClick={handleButtonClick}
         disabled={disabled || capturing}
@@ -260,6 +265,7 @@ export function GPSPhotoCapture({
           </>
         )}
       </button>
+
       {gpsStatus === 'checking' && (
         <div style={{ marginTop: '12px', textAlign: 'center', color: '#6b7280', fontSize: '14px' }}>
           Getting GPS location...

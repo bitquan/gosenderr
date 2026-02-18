@@ -437,6 +437,7 @@ export default function RequestDeliveryPage() {
           </div>
         </div>
       </div>
+
       <div className="max-w-4xl mx-auto px-6 -mt-8 space-y-6">
         <div className="md:hidden flex items-center justify-between">
           <button
@@ -595,6 +596,7 @@ export default function RequestDeliveryPage() {
           </Card>
         )}
       </div>
+
       <FloatingButton
         icon="💳"
         position="bottom-center"

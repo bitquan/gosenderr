@@ -615,6 +615,7 @@ export default function SystemCheckPage() {
           <p className="text-purple-100">Full platform diagnostics and flow testing</p>
         </div>
       </div>
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 -mt-6 space-y-4">
         {/* Test Summary */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -805,5 +806,5 @@ export default function SystemCheckPage() {
         </div>
       </div>
     </div>
-  );
+  )
 }

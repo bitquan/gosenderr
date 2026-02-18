@@ -2,7 +2,6 @@ import * as functions from 'firebase-functions/v2';
 import Stripe from 'stripe';
 import * as admin from 'firebase-admin';
 import { getStripeClient } from './stripeSecrets';
-import { applyTokenWalletDelta } from './tokenWallet';
 
 const db = admin.firestore();
 
@@ -82,38 +81,6 @@ export const stripeWebhook = functions.https.onRequest(
 
 async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
   console.log('Processing checkout.session.completed:', session.id);
-
-  const topupFlag = session.metadata?.tokenWalletTopup === 'true';
-  const topupUid = session.metadata?.tokenWalletUid || session.client_reference_id || '';
-  const topupAmountRaw = session.metadata?.tokenWalletAmount || session.metadata?.tokenAmount || '';
-
-  if (topupFlag && topupUid) {
-    const topupAmount = Number(topupAmountRaw);
-    if (Number.isFinite(topupAmount) && topupAmount > 0) {
-      await applyTokenWalletDelta({
-        uid: topupUid,
-        delta: topupAmount,
-        reason: 'stripe_checkout_topup',
-        metadata: {
-          checkoutSessionId: session.id,
-          paymentIntentId: session.payment_intent || null,
-          mode: session.mode || null,
-        },
-      });
-
-      console.log('Token wallet top-up applied from checkout session', {
-        uid: topupUid,
-        amount: topupAmount,
-        sessionId: session.id,
-      });
-      return;
-    }
-
-    console.warn('Token wallet top-up metadata present but invalid amount', {
-      sessionId: session.id,
-      topupAmountRaw,
-    });
-  }
 
   // Find the marketplace order by checkoutSessionId
   const ordersSnapshot = await db

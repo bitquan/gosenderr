@@ -286,6 +286,7 @@ export function CourierSelector({
                 </div>
               </div>
             </div>
+
             {/* Rate Breakdown */}
             <div
               style={{
@@ -365,6 +366,7 @@ export function CourierSelector({
                 </span>
               </div>
             </div>
+
             {/* Select Button */}
             {isSelected && (
               <div

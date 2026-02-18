@@ -128,6 +128,7 @@ export default function EmailSettingsPage() {
           <p className="text-purple-100">Configure email notifications and templates</p>
         </div>
       </div>
+
       <div className="max-w-4xl mx-auto px-4 sm:px-6 -mt-8 space-y-6">
         {/* SMTP Configuration */}
         <Card variant="elevated">
@@ -421,5 +422,5 @@ export default function EmailSettingsPage() {
         </button>
       </div>
     </div>
-  );
+  )
 }

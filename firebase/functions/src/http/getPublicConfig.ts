@@ -35,23 +35,11 @@ export const getPublicConfig = functions.https.onCall(
   const useLive = configuredMode === "live" && !!livePublishableKey;
   const stripePublishableKey = useLive ? livePublishableKey : testPublishableKey;
   const effectiveMode = useLive ? "live" : "test";
-  const firebaseProjectId =
-    process.env.GCLOUD_PROJECT ||
-    process.env.FIREBASE_PROJECT ||
-    admin.app().options.projectId ||
-    "";
-  const expectedAuthDomain = firebaseProjectId
-    ? `${firebaseProjectId}.firebaseapp.com`
-    : "";
-  const firestoreRulesSource = process.env.FIRESTORE_RULES_FILE || "firebase/firestore.rules";
 
     return {
       stripePublishableKey,
       stripeMode: effectiveMode,
       mapboxPublicToken: mapboxData?.publicToken || "",
-      firebaseProjectId,
-      expectedAuthDomain,
-      firestoreRulesSource,
     };
   },
 );

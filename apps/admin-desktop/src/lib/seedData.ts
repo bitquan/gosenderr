@@ -51,9 +51,7 @@ const FEATURE_FLAGS = [
   // Advanced
   { name: 'Rating Enforcement', description: 'Enforce rating requirements', enabled: true, category: 'system' },
   { name: 'Auto Cancel', description: 'Auto-cancel stale jobs', enabled: true, category: 'system' },
-  { name: 'Dark Mode', description: 'Enable dark mode UI', enabled: false, category: 'system' },
-  // Senderr web MVP (scope-locked flag)
-  { name: 'Senderr Web MVP', description: 'Enable scoped Senderr web MVP surface (feature-flag guard). Default OFF in production.', enabled: false, category: 'ui' }
+  { name: 'Dark Mode', description: 'Enable dark mode UI', enabled: false, category: 'system' }
 ];
 
 // Top marginal single-filer state income tax rates (as of 2026-01-17; source: Wikipedia)
@@ -165,9 +163,7 @@ export const FEATURE_FLAGS_CONFIG = {
   ui: {
     modernStyling: true,
     darkMode: false,
-    animations: true,
-    // Feature-flag for the scoped Senderr web MVP (default: OFF in prod)
-    senderrWebMvp: false
+    animations: true
   }
 };
 

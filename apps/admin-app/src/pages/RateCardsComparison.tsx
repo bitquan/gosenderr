@@ -94,8 +94,8 @@ export default function RateCardsComparisonPage() {
   }
   const sortedCouriers = [...couriers].sort((a, b) => {
     if (sortBy === 'email') return a.email.localeCompare(b.email)
-    if (sortBy === 'packageRate') return (a.packageBaseFare || Infinity) - (b.packageBaseFare || Infinity);
-    if (sortBy === 'foodRate') return (a.foodBaseFare || Infinity) - (b.foodBaseFare || Infinity);
+    if (sortBy === 'packageRate') return (a.packageBaseFare || Infinity) - (b.packageBaseFare || Infinity)
+    if (sortBy === 'foodRate') return (a.foodBaseFare || Infinity) - (b.foodBaseFare || Infinity)
     return 0
   })
 

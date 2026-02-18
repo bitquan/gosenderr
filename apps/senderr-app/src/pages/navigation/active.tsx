@@ -5,7 +5,78 @@ import { useUserDoc } from '@/hooks/v2/useUserDoc';
 import { NavigationHeader } from '@/components/navigation/NavigationHeader';
 import { MapboxMap, MapboxMapHandle } from '@/components/v2/MapboxMap';
 import type { RouteSegment } from '@/lib/navigation/types';
+import { fetchDirections } from '@/lib/navigation/directions';
+import type { RouteData } from '@/lib/navigation/types';
 import type mapboxgl from 'mapbox-gl';
+
+const EARTH_RADIUS_METERS = 6371000;
+
+function toRad(value: number) {
+  return (value * Math.PI) / 180;
+}
+
+function distanceMeters(
+  a: { lat: number; lng: number },
+  b: { lat: number; lng: number },
+) {
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+  const lat1 = toRad(a.lat);
+  const lat2 = toRad(b.lat);
+
+  const h =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+
+  return 2 * EARTH_RADIUS_METERS * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+}
+
+function pointToSegmentDistanceMeters(
+  point: { lat: number; lng: number },
+  start: [number, number],
+  end: [number, number],
+) {
+  const px = point.lng;
+  const py = point.lat;
+  const x1 = start[0];
+  const y1 = start[1];
+  const x2 = end[0];
+  const y2 = end[1];
+
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  if (dx === 0 && dy === 0) {
+    return distanceMeters(point, { lat: y1, lng: x1 });
+  }
+
+  const t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / (dx * dx + dy * dy)));
+  const proj = { lng: x1 + t * dx, lat: y1 + t * dy };
+  return distanceMeters(point, proj);
+}
+
+function pointToPolylineDistanceMeters(
+  point: { lat: number; lng: number },
+  coordinates: [number, number][],
+) {
+  if (coordinates.length < 2) return Number.POSITIVE_INFINITY;
+  let min = Number.POSITIVE_INFINITY;
+  for (let index = 0; index < coordinates.length - 1; index += 1) {
+    const dist = pointToSegmentDistanceMeters(point, coordinates[index], coordinates[index + 1]);
+    if (dist < min) min = dist;
+  }
+  return min;
+}
+
+function normalizeAngle(angle: number) {
+  return ((angle % 360) + 360) % 360;
+}
+
+function shortestAngleDiff(from: number, to: number) {
+  const diff = normalizeAngle(to) - normalizeAngle(from);
+  if (diff > 180) return diff - 360;
+  if (diff < -180) return diff + 360;
+  return diff;
+}
 
 export default function ActiveNavigationPage() {
   const navigate = useNavigate();
@@ -15,6 +86,17 @@ export default function ActiveNavigationPage() {
   const [orientationPermission, setOrientationPermission] = useState<'granted' | 'denied' | 'prompt'>('prompt');
   const orientationListenerActive = useRef(false);
   const lastBearing = useRef<number>(0);
+  const orientationHandlerRef = useRef<((event: DeviceOrientationEvent) => void) | null>(null);
+  const geoWatchIdRef = useRef<number | null>(null);
+  const offRouteCountRef = useRef(0);
+  const lastRerouteAtRef = useRef(0);
+  const stepIndexRef = useRef(0);
+  const [isRerouting, setIsRerouting] = useState(false);
+  const [liveLocation, setLiveLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [activeRoute, setActiveRoute] = useState<RouteData | null>(null);
+  const [stepIndex, setStepIndex] = useState(0);
+  const [liveDistanceToTurn, setLiveDistanceToTurn] = useState(0);
+  const [liveEtaSeconds, setLiveEtaSeconds] = useState(0);
   
   const {
     isNavigating,
@@ -26,25 +108,43 @@ export default function ActiveNavigationPage() {
     stopNavigation,
     toggleCameraMode,
     currentRoute,
+    updateDistance,
+    updateETA,
+    updateCurrentStep,
   } = useNavigation();
   
   const { userDoc } = useUserDoc();
   
   const jobId = location.state?.jobId;
 
+  useEffect(() => {
+    if (!currentRoute) return;
+    setActiveRoute(currentRoute);
+    setStepIndex(0);
+    stepIndexRef.current = 0;
+    setLiveDistanceToTurn(distanceToNextTurn || 0);
+    setLiveEtaSeconds(estimatedTimeRemaining || currentRoute.duration || 0);
+  }, [currentRoute, distanceToNextTurn, estimatedTimeRemaining]);
+
+  useEffect(() => {
+    if (!liveLocation && userDoc?.courierProfile?.currentLocation) {
+      setLiveLocation(userDoc.courierProfile.currentLocation);
+    }
+  }, [liveLocation, userDoc?.courierProfile?.currentLocation]);
+
   // Generate route segments from current route
   const routeSegments: RouteSegment[] = useMemo(() => {
-    if (!currentRoute) {
+    if (!activeRoute) {
       console.log('🗺️ No current route');
       return [];
     }
 
     // Use the top-level geometry which has all coordinates
-    const coordinates = currentRoute.geometry?.coordinates || [];
+    const coordinates = activeRoute.geometry?.coordinates || [];
 
     console.log('🗺️ Navigation route segments:', {
-      hasRoute: !!currentRoute,
-      hasGeometry: !!currentRoute.geometry,
+      hasRoute: !!activeRoute,
+      hasGeometry: !!activeRoute.geometry,
       numCoordinates: coordinates.length,
       firstCoord: coordinates[0],
       lastCoord: coordinates[coordinates.length - 1]
@@ -60,7 +160,14 @@ export default function ActiveNavigationPage() {
       color: '#6E56CF', // purple for active navigation
       type: 'navigation' as const,
     }];
-  }, [currentRoute]);
+  }, [activeRoute]);
+
+  const allSteps = useMemo(() => {
+    if (!activeRoute) return [];
+    return activeRoute.legs.flatMap((leg) => leg.steps);
+  }, [activeRoute]);
+
+  const displayStep = allSteps[stepIndex] || currentStep;
 
   const lastCenterAt = useRef(0);
   const lastCenter = useRef<[number, number] | null>(null);
@@ -115,23 +222,24 @@ export default function ActiveNavigationPage() {
 
   // Follow mode: recenter on courier location
   useEffect(() => {
-    if (cameraMode !== 'follow' || !mapRef.current || !userDoc?.courierProfile?.currentLocation) return;
+    if (cameraMode !== 'follow' || !mapRef.current || !liveLocation) return;
     const map = mapRef.current.getMap();
     if (!map) return;
-    applyFollowCamera(map, userDoc.courierProfile.currentLocation);
-  }, [cameraMode, userDoc?.courierProfile?.currentLocation]);
+    applyFollowCamera(map, liveLocation);
+  }, [cameraMode, liveLocation]);
 
   // Follow mode: update bearing only
   useEffect(() => {
     if (cameraMode !== 'follow' || !mapRef.current) return;
     const map = mapRef.current.getMap();
     if (!map) return;
-    const delta = Math.abs(deviceHeading - lastBearing.current);
-    if (delta < 1) return;
-    lastBearing.current = deviceHeading;
+    const diff = shortestAngleDiff(lastBearing.current, deviceHeading);
+    if (Math.abs(diff) < 1.5) return;
+    const nextBearing = normalizeAngle(lastBearing.current + diff * 0.2);
+    lastBearing.current = nextBearing;
     map.easeTo({
-      bearing: deviceHeading,
-      duration: 240,
+      bearing: nextBearing,
+      duration: 180,
       easing: (t: number) => t * (2 - t),
       essential: true
     });
@@ -175,13 +283,16 @@ export default function ActiveNavigationPage() {
     
     const handleOrientation = (event: DeviceOrientationEvent) => {
       // iOS provides compass heading directly
-      const heading = // Android: calculate from alpha (0-360, where 0 is north)
-      (event as any).webkitCompassHeading || (event.alpha !== null ? 360 - event.alpha : 0);
+      const heading = (event as any).webkitCompassHeading || 
+                     // Android: calculate from alpha (0-360, where 0 is north)
+                     (event.alpha !== null ? 360 - event.alpha : 0);
       
       setDeviceHeading(heading);
       
       // Bearing updates are handled in an effect to avoid camera jitter
     };
+
+    orientationHandlerRef.current = handleOrientation;
 
     window.addEventListener('deviceorientation', handleOrientation, true);
     orientationListenerActive.current = true;
@@ -209,12 +320,133 @@ export default function ActiveNavigationPage() {
     }
 
     return () => {
-      if (orientationListenerActive.current) {
-        window.removeEventListener('deviceorientation', () => {}, true);
+      if (orientationListenerActive.current && orientationHandlerRef.current) {
+        window.removeEventListener('deviceorientation', orientationHandlerRef.current, true);
         orientationListenerActive.current = false;
+        orientationHandlerRef.current = null;
       }
     };
   }, [orientationPermission]);
+
+  useEffect(() => {
+    if (!isNavigating || !activeRoute) return;
+    if (!navigator?.geolocation?.watchPosition) return;
+
+    const runReroute = async (locationPoint: { lat: number; lng: number }) => {
+      if (!currentJob?.dropoff) return;
+      const now = Date.now();
+      if (isRerouting || now - lastRerouteAtRef.current < 12000) return;
+
+      setIsRerouting(true);
+      try {
+        const directions = await fetchDirections(
+          [
+            [locationPoint.lng, locationPoint.lat],
+            [currentJob.dropoff.lng, currentJob.dropoff.lat],
+          ],
+          {
+            profile: 'driving-traffic',
+            geometries: 'geojson',
+            steps: true,
+            overview: 'full',
+            bannerInstructions: true,
+            voiceInstructions: false,
+          },
+        );
+
+        const nextRoute = directions.routes?.[0];
+        if (nextRoute) {
+          setActiveRoute(nextRoute);
+          setStepIndex(0);
+          stepIndexRef.current = 0;
+          setLiveDistanceToTurn(nextRoute.legs?.[0]?.steps?.[0]?.distance || 0);
+          setLiveEtaSeconds(nextRoute.duration || 0);
+          updateDistance(nextRoute.legs?.[0]?.steps?.[0]?.distance || 0);
+          updateETA(nextRoute.duration || 0);
+          updateCurrentStep(0);
+          lastRerouteAtRef.current = now;
+          offRouteCountRef.current = 0;
+        }
+      } catch (error) {
+        console.error('Failed to reroute', error);
+      } finally {
+        setIsRerouting(false);
+      }
+    };
+
+    geoWatchIdRef.current = navigator.geolocation.watchPosition(
+      (position) => {
+        const point = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        };
+        setLiveLocation(point);
+
+        const steps = activeRoute.legs.flatMap((leg) => leg.steps);
+        const currentIdx = stepIndexRef.current;
+        const current = steps[currentIdx] || null;
+
+        if (current?.maneuver?.location) {
+          const maneuver = {
+            lng: current.maneuver.location[0],
+            lat: current.maneuver.location[1],
+          };
+          const meters = distanceMeters(point, maneuver);
+          setLiveDistanceToTurn(meters);
+          updateDistance(meters);
+
+          const remainingDuration = steps
+            .slice(currentIdx)
+            .reduce((sum, step) => sum + (step.duration || 0), 0);
+          setLiveEtaSeconds(remainingDuration);
+          updateETA(remainingDuration);
+
+          if (meters < 22 && currentIdx + 1 < steps.length) {
+            const nextIndex = currentIdx + 1;
+            setStepIndex(nextIndex);
+            stepIndexRef.current = nextIndex;
+            updateCurrentStep(nextIndex);
+          }
+        }
+
+        const routeCoords = activeRoute.geometry?.coordinates || [];
+        const offRouteDistance = pointToPolylineDistanceMeters(point, routeCoords);
+        if (offRouteDistance > 85) {
+          offRouteCountRef.current += 1;
+        } else {
+          offRouteCountRef.current = 0;
+        }
+
+        if (offRouteCountRef.current >= 3) {
+          void runReroute(point);
+        }
+      },
+      (error) => {
+        console.error('Navigation watchPosition error', error);
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 2000,
+        timeout: 10000,
+      },
+    );
+
+    return () => {
+      if (geoWatchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(geoWatchIdRef.current);
+        geoWatchIdRef.current = null;
+      }
+    };
+  }, [
+    isNavigating,
+    activeRoute,
+    currentJob?.dropoff?.lat,
+    currentJob?.dropoff?.lng,
+    isRerouting,
+    updateCurrentStep,
+    updateDistance,
+    updateETA,
+  ]);
 
   // Redirect if not navigating
   useEffect(() => {
@@ -277,11 +509,11 @@ export default function ActiveNavigationPage() {
     );
   }
 
-  const totalDistance = currentRoute?.distance || 0;
+  const totalDistance = activeRoute?.distance || 0;
 
   console.log('🎨 Rendering navigation page with:', {
     hasJob: !!currentJob,
-    hasRoute: !!currentRoute,
+    hasRoute: !!activeRoute,
     numSegments: routeSegments.length,
     segmentCoords: routeSegments[0]?.coordinates?.length,
     orientationPermission,
@@ -294,25 +526,27 @@ export default function ActiveNavigationPage() {
       <div className="absolute top-0 left-0 right-0 z-10 pointer-events-none">
         <div className="pointer-events-auto">
           <NavigationHeader
-            currentStep={currentStep}
-            distanceToTurn={distanceToNextTurn}
-            timeRemaining={estimatedTimeRemaining}
+            currentStep={displayStep}
+            distanceToTurn={liveDistanceToTurn || distanceToNextTurn}
+            timeRemaining={liveEtaSeconds || estimatedTimeRemaining}
             totalDistance={totalDistance}
             onExit={handleExit}
           />
         </div>
       </div>
+
       {/* Full-Screen Map */}
       <div className="absolute inset-0">
         <MapboxMap
           ref={mapRef}
           pickup={currentJob.pickup}
           dropoff={currentJob.dropoff}
-          courierLocation={userDoc?.courierProfile?.currentLocation as any || null}
+          courierLocation={(liveLocation || userDoc?.courierProfile?.currentLocation) as any || null}
           routeSegments={routeSegments}
           height="100%"
         />
       </div>
+
       {/* Camera Mode Toggle - pill segmented control */}
       <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-10">
         <div className="flex items-center gap-1 bg-white/95 backdrop-blur rounded-full shadow-lg p-1">
@@ -338,13 +572,15 @@ export default function ActiveNavigationPage() {
           </button>
         </div>
       </div>
+
       {/* Navigation Active Indicator */}
       <div className="absolute top-4 left-4 z-10 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium shadow-lg">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
-          Navigating
+          {isRerouting ? 'Rerouting…' : 'Navigating'}
         </div>
       </div>
+
       {/* Orientation Permission Prompt */}
       {orientationPermission === 'prompt' && (
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-white rounded-2xl shadow-2xl p-6 max-w-sm mx-4">
@@ -369,6 +605,7 @@ export default function ActiveNavigationPage() {
           </div>
         </div>
       )}
+
       {/* Backdrop for permission prompt */}
       {orientationPermission === 'prompt' && (
         <div className="absolute inset-0 bg-black/50 z-40" />

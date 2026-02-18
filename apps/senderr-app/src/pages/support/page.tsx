@@ -74,6 +74,9 @@ const faqs: FAQItem[] = [
 export default function CourierSupportPage() {
   const [activeCategory, setActiveCategory] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState<"help" | "contact" | "emergency">(
+    "help",
+  );
 
   const categories = [
     "All",
@@ -87,73 +90,113 @@ export default function CourierSupportPage() {
     const matchesCategory =
       activeCategory === "All" || faq.category === activeCategory;
     const matchesSearch =
-      searchQuery === "" || faq.question.toLowerCase().includes(searchQuery.toLowerCase()) || faq.answer.toLowerCase().includes(searchQuery.toLowerCase());
+      searchQuery === "" ||
+      faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      faq.answer.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
   return (
-    <div className="min-h-screen bg-[#F8F9FF]">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-purple-950/90 text-white">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-6 sm:space-y-8">
         {/* Header */}
         <div className="text-center space-y-4">
-          <h1 className="text-4xl font-bold text-gray-900">
+          <h1 className="text-4xl font-bold text-white">
             How can we help you?
           </h1>
-          <p className="text-lg text-gray-600">
+          <p className="text-lg text-blue-100">
             Find answers or contact support
           </p>
 
+          <div className="max-w-2xl mx-auto bg-slate-950/70 border border-white/15 rounded-2xl shadow-lg p-2 grid grid-cols-3 gap-2 backdrop-blur">
+            <button
+              onClick={() => setActiveTab("help")}
+              className={`rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${
+                activeTab === "help"
+                  ? "bg-gradient-to-r from-blue-700 via-blue-600 to-purple-600 text-white"
+                  : "text-blue-100 hover:bg-white/10"
+              }`}
+            >
+              Help
+            </button>
+            <button
+              onClick={() => setActiveTab("contact")}
+              className={`rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${
+                activeTab === "contact"
+                  ? "bg-gradient-to-r from-blue-700 via-blue-600 to-purple-600 text-white"
+                  : "text-blue-100 hover:bg-white/10"
+              }`}
+            >
+              Contact
+            </button>
+            <button
+              onClick={() => setActiveTab("emergency")}
+              className={`rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${
+                activeTab === "emergency"
+                  ? "bg-gradient-to-r from-blue-700 via-blue-600 to-purple-600 text-white"
+                  : "text-blue-100 hover:bg-white/10"
+              }`}
+            >
+              Emergency
+            </button>
+          </div>
+
           {/* Search */}
+          {activeTab === "help" && (
           <div className="max-w-2xl mx-auto">
             <input
               type="text"
               placeholder="Search for help..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-6 py-4 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-lg"
+              className="w-full px-6 py-4 border border-white/20 bg-slate-950/40 text-white rounded-2xl focus:ring-2 focus:ring-blue-400 focus:border-transparent text-lg"
             />
           </div>
+          )}
         </div>
 
         {/* Quick Actions */}
+        {activeTab === "contact" && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card
             variant="elevated"
-            className="cursor-pointer hover:shadow-lg transition"
+            className="cursor-pointer hover:shadow-lg transition bg-white/10 border border-white/15 text-white"
             onClick={() => window.open("mailto:support@gosenderr.com")}
           >
             <CardContent className="p-6 text-center">
               <div className="text-4xl mb-3">📧</div>
-              <h3 className="font-semibold text-gray-900 mb-1">Email Us</h3>
-              <p className="text-sm text-gray-500">support@gosenderr.com</p>
+              <h3 className="font-semibold text-white mb-1">Email Us</h3>
+              <p className="text-sm text-blue-100">support@gosenderr.com</p>
             </CardContent>
           </Card>
 
           <Card
             variant="elevated"
-            className="cursor-pointer hover:shadow-lg transition"
+            className="cursor-pointer hover:shadow-lg transition bg-white/10 border border-white/15 text-white"
             onClick={() => window.open("tel:1-800-SENDERR")}
           >
             <CardContent className="p-6 text-center">
               <div className="text-4xl mb-3">📱</div>
-              <h3 className="font-semibold text-gray-900 mb-1">Call Us</h3>
-              <p className="text-sm text-gray-500">1-800-SENDERR (24/7)</p>
+              <h3 className="font-semibold text-white mb-1">Call Us</h3>
+              <p className="text-sm text-blue-100">1-800-SENDERR (24/7)</p>
             </CardContent>
           </Card>
 
           <Card
             variant="elevated"
-            className="cursor-pointer hover:shadow-lg transition"
+            className="cursor-pointer hover:shadow-lg transition bg-white/10 border border-white/15 text-white"
           >
             <CardContent className="p-6 text-center">
               <div className="text-4xl mb-3">💬</div>
-              <h3 className="font-semibold text-gray-900 mb-1">Live Chat</h3>
-              <p className="text-sm text-gray-500">Coming soon</p>
+              <h3 className="font-semibold text-white mb-1">Live Chat</h3>
+              <p className="text-sm text-blue-100">Coming soon</p>
             </CardContent>
           </Card>
         </div>
+        )}
 
         {/* Category Filter */}
+        {activeTab === "help" && (
         <div className="flex flex-wrap gap-2 justify-center">
           {categories.map((category) => (
             <button
@@ -161,41 +204,43 @@ export default function CourierSupportPage() {
               onClick={() => setActiveCategory(category)}
               className={`px-6 py-2 rounded-full font-medium transition ${
                 activeCategory === category
-                  ? "bg-emerald-600 text-white"
-                  : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
+                  ? "bg-gradient-to-r from-blue-700 via-blue-600 to-purple-600 text-white"
+                  : "bg-white/10 text-blue-100 hover:bg-white/20 border border-white/20"
               }`}
             >
               {category}
             </button>
           ))}
         </div>
+        )}
 
         {/* FAQ List */}
+        {activeTab === "help" && (
         <div className="space-y-4">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+          <h2 className="text-2xl font-bold text-white mb-4">
             Frequently Asked Questions
           </h2>
           {filteredFAQs.length === 0 ? (
-            <Card variant="outlined">
+            <Card variant="outlined" className="bg-white/10 border border-white/15 text-white">
               <CardContent className="py-12 text-center">
                 <div className="text-6xl mb-4">🔍</div>
-                <p className="text-gray-500">
+                <p className="text-blue-100">
                   No FAQs found matching your search
                 </p>
               </CardContent>
             </Card>
           ) : (
             filteredFAQs.map((faq, index) => (
-              <Card key={index} variant="elevated">
+              <Card key={index} variant="elevated" className="bg-white/10 border border-white/15 text-white">
                 <CardContent className="p-6">
                   <div className="flex items-start gap-3">
                     <span className="text-2xl">❓</span>
                     <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900 mb-2">
+                      <h3 className="font-semibold text-white mb-2">
                         {faq.question}
                       </h3>
-                      <p className="text-gray-600">{faq.answer}</p>
-                      <span className="inline-block mt-2 px-3 py-1 text-xs font-medium bg-emerald-50 text-emerald-700 rounded-full">
+                      <p className="text-blue-100">{faq.answer}</p>
+                      <span className="inline-block mt-2 px-3 py-1 text-xs font-medium bg-blue-600/20 text-blue-100 rounded-full border border-blue-300/30">
                         {faq.category}
                       </span>
                     </div>
@@ -205,17 +250,19 @@ export default function CourierSupportPage() {
             ))
           )}
         </div>
+        )}
 
         {/* Emergency Contact */}
-        <Card variant="outlined" className="border-red-200 bg-red-50">
+        {activeTab === "emergency" && (
+        <Card variant="outlined" className="border-red-300/30 bg-red-500/15 text-white">
           <CardContent className="p-6">
             <div className="flex items-start gap-3">
               <span className="text-3xl">🚨</span>
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-red-900 mb-2">
+                <h3 className="text-lg font-semibold text-red-100 mb-2">
                   Emergency Support
                 </h3>
-                <p className="text-sm text-red-800 mb-3">
+                <p className="text-sm text-red-100 mb-3">
                   If you have an urgent issue during a delivery (accident,
                   safety concern), call immediately:
                 </p>
@@ -229,6 +276,7 @@ export default function CourierSupportPage() {
             </div>
           </CardContent>
         </Card>
+        )}
       </div>
     </div>
   );

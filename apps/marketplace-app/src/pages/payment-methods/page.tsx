@@ -122,11 +122,13 @@ function AddPaymentMethodForm({ onSuccess }: { onSuccess: () => void }) {
           }}
         />
       </div>
+
       {error && (
         <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
           {error}
         </div>
       )}
+
       <button
         type="submit"
         disabled={!stripe || loading}
@@ -141,6 +143,7 @@ function AddPaymentMethodForm({ onSuccess }: { onSuccess: () => void }) {
 export default function PaymentMethodsPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
@@ -167,17 +170,25 @@ export default function PaymentMethodsPage() {
 
   const fetchPaymentMethods = async (uid: string) => {
     setLoading(true);
-    const q = query(
-      collection(db, "paymentMethods"),
-      where("userId", "==", uid),
-    );
-    const snapshot = await getDocs(q);
-    const methods = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as PaymentMethod[];
-    setPaymentMethods(methods);
-    setLoading(false);
+    setError(null);
+    try {
+      const q = query(
+        collection(db, "paymentMethods"),
+        where("userId", "==", uid),
+      );
+      const snapshot = await getDocs(q);
+      const methods = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as PaymentMethod[];
+      setPaymentMethods(methods);
+    } catch (err: any) {
+      console.error("Failed to load payment methods:", err);
+      setError(err?.message || "Failed to load payment methods");
+      setPaymentMethods([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDelete = async (methodId: string) => {
@@ -203,6 +214,27 @@ export default function PaymentMethodsPage() {
     return (
       <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center">
         <div className="animate-pulse text-gray-500">Loading...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center px-6">
+        <Card variant="elevated" className="max-w-md w-full">
+          <CardContent>
+            <div className="text-center py-6">
+              <h2 className="text-xl font-bold mb-2">Unable to load payment methods</h2>
+              <p className="text-gray-600 mb-4">{error}</p>
+              <button
+                onClick={() => userId && fetchPaymentMethods(userId)}
+                className="bg-purple-600 text-white py-2 px-4 rounded-xl hover:bg-purple-700 transition"
+              >
+                Retry
+              </button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }

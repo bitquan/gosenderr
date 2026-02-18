@@ -13,17 +13,6 @@ interface SendTestPushRequest {
 
 export const sendTestPush = functions.https.onCall(
   async (data: SendTestPushRequest, context) => {
-    const projectId = process.env.GCLOUD_PROJECT || process.env.FIREBASE_PROJECT || "";
-    const isProductionProject =
-      projectId === "gosenderr-6773f" || process.env.NODE_ENV === "production";
-
-    if (isProductionProject) {
-      throw new functions.https.HttpsError(
-        "permission-denied",
-        "sendTestPush is disabled in production",
-      );
-    }
-
     if (!context.auth) {
       throw new functions.https.HttpsError(
         "unauthenticated",

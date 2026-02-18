@@ -62,10 +62,10 @@ export default function AdminUsersPage() {
   const filteredUsers = users.filter(user => {
     if (filter === 'all') return true
     if (filter === 'admin') return user.role === 'admin'
-    if (filter === 'courier') return user.role === 'courier' || user.courierProfile;
+    if (filter === 'courier') return user.role === 'courier' || user.courierProfile
     if (filter === 'package_runner') return user.role === 'package_runner'
     if (filter === 'seller') return user.role === 'seller'
-    if (filter === 'customer') return user.role === 'customer' || (!user.role && !user.courierProfile);
+    if (filter === 'customer') return user.role === 'customer' || (!user.role && !user.courierProfile)
     return true
   })
 
@@ -96,6 +96,7 @@ export default function AdminUsersPage() {
           </div>
         </div>
       </div>
+
       <div className="max-w-6xl mx-auto px-4 sm:px-6 -mt-6 space-y-4">
         {/* Filter Tabs */}
         <div className="bg-white rounded-2xl shadow-lg p-2 flex gap-2 flex-wrap">
@@ -108,10 +109,10 @@ export default function AdminUsersPage() {
               const count = users.filter(user => {
                 if (f === 'all') return true
                 if (f === 'admin') return user.role === 'admin'
-                if (f === 'courier') return user.role === 'courier' || user.courierProfile;
+                if (f === 'courier') return user.role === 'courier' || user.courierProfile
                 if (f === 'package_runner') return user.role === 'package_runner'
                 if (f === 'seller') return user.role === 'seller'
-                if (f === 'customer') return user.role === 'customer' || (!user.role && !user.courierProfile);
+                if (f === 'customer') return user.role === 'customer' || (!user.role && !user.courierProfile)
                 return false
               }).length
 
@@ -139,7 +140,7 @@ export default function AdminUsersPage() {
                   </div>
                 </button>
               )
-            });
+            })
           })()}
         </div>
 
@@ -285,6 +286,7 @@ export default function AdminUsersPage() {
           </CardContent>
         </Card>
       </div>
+
       {/* Modals */}
       <EditRoleModal
         user={editRoleUser!}
@@ -295,6 +297,7 @@ export default function AdminUsersPage() {
           setEditRoleUser(null)
         }}
       />
+
       <BanUserModal
         user={banUser!}
         isOpen={!!banUser}
@@ -304,6 +307,7 @@ export default function AdminUsersPage() {
           setBanUser(null)
         }}
       />
+
       <CreateUserModal
         isOpen={createUserOpen}
         onClose={() => setCreateUserOpen(false)}
@@ -313,5 +317,5 @@ export default function AdminUsersPage() {
         }}
       />
     </div>
-  );
+  )
 }

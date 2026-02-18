@@ -16,7 +16,7 @@ import { Avatar } from "@/components/ui/Avatar";
 
 interface OrderDetails {
   itemId: string;
-  courierUid: string;
+  courierId: string;
   courierName?: string;
   courierRate: number;
   platformFee: number;
@@ -80,13 +80,17 @@ export default function PaymentPage() {
 
     // Fallback to query params
     const itemId = searchParams.get("itemId");
-    const courierUid = searchParams.get('courierUid');
+    const courierId = searchParams.get("courierId");
     const courierRate = searchParams.get("courierRate");
     const platformFee = searchParams.get("platformFee");
     const dropoffAddress = searchParams.get("dropoffAddress");
 
     if (
-      !itemId || !courierUid || !courierRate || !platformFee || !dropoffAddress
+      !itemId ||
+      !courierId ||
+      !courierRate ||
+      !platformFee ||
+      !dropoffAddress
     ) {
       setError("Missing required order information. Please start over.");
       return;
@@ -94,7 +98,7 @@ export default function PaymentPage() {
 
     setOrderDetails({
       itemId,
-      courierUid,
+      courierId,
       courierName: searchParams.get("courierName") || undefined,
       courierRate: parseFloat(courierRate),
       platformFee: parseFloat(platformFee),
@@ -121,7 +125,7 @@ export default function PaymentPage() {
       // Create delivery job in Firestore
       const deliveryJobData = {
         customerId: user.uid,
-        courierId: orderDetails.courierUid,
+        courierId: orderDetails.courierId,
         itemId: orderDetails.itemId,
         status: "pending",
         paymentStatus: "authorized",
@@ -261,6 +265,7 @@ export default function PaymentPage() {
           </div>
         </div>
       </div>
+
       <div className="max-w-4xl mx-auto px-6 -mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-6">
           <Card variant="elevated" className="animate-fade-in">
