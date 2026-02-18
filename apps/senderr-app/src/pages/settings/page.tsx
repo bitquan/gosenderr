@@ -94,6 +94,24 @@ export default function CourierSettingsPage() {
   });
   const [savingPreferences, setSavingPreferences] = useState(false);
   const [payoutMode, setPayoutMode] = useState<"cash" | "token">("cash");
+  const [paymentLinks, setPaymentLinks] = useState({
+    cashApp: "",
+    venmo: "",
+    zelle: "",
+    paypal: "",
+    cashAppQrUrl: "",
+    venmoQrUrl: "",
+    paypalQrUrl: "",
+  });
+  const [uploadingPaymentQr, setUploadingPaymentQr] = useState<{
+    cashApp: boolean;
+    venmo: boolean;
+    paypal: boolean;
+  }>({
+    cashApp: false,
+    venmo: false,
+    paypal: false,
+  });
   const [tokenLoading, setTokenLoading] = useState(false);
   const [tokenTopUpLoading, setTokenTopUpLoading] = useState(false);
   const [tokenPolicy, setTokenPolicy] = useState<{
@@ -130,6 +148,15 @@ export default function CourierSettingsPage() {
               setServiceRadius(Number(profile.serviceRadius || 10));
               setTaxState(profile.taxState || userDoc.data().taxState || '');
               setPayoutMode(profile.payoutMode === "token" ? "token" : "cash");
+              setPaymentLinks({
+                cashApp: profile.paymentLinks?.cashApp || "",
+                venmo: profile.paymentLinks?.venmo || "",
+                zelle: profile.paymentLinks?.zelle || "",
+                paypal: profile.paymentLinks?.paypal || "",
+                cashAppQrUrl: profile.paymentLinks?.cashAppQrUrl || "",
+                venmoQrUrl: profile.paymentLinks?.venmoQrUrl || "",
+                paypalQrUrl: profile.paymentLinks?.paypalQrUrl || "",
+              });
               setNotificationPrefs({
                 jobOffers: profile.notificationPrefs?.jobOffers ?? true,
                 payoutUpdates: profile.notificationPrefs?.payoutUpdates ?? true,
@@ -243,6 +270,7 @@ export default function CourierSettingsPage() {
         'courierProfile.serviceRadius': serviceRadius,
         'courierProfile.taxState': taxState,
         'courierProfile.payoutMode': payoutMode,
+        'courierProfile.paymentLinks': paymentLinks,
         'courierProfile.notificationPrefs': notificationPrefs,
         updatedAt: serverTimestamp(),
       });
@@ -250,6 +278,36 @@ export default function CourierSettingsPage() {
       console.error("Error saving courier preferences:", error);
     } finally {
       setSavingPreferences(false);
+    }
+  };
+
+  const handlePaymentQrUpload = async (
+    provider: "cashApp" | "venmo" | "paypal",
+    file: File
+  ) => {
+    if (!user) return;
+
+    const qrFieldMap = {
+      cashApp: "cashAppQrUrl",
+      venmo: "venmoQrUrl",
+      paypal: "paypalQrUrl",
+    } as const;
+
+    setUploadingPaymentQr((prev) => ({ ...prev, [provider]: true }));
+    try {
+      const storageRef = ref(
+        storage,
+        `courierPaymentQrs/${user.uid}/${provider}_${Date.now()}_${file.name}`
+      );
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
+      const qrField = qrFieldMap[provider];
+      setPaymentLinks((prev) => ({ ...prev, [qrField]: url }));
+    } catch (error) {
+      console.error(`Failed to upload ${provider} QR:`, error);
+      alert("Failed to upload QR image. Please try again.");
+    } finally {
+      setUploadingPaymentQr((prev) => ({ ...prev, [provider]: false }));
     }
   };
 
@@ -686,6 +744,127 @@ export default function CourierSettingsPage() {
                         </button>
                       </>
                     )}
+                  </div>
+                )}
+
+                {payoutMode === "cash" && (
+                  <div className="mt-3 rounded-lg border border-blue-300/30 bg-blue-600/10 p-3 space-y-3">
+                    <div>
+                      <p className="text-xs font-medium text-blue-100">External Payment Links</p>
+                      <p className="text-xs text-blue-100 mt-1">
+                        Add your payment handles and optional QR codes for faster off-platform payments.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-3">
+                      <div>
+                        <label className="text-xs font-medium text-blue-100">Cash App</label>
+                        <input
+                          value={paymentLinks.cashApp}
+                          onChange={(event) =>
+                            setPaymentLinks((prev) => ({ ...prev, cashApp: event.target.value }))
+                          }
+                          placeholder="$yourhandle or cash.app/$handle"
+                          className="mt-1 w-full rounded-lg border border-white/20 bg-slate-950/40 text-white px-3 py-2 text-xs"
+                        />
+                        {paymentLinks.cashAppQrUrl && (
+                          <img
+                            src={paymentLinks.cashAppQrUrl}
+                            alt="Cash App QR"
+                            className="mt-2 h-20 rounded-md border border-white/20"
+                          />
+                        )}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(event) => {
+                            const file = event.target.files?.[0];
+                            if (!file) return;
+                            handlePaymentQrUpload("cashApp", file);
+                          }}
+                          className="mt-2 w-full text-xs text-blue-100"
+                        />
+                        {uploadingPaymentQr.cashApp && (
+                          <p className="mt-1 text-[11px] text-blue-100">Uploading Cash App QR...</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-medium text-blue-100">Venmo</label>
+                        <input
+                          value={paymentLinks.venmo}
+                          onChange={(event) =>
+                            setPaymentLinks((prev) => ({ ...prev, venmo: event.target.value }))
+                          }
+                          placeholder="https://venmo.com/username"
+                          className="mt-1 w-full rounded-lg border border-white/20 bg-slate-950/40 text-white px-3 py-2 text-xs"
+                        />
+                        {paymentLinks.venmoQrUrl && (
+                          <img
+                            src={paymentLinks.venmoQrUrl}
+                            alt="Venmo QR"
+                            className="mt-2 h-20 rounded-md border border-white/20"
+                          />
+                        )}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(event) => {
+                            const file = event.target.files?.[0];
+                            if (!file) return;
+                            handlePaymentQrUpload("venmo", file);
+                          }}
+                          className="mt-2 w-full text-xs text-blue-100"
+                        />
+                        {uploadingPaymentQr.venmo && (
+                          <p className="mt-1 text-[11px] text-blue-100">Uploading Venmo QR...</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-medium text-blue-100">Zelle</label>
+                        <input
+                          value={paymentLinks.zelle}
+                          onChange={(event) =>
+                            setPaymentLinks((prev) => ({ ...prev, zelle: event.target.value }))
+                          }
+                          placeholder="Email or phone for Zelle"
+                          className="mt-1 w-full rounded-lg border border-white/20 bg-slate-950/40 text-white px-3 py-2 text-xs"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-medium text-blue-100">PayPal</label>
+                        <input
+                          value={paymentLinks.paypal}
+                          onChange={(event) =>
+                            setPaymentLinks((prev) => ({ ...prev, paypal: event.target.value }))
+                          }
+                          placeholder="https://paypal.me/username"
+                          className="mt-1 w-full rounded-lg border border-white/20 bg-slate-950/40 text-white px-3 py-2 text-xs"
+                        />
+                        {paymentLinks.paypalQrUrl && (
+                          <img
+                            src={paymentLinks.paypalQrUrl}
+                            alt="PayPal QR"
+                            className="mt-2 h-20 rounded-md border border-white/20"
+                          />
+                        )}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(event) => {
+                            const file = event.target.files?.[0];
+                            if (!file) return;
+                            handlePaymentQrUpload("paypal", file);
+                          }}
+                          className="mt-2 w-full text-xs text-blue-100"
+                        />
+                        {uploadingPaymentQr.paypal && (
+                          <p className="mt-1 text-[11px] text-blue-100">Uploading PayPal QR...</p>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
