@@ -1,65 +1,107 @@
-import { collection, doc, getDoc, runTransaction, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import { getDownloadURL, ref, uploadString } from 'firebase/storage';
-import { db, storage } from './firebase';
+import { app, db, storage } from './firebase';
 import type { Job, JobStatus } from '../types/job';
 
-export async function claimJob(job: Job, courierUid: string, agreedFee?: number) {
-  const jobRef = doc(db, 'jobs', job.id);
+type LifecycleCommandResult = {
+  queued: boolean;
+};
 
-  await runTransaction(db, async (transaction) => {
-    const snapshot = await transaction.get(jobRef);
-    if (!snapshot.exists()) {
-      throw new Error('Job does not exist');
-    }
+type ClaimCourierJobCallableRequest = {
+  jobId: string;
+  agreedFee: number;
+  idempotencyKey: string;
+};
 
-    const data = snapshot.data() as Job;
-    const effectiveStatus = data.statusDetail ?? data.status;
-    if (!(effectiveStatus === 'open' || effectiveStatus === 'pending') || data.courierUid) {
-      throw new Error('Job is no longer available');
-    }
+type AdvanceCourierJobStatusCallableRequest = {
+  jobId: string;
+  nextStatus: JobStatus;
+  idempotencyKey: string;
+};
 
-    transaction.update(jobRef, {
-      courierUid,
-      courierId: courierUid,
-      agreedFee: agreedFee ?? data.agreedFee ?? null,
-      status: 'assigned',
-      statusDetail: 'assigned',
-      acceptedAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    });
-  });
+type SubmitCourierJobProofCallableRequest = {
+  jobId: string;
+  type: 'pickup' | 'dropoff';
+  photoUrl: string;
+  coordinates: {
+    latitude: number;
+    longitude: number;
+    accuracy: number;
+  };
+};
+
+let idempotencyCounter = 0;
+
+function sanitizeIdPart(value: string): string {
+  return value.replace(/[^a-zA-Z0-9_-]/g, '_');
 }
 
-export async function updateJobStatus(jobId: string, statusDetail: JobStatus) {
-  const jobRef = doc(db, 'jobs', jobId);
-  const status =
-    statusDetail === 'completed'
-      ? 'completed'
-      : statusDetail === 'cancelled'
-      ? 'cancelled'
-      : statusDetail === 'assigned'
-      ? 'assigned'
-      : 'in_progress';
+function createIdempotencyKey(command: 'claim' | 'advance', jobId: string): string {
+  idempotencyCounter += 1;
+  const safeJobId = sanitizeIdPart(jobId);
+  return `${command}_${safeJobId}_${Date.now()}_${idempotencyCounter}`;
+}
 
-  await updateDoc(jobRef, {
-    status,
-    statusDetail,
-    updatedAt: serverTimestamp(),
-    ...(status === 'completed' ? { completedAt: serverTimestamp() } : {}),
+function getFunctionsInstance() {
+  return app ? getFunctions(app) : getFunctions();
+}
+
+async function callClaimCourierJob(payload: ClaimCourierJobCallableRequest): Promise<void> {
+  const callable = httpsCallable<ClaimCourierJobCallableRequest, { success: boolean }>(
+    getFunctionsInstance(),
+    'claimCourierJob',
+  );
+  await callable(payload);
+}
+
+async function callAdvanceCourierJobStatus(payload: AdvanceCourierJobStatusCallableRequest): Promise<void> {
+  const callable = httpsCallable<AdvanceCourierJobStatusCallableRequest, { success: boolean }>(
+    getFunctionsInstance(),
+    'advanceCourierJobStatus',
+  );
+  await callable(payload);
+}
+
+async function callSubmitCourierJobProof(payload: SubmitCourierJobProofCallableRequest): Promise<void> {
+  const callable = httpsCallable<SubmitCourierJobProofCallableRequest, { success: boolean }>(
+    getFunctionsInstance(),
+    'submitCourierJobProof',
+  );
+  await callable(payload);
+}
+
+export async function claimJob(job: Job, _courierUid: string, agreedFee?: number): Promise<LifecycleCommandResult> {
+  const resolvedFee = Number(agreedFee ?? job.agreedFee ?? 0);
+  if (!Number.isFinite(resolvedFee) || resolvedFee <= 0) {
+    throw new Error('Cannot claim job: agreed fee is missing.');
+  }
+
+  await callClaimCourierJob({
+    jobId: job.id,
+    agreedFee: resolvedFee,
+    idempotencyKey: createIdempotencyKey('claim', job.id),
   });
+
+  return { queued: false };
+}
+
+export async function updateJobStatus(jobId: string, nextStatus: JobStatus): Promise<LifecycleCommandResult> {
+  await callAdvanceCourierJobStatus({
+    jobId,
+    nextStatus,
+    idempotencyKey: createIdempotencyKey('advance', jobId),
+  });
+
+  return { queued: false };
 }
 
 async function createProofPhoto(params: {
   jobId: string;
-  courierUid: string;
   photoDataUrl: string;
-  notes?: string;
-  type: 'pickup' | 'dropoff';
-  location?: { lat: number; lng: number } | null;
-  accuracy?: number | null;
 }) {
-  const { jobId, courierUid, photoDataUrl, notes, type, location, accuracy } = params;
-  const photoId = doc(collection(db, 'jobPhotos')).id;
+  const { jobId, photoDataUrl } = params;
+  const photoId = `${Date.now()}_${sanitizeIdPart(jobId)}`;
   let photoUrl: string | null = null;
   let photoDataUrlStored: string | null = null;
 
@@ -69,29 +111,14 @@ async function createProofPhoto(params: {
       await uploadString(storageRef, photoDataUrl, 'data_url');
       photoUrl = await getDownloadURL(storageRef);
     } catch (error) {
-      console.warn('Storage upload failed, falling back to Firestore:', error);
+      console.warn('Storage upload failed, falling back to inline photo payload:', error);
       photoDataUrlStored = photoDataUrl;
     }
   } else {
     photoDataUrlStored = photoDataUrl;
   }
 
-  const photoRef = doc(db, 'jobPhotos', photoId);
-  await setDoc(photoRef, {
-    jobId,
-    courierUid,
-    photoUrl: photoUrl ?? null,
-    photoDataUrl: photoDataUrlStored ?? null,
-    url: photoUrl ?? photoDataUrlStored ?? null,
-    location: location ?? null,
-    accuracy: accuracy ?? null,
-    notes: notes ?? null,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-    type,
-  });
-
-  return { photoId, photoUrl, photoDataUrl: photoDataUrlStored };
+  return { photoUrl: photoUrl ?? photoDataUrlStored };
 }
 
 export async function completeDeliveryWithProof(params: {
@@ -101,7 +128,7 @@ export async function completeDeliveryWithProof(params: {
   notes?: string;
   location?: { lat: number; lng: number; accuracy?: number | null } | null;
 }) {
-  const { jobId, courierUid, photoDataUrl, notes, location } = params;
+  const { jobId, courierUid, photoDataUrl, location } = params;
   if (!photoDataUrl) {
     throw new Error('Delivery photo is required');
   }
@@ -123,37 +150,31 @@ export async function completeDeliveryWithProof(params: {
       : null;
   const proofLocation = location?.lat && location?.lng ? { lat: location.lat, lng: location.lng } : fallbackLocation;
   const proofAccuracy = typeof location?.accuracy === 'number' ? location?.accuracy : null;
+  if (!proofLocation) {
+    throw new Error('Dropoff location is missing for proof submission');
+  }
 
-  const { photoId, photoUrl, photoDataUrl: photoDataUrlStored } = await createProofPhoto({
+  const uploaded = await createProofPhoto({
     jobId,
-    courierUid,
     photoDataUrl,
-    notes,
+  });
+
+  if (!uploaded.photoUrl) {
+    throw new Error('Failed to upload proof photo');
+  }
+
+  await callSubmitCourierJobProof({
+    jobId,
     type: 'dropoff',
-    location: proofLocation,
-    accuracy: proofAccuracy,
+    photoUrl: uploaded.photoUrl,
+    coordinates: {
+      latitude: proofLocation.lat,
+      longitude: proofLocation.lng,
+      accuracy: proofAccuracy ?? 0,
+    },
   });
 
-  const proofPayload = {
-    photoId,
-    photoUrl: photoUrl ?? null,
-    photoDataUrl: photoDataUrlStored ?? null,
-    url: photoUrl ?? photoDataUrlStored ?? null,
-    location: proofLocation ?? null,
-    accuracy: proofAccuracy,
-    notes: notes ?? null,
-    createdAt: serverTimestamp(),
-    timestamp: serverTimestamp(),
-  };
-
-  await updateDoc(jobRef, {
-    status: 'completed',
-    statusDetail: 'completed',
-    completedAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-    deliveryProof: proofPayload,
-    dropoffProof: proofPayload,
-  });
+  await updateJobStatus(jobId, 'completed');
 }
 
 export async function completePickupWithProof(params: {
@@ -163,7 +184,7 @@ export async function completePickupWithProof(params: {
   notes?: string;
   location?: { lat: number; lng: number; accuracy?: number | null } | null;
 }) {
-  const { jobId, courierUid, photoDataUrl, notes, location } = params;
+  const { jobId, courierUid, photoDataUrl, location } = params;
   if (!photoDataUrl) {
     throw new Error('Pickup photo is required');
   }
@@ -185,33 +206,29 @@ export async function completePickupWithProof(params: {
       : null;
   const proofLocation = location?.lat && location?.lng ? { lat: location.lat, lng: location.lng } : fallbackLocation;
   const proofAccuracy = typeof location?.accuracy === 'number' ? location?.accuracy : null;
+  if (!proofLocation) {
+    throw new Error('Pickup location is missing for proof submission');
+  }
 
-  const { photoId, photoUrl, photoDataUrl: photoDataUrlStored } = await createProofPhoto({
+  const uploaded = await createProofPhoto({
     jobId,
-    courierUid,
     photoDataUrl,
-    notes,
+  });
+
+  if (!uploaded.photoUrl) {
+    throw new Error('Failed to upload proof photo');
+  }
+
+  await callSubmitCourierJobProof({
+    jobId,
     type: 'pickup',
-    location: proofLocation,
-    accuracy: proofAccuracy,
+    photoUrl: uploaded.photoUrl,
+    coordinates: {
+      latitude: proofLocation.lat,
+      longitude: proofLocation.lng,
+      accuracy: proofAccuracy ?? 0,
+    },
   });
 
-  const proofPayload = {
-    photoId,
-    photoUrl: photoUrl ?? null,
-    photoDataUrl: photoDataUrlStored ?? null,
-    url: photoUrl ?? photoDataUrlStored ?? null,
-    location: proofLocation ?? null,
-    accuracy: proofAccuracy,
-    notes: notes ?? null,
-    createdAt: serverTimestamp(),
-    timestamp: serverTimestamp(),
-  };
-
-  await updateDoc(jobRef, {
-    status: 'in_progress',
-    statusDetail: 'picked_up',
-    updatedAt: serverTimestamp(),
-    pickupProof: proofPayload,
-  });
+  await updateJobStatus(jobId, 'picked_up');
 }
