@@ -19,6 +19,7 @@ type LifecycleCommandQueueItem = {
   command: LifecycleCommandName;
   jobId: string;
   agreedFee?: number;
+  reservationId?: string;
   nextStatus?: JobStatus;
   idempotencyKey: string;
   createdAt: number;
@@ -29,6 +30,7 @@ type ClaimCourierJobCallableRequest = {
   jobId: string;
   agreedFee: number;
   idempotencyKey: string;
+  reservationId?: string;
 };
 
 type AdvanceCourierJobStatusCallableRequest = {
@@ -50,6 +52,38 @@ type SubmitCourierJobProofCallableRequest = {
     latitude: number;
     longitude: number;
     accuracy: number;
+  };
+};
+
+type TokenReserveCallableRequest = {
+  action: string;
+  amount: number;
+  idempotencyKey: string;
+  metadata?: Record<string, unknown>;
+};
+
+type TokenReserveCallableResponse = {
+  reservationId: string;
+  walletType?: "utility" | "payout";
+  wallet?: {
+    available: number;
+    reserved: number;
+  };
+};
+
+type TokenReleaseCallableRequest = {
+  reservationId: string;
+  idempotencyKey: string;
+  reason?: string;
+  metadata?: Record<string, unknown>;
+};
+
+type TokenReleaseCallableResponse = {
+  reservationId: string;
+  walletType?: "utility" | "payout";
+  wallet?: {
+    available: number;
+    reserved: number;
   };
 };
 
@@ -212,6 +246,7 @@ export async function flushLifecycleCommandQueue(): Promise<void> {
           jobId: item.jobId,
           agreedFee: item.agreedFee,
           idempotencyKey: item.idempotencyKey,
+          reservationId: item.reservationId,
         });
       } else if (item.command === "advance") {
         if (!item.nextStatus) {
@@ -323,6 +358,7 @@ export async function claimJob(
   jobId: string,
   _courierUid: string,
   agreedFee: number,
+  options?: { reservationId?: string },
 ): Promise<LifecycleCommandResult> {
   ensureLifecycleQueueListener();
   if (typeof navigator !== "undefined" && navigator.onLine) {
@@ -332,7 +368,12 @@ export async function claimJob(
   const idempotencyKey = createLifecycleIdempotencyKey("claim", jobId);
 
   try {
-    await callClaimCourierJob({ jobId, agreedFee, idempotencyKey });
+    await callClaimCourierJob({
+      jobId,
+      agreedFee,
+      idempotencyKey,
+      reservationId: options?.reservationId,
+    });
     return { queued: false };
   } catch (error) {
     const offline = isOfflineLikeError(error);
@@ -343,6 +384,7 @@ export async function claimJob(
         command: "claim",
         jobId,
         agreedFee,
+        reservationId: options?.reservationId,
         idempotencyKey,
         createdAt: Date.now(),
         attempts: 1,
@@ -402,9 +444,13 @@ export type TokenPolicyPack = {
 export type TokenPolicyResponse = {
   enabled: boolean;
   costs: {
-    claimJob: number;
-    cancelJob: number;
-    disputeJob: number;
+    claimJob?: number;
+    cancelJob?: number;
+    disputeJob?: number;
+    jobUnlockStandard?: number;
+    jobUnlockPriority?: number;
+    jobUnlockHeavy?: number;
+    [key: string]: number | undefined;
   };
   packs: TokenPolicyPack[];
 };
@@ -426,6 +472,17 @@ export type TokenClaimReadiness = {
   requiredTokens: number;
   availableTokens: number;
   reason?: string;
+};
+
+type JobLikeForTokenCost = {
+  package?: {
+    size?: string;
+    flags?: {
+      needsSuvVan?: boolean;
+      heavyTwoPerson?: boolean;
+      oversized?: boolean;
+    };
+  };
 };
 
 type TokenCheckoutSessionRequest = {
@@ -494,7 +551,7 @@ export async function getTokenClaimReadiness(
     getTokenWalletSummary(),
   ]);
 
-  const requiredTokens = Math.max(policy?.costs?.claimJob ?? 0, 0);
+  const requiredTokens = Math.max(policy?.costs?.jobUnlockStandard ?? policy?.costs?.claimJob ?? 0, 0);
   const availableTokens = Math.max(wallet?.available ?? 0, 0);
   const useTokenMode = Boolean(policy?.enabled) && requiredTokens > 0;
   const canClaim = !useTokenMode || availableTokens >= requiredTokens;
@@ -508,6 +565,78 @@ export async function getTokenClaimReadiness(
       ? undefined
       : `Insufficient tokens. Requires ${requiredTokens}, available ${availableTokens}.`,
   };
+}
+
+export function getRequiredTokensForJob(
+  job: JobLikeForTokenCost,
+  policy: TokenPolicyResponse,
+): number {
+  const costs = policy?.costs || {};
+  const size = String(job?.package?.size || "").trim().toLowerCase();
+  const flags = job?.package?.flags || {};
+
+  const isHeavy =
+    size === "xl" ||
+    flags.needsSuvVan === true ||
+    flags.heavyTwoPerson === true ||
+    flags.oversized === true;
+
+  if (isHeavy) {
+    return Math.max(Number(costs.jobUnlockHeavy ?? costs.jobUnlockPriority ?? costs.jobUnlockStandard ?? costs.claimJob ?? 0), 0);
+  }
+
+  if (size === "large") {
+    return Math.max(Number(costs.jobUnlockPriority ?? costs.jobUnlockStandard ?? costs.claimJob ?? 0), 0);
+  }
+
+  return Math.max(Number(costs.jobUnlockStandard ?? costs.claimJob ?? 0), 0);
+}
+
+export async function reserveJobClaimTokens(
+  jobId: string,
+  amount: number,
+): Promise<TokenReserveCallableResponse> {
+  if (!functions) {
+    throw new Error("Firebase Functions not initialized");
+  }
+
+  const idempotencyKey = `claim_preview_${jobId.replace(/[^a-zA-Z0-9_-]/g, "_")}_${Date.now()}_${randomSuffix(8)}`;
+  const callable = httpsCallable<TokenReserveCallableRequest, TokenReserveCallableResponse>(
+    functions,
+    "tokenReserve",
+  );
+
+  const result = await callable({
+    action: "jobUnlockPreview",
+    amount,
+    idempotencyKey,
+    metadata: { jobId },
+  });
+
+  return result.data;
+}
+
+export async function releaseJobClaimTokens(
+  reservationId: string,
+  reason: string,
+): Promise<TokenReleaseCallableResponse> {
+  if (!functions) {
+    throw new Error("Firebase Functions not initialized");
+  }
+
+  const idempotencyKey = `claim_preview_release_${reservationId.replace(/[^a-zA-Z0-9_-]/g, "_")}_${Date.now()}_${randomSuffix(8)}`;
+  const callable = httpsCallable<TokenReleaseCallableRequest, TokenReleaseCallableResponse>(
+    functions,
+    "tokenRelease",
+  );
+
+  const result = await callable({
+    reservationId,
+    idempotencyKey,
+    reason,
+  });
+
+  return result.data;
 }
 
 export async function declineCourierJobOffer(jobId: string): Promise<void> {

@@ -22,6 +22,7 @@ interface ClaimCourierJobRequest {
   jobId: string;
   agreedFee: number;
   idempotencyKey?: string;
+  reservationId?: string;
 }
 
 interface AdvanceCourierJobStatusRequest {
@@ -158,6 +159,62 @@ function isExternalRailValue(value: unknown): boolean {
   if (!normalized) return false;
   if (normalized === "external" || normalized.startsWith("external_")) return true;
   return ["cash", "cash_app", "cashapp", "venmo", "zelle", "paypal", "apple_cash"].includes(normalized);
+}
+
+function toPositiveNumber(value: unknown): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+}
+
+function resolveTokenClaimCost(
+  tokenPolicy: Record<string, unknown> | undefined,
+  jobData: Record<string, unknown>,
+): { amount: number; action: string } {
+  const policyEnabled = tokenPolicy?.enabled !== false;
+  if (!policyEnabled) {
+    return { amount: 0, action: "jobUnlockStandard" };
+  }
+
+  const costs = (tokenPolicy?.costs || {}) as Record<string, unknown>;
+  const standard = toPositiveNumber(costs.jobUnlockStandard || costs.claimJob || 0);
+  const priority = toPositiveNumber(costs.jobUnlockPriority || standard);
+  const heavy = toPositiveNumber(costs.jobUnlockHeavy || priority || standard);
+
+  const packageData = (jobData.package || {}) as {
+    size?: unknown;
+    flags?: {
+      needsSuvVan?: unknown;
+      heavyTwoPerson?: unknown;
+      oversized?: unknown;
+    };
+  };
+
+  const size = String(packageData.size || "").trim().toLowerCase();
+  const flags = packageData.flags || {};
+  const isHeavy =
+    size === "xl" ||
+    flags.needsSuvVan === true ||
+    flags.heavyTwoPerson === true ||
+    flags.oversized === true;
+
+  if (isHeavy) {
+    return {
+      amount: heavy,
+      action: "jobUnlockHeavy",
+    };
+  }
+
+  if (size === "large") {
+    return {
+      amount: priority,
+      action: "jobUnlockPriority",
+    };
+  }
+
+  return {
+    amount: standard,
+    action: "jobUnlockStandard",
+  };
 }
 
 function requiresTokenPayoutOptIn(
@@ -307,6 +364,7 @@ export const claimCourierJob = functions.https.onCall(
 
     const { jobId, agreedFee } = data || ({} as ClaimCourierJobRequest);
     const idempotencyKey = normalizeIdempotencyKey(data?.idempotencyKey);
+    const reservationId = typeof data?.reservationId === "string" ? data.reservationId.trim() : "";
 
     if (!jobId || typeof jobId !== "string") {
       throw new functions.https.HttpsError(
@@ -427,6 +485,119 @@ export const claimCourierJob = functions.https.onCall(
           throw new functions.https.HttpsError(
             "failed-precondition",
             "This job requires token payout settlement. Enable token-payout jobs in Settings to claim it.",
+          );
+        }
+
+        const tokenPolicySnap = await tx.get(db.doc("platformSettings/tokenPolicy"));
+        const tokenPolicyData = tokenPolicySnap.exists
+          ? (tokenPolicySnap.data() as Record<string, unknown>)
+          : undefined;
+        const claimCost = resolveTokenClaimCost(tokenPolicyData, jobData);
+
+        if (claimCost.amount > 0) {
+          if (!reservationId) {
+            throw new functions.https.HttpsError(
+              "failed-precondition",
+              `Token unlock required. Reserve ${claimCost.amount} token${claimCost.amount === 1 ? "" : "s"} before claiming this job.`,
+            );
+          }
+
+          const reservationRef = db.doc(`tokenReservations/${reservationId}`);
+          const reservationSnap = await tx.get(reservationRef);
+          if (!reservationSnap.exists) {
+            throw new functions.https.HttpsError("failed-precondition", "Token reservation not found");
+          }
+
+          const reservation = reservationSnap.data() as {
+            uid?: string;
+            amount?: number;
+            status?: string;
+            action?: string;
+          };
+
+          if (reservation.uid !== courierUid) {
+            throw new functions.https.HttpsError("permission-denied", "Token reservation owner mismatch");
+          }
+
+          if (reservation.status !== "reserved") {
+            throw new functions.https.HttpsError(
+              "failed-precondition",
+              `Token reservation is ${reservation.status || "unknown"}; expected reserved`,
+            );
+          }
+
+          const reservedAmount = Number(reservation.amount || 0);
+          if (!Number.isFinite(reservedAmount) || reservedAmount < claimCost.amount) {
+            throw new functions.https.HttpsError(
+              "failed-precondition",
+              `Reserved tokens (${reservedAmount}) are less than required (${claimCost.amount})`,
+            );
+          }
+
+          const walletRef = db.doc(`tokenWallets/${courierUid}`);
+          const walletSnap = await tx.get(walletRef);
+          const walletData = walletSnap.exists ? (walletSnap.data() || {}) : {};
+          const currentAvailable = Number(walletData.available || 0);
+          const currentReserved = Number(walletData.reserved || 0);
+          const currentPurchased = Number(walletData.lifetimePurchased || 0);
+          const currentSpent = Number(walletData.lifetimeSpent || 0);
+          const currentAdjusted = Number(walletData.lifetimeAdjusted || 0);
+          const nextReserved = currentReserved - reservedAmount;
+
+          if (!Number.isFinite(nextReserved) || nextReserved < 0) {
+            throw new functions.https.HttpsError(
+              "failed-precondition",
+              "Reserved token balance underflow",
+            );
+          }
+
+          tx.set(
+            walletRef,
+            {
+              available: currentAvailable,
+              reserved: nextReserved,
+              lifetimePurchased: currentPurchased,
+              lifetimeSpent: currentSpent + claimCost.amount,
+              lifetimeAdjusted: currentAdjusted,
+              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            },
+            { merge: true },
+          );
+
+          tx.set(
+            reservationRef,
+            {
+              status: "committed",
+              committedAt: admin.firestore.FieldValue.serverTimestamp(),
+              commitIdempotencyKey: idempotencyKey || `claim_${jobId}_${Date.now()}`,
+              metadata: {
+                ...(reservationSnap.data()?.metadata || {}),
+                jobId,
+                claimAction: claimCost.action,
+              },
+              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            },
+            { merge: true },
+          );
+
+          const commitTxId = `commit_claim_${sanitizeIdPart(reservationId)}_${sanitizeIdPart(jobId)}`;
+          tx.set(
+            db.doc(`tokenTransactions/${commitTxId}`),
+            {
+              uid: courierUid,
+              type: "commit",
+              actorType: "courier",
+              action: claimCost.action,
+              amount: claimCost.amount,
+              idempotencyKey: idempotencyKey || commitTxId,
+              reservationId,
+              metadata: {
+                jobId,
+                source: "claimCourierJob",
+              },
+              createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            },
+            { merge: true },
           );
         }
 

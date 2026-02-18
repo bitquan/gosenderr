@@ -10,8 +10,12 @@ import { useOpenJobs } from "@/hooks/v2/useOpenJobs";
 import {
   claimJob,
   declineCourierJobOffer,
-  getTokenClaimReadiness,
-  type TokenClaimReadiness,
+  getTokenPolicy,
+  getTokenWalletSummary,
+  getRequiredTokensForJob,
+  releaseJobClaimTokens,
+  reserveJobClaimTokens,
+  type TokenPolicyResponse,
 } from "@/lib/v2/jobs";
 import { MapboxMap } from "@/components/v2/MapboxMap";
 import { calcFee, calcMiles } from "@/lib/v2/pricing";
@@ -51,8 +55,15 @@ export default function CourierDashboardMapShell() {
     startY: 0,
     startHeight: 340,
   });
-  const [tokenClaimReadiness, setTokenClaimReadiness] =
-    useState<TokenClaimReadiness | null>(null);
+  const [tokenPolicy, setTokenPolicy] = useState<TokenPolicyResponse | null>(null);
+  const [tokenWallet, setTokenWallet] = useState<{ available: number; reserved: number } | null>(null);
+  const [tokenReservation, setTokenReservation] = useState<{
+    jobId: string;
+    reservationId: string;
+    amount: number;
+  } | null>(null);
+  const [unlockingJobId, setUnlockingJobId] = useState<string | null>(null);
+  const [releasingReservation, setReleasingReservation] = useState(false);
 
   const transportMode =
     (userDoc?.courierProfile?.vehicleType as TransportMode | VehicleType) || "car";
@@ -156,23 +167,56 @@ export default function CourierDashboardMapShell() {
 
   useEffect(() => {
     if (!uid) {
-      setTokenClaimReadiness(null);
+      setTokenPolicy(null);
+      setTokenWallet(null);
       return;
     }
 
     let mounted = true;
-    getTokenClaimReadiness(uid)
-      .then((readiness) => {
-        if (mounted) setTokenClaimReadiness(readiness);
+    Promise.all([getTokenPolicy(), getTokenWalletSummary()])
+      .then(([policy, wallet]) => {
+        if (!mounted) return;
+        setTokenPolicy(policy);
+        setTokenWallet({ available: wallet.available, reserved: wallet.reserved });
       })
       .catch((error) => {
-        console.error("Failed to load token claim readiness", error);
+        console.error("Failed to load token policy/wallet", error);
       });
 
     return () => {
       mounted = false;
     };
   }, [uid]);
+
+  const releaseReservation = async (reason: string) => {
+    if (!tokenReservation || releasingReservation) return;
+
+    setReleasingReservation(true);
+    try {
+      await releaseJobClaimTokens(tokenReservation.reservationId, reason);
+    } catch (error) {
+      console.error("Failed to release token reservation", error);
+    } finally {
+      setTokenReservation(null);
+      setReleasingReservation(false);
+      try {
+        const wallet = await getTokenWalletSummary();
+        setTokenWallet({ available: wallet.available, reserved: wallet.reserved });
+      } catch (error) {
+        console.error("Failed to refresh token wallet after release", error);
+      }
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (tokenReservation) {
+        void releaseJobClaimTokens(tokenReservation.reservationId, "preview_exit").catch((error) => {
+          console.error("Failed to release reservation on exit", error);
+        });
+      }
+    };
+  }, [tokenReservation]);
 
   useEffect(() => {
     if (!uid || !storedIsOnline || isApproved) return;
@@ -183,6 +227,12 @@ export default function CourierDashboardMapShell() {
       console.error("Failed to reset online status for unapproved courier", error);
     });
   }, [uid, storedIsOnline, isApproved]);
+
+  useEffect(() => {
+    if (!selectedJobId || !tokenReservation) return;
+    if (tokenReservation.jobId === selectedJobId) return;
+    void releaseReservation("preview_switched_job");
+  }, [selectedJobId, tokenReservation]);
 
   const getRateCardForJob = (job: Job): RateCard | PackageRateCard | FoodRateCard | null => {
     const isFoodJob = Boolean(
@@ -236,12 +286,18 @@ export default function CourierDashboardMapShell() {
   const handleAcceptJob = async (job: Job) => {
     if (!uid) return;
 
-    if (tokenClaimReadiness?.useTokenMode && !tokenClaimReadiness.canClaim) {
-      alert(
-        tokenClaimReadiness.reason ||
-          `Insufficient tokens. Requires ${tokenClaimReadiness.requiredTokens}.`,
-      );
-      return;
+    const useTokenMode = Boolean(tokenPolicy?.enabled);
+    const requiredTokens = useTokenMode && tokenPolicy ? getRequiredTokensForJob(job, tokenPolicy) : 0;
+
+    if (requiredTokens > 0) {
+      if (!tokenReservation || tokenReservation.jobId !== job.id) {
+        alert(`Unlock this offer first. Requires ${requiredTokens} token${requiredTokens === 1 ? "" : "s"}.`);
+        return;
+      }
+      if (tokenReservation.amount < requiredTokens) {
+        alert(`Reserved tokens are too low for this job. Required ${requiredTokens}.`);
+        return;
+      }
     }
 
     const rateCard = getRateCardForJob(job);
@@ -266,10 +322,21 @@ export default function CourierDashboardMapShell() {
 
     setAcceptingJobId(job.id);
     try {
-      const result = await claimJob(job.id, uid, agreedFee);
+      const result = await claimJob(job.id, uid, agreedFee, {
+        reservationId: tokenReservation?.jobId === job.id ? tokenReservation.reservationId : undefined,
+      });
       if (result.queued) {
         alert("Job claim queued while offline. It will be submitted when connection returns.");
         return;
+      }
+      if (tokenReservation?.jobId === job.id) {
+        setTokenReservation(null);
+      }
+      try {
+        const wallet = await getTokenWalletSummary();
+        setTokenWallet({ available: wallet.available, reserved: wallet.reserved });
+      } catch (error) {
+        console.error("Failed to refresh wallet after claim", error);
       }
       navigate(`/jobs/${job.id}`);
     } catch (error) {
@@ -283,6 +350,9 @@ export default function CourierDashboardMapShell() {
   const handleDeclineJob = async (job: Job) => {
     setDecliningJobId(job.id);
     try {
+      if (tokenReservation?.jobId === job.id) {
+        await releaseReservation("preview_declined");
+      }
       await declineCourierJobOffer(job.id);
     } catch (error) {
       console.error("Failed to decline job", error);
@@ -293,8 +363,55 @@ export default function CourierDashboardMapShell() {
   };
 
   const handleSelectJobFromMap = (jobId: string) => {
+    if (tokenReservation && tokenReservation.jobId !== jobId) {
+      void releaseReservation("preview_switched_job");
+    }
     setSelectedJobId(jobId);
     setBottomSheetHeight((prev) => Math.max(prev, 360));
+  };
+
+  const handleUnlockOffer = async (job: Job) => {
+    if (!tokenPolicy?.enabled) return;
+    const requiredTokens = getRequiredTokensForJob(job, tokenPolicy);
+
+    if (requiredTokens <= 0) {
+      return;
+    }
+
+    if (tokenReservation?.jobId === job.id && tokenReservation.amount >= requiredTokens) {
+      return;
+    }
+
+    if (tokenReservation && tokenReservation.jobId !== job.id) {
+      await releaseReservation("preview_switched_job");
+    }
+
+    const availableTokens = tokenWallet?.available ?? 0;
+    if (availableTokens < requiredTokens) {
+      alert(`Insufficient tokens. Requires ${requiredTokens}, available ${availableTokens}.`);
+      return;
+    }
+
+    setUnlockingJobId(job.id);
+    try {
+      const reservation = await reserveJobClaimTokens(job.id, requiredTokens);
+      setTokenReservation({
+        jobId: job.id,
+        reservationId: reservation.reservationId,
+        amount: requiredTokens,
+      });
+      try {
+        const wallet = await getTokenWalletSummary();
+        setTokenWallet({ available: wallet.available, reserved: wallet.reserved });
+      } catch (error) {
+        console.error("Failed to refresh wallet after reserve", error);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to reserve tokens";
+      alert(message);
+    } finally {
+      setUnlockingJobId(null);
+    }
   };
 
   const beginBottomSheetDrag = (clientY: number) => {
@@ -400,29 +517,22 @@ export default function CourierDashboardMapShell() {
             </div>
           </div>
 
-          {tokenClaimReadiness?.useTokenMode && (
+          {tokenPolicy?.enabled && (
             <div
-              className={`pointer-events-auto rounded-xl border p-3 ${
-                tokenClaimReadiness.canClaim
-                  ? "bg-gradient-to-r from-blue-700/35 via-blue-600/30 to-purple-600/30 border-blue-300/30 text-white shadow-2xl backdrop-blur"
-                  : "bg-gradient-to-br from-slate-900 via-purple-900 to-purple-950/90 border-white/10 text-white shadow-2xl"
-              }`}
+              className="pointer-events-auto rounded-xl border p-3 bg-gradient-to-r from-blue-700/35 via-blue-600/30 to-purple-600/30 border-blue-300/30 text-white shadow-2xl backdrop-blur"
             >
               <p className="text-xs font-semibold">Token Claim Mode</p>
               <p className="text-xs mt-1">
-                Cost: {tokenClaimReadiness.requiredTokens} token
-                {tokenClaimReadiness.requiredTokens === 1 ? "" : "s"} • Available: {tokenClaimReadiness.availableTokens}
+                Available: {tokenWallet?.available ?? 0} • Reserved: {tokenWallet?.reserved ?? 0}
               </p>
-              {!tokenClaimReadiness.canClaim && (
-                <div className="mt-2">
-                  <Link
-                    to="/settings"
-                    className="inline-flex items-center rounded-md border border-blue-200/40 bg-slate-950/40 px-2 py-1 text-[11px] font-semibold text-blue-100"
-                  >
-                    Top up tokens
-                  </Link>
-                </div>
-              )}
+              <div className="mt-2">
+                <Link
+                  to="/settings"
+                  className="inline-flex items-center rounded-md border border-blue-200/40 bg-slate-950/40 px-2 py-1 text-[11px] font-semibold text-blue-100"
+                >
+                  Top up tokens
+                </Link>
+              </div>
             </div>
           )}
         </div>
@@ -490,7 +600,12 @@ export default function CourierDashboardMapShell() {
 
             {jobsForQueue.map((job) => {
               const selected = selectedJobId === job.id;
-              const canClaim = !(tokenClaimReadiness?.useTokenMode && !tokenClaimReadiness?.canClaim);
+              const requiredTokens = tokenPolicy?.enabled && tokenPolicy
+                ? getRequiredTokensForJob(job, tokenPolicy)
+                : 0;
+              const hasUnlockedSelectedOffer =
+                requiredTokens <= 0 ||
+                (tokenReservation?.jobId === job.id && tokenReservation.amount >= requiredTokens);
 
               return (
                 <div
@@ -500,7 +615,7 @@ export default function CourierDashboardMapShell() {
                   }`}
                 >
                   <button
-                    onClick={() => setSelectedJobId(job.id)}
+                    onClick={() => handleSelectJobFromMap(job.id)}
                     className="w-full text-left"
                   >
                     <div className="flex items-center justify-between gap-2">
@@ -518,19 +633,34 @@ export default function CourierDashboardMapShell() {
 
                   {selected && (
                     <div className="mt-3 grid grid-cols-2 gap-2">
+                      {requiredTokens > 0 && !hasUnlockedSelectedOffer && (
+                        <button
+                          onClick={() => handleUnlockOffer(job)}
+                          disabled={unlockingJobId === job.id}
+                          className={`col-span-2 rounded-lg px-3 py-2 text-xs font-semibold text-white ${
+                            unlockingJobId === job.id
+                              ? "bg-gray-300 cursor-not-allowed"
+                              : "bg-blue-600 hover:bg-blue-700"
+                          }`}
+                        >
+                          {unlockingJobId === job.id
+                            ? "Unlocking..."
+                            : `Use ${requiredTokens} token${requiredTokens === 1 ? "" : "s"} to unlock this offer`}
+                        </button>
+                      )}
                       <button
                         onClick={() => handleAcceptJob(job)}
-                        disabled={acceptingJobId === job.id || !canClaim}
+                        disabled={acceptingJobId === job.id || !hasUnlockedSelectedOffer}
                         className={`rounded-lg px-3 py-2 text-xs font-semibold text-white ${
-                          acceptingJobId === job.id || !canClaim
+                          acceptingJobId === job.id || !hasUnlockedSelectedOffer
                             ? "bg-gray-300 cursor-not-allowed"
                             : "bg-emerald-600 hover:bg-emerald-700"
                         }`}
                       >
                         {acceptingJobId === job.id
                           ? "Claiming..."
-                          : !canClaim
-                            ? "Top-up required"
+                          : !hasUnlockedSelectedOffer
+                            ? "Unlock required"
                             : "Claim from map"}
                       </button>
 
