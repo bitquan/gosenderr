@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { doc, updateDoc } from "firebase/firestore";
 import { LoadingState } from "@gosenderr/ui";
@@ -64,6 +64,12 @@ export default function CourierDashboardMapShell() {
   } | null>(null);
   const [unlockingJobId, setUnlockingJobId] = useState<string | null>(null);
   const [releasingReservation, setReleasingReservation] = useState(false);
+
+  const refreshTokenWallet = useCallback(async () => {
+    const wallet = await getTokenWalletSummary();
+    setTokenWallet({ available: wallet.available, reserved: wallet.reserved });
+    return wallet;
+  }, []);
 
   const transportMode =
     (userDoc?.courierProfile?.vehicleType as TransportMode | VehicleType) || "car";
@@ -187,6 +193,31 @@ export default function CourierDashboardMapShell() {
       mounted = false;
     };
   }, [uid]);
+
+  useEffect(() => {
+    if (!uid) return;
+
+    const refreshIfVisible = () => {
+      if (document.visibilityState === "visible") {
+        void refreshTokenWallet().catch((error) => {
+          console.error("Failed to refresh token wallet", error);
+        });
+      }
+    };
+
+    window.addEventListener("focus", refreshIfVisible);
+    document.addEventListener("visibilitychange", refreshIfVisible);
+
+    const intervalId = window.setInterval(() => {
+      void refreshIfVisible();
+    }, 15000);
+
+    return () => {
+      window.removeEventListener("focus", refreshIfVisible);
+      document.removeEventListener("visibilitychange", refreshIfVisible);
+      window.clearInterval(intervalId);
+    };
+  }, [uid, refreshTokenWallet]);
 
   const releaseReservation = async (reason: string) => {
     if (!tokenReservation || releasingReservation) return;
@@ -386,7 +417,14 @@ export default function CourierDashboardMapShell() {
       await releaseReservation("preview_switched_job");
     }
 
-    const availableTokens = tokenWallet?.available ?? 0;
+    let availableTokens = tokenWallet?.available ?? 0;
+    try {
+      const latestWallet = await refreshTokenWallet();
+      availableTokens = latestWallet.available;
+    } catch (error) {
+      console.error("Failed to refresh token wallet before unlock", error);
+    }
+
     if (availableTokens < requiredTokens) {
       alert(`Insufficient tokens. Requires ${requiredTokens}, available ${availableTokens}.`);
       return;
@@ -401,8 +439,7 @@ export default function CourierDashboardMapShell() {
         amount: requiredTokens,
       });
       try {
-        const wallet = await getTokenWalletSummary();
-        setTokenWallet({ available: wallet.available, reserved: wallet.reserved });
+        await refreshTokenWallet();
       } catch (error) {
         console.error("Failed to refresh wallet after reserve", error);
       }
