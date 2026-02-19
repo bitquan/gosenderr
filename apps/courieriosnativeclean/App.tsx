@@ -168,6 +168,20 @@ function AppContent() {
     isNativeEnabled &&
     courierStatus === 'pending';
 
+  const showStartupSplash = firebaseReady && (authLoading || flagsLoading);
+
+  if (showStartupSplash) {
+    return (
+      <View style={styles.fullScreen}>
+        <View style={styles.startupSplash}>
+          <ActivityIndicator color="#ffffff" size="large" />
+          <Text style={styles.startupSplashTitle}>GoSenderr Courier</Text>
+          <Text style={styles.item}>Starting app…</Text>
+        </View>
+      </View>
+    );
+  }
+
   const handleAuthSubmit = async () => {
     if (authBusy) return;
     if (!authUiReady) return;
@@ -254,14 +268,7 @@ function AppContent() {
         </View>
       )}
 
-      {firebaseReady && authLoading && (
-        <View style={styles.centered}>
-          <ActivityIndicator color="#ffffff" />
-          <Text style={styles.item}>Loading auth…</Text>
-        </View>
-      )}
-
-      {firebaseReady && !authLoading && !user && (
+      {firebaseReady && !authLoading && !flagsLoading && !user && (
         <KeyboardAvoidingView
           style={styles.authRoot}
           behavior={Platform.select({ios: 'padding', android: undefined})}
@@ -527,6 +534,18 @@ const styles = StyleSheet.create({
     marginTop: 24,
     alignItems: 'center',
     gap: 8,
+  },
+  startupSplash: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 24,
+  },
+  startupSplashTitle: {
+    color: '#f8fafc',
+    fontSize: 22,
+    fontWeight: '700',
   },
   pendingWrap: {
     marginTop: 16,
