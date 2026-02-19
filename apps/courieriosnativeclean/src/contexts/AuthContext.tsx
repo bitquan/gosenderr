@@ -35,7 +35,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let active = true;
 
     const ensureUserProfile = async (nextUser: User) => {
-      console.debug(`[Auth] ensureUserProfile start uid=${nextUser?.uid}`);
       if (!isFirebaseReady()) return;
       try {
         const userRef = doc(db, 'users', nextUser.uid);
@@ -86,10 +85,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const unsubscribe = onAuthStateChanged(authInstance, (nextUser: User | null) => {
       if (!active) return;
-      console.debug(`[Auth] onAuthStateChanged user=${nextUser?.uid ?? 'null'}`);
       setUser(nextUser);
       setLoading(false);
-      console.debug(`[Auth] loading=false user=${nextUser?.uid ?? 'none'}`);
       if (nextUser) {
         void ensureUserProfile(nextUser);
       }
@@ -102,15 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    console.debug(`[Auth] signIn requested email=${email?.slice(0,64)}`);
-    try {
-      const res = await signInWithEmail(email, password);
-      console.debug('[Auth] signIn resolved', { uid: res?.user?.uid });
-      return res;
-    } catch (err) {
-      console.debug('[Auth] signIn error', err);
-      throw err;
-    }
+    await signInWithEmail(email, password);
   };
 
   const signUp = async (email: string, password: string, fullName?: string) => {

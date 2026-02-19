@@ -16,7 +16,6 @@ import ReactAppDependencyProvider
 class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate, MessagingDelegate {
   var window: UIWindow?
   var reactBridge: RCTBridge?
-  private let keyboardDebugEnabled = ProcessInfo.processInfo.environment["IOS_KEYBOARD_DEBUG"] == "1"
 
   func application(
     _ application: UIApplication,
@@ -45,13 +44,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
       let rootViewController = makeRootViewController(bridge: bridge)
       window?.rootViewController = rootViewController
       window?.makeKeyAndVisible()
-    }
-
-    if keyboardDebugEnabled {
-      NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow(_:)), name: UIResponder.keyboardWillShowNotification, object: nil)
-      NotificationCenter.default.addObserver(self, selector: #selector(keyboardDidShow(_:)), name: UIResponder.keyboardDidShowNotification, object: nil)
-      NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide(_:)), name: UIResponder.keyboardWillHideNotification, object: nil)
-      NotificationCenter.default.addObserver(self, selector: #selector(keyboardDidHide(_:)), name: UIResponder.keyboardDidHideNotification, object: nil)
     }
 
     return true
@@ -183,26 +175,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
 #endif
   }
 
-  // Keyboard event monitoring for input debugging
-  @objc func keyboardWillShow(_ notification: Notification) {
-    guard keyboardDebugEnabled else { return }
-    NSLog("[Keyboard] willShow: \(notification.userInfo ?? [:])")
-  }
-
-  @objc func keyboardDidShow(_ notification: Notification) {
-    guard keyboardDebugEnabled else { return }
-    NSLog("[Keyboard] didShow: \(notification.userInfo ?? [:])")
-  }
-
-  @objc func keyboardWillHide(_ notification: Notification) {
-    guard keyboardDebugEnabled else { return }
-    NSLog("[Keyboard] willHide: \(notification.userInfo ?? [:])")
-  }
-
-  @objc func keyboardDidHide(_ notification: Notification) {
-    guard keyboardDebugEnabled else { return }
-    NSLog("[Keyboard] didHide: \(notification.userInfo ?? [:])")
-  }
 }
 
 @available(iOS 13.0, *)

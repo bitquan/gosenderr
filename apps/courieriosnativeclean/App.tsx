@@ -141,7 +141,6 @@ function AppContent() {
     courierStatus === 'pending';
 
   const handleAuthSubmit = async () => {
-    console.debug('[UI] handleAuthSubmit start', { authMode, email: email?.slice(0, 64) });
     if (authBusy) return;
     setError(null);
     const normalizedEmail = email.trim().toLowerCase();
@@ -156,21 +155,15 @@ function AppContent() {
 
     setAuthBusy(true);
     try {
-      // extra debug: confirm UI state before calling sign-in
-      console.debug('[UI] Signing in with state', { emailState: email, passwordLen: password?.length });
-
       if (authMode === 'signup') {
         await signUp(normalizedEmail, password, fullName.trim() || undefined);
       } else {
         await signIn(normalizedEmail, password);
       }
-      console.debug('[UI] handleAuthSubmit success');
     } catch (err: any) {
-      console.debug('[UI] handleAuthSubmit error', err);
       setError(err?.message ?? (authMode === 'signup' ? 'Sign up failed' : 'Sign in failed'));
     } finally {
       setAuthBusy(false);
-      console.debug('[UI] handleAuthSubmit end');
     }
   };
 
@@ -272,7 +265,6 @@ function AppContent() {
               blurOnSubmit={false}
               value={email}
               onFocus={() => {
-                console.debug('[UI] Email input onFocus');
                 recentEmailChangeRef.current = false;
                 setInputFallbackVisible(false);
                 if (inputStallTimerRef.current) clearTimeout(inputStallTimerRef.current);
@@ -282,7 +274,6 @@ function AppContent() {
                 }
                 inputStallTimerRef.current = setTimeout(() => {
                   if (!recentEmailChangeRef.current) {
-                    console.debug('[UI] Email input stalled — attempting blur/focus recovery');
                     setInputFallbackVisible(true);
                     emailInputRef.current?.blur();
                     setTimeout(() => emailInputRef.current?.focus(), 200);
@@ -290,7 +281,6 @@ function AppContent() {
                 }, 1200);
               }}
               onBlur={() => {
-                console.debug('[UI] Email input onBlur');
                 if (inputStallTimerRef.current) {
                   clearTimeout(inputStallTimerRef.current);
                   inputStallTimerRef.current = null;
@@ -299,7 +289,6 @@ function AppContent() {
               onChangeText={(text) => {
                 recentEmailChangeRef.current = true;
                 setInputFallbackVisible(false);
-                console.debug('[UI] Email onChangeText', text?.slice(0,64));
                 setEmail(text);
               }}
               onSubmitEditing={() => {
@@ -318,9 +307,7 @@ function AppContent() {
               autoComplete="password"
               returnKeyType="done"
               value={password}
-              onFocus={() => console.debug('[UI] Password input onFocus')}
-              onBlur={() => console.debug('[UI] Password input onBlur')}
-              onChangeText={(text) => { console.debug('[UI] Password onChangeText len=', String(text?.length)); setPassword(text); }}
+              onChangeText={setPassword}
               onSubmitEditing={handleAuthSubmit}
             />
 
@@ -387,7 +374,6 @@ function AppContent() {
                   onPress={() => {
                     setEmail('test@gosenderr.com');
                     setPassword('TestPass123');
-                    console.debug('[DEV] Quick-fill credentials');
                   }}
                 >
                   <Text style={styles.ghostButtonText}>Quick Fill</Text>
@@ -397,7 +383,6 @@ function AppContent() {
                   style={styles.ghostButton}
                   onPress={() => {
                     emailInputRef.current?.focus();
-                    console.debug('[DEV] Force focus email input');
                   }}
                 >
                   <Text style={styles.ghostButtonText}>Force Focus</Text>
