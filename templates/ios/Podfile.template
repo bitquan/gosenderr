@@ -19,20 +19,41 @@ end
 platform :ios, '16.0'
 prepare_react_native_project!
 
+module NullByteSafeFileRef
+  def add_file_reference(*args)
+    path_value = args.first
+    path_string = path_value.respond_to?(:to_path) ? path_value.to_path.to_s : path_value.to_s
+    return nil if path_string.include?("\u0000")
+    super
+  rescue ArgumentError => e
+    if e.message.include?('null byte')
+      Pod::UI.warn("Skipping invalid pod path due to null byte")
+      nil
+    else
+      raise
+    end
+  end
+end
+
+Pod::Project.prepend(NullByteSafeFileRef)
+
 # Keep new architecture disabled until explicitly migrated.
 ENV['RCT_NEW_ARCH_ENABLED'] = '0'
 
 target 'Senderrappios' do
   config = use_native_modules!
+  hermes_enabled = ENV.fetch('USE_HERMES', '1') == '1'
 
   use_react_native!(
     :path => config[:reactNativePath],
+    :hermes_enabled => hermes_enabled,
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
 
   # AppDelegate imports FirebaseCore directly.
   pod 'FirebaseCore', :modular_headers => true
   pod 'FirebaseCoreInternal', :modular_headers => true
+  pod 'FirebaseMessaging', :modular_headers => true
   pod 'GoogleUtilities', :modular_headers => true
 
   post_install do |installer|

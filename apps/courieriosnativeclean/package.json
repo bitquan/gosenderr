@@ -12,6 +12,7 @@
     "ios:pods:hermes-off": "cd ios && USE_HERMES=0 HERMES_ENABLED=0 pod install",
     "ios:prod-run:hermes-on": "cd ios && USE_HERMES=1 HERMES_ENABLED=1 xcodebuild -workspace Senderrappios.xcworkspace -scheme \"Senderr (Production)\" -configuration Release -sdk iphoneos clean build",
     "ios:prod-run:hermes-off": "cd ios && USE_HERMES=0 HERMES_ENABLED=0 xcodebuild -workspace Senderrappios.xcworkspace -scheme \"Senderr (Production)\" -configuration Release -sdk iphoneos clean build",
+    "verify:xcode-scripts": "bash ../../scripts/verify-xcode-script-outputpaths.sh",
     "lint": "eslint .",
     "start": "react-native start",
     "test": "jest"

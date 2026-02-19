@@ -10,6 +10,8 @@ import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
+  Keyboard,
+  LogBox,
   Platform,
   Pressable,
   ScrollView,
@@ -73,6 +75,7 @@ function AppContent() {
   const passwordInputRef = useRef<TextInput | null>(null);
   const recentEmailChangeRef = useRef(false);
   const inputStallTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mountedRef = useRef(true); // guard to avoid setState after unmount
 
   const firebaseReady = isFirebaseReady();
   const isNativeEnabled = Boolean(flags?.courier?.nativeV2) || (__DEV__ && devOverride);
@@ -88,22 +91,50 @@ function AppContent() {
     const unsubscribe = onSnapshot(
       doc(db, 'users', user.uid),
       (snapshot) => {
+        if (!mountedRef.current) return;
         setUserDoc(snapshot.exists() ? (snapshot.data() as Record<string, any>) : null);
         setUserDocLoading(false);
       },
-      () => setUserDocLoading(false),
+      () => {
+        if (!mountedRef.current) return;
+        setUserDocLoading(false);
+      },
     );
 
     return unsubscribe;
   }, [firebaseReady, user?.uid]);
 
   useEffect(() => {
-    // cleanup any pending input-stall timer
+    // cleanup any pending input-stall timer and mark unmounted
     return () => {
+      mountedRef.current = false;
       if (inputStallTimerRef.current) {
         clearTimeout(inputStallTimerRef.current);
         inputStallTimerRef.current = null;
       }
+    };
+  }, []);
+
+  // Suppress noisy shadow-view / unbalanced-calls warnings in DEV and add a
+  // keyboard watchdog to collect better signal if an input stall reproduces.
+  useEffect(() => {
+    if (__DEV__) {
+      LogBox.ignoreLogs([
+        'Could not locate shadow view with tag',
+        'Unbalanced calls to begin/end for tag',
+      ]);
+    }
+
+    const show = Keyboard.addListener('keyboardDidShow', () => {
+      // no-op: kept for future telemetry/hardening if needed
+    });
+    const hide = Keyboard.addListener('keyboardDidHide', () => {
+      // no-op
+    });
+
+    return () => {
+      show.remove();
+      hide.remove();
     };
   }, []);
 
@@ -161,9 +192,13 @@ function AppContent() {
         await signIn(normalizedEmail, password);
       }
     } catch (err: any) {
-      setError(err?.message ?? (authMode === 'signup' ? 'Sign up failed' : 'Sign in failed'));
+      if (mountedRef.current) {
+        setError(err?.message ?? (authMode === 'signup' ? 'Sign up failed' : 'Sign in failed'));
+      }
     } finally {
-      setAuthBusy(false);
+      if (mountedRef.current) {
+        setAuthBusy(false);
+      }
     }
   };
 
@@ -273,10 +308,15 @@ function AppContent() {
                   return;
                 }
                 inputStallTimerRef.current = setTimeout(() => {
+                  if (!mountedRef.current) return;
                   if (!recentEmailChangeRef.current) {
                     setInputFallbackVisible(true);
-                    emailInputRef.current?.blur();
-                    setTimeout(() => emailInputRef.current?.focus(), 200);
+                    try {
+                      emailInputRef.current?.blur();
+                      setTimeout(() => emailInputRef.current?.focus(), 200);
+                    } catch (e) {
+                      // ignore focus errors on unmounted refs
+                    }
                   }
                 }, 1200);
               }}
