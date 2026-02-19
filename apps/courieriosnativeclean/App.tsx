@@ -5,13 +5,11 @@
  * @format
  */
 
-import { Suspense, lazy, useEffect, useState, useRef } from 'react';
+import {Suspense, lazy, useEffect, useState, useRef} from 'react';
 import {
   ActivityIndicator,
-  Alert,
+  InteractionManager,
   KeyboardAvoidingView,
-  Keyboard,
-  LogBox,
   Platform,
   Pressable,
   ScrollView,
@@ -26,20 +24,20 @@ import {
   SafeAreaProvider,
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
-import { doc, onSnapshot } from 'firebase/firestore';
-import { AuthProvider } from './src/contexts/AuthContext';
-import { useAuth } from './src/hooks/useAuth';
-import { useFeatureFlags } from './src/hooks/useFeatureFlags';
-import { db, isFirebaseReady } from './src/lib/firebase';
+import {doc, onSnapshot} from 'firebase/firestore';
+import {AuthProvider} from './src/contexts/AuthContext';
+import {useAuth} from './src/hooks/useAuth';
+import {useFeatureFlags} from './src/hooks/useFeatureFlags';
+import {db, isFirebaseReady} from './src/lib/firebase';
 
 const MapShell = lazy(async () => {
   const module = await import('./src/screens/MapShell');
-  return { default: module.MapShell };
+  return {default: module.MapShell};
 });
 
 const CourierOnboarding = lazy(async () => {
   const module = await import('./src/components/CourierOnboarding');
-  return { default: module.CourierOnboarding };
+  return {default: module.CourierOnboarding};
 });
 
 function App() {
@@ -57,8 +55,8 @@ function App() {
 
 function AppContent() {
   const safeAreaInsets = useSafeAreaInsets();
-  const { user, loading: authLoading, signIn, signUp, signOut } = useAuth();
-  const { flags, loading: flagsLoading } = useFeatureFlags();
+  const {user, loading: authLoading, signIn, signUp, signOut} = useAuth();
+  const {flags, loading: flagsLoading} = useFeatureFlags();
   const [userDoc, setUserDoc] = useState<Record<string, any> | null>(null);
   const [userDocLoading, setUserDocLoading] = useState(false);
   const [fullName, setFullName] = useState('');
@@ -66,19 +64,18 @@ function AppContent() {
   const [password, setPassword] = useState('');
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
   const [authBusy, setAuthBusy] = useState(false);
+  const [authUiReady, setAuthUiReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [devOverride, setDevOverride] = useState(false);
-  const [inputFallbackVisible, setInputFallbackVisible] = useState(false);
 
-  // DEV: resilient input helpers to recover from device keyboard/session stalls
+  // Keep refs for return-key navigation and optional dev focus action.
   const emailInputRef = useRef<TextInput | null>(null);
   const passwordInputRef = useRef<TextInput | null>(null);
-  const recentEmailChangeRef = useRef(false);
-  const inputStallTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mountedRef = useRef(true); // guard to avoid setState after unmount
 
   const firebaseReady = isFirebaseReady();
-  const isNativeEnabled = Boolean(flags?.courier?.nativeV2) || (__DEV__ && devOverride);
+  const isNativeEnabled =
+    Boolean(flags?.courier?.nativeV2) || (__DEV__ && devOverride);
 
   useEffect(() => {
     if (!firebaseReady || !user?.uid) {
@@ -90,9 +87,11 @@ function AppContent() {
     setUserDocLoading(true);
     const unsubscribe = onSnapshot(
       doc(db, 'users', user.uid),
-      (snapshot) => {
+      snapshot => {
         if (!mountedRef.current) return;
-        setUserDoc(snapshot.exists() ? (snapshot.data() as Record<string, any>) : null);
+        setUserDoc(
+          snapshot.exists() ? (snapshot.data() as Record<string, any>) : null,
+        );
         setUserDocLoading(false);
       },
       () => {
@@ -105,44 +104,42 @@ function AppContent() {
   }, [firebaseReady, user?.uid]);
 
   useEffect(() => {
-    // cleanup any pending input-stall timer and mark unmounted
+    // mark unmounted to avoid setState in async handlers
     return () => {
       mountedRef.current = false;
-      if (inputStallTimerRef.current) {
-        clearTimeout(inputStallTimerRef.current);
-        inputStallTimerRef.current = null;
-      }
     };
   }, []);
 
-  // Suppress noisy shadow-view / unbalanced-calls warnings in DEV and add a
-  // keyboard watchdog to collect better signal if an input stall reproduces.
   useEffect(() => {
-    if (__DEV__) {
-      LogBox.ignoreLogs([
-        'Could not locate shadow view with tag',
-        'Unbalanced calls to begin/end for tag',
-      ]);
+    let cancelled = false;
+    let interactionHandle: {cancel?: () => void} | null = null;
+
+    const shouldPrepareAuthUi = firebaseReady && !authLoading && !user;
+    if (!shouldPrepareAuthUi) {
+      setAuthUiReady(false);
+      return;
     }
 
-    const show = Keyboard.addListener('keyboardDidShow', () => {
-      // no-op: kept for future telemetry/hardening if needed
-    });
-    const hide = Keyboard.addListener('keyboardDidHide', () => {
-      // no-op
+    setAuthUiReady(false);
+    interactionHandle = InteractionManager.runAfterInteractions(() => {
+      if (!cancelled && mountedRef.current) {
+        setAuthUiReady(true);
+      }
     });
 
     return () => {
-      show.remove();
-      hide.remove();
+      cancelled = true;
+      interactionHandle?.cancel?.();
     };
-  }, []);
+  }, [firebaseReady, authLoading, user]);
 
   const courierProfile = userDoc?.courierProfile || {};
   const courierStatus = String(courierProfile?.status || '').toLowerCase();
   const onboardingCompleted = Boolean(courierProfile?.onboardingCompleted);
   const rejectionReason =
-    typeof courierProfile?.rejectionReason === 'string' ? courierProfile.rejectionReason : '';
+    typeof courierProfile?.rejectionReason === 'string'
+      ? courierProfile.rejectionReason
+      : '';
 
   const canEnterMapShell =
     firebaseReady &&
@@ -173,6 +170,7 @@ function AppContent() {
 
   const handleAuthSubmit = async () => {
     if (authBusy) return;
+    if (!authUiReady) return;
     setError(null);
     const normalizedEmail = email.trim().toLowerCase();
     if (!normalizedEmail || !password) {
@@ -193,7 +191,10 @@ function AppContent() {
       }
     } catch (err: any) {
       if (mountedRef.current) {
-        setError(err?.message ?? (authMode === 'signup' ? 'Sign up failed' : 'Sign in failed'));
+        setError(
+          err?.message ??
+            (authMode === 'signup' ? 'Sign up failed' : 'Sign in failed'),
+        );
       }
     } finally {
       if (mountedRef.current) {
@@ -205,7 +206,13 @@ function AppContent() {
   if (canEnterMapShell) {
     return (
       <View style={styles.fullScreen}>
-        <Suspense fallback={<View style={styles.centered}><ActivityIndicator color="#ffffff" /><Text style={styles.item}>Loading map…</Text></View>}>
+        <Suspense
+          fallback={
+            <View style={styles.centered}>
+              <ActivityIndicator color="#ffffff" />
+              <Text style={styles.item}>Loading map…</Text>
+            </View>
+          }>
           <MapShell onSignOut={signOut} />
         </Suspense>
       </View>
@@ -215,7 +222,13 @@ function AppContent() {
   if (showOnboarding && user?.uid) {
     return (
       <View style={styles.fullScreen}>
-        <Suspense fallback={<View style={styles.centered}><ActivityIndicator color="#ffffff" /><Text style={styles.item}>Loading onboarding…</Text></View>}>
+        <Suspense
+          fallback={
+            <View style={styles.centered}>
+              <ActivityIndicator color="#ffffff" />
+              <Text style={styles.item}>Loading onboarding…</Text>
+            </View>
+          }>
           <CourierOnboarding
             uid={user.uid}
             initialProfile={courierProfile}
@@ -228,14 +241,16 @@ function AppContent() {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: safeAreaInsets.top + 24 }]}> 
+    <View style={[styles.container, {paddingTop: safeAreaInsets.top + 24}]}>
       <Text style={styles.title}>GoSenderr Courier V2</Text>
       <Text style={styles.subtitle}>Native courier app</Text>
 
       {!firebaseReady && (
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Firebase not configured</Text>
-          <Text style={styles.item}>Update firebase config to enable auth + flags.</Text>
+          <Text style={styles.item}>
+            Update firebase config to enable auth + flags.
+          </Text>
         </View>
       )}
 
@@ -248,197 +263,158 @@ function AppContent() {
 
       {firebaseReady && !authLoading && !user && (
         <KeyboardAvoidingView
-          behavior={Platform.select({ ios: 'padding', android: undefined })}
-          keyboardVerticalOffset={safeAreaInsets.top + 16}
-        >
-          <View style={styles.authCard}>
-            <View style={styles.authModeToggle}>
-              <Pressable
-                style={[styles.authModeButton, authMode === 'signin' && styles.authModeButtonActive]}
-                onPress={() => {
-                  setAuthMode('signin');
-                  setError(null);
+          style={styles.authRoot}
+          behavior={Platform.select({ios: 'padding', android: undefined})}
+          keyboardVerticalOffset={safeAreaInsets.top + 16}>
+          <ScrollView
+            style={styles.authScroll}
+            contentContainerStyle={styles.authScrollContent}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode={
+              Platform.OS === 'ios' ? 'interactive' : 'on-drag'
+            }
+            automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+            showsVerticalScrollIndicator={false}>
+            <View style={styles.authCard}>
+              {!authUiReady && (
+                <View style={styles.authInitWrap}>
+                  <ActivityIndicator color="#ffffff" />
+                  <Text style={styles.item}>Preparing sign in…</Text>
+                </View>
+              )}
+              <View style={styles.authModeToggle}>
+                <Pressable
+                  style={[
+                    styles.authModeButton,
+                    authMode === 'signin' && styles.authModeButtonActive,
+                  ]}
+                  disabled={!authUiReady || authBusy}
+                  onPress={() => {
+                    setAuthMode('signin');
+                    setError(null);
+                  }}>
+                  <Text
+                    style={[
+                      styles.authModeText,
+                      authMode === 'signin' && styles.authModeTextActive,
+                    ]}>
+                    Sign In
+                  </Text>
+                </Pressable>
+                <Pressable
+                  style={[
+                    styles.authModeButton,
+                    authMode === 'signup' && styles.authModeButtonActive,
+                  ]}
+                  disabled={!authUiReady || authBusy}
+                  onPress={() => {
+                    setAuthMode('signup');
+                    setError(null);
+                  }}>
+                  <Text
+                    style={[
+                      styles.authModeText,
+                      authMode === 'signup' && styles.authModeTextActive,
+                    ]}>
+                    Sign Up
+                  </Text>
+                </Pressable>
+              </View>
+
+              <Text style={styles.sectionTitle}>
+                {authMode === 'signup'
+                  ? 'Create courier account'
+                  : 'Welcome back'}
+              </Text>
+
+              {authMode === 'signup' && (
+                <TextInput
+                  style={styles.input}
+                  placeholder="Full name"
+                  placeholderTextColor="#9ca3af"
+                  value={fullName}
+                  onChangeText={setFullName}
+                  editable={authUiReady && !authBusy}
+                />
+              )}
+
+              <TextInput
+                ref={ref => (emailInputRef.current = ref)}
+                style={styles.input}
+                placeholder="Email"
+                placeholderTextColor="#9ca3af"
+                autoCapitalize="none"
+                autoCorrect={false}
+                spellCheck={false}
+                textContentType="username"
+                autoComplete="email"
+                keyboardType="email-address"
+                returnKeyType="next"
+                blurOnSubmit={false}
+                value={email}
+                onChangeText={setEmail}
+                editable={authUiReady && !authBusy}
+                onSubmitEditing={() => {
+                  passwordInputRef.current?.focus();
                 }}
-              >
-                <Text style={[styles.authModeText, authMode === 'signin' && styles.authModeTextActive]}>Sign In</Text>
-              </Pressable>
+              />
+              <TextInput
+                ref={ref => (passwordInputRef.current = ref)}
+                style={styles.input}
+                placeholder="Password"
+                placeholderTextColor="#9ca3af"
+                secureTextEntry
+                autoCorrect={false}
+                spellCheck={false}
+                textContentType="password"
+                autoComplete="password"
+                returnKeyType="done"
+                value={password}
+                onChangeText={setPassword}
+                editable={authUiReady && !authBusy}
+                onSubmitEditing={handleAuthSubmit}
+              />
+
+              {/* DEV helpers: quick-fill + manual focus for faster auth iteration */}
+              {__DEV__ && (
+                <View style={{flexDirection: 'row', marginTop: 8}}>
+                  <Pressable
+                    style={[styles.ghostButton, {marginRight: 8}]}
+                    onPress={() => {
+                      setEmail('test@gosenderr.com');
+                      setPassword('TestPass123');
+                    }}>
+                    <Text style={styles.ghostButtonText}>Quick Fill</Text>
+                  </Pressable>
+
+                  <Pressable
+                    style={styles.ghostButton}
+                    onPress={() => {
+                      emailInputRef.current?.focus();
+                    }}>
+                    <Text style={styles.ghostButtonText}>Force Focus</Text>
+                  </Pressable>
+                </View>
+              )}
+
+              {error ? <Text style={styles.error}>{error}</Text> : null}
               <Pressable
-                style={[styles.authModeButton, authMode === 'signup' && styles.authModeButtonActive]}
-                onPress={() => {
-                  setAuthMode('signup');
-                  setError(null);
-                }}
-              >
-                <Text style={[styles.authModeText, authMode === 'signup' && styles.authModeTextActive]}>Sign Up</Text>
+                style={[
+                  styles.primaryButton,
+                  (authBusy || !authUiReady) && styles.primaryButtonDisabled,
+                ]}
+                onPress={handleAuthSubmit}
+                disabled={authBusy || !authUiReady}>
+                {authBusy ? (
+                  <ActivityIndicator color="#ffffff" />
+                ) : (
+                  <Text style={styles.primaryButtonText}>
+                    {authMode === 'signup' ? 'Create Account' : 'Sign In'}
+                  </Text>
+                )}
               </Pressable>
             </View>
-
-            <Text style={styles.sectionTitle}>{authMode === 'signup' ? 'Create courier account' : 'Welcome back'}</Text>
-
-            {authMode === 'signup' && (
-              <TextInput
-                style={styles.input}
-                placeholder="Full name"
-                placeholderTextColor="#9ca3af"
-                value={fullName}
-                onChangeText={setFullName}
-              />
-            )}
-
-            <TextInput
-              ref={(ref) => (emailInputRef.current = ref)}
-              style={styles.input}
-              placeholder="Email"
-              placeholderTextColor="#9ca3af"
-              autoCapitalize="none"
-              autoCorrect={false}
-              spellCheck={false}
-              textContentType="username"
-              autoComplete="email"
-              keyboardType="email-address"
-              returnKeyType="next"
-              blurOnSubmit={false}
-              value={email}
-              onFocus={() => {
-                recentEmailChangeRef.current = false;
-                setInputFallbackVisible(false);
-                if (inputStallTimerRef.current) clearTimeout(inputStallTimerRef.current);
-                if (Platform.OS === 'ios') {
-                  setInputFallbackVisible(true);
-                  return;
-                }
-                inputStallTimerRef.current = setTimeout(() => {
-                  if (!mountedRef.current) return;
-                  if (!recentEmailChangeRef.current) {
-                    setInputFallbackVisible(true);
-                    try {
-                      emailInputRef.current?.blur();
-                      setTimeout(() => emailInputRef.current?.focus(), 200);
-                    } catch (e) {
-                      // ignore focus errors on unmounted refs
-                    }
-                  }
-                }, 1200);
-              }}
-              onBlur={() => {
-                if (inputStallTimerRef.current) {
-                  clearTimeout(inputStallTimerRef.current);
-                  inputStallTimerRef.current = null;
-                }
-              }}
-              onChangeText={(text) => {
-                recentEmailChangeRef.current = true;
-                setInputFallbackVisible(false);
-                setEmail(text);
-              }}
-              onSubmitEditing={() => {
-                passwordInputRef.current?.focus();
-              }}
-            />
-            <TextInput
-              ref={(ref) => (passwordInputRef.current = ref)}
-              style={styles.input}
-              placeholder="Password"
-              placeholderTextColor="#9ca3af"
-              secureTextEntry
-              autoCorrect={false}
-              spellCheck={false}
-              textContentType="password"
-              autoComplete="password"
-              returnKeyType="done"
-              value={password}
-              onChangeText={setPassword}
-              onSubmitEditing={handleAuthSubmit}
-            />
-
-            {inputFallbackVisible && Platform.OS === 'ios' && (
-              <View style={{ flexDirection: 'row', marginTop: 4, marginBottom: 8 }}>
-                <Pressable
-                  style={[styles.ghostButton, { marginRight: 8, marginTop: 0 }]}
-                  onPress={() => {
-                    Alert.prompt(
-                      'Enter email',
-                      undefined,
-                      [
-                        { text: 'Cancel', style: 'cancel' },
-                        {
-                          text: 'Use',
-                          onPress: (value) => {
-                            if (typeof value === 'string') {
-                              setEmail(value.trim());
-                              setInputFallbackVisible(false);
-                            }
-                          },
-                        },
-                      ],
-                      'plain-text',
-                      email,
-                    );
-                  }}
-                >
-                  <Text style={styles.ghostButtonText}>Enter Email</Text>
-                </Pressable>
-
-                <Pressable
-                  style={[styles.ghostButton, { marginTop: 0 }]}
-                  onPress={() => {
-                    Alert.prompt(
-                      'Enter password',
-                      undefined,
-                      [
-                        { text: 'Cancel', style: 'cancel' },
-                        {
-                          text: 'Use',
-                          onPress: (value) => {
-                            if (typeof value === 'string') {
-                              setPassword(value);
-                              setInputFallbackVisible(false);
-                            }
-                          },
-                        },
-                      ],
-                      'secure-text',
-                    );
-                  }}
-                >
-                  <Text style={styles.ghostButtonText}>Enter Password</Text>
-                </Pressable>
-              </View>
-            )}
-
-            {/* DEV helpers: quick-fill + force-focus to bypass device keyboard stalls */}
-            {__DEV__ && (
-              <View style={{ flexDirection: 'row', marginTop: 8 }}>
-                <Pressable
-                  style={[styles.ghostButton, { marginRight: 8 }]}
-                  onPress={() => {
-                    setEmail('test@gosenderr.com');
-                    setPassword('TestPass123');
-                  }}
-                >
-                  <Text style={styles.ghostButtonText}>Quick Fill</Text>
-                </Pressable>
-
-                <Pressable
-                  style={styles.ghostButton}
-                  onPress={() => {
-                    emailInputRef.current?.focus();
-                  }}
-                >
-                  <Text style={styles.ghostButtonText}>Force Focus</Text>
-                </Pressable>
-              </View>
-            )}
-
-            {error ? <Text style={styles.error}>{error}</Text> : null}
-            <Pressable style={[styles.primaryButton, authBusy && styles.primaryButtonDisabled]} onPress={handleAuthSubmit} disabled={authBusy}>
-              {authBusy ? (
-                <ActivityIndicator color="#ffffff" />
-              ) : (
-                <Text style={styles.primaryButtonText}>{authMode === 'signup' ? 'Create Account' : 'Sign In'}</Text>
-              )}
-            </Pressable>
-          </View>
+          </ScrollView>
         </KeyboardAvoidingView>
       )}
 
@@ -449,19 +425,27 @@ function AppContent() {
         </View>
       )}
 
-      {firebaseReady && !authLoading && user && !flagsLoading && isNativeEnabled && userDocLoading && (
-        <View style={styles.centered}>
-          <ActivityIndicator color="#ffffff" />
-          <Text style={styles.item}>Loading courier profile…</Text>
-        </View>
-      )}
+      {firebaseReady &&
+        !authLoading &&
+        user &&
+        !flagsLoading &&
+        isNativeEnabled &&
+        userDocLoading && (
+          <View style={styles.centered}>
+            <ActivityIndicator color="#ffffff" />
+            <Text style={styles.item}>Loading courier profile…</Text>
+          </View>
+        )}
 
       {showPendingReview && (
-        <ScrollView style={styles.pendingWrap} contentContainerStyle={styles.pendingContent}>
+        <ScrollView
+          style={styles.pendingWrap}
+          contentContainerStyle={styles.pendingContent}>
           <View style={styles.pendingCard}>
             <Text style={styles.pendingTitle}>Application Under Review</Text>
             <Text style={styles.pendingText}>
-              Your onboarding is submitted and pending approval. You’ll be able to go online once approved.
+              Your onboarding is submitted and pending approval. You’ll be able
+              to go online once approved.
             </Text>
             <Pressable style={styles.ghostButton} onPress={signOut}>
               <Text style={styles.ghostButtonText}>Sign Out</Text>
@@ -470,25 +454,33 @@ function AppContent() {
         </ScrollView>
       )}
 
-      {firebaseReady && !authLoading && user && !flagsLoading && !isNativeEnabled && (
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Feature disabled</Text>
-          <Text style={styles.item}>Enable courier.nativeV2 in featureFlags/config.</Text>
-          {__DEV__ && (
-            <Pressable
-              style={[styles.secondaryButton, devOverride && styles.secondaryButtonActive]}
-              onPress={() => setDevOverride((prev) => !prev)}
-            >
-              <Text style={styles.secondaryButtonText}>
-                {devOverride ? 'Disable' : 'Enable'} Dev Override
-              </Text>
+      {firebaseReady &&
+        !authLoading &&
+        user &&
+        !flagsLoading &&
+        !isNativeEnabled && (
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Feature disabled</Text>
+            <Text style={styles.item}>
+              Enable courier.nativeV2 in featureFlags/config.
+            </Text>
+            {__DEV__ && (
+              <Pressable
+                style={[
+                  styles.secondaryButton,
+                  devOverride && styles.secondaryButtonActive,
+                ]}
+                onPress={() => setDevOverride(prev => !prev)}>
+                <Text style={styles.secondaryButtonText}>
+                  {devOverride ? 'Disable' : 'Enable'} Dev Override
+                </Text>
+              </Pressable>
+            )}
+            <Pressable style={styles.ghostButton} onPress={signOut}>
+              <Text style={styles.ghostButtonText}>Sign Out</Text>
             </Pressable>
-          )}
-          <Pressable style={styles.ghostButton} onPress={signOut}>
-            <Text style={styles.ghostButtonText}>Sign Out</Text>
-          </Pressable>
-        </View>
-      )}
+          </View>
+        )}
     </View>
   );
 }
@@ -594,6 +586,20 @@ const styles = StyleSheet.create({
     marginTop: 16,
     borderWidth: 1,
     borderColor: '#1f2937',
+  },
+  authInitWrap: {
+    alignItems: 'center',
+    marginBottom: 10,
+    gap: 8,
+  },
+  authRoot: {
+    flex: 1,
+  },
+  authScroll: {
+    flex: 1,
+  },
+  authScrollContent: {
+    paddingBottom: 24,
   },
   authModeToggle: {
     flexDirection: 'row',
