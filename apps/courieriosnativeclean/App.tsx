@@ -276,14 +276,16 @@ function AppContent() {
                 recentEmailChangeRef.current = false;
                 setInputFallbackVisible(false);
                 if (inputStallTimerRef.current) clearTimeout(inputStallTimerRef.current);
+                if (Platform.OS === 'ios') {
+                  setInputFallbackVisible(true);
+                  return;
+                }
                 inputStallTimerRef.current = setTimeout(() => {
                   if (!recentEmailChangeRef.current) {
                     console.debug('[UI] Email input stalled — attempting blur/focus recovery');
                     setInputFallbackVisible(true);
-                    if (Platform.OS !== 'ios') {
-                      emailInputRef.current?.blur();
-                      setTimeout(() => emailInputRef.current?.focus(), 200);
-                    }
+                    emailInputRef.current?.blur();
+                    setTimeout(() => emailInputRef.current?.focus(), 200);
                   }
                 }, 1200);
               }}
