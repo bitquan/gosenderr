@@ -3,11 +3,13 @@ import { getFirestore, Firestore } from 'firebase/firestore';
 import { FirebaseStorage, getStorage } from 'firebase/storage';
 import {
   Auth,
+  createUserWithEmailAndPassword,
   getAuth,
   initializeAuth,
   getReactNativePersistence,
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
+  updateProfile,
 } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -57,6 +59,16 @@ export const getAuthSafe = () => authInstance ?? null;
 export async function signInWithEmail(email: string, password: string) {
   if (!authInstance) throw new Error('Firebase Auth not initialized');
   return signInWithEmailAndPassword(authInstance, email, password);
+}
+
+export async function signUpWithEmail(email: string, password: string, fullName?: string) {
+  if (!authInstance) throw new Error('Firebase Auth not initialized');
+  const credential = await createUserWithEmailAndPassword(authInstance, email, password);
+  const name = fullName?.trim();
+  if (name) {
+    await updateProfile(credential.user, { displayName: name });
+  }
+  return credential;
 }
 
 export async function signOut() {

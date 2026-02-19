@@ -1,6 +1,7 @@
 import { doc, getDoc } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { getDownloadURL, ref, uploadString } from 'firebase/storage';
+import { Platform } from 'react-native';
 import { app, db, storage } from './firebase';
 import type { Job, JobStatus } from '../types/job';
 
@@ -223,7 +224,9 @@ async function createProofPhoto(params: {
   let photoUrl: string | null = null;
   let photoDataUrlStored: string | null = null;
 
-  if (storage) {
+  const shouldUseStorageUpload = Boolean(storage) && Platform.OS === 'web';
+
+  if (shouldUseStorageUpload) {
     try {
       const storageRef = ref(storage, `job-photos/${jobId}/${photoId}.jpg`);
       await uploadString(storageRef, photoDataUrl, 'data_url');

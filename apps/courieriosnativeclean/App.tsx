@@ -8,6 +8,8 @@
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StatusBar,
@@ -44,12 +46,15 @@ function App() {
 
 function AppContent() {
   const safeAreaInsets = useSafeAreaInsets();
-  const { user, loading: authLoading, signIn, signOut } = useAuth();
+  const { user, loading: authLoading, signIn, signUp, signOut } = useAuth();
   const { flags, loading: flagsLoading } = useFeatureFlags();
   const [userDoc, setUserDoc] = useState<Record<string, any> | null>(null);
   const [userDocLoading, setUserDocLoading] = useState(false);
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
+  const [authBusy, setAuthBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [devOverride, setDevOverride] = useState(false);
 
@@ -109,12 +114,30 @@ function AppContent() {
     isNativeEnabled &&
     courierStatus === 'pending';
 
-  const handleSignIn = async () => {
+  const handleAuthSubmit = async () => {
+    if (authBusy) return;
     setError(null);
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail || !password) {
+      setError('Email and password are required.');
+      return;
+    }
+    if (authMode === 'signup' && password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+
+    setAuthBusy(true);
     try {
-      await signIn(email.trim(), password);
+      if (authMode === 'signup') {
+        await signUp(normalizedEmail, password, fullName.trim() || undefined);
+      } else {
+        await signIn(normalizedEmail, password);
+      }
     } catch (err: any) {
-      setError(err?.message ?? 'Sign in failed');
+      setError(err?.message ?? (authMode === 'signup' ? 'Sign up failed' : 'Sign in failed'));
+    } finally {
+      setAuthBusy(false);
     }
   };
 
@@ -159,30 +182,71 @@ function AppContent() {
       )}
 
       {firebaseReady && !authLoading && !user && (
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Sign in</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            placeholderTextColor="#9ca3af"
-            autoCapitalize="none"
-            keyboardType="email-address"
-            value={email}
-            onChangeText={setEmail}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            placeholderTextColor="#9ca3af"
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-          />
-          {error ? <Text style={styles.error}>{error}</Text> : null}
-          <Pressable style={styles.primaryButton} onPress={handleSignIn}>
-            <Text style={styles.primaryButtonText}>Sign In</Text>
-          </Pressable>
-        </View>
+        <KeyboardAvoidingView
+          behavior={Platform.select({ ios: 'padding', android: undefined })}
+          keyboardVerticalOffset={safeAreaInsets.top + 16}
+        >
+          <View style={styles.authCard}>
+            <View style={styles.authModeToggle}>
+              <Pressable
+                style={[styles.authModeButton, authMode === 'signin' && styles.authModeButtonActive]}
+                onPress={() => {
+                  setAuthMode('signin');
+                  setError(null);
+                }}
+              >
+                <Text style={[styles.authModeText, authMode === 'signin' && styles.authModeTextActive]}>Sign In</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.authModeButton, authMode === 'signup' && styles.authModeButtonActive]}
+                onPress={() => {
+                  setAuthMode('signup');
+                  setError(null);
+                }}
+              >
+                <Text style={[styles.authModeText, authMode === 'signup' && styles.authModeTextActive]}>Sign Up</Text>
+              </Pressable>
+            </View>
+
+            <Text style={styles.sectionTitle}>{authMode === 'signup' ? 'Create courier account' : 'Welcome back'}</Text>
+
+            {authMode === 'signup' && (
+              <TextInput
+                style={styles.input}
+                placeholder="Full name"
+                placeholderTextColor="#9ca3af"
+                value={fullName}
+                onChangeText={setFullName}
+              />
+            )}
+
+            <TextInput
+              style={styles.input}
+              placeholder="Email"
+              placeholderTextColor="#9ca3af"
+              autoCapitalize="none"
+              keyboardType="email-address"
+              value={email}
+              onChangeText={setEmail}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Password"
+              placeholderTextColor="#9ca3af"
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+            />
+            {error ? <Text style={styles.error}>{error}</Text> : null}
+            <Pressable style={[styles.primaryButton, authBusy && styles.primaryButtonDisabled]} onPress={handleAuthSubmit} disabled={authBusy}>
+              {authBusy ? (
+                <ActivityIndicator color="#ffffff" />
+              ) : (
+                <Text style={styles.primaryButtonText}>{authMode === 'signup' ? 'Create Account' : 'Sign In'}</Text>
+              )}
+            </Pressable>
+          </View>
+        </KeyboardAvoidingView>
       )}
 
       {firebaseReady && !authLoading && user && flagsLoading && (
@@ -323,9 +387,43 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
   },
+  primaryButtonDisabled: {
+    opacity: 0.65,
+  },
   primaryButtonText: {
     color: '#ffffff',
     fontWeight: '600',
+  },
+  authCard: {
+    backgroundColor: '#111827',
+    borderRadius: 18,
+    padding: 18,
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: '#1f2937',
+  },
+  authModeToggle: {
+    flexDirection: 'row',
+    backgroundColor: '#0b0f1a',
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 14,
+  },
+  authModeButton: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  authModeButtonActive: {
+    backgroundColor: '#6B4EFF',
+  },
+  authModeText: {
+    color: '#9ca3af',
+    fontWeight: '600',
+  },
+  authModeTextActive: {
+    color: '#ffffff',
   },
   secondaryButton: {
     marginTop: 12,
