@@ -15,6 +15,8 @@ import ReactAppDependencyProvider
 @objc(AppDelegate)
 class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate, MessagingDelegate {
   var window: UIWindow?
+  var reactBridge: RCTBridge?
+  private let keyboardDebugEnabled = ProcessInfo.processInfo.environment["IOS_KEYBOARD_DEBUG"] == "1"
 
   func application(
     _ application: UIApplication,
@@ -31,34 +33,44 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     UNUserNotificationCenter.current().delegate = self
     application.registerForRemoteNotifications()
 
-    window = UIWindow(frame: UIScreen.main.bounds)
-
-    guard let jsBundleURL = resolveJSBundleURL() else {
-      NSLog("Failed to resolve JS bundle URL")
+    guard let bridge = buildReactBridge(launchOptions: launchOptions) else {
       return false
     }
+    reactBridge = bridge
 
-    NSLog("[AppDelegate] resolved JS bundle URL: %{public}@", jsBundleURL.absoluteString)
-
-
-    guard let bridge = RCTBridge(bundleURL: jsBundleURL, moduleProvider: nil, launchOptions: launchOptions) else {
-      NSLog("Failed to create React bridge")
-      return false
+    if #available(iOS 13.0, *) {
+      // Window/root view creation happens in SceneDelegate.
+    } else {
+      window = UIWindow(frame: UIScreen.main.bounds)
+      let rootViewController = makeRootViewController(bridge: bridge)
+      window?.rootViewController = rootViewController
+      window?.makeKeyAndVisible()
     }
 
-    let rootView = RCTRootView(bridge: bridge, moduleName: "Senderr", initialProperties: nil)
-    let rootViewController = UIViewController()
-    rootViewController.view = rootView
-    window?.rootViewController = rootViewController
-    window?.makeKeyAndVisible()
-
-    // Add keyboard event monitoring for input debugging
-    NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow(_:)), name: UIResponder.keyboardWillShowNotification, object: nil)
-    NotificationCenter.default.addObserver(self, selector: #selector(keyboardDidShow(_:)), name: UIResponder.keyboardDidShowNotification, object: nil)
-    NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide(_:)), name: UIResponder.keyboardWillHideNotification, object: nil)
-    NotificationCenter.default.addObserver(self, selector: #selector(keyboardDidHide(_:)), name: UIResponder.keyboardDidHideNotification, object: nil)
+    if keyboardDebugEnabled {
+      NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow(_:)), name: UIResponder.keyboardWillShowNotification, object: nil)
+      NotificationCenter.default.addObserver(self, selector: #selector(keyboardDidShow(_:)), name: UIResponder.keyboardDidShowNotification, object: nil)
+      NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide(_:)), name: UIResponder.keyboardWillHideNotification, object: nil)
+      NotificationCenter.default.addObserver(self, selector: #selector(keyboardDidHide(_:)), name: UIResponder.keyboardDidHideNotification, object: nil)
+    }
 
     return true
+  }
+
+  @available(iOS 13.0, *)
+  func application(
+    _ application: UIApplication,
+    configurationForConnecting connectingSceneSession: UISceneSession,
+    options: UIScene.ConnectionOptions
+  ) -> UISceneConfiguration {
+    UISceneConfiguration(name: "Default Configuration", sessionRole: connectingSceneSession.role)
+  }
+
+  @available(iOS 13.0, *)
+  func application(
+    _ application: UIApplication,
+    didDiscardSceneSessions sceneSessions: Set<UISceneSession>
+  ) {
   }
 
   private func configureFirebaseIfAvailable() {
@@ -116,7 +128,30 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     completionHandler(.newData)
   }
 
-  private func resolveJSBundleURL() -> URL? {
+  func buildReactBridge(launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> RCTBridge? {
+    guard let jsBundleURL = resolveJSBundleURL() else {
+      NSLog("Failed to resolve JS bundle URL")
+      return nil
+    }
+
+    NSLog("[AppDelegate] resolved JS bundle URL: %{public}@", jsBundleURL.absoluteString)
+
+    guard let bridge = RCTBridge(bundleURL: jsBundleURL, moduleProvider: nil, launchOptions: launchOptions) else {
+      NSLog("Failed to create React bridge")
+      return nil
+    }
+
+    return bridge
+  }
+
+  func makeRootViewController(bridge: RCTBridge) -> UIViewController {
+    let rootView = RCTRootView(bridge: bridge, moduleName: "Senderr", initialProperties: nil)
+    let rootViewController = UIViewController()
+    rootViewController.view = rootView
+    return rootViewController
+  }
+
+  func resolveJSBundleURL() -> URL? {
 #if DEBUG
     #if !targetEnvironment(simulator)
     if let bundled = Bundle.main.url(forResource: "main", withExtension: "jsbundle") {
@@ -150,18 +185,46 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
 
   // Keyboard event monitoring for input debugging
   @objc func keyboardWillShow(_ notification: Notification) {
+    guard keyboardDebugEnabled else { return }
     NSLog("[Keyboard] willShow: \(notification.userInfo ?? [:])")
   }
 
   @objc func keyboardDidShow(_ notification: Notification) {
+    guard keyboardDebugEnabled else { return }
     NSLog("[Keyboard] didShow: \(notification.userInfo ?? [:])")
   }
 
   @objc func keyboardWillHide(_ notification: Notification) {
+    guard keyboardDebugEnabled else { return }
     NSLog("[Keyboard] willHide: \(notification.userInfo ?? [:])")
   }
 
   @objc func keyboardDidHide(_ notification: Notification) {
+    guard keyboardDebugEnabled else { return }
     NSLog("[Keyboard] didHide: \(notification.userInfo ?? [:])")
+  }
+}
+
+@available(iOS 13.0, *)
+class SceneDelegate: UIResponder, UIWindowSceneDelegate {
+  var window: UIWindow?
+
+  func scene(
+    _ scene: UIScene,
+    willConnectTo session: UISceneSession,
+    options connectionOptions: UIScene.ConnectionOptions
+  ) {
+    guard let windowScene = scene as? UIWindowScene else { return }
+    guard let appDelegate = UIApplication.shared.delegate as? AppDelegate else { return }
+
+    let bridge = appDelegate.reactBridge ?? appDelegate.buildReactBridge(launchOptions: nil)
+    guard let bridge else { return }
+    appDelegate.reactBridge = bridge
+
+    let window = UIWindow(windowScene: windowScene)
+    window.rootViewController = appDelegate.makeRootViewController(bridge: bridge)
+    self.window = window
+    appDelegate.window = window
+    window.makeKeyAndVisible()
   }
 }
