@@ -116,6 +116,7 @@
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				E4CF99A6F3F2F5AF5151D538 /* [CP] Embed Pods Frameworks */,
+				F4A8D1C71B3E4F5A67890BCD /* Strip Bitcode (Release) */,
 				383B8D81FEAA882DF52F80CC /* [CP] Copy Pods Resources */,
 				052F58A98EE4079F735C232B /* [CP-User] [RNFB] Core Configuration */,
 			);
@@ -259,6 +260,21 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Senderrappios/Pods-Senderrappios-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
+		F4A8D1C71B3E4F5A67890BCD /* Strip Bitcode (Release) */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Strip Bitcode (Release)";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if [ \"${CONFIGURATION}\" != \"Release\" ] || [ \"${PLATFORM_NAME}\" != \"iphoneos\" ]; then\n  exit 0\nfi\n\nFRAMEWORKS_DIR=\"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}\"\nBITCODE_STRIP=\"$(xcrun --find bitcode_strip)\"\n\nfor FRAMEWORK in MapboxCommon.framework MapboxCoreMaps.framework MapboxMobileEvents.framework; do\n  BINARY=\"${FRAMEWORKS_DIR}/${FRAMEWORK}/${FRAMEWORK%.framework}\"\n  if [ -f \"${BINARY}\" ]; then\n    \"${BITCODE_STRIP}\" \"${BINARY}\" -r -o \"${BINARY}\"\n  fi\ndone\n";
+			showEnvVarsInLog = 0;
+		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -284,7 +300,7 @@
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CODE_SIGN_ENTITLEMENTS = Senderrappios/Senderrappios.entitlements;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = G27DM624XF;
 				ENABLE_BITCODE = NO;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
@@ -321,8 +337,10 @@
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CODE_SIGN_ENTITLEMENTS = Senderrappios/Senderrappios.entitlements;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = G27DM624XF;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_BITCODE = NO;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_INHIBIT_ALL_WARNINGS = NO;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
