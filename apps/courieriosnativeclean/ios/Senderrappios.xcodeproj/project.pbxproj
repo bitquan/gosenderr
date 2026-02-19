@@ -204,7 +204,7 @@
 			);
 			name = "[CP-User] [RNFB] Core Configuration";
 			outputPaths = (
-				"${BUILT_PRODUCTS_DIR}/${INFOPLIST_PATH}",
+				"${DERIVED_FILE_DIR}/rnfb-core-config.stamp",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -236,14 +236,11 @@
 			);
 			name = "Re-sign Modified Frameworks (Release)";
 			outputPaths = (
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/MapboxCommon.framework/MapboxCommon",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/MapboxCoreMaps.framework/MapboxCoreMaps",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/MapboxMobileEvents.framework/MapboxMobileEvents",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermes.framework/hermes",
+				"${DERIVED_FILE_DIR}/resign-modified-frameworks-release.stamp",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "FRAMEWORKS_DIR=\"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}\"\nif [ \"${CODE_SIGNING_ALLOWED}\" != \"NO\" ] && [ -n \"${EXPANDED_CODE_SIGN_IDENTITY}\" ]; then\n  echo \"info: re-signing embedded frameworks\"\n  for FRAMEWORK in MapboxCommon.framework MapboxCoreMaps.framework MapboxMobileEvents.framework hermes.framework; do\n    BIN_PATH=\"${FRAMEWORKS_DIR}/${FRAMEWORK}/${FRAMEWORK%.framework}\"\n    if [ -f \"${BIN_PATH}\" ]; then\n      /usr/bin/codesign --force --sign \"${EXPANDED_CODE_SIGN_IDENTITY}\" --preserve-metadata=identifier,entitlements \"${BIN_PATH}\" || echo \"warning: codesign failed for ${BIN_PATH}\"\n    fi\n  done\nfi\n";
+			shellScript = "FRAMEWORKS_DIR=\"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}\"\nif [ \"${CODE_SIGNING_ALLOWED}\" != \"NO\" ] && [ -n \"${EXPANDED_CODE_SIGN_IDENTITY}\" ]; then\n  echo \"info: re-signing embedded frameworks\"\n  for FRAMEWORK in MapboxCommon.framework MapboxCoreMaps.framework MapboxMobileEvents.framework hermes.framework; do\n    BIN_PATH=\"${FRAMEWORKS_DIR}/${FRAMEWORK}/${FRAMEWORK%.framework}\"\n    if [ -f \"${BIN_PATH}\" ]; then\n      /usr/bin/codesign --force --sign \"${EXPANDED_CODE_SIGN_IDENTITY}\" --preserve-metadata=identifier,entitlements \"${BIN_PATH}\" || echo \"warning: codesign failed for ${BIN_PATH}\"\n    fi\n  done\nfi\nmkdir -p \"${DERIVED_FILE_DIR}\"\n: > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 		};
 		E3FDB19AE97360D828D69151 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -293,14 +290,11 @@
 			);
 			name = "Strip Bitcode (Release)";
 			outputPaths = (
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/MapboxCommon.framework/MapboxCommon",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/MapboxCoreMaps.framework/MapboxCoreMaps",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/MapboxMobileEvents.framework/MapboxMobileEvents",
-				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}",
+				"${DERIVED_FILE_DIR}/strip-bitcode-release.stamp",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [ \"${CONFIGURATION}\" != \"Release\" ] || [ \"${PLATFORM_NAME}\" != \"iphoneos\" ]; then\n  exit 0\nfi\n\nFRAMEWORKS_DIR=\"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}\"\nBITCODE_STRIP=\"$(xcrun --find bitcode_strip)\"\nDSYMUTIL=\"$(xcrun --find dsymutil)\"\nARCHIVE_DSYMS_DIR=\"${ARCHIVE_DSYMS_PATH:-${DWARF_DSYM_FOLDER_PATH}}\"\n\nmkdir -p \"${ARCHIVE_DSYMS_DIR}\"\n\nfor FRAMEWORK in MapboxCommon.framework MapboxCoreMaps.framework MapboxMobileEvents.framework; do\n  BINARY=\"${FRAMEWORKS_DIR}/${FRAMEWORK}/${FRAMEWORK%.framework}\"\n  if [ -f \"${BINARY}\" ]; then\n    \"${BITCODE_STRIP}\" \"${BINARY}\" -r -o \"${BINARY}\"\n  fi\ndone\n\nfor FRAMEWORK in MapboxCommon.framework MapboxCoreMaps.framework MapboxMobileEvents.framework hermes.framework; do\n  BINARY=\"${FRAMEWORKS_DIR}/${FRAMEWORK}/${FRAMEWORK%.framework}\"\n  DSYM_PATH=\"${ARCHIVE_DSYMS_DIR}/${FRAMEWORK}.dSYM\"\n  if [ -f \"${BINARY}\" ]; then\n    rm -rf \"${DSYM_PATH}\"\n    \"${DSYMUTIL}\" \"${BINARY}\" -o \"${DSYM_PATH}\"\n  fi\ndone\n";
+			shellScript = "if [ \"${CONFIGURATION}\" != \"Release\" ] || [ \"${PLATFORM_NAME}\" != \"iphoneos\" ]; then\n  exit 0\nfi\n\nFRAMEWORKS_DIR=\"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}\"\nBITCODE_STRIP=\"$(xcrun --find bitcode_strip)\"\nDSYMUTIL=\"$(xcrun --find dsymutil)\"\nARCHIVE_DSYMS_DIR=\"${ARCHIVE_DSYMS_PATH:-${DWARF_DSYM_FOLDER_PATH}}\"\n\nmkdir -p \"${ARCHIVE_DSYMS_DIR}\"\n\nfor FRAMEWORK in MapboxCommon.framework MapboxCoreMaps.framework MapboxMobileEvents.framework; do\n  BINARY=\"${FRAMEWORKS_DIR}/${FRAMEWORK}/${FRAMEWORK%.framework}\"\n  if [ -f \"${BINARY}\" ]; then\n    \"${BITCODE_STRIP}\" \"${BINARY}\" -r -o \"${BINARY}\"\n  fi\ndone\n\nfor FRAMEWORK in MapboxCommon.framework MapboxCoreMaps.framework MapboxMobileEvents.framework hermes.framework; do\n  BINARY=\"${FRAMEWORKS_DIR}/${FRAMEWORK}/${FRAMEWORK%.framework}\"\n  DSYM_PATH=\"${ARCHIVE_DSYMS_DIR}/${FRAMEWORK}.dSYM\"\n  if [ -f \"${BINARY}\" ]; then\n    rm -rf \"${DSYM_PATH}\"\n    \"${DSYMUTIL}\" \"${BINARY}\" -o \"${DSYM_PATH}\"\n  fi\ndone\nmkdir -p \"${DERIVED_FILE_DIR}\"\n: > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
