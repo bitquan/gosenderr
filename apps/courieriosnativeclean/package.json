@@ -5,6 +5,9 @@
   "scripts": {
     "android": "react-native run-android",
     "ios": "react-native run-ios",
+    "ios:prod-plist-install": "bash ../../scripts/swap-google-plist.sh install",
+    "ios:prod-plist-restore": "bash ../../scripts/swap-google-plist.sh restore",
+    "ios:prod-run": "xcodebuild -workspace ios/Senderrappios.xcworkspace -scheme \"Senderr (Production)\" -configuration Release -sdk iphoneos clean build",
     "lint": "eslint .",
     "start": "react-native start",
     "test": "jest"

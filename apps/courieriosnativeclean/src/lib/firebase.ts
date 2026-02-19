@@ -58,7 +58,15 @@ export const getAuthSafe = () => authInstance ?? null;
 
 export async function signInWithEmail(email: string, password: string) {
   if (!authInstance) throw new Error('Firebase Auth not initialized');
-  return signInWithEmailAndPassword(authInstance, email, password);
+  console.debug('[Firebase] signInWithEmail called', { projectId: firebaseConfig.projectId, email: email?.slice(0,64) });
+  try {
+    const res = await signInWithEmailAndPassword(authInstance, email, password);
+    console.debug('[Firebase] signInWithEmail success', { uid: res.user?.uid });
+    return res;
+  } catch (err) {
+    console.debug('[Firebase] signInWithEmail error', err);
+    throw err;
+  }
 }
 
 export async function signUpWithEmail(email: string, password: string, fullName?: string) {

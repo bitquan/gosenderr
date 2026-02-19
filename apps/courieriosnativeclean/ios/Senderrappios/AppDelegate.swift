@@ -4,23 +4,28 @@ import FirebaseCore
 import FirebaseMessaging
 import React
 import React_RCTAppDelegate
+#if targetEnvironment(simulator)
+import Darwin
+#endif
 #if canImport(ReactAppDependencyProvider)
 import ReactAppDependencyProvider
 #endif
 
 @main
-class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate, MessagingDelegate, RCTBridgeDelegate {
+@objc(AppDelegate)
+class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate, MessagingDelegate {
   var window: UIWindow?
-
-  override init() {
-    super.init()
-    configureFirebaseIfAvailable()
-  }
 
   func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
   ) -> Bool {
+    // Prevent any RN packager launch/connection attempts on physical devices
+    #if !targetEnvironment(simulator)
+    setenv("RCT_NO_LAUNCH_PACKAGER", "1", 1)
+    NSLog("[AppDelegate] RCT_NO_LAUNCH_PACKAGER=1 (device)")
+    #endif
+
     configureFirebaseIfAvailable()
     Messaging.messaging().delegate = self
     UNUserNotificationCenter.current().delegate = self
@@ -28,7 +33,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
 
     window = UIWindow(frame: UIScreen.main.bounds)
 
-    guard let bridge = RCTBridge(delegate: self, launchOptions: launchOptions) else {
+    guard let jsBundleURL = resolveJSBundleURL() else {
+      NSLog("Failed to resolve JS bundle URL")
+      return false
+    }
+
+    NSLog("[AppDelegate] resolved JS bundle URL: %{public}@", jsBundleURL.absoluteString)
+
+
+    guard let bridge = RCTBridge(bundleURL: jsBundleURL, moduleProvider: nil, launchOptions: launchOptions) else {
+      NSLog("Failed to create React bridge")
       return false
     }
 
@@ -38,6 +52,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     window?.rootViewController = rootViewController
     window?.makeKeyAndVisible()
 
+    // Add keyboard event monitoring for input debugging
+    NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow(_:)), name: UIResponder.keyboardWillShowNotification, object: nil)
+    NotificationCenter.default.addObserver(self, selector: #selector(keyboardDidShow(_:)), name: UIResponder.keyboardDidShowNotification, object: nil)
+    NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide(_:)), name: UIResponder.keyboardWillHideNotification, object: nil)
+    NotificationCenter.default.addObserver(self, selector: #selector(keyboardDidHide(_:)), name: UIResponder.keyboardDidHideNotification, object: nil)
+
     return true
   }
 
@@ -46,17 +66,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
       return
     }
 
-    if Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") != nil {
-      FirebaseApp.configure()
+    if let plistPath = Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist"),
+       let options = FirebaseOptions(contentsOfFile: plistPath) {
+      FirebaseApp.configure(options: options)
+      NSLog("Firebase configured from bundled GoogleService-Info.plist")
     } else {
-#if DEBUG
       NSLog(
         "Firebase disabled: GoogleService-Info.plist is missing from app bundle for target Senderr."
       )
-#else
-      assertionFailure("GoogleService-Info.plist is required for production/TestFlight builds")
-      NSLog("Firebase disabled in production build because GoogleService-Info.plist is missing")
-#endif
     }
   }
 
@@ -99,9 +116,25 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     completionHandler(.newData)
   }
 
-  // MARK: - RCTBridgeDelegate
-  func sourceURL(for bridge: RCTBridge) -> URL? {
+  private func resolveJSBundleURL() -> URL? {
 #if DEBUG
+    #if !targetEnvironment(simulator)
+    if let bundled = Bundle.main.url(forResource: "main", withExtension: "jsbundle") {
+      NSLog("Using bundled JS for debug device build (Metro disabled)")
+      return bundled
+    }
+    NSLog("Missing main.jsbundle in debug device build; Metro fallback is disabled")
+    return nil
+    #else
+    if let bundled = Bundle.main.url(forResource: "main", withExtension: "jsbundle") {
+      if ProcessInfo.processInfo.environment["FORCE_METRO"] == "1" {
+        // fall through to Metro URL provider below
+      } else {
+        NSLog("Using bundled JS for debug simulator build")
+        return bundled
+      }
+    }
+
     let provider = RCTBundleURLProvider.sharedSettings()
     if provider.jsLocation == nil || provider.jsLocation?.isEmpty == true {
       if let metroHost = ProcessInfo.processInfo.environment["METRO_HOST"], !metroHost.isEmpty {
@@ -109,8 +142,26 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
       }
     }
     return provider.jsBundleURL(forBundleRoot: "index")
+    #endif
 #else
     return Bundle.main.url(forResource: "main", withExtension: "jsbundle")
 #endif
+  }
+
+  // Keyboard event monitoring for input debugging
+  @objc func keyboardWillShow(_ notification: Notification) {
+    NSLog("[Keyboard] willShow: \(notification.userInfo ?? [:])")
+  }
+
+  @objc func keyboardDidShow(_ notification: Notification) {
+    NSLog("[Keyboard] didShow: \(notification.userInfo ?? [:])")
+  }
+
+  @objc func keyboardWillHide(_ notification: Notification) {
+    NSLog("[Keyboard] willHide: \(notification.userInfo ?? [:])")
+  }
+
+  @objc func keyboardDidHide(_ notification: Notification) {
+    NSLog("[Keyboard] didHide: \(notification.userInfo ?? [:])")
   }
 }

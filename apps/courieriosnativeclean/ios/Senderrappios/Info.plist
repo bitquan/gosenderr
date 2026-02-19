@@ -45,6 +45,10 @@
 	<string>Senderr needs your location to show nearby delivery jobs and navigate to pickup/dropoff locations.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Senderr uses your local network during development to connect to Metro for debug builds.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_http._tcp</string>
+	</array>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Senderr needs photo library access to save delivery proof photos.</string>
 	<key>RCTNewArchEnabled</key>

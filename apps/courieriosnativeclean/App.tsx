@@ -5,7 +5,7 @@
  * @format
  */
 
-import { useEffect, useState } from 'react';
+import { Suspense, lazy, useEffect, useState, useRef } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -25,11 +25,19 @@ import {
 } from 'react-native-safe-area-context';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { AuthProvider } from './src/contexts/AuthContext';
-import { CourierOnboarding } from './src/components/CourierOnboarding';
 import { useAuth } from './src/hooks/useAuth';
 import { useFeatureFlags } from './src/hooks/useFeatureFlags';
 import { db, isFirebaseReady } from './src/lib/firebase';
-import { MapShell } from './src/screens/MapShell';
+
+const MapShell = lazy(async () => {
+  const module = await import('./src/screens/MapShell');
+  return { default: module.MapShell };
+});
+
+const CourierOnboarding = lazy(async () => {
+  const module = await import('./src/components/CourierOnboarding');
+  return { default: module.CourierOnboarding };
+});
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
@@ -58,6 +66,12 @@ function AppContent() {
   const [error, setError] = useState<string | null>(null);
   const [devOverride, setDevOverride] = useState(false);
 
+  // DEV: resilient input helpers to recover from device keyboard/session stalls
+  const emailInputRef = useRef<TextInput | null>(null);
+  const passwordInputRef = useRef<TextInput | null>(null);
+  const recentEmailChangeRef = useRef(false);
+  const inputStallTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const firebaseReady = isFirebaseReady();
   const isNativeEnabled = Boolean(flags?.courier?.nativeV2) || (__DEV__ && devOverride);
 
@@ -80,6 +94,16 @@ function AppContent() {
 
     return unsubscribe;
   }, [firebaseReady, user?.uid]);
+
+  useEffect(() => {
+    // cleanup any pending input-stall timer
+    return () => {
+      if (inputStallTimerRef.current) {
+        clearTimeout(inputStallTimerRef.current);
+        inputStallTimerRef.current = null;
+      }
+    };
+  }, []);
 
   const courierProfile = userDoc?.courierProfile || {};
   const courierStatus = String(courierProfile?.status || '').toLowerCase();
@@ -115,6 +139,7 @@ function AppContent() {
     courierStatus === 'pending';
 
   const handleAuthSubmit = async () => {
+    console.debug('[UI] handleAuthSubmit start', { authMode, email: email?.slice(0, 64) });
     if (authBusy) return;
     setError(null);
     const normalizedEmail = email.trim().toLowerCase();
@@ -129,22 +154,30 @@ function AppContent() {
 
     setAuthBusy(true);
     try {
+      // extra debug: confirm UI state before calling sign-in
+      console.debug('[UI] Signing in with state', { emailState: email, passwordLen: password?.length });
+
       if (authMode === 'signup') {
         await signUp(normalizedEmail, password, fullName.trim() || undefined);
       } else {
         await signIn(normalizedEmail, password);
       }
+      console.debug('[UI] handleAuthSubmit success');
     } catch (err: any) {
+      console.debug('[UI] handleAuthSubmit error', err);
       setError(err?.message ?? (authMode === 'signup' ? 'Sign up failed' : 'Sign in failed'));
     } finally {
       setAuthBusy(false);
+      console.debug('[UI] handleAuthSubmit end');
     }
   };
 
   if (canEnterMapShell) {
     return (
       <View style={styles.fullScreen}>
-        <MapShell onSignOut={signOut} />
+        <Suspense fallback={<View style={styles.centered}><ActivityIndicator color="#ffffff" /><Text style={styles.item}>Loading map…</Text></View>}>
+          <MapShell onSignOut={signOut} />
+        </Suspense>
       </View>
     );
   }
@@ -152,12 +185,14 @@ function AppContent() {
   if (showOnboarding && user?.uid) {
     return (
       <View style={styles.fullScreen}>
-        <CourierOnboarding
-          uid={user.uid}
-          initialProfile={courierProfile}
-          rejectionReason={rejectionReason || undefined}
-          onSignOut={signOut}
-        />
+        <Suspense fallback={<View style={styles.centered}><ActivityIndicator color="#ffffff" /><Text style={styles.item}>Loading onboarding…</Text></View>}>
+          <CourierOnboarding
+            uid={user.uid}
+            initialProfile={courierProfile}
+            rejectionReason={rejectionReason || undefined}
+            onSignOut={signOut}
+          />
+        </Suspense>
       </View>
     );
   }
@@ -221,22 +256,91 @@ function AppContent() {
             )}
 
             <TextInput
+              ref={(ref) => (emailInputRef.current = ref)}
               style={styles.input}
               placeholder="Email"
               placeholderTextColor="#9ca3af"
               autoCapitalize="none"
+              autoCorrect={false}
+              spellCheck={false}
+              textContentType="username"
+              autoComplete="email"
               keyboardType="email-address"
+              returnKeyType="next"
+              blurOnSubmit={false}
               value={email}
-              onChangeText={setEmail}
+              onFocus={() => {
+                console.debug('[UI] Email input onFocus');
+                recentEmailChangeRef.current = false;
+                if (inputStallTimerRef.current) clearTimeout(inputStallTimerRef.current);
+                inputStallTimerRef.current = setTimeout(() => {
+                  if (!recentEmailChangeRef.current) {
+                    console.debug('[UI] Email input stalled — attempting blur/focus recovery');
+                    emailInputRef.current?.blur();
+                    setTimeout(() => emailInputRef.current?.focus(), 200);
+                  }
+                }, 1200);
+              }}
+              onBlur={() => {
+                console.debug('[UI] Email input onBlur');
+                if (inputStallTimerRef.current) {
+                  clearTimeout(inputStallTimerRef.current);
+                  inputStallTimerRef.current = null;
+                }
+              }}
+              onChangeText={(text) => {
+                recentEmailChangeRef.current = true;
+                console.debug('[UI] Email onChangeText', text?.slice(0,64));
+                setEmail(text);
+              }}
+              onSubmitEditing={() => {
+                passwordInputRef.current?.focus();
+              }}
             />
             <TextInput
+              ref={(ref) => (passwordInputRef.current = ref)}
               style={styles.input}
               placeholder="Password"
               placeholderTextColor="#9ca3af"
               secureTextEntry
+              autoCorrect={false}
+              spellCheck={false}
+              textContentType="password"
+              autoComplete="password"
+              returnKeyType="done"
               value={password}
-              onChangeText={setPassword}
+              onFocus={() => console.debug('[UI] Password input onFocus')}
+              onBlur={() => console.debug('[UI] Password input onBlur')}
+              onChangeText={(text) => { console.debug('[UI] Password onChangeText len=', String(text?.length)); setPassword(text); }}
+              onSubmitEditing={handleAuthSubmit}
             />
+
+            {/* DEV helpers: quick-fill + force-focus to bypass device keyboard stalls */}
+            {__DEV__ && (
+              <View style={{ flexDirection: 'row', marginTop: 8 }}>
+                <Pressable
+                  style={[styles.ghostButton, { marginRight: 8 }]}
+                  onPress={() => {
+                    setEmail('test@gosenderr.com');
+                    setPassword('TestPass123');
+                    console.debug('[DEV] Quick-fill credentials');
+                  }}
+                >
+                  <Text style={styles.ghostButtonText}>Quick Fill</Text>
+                </Pressable>
+
+                <Pressable
+                  style={styles.ghostButton}
+                  onPress={() => {
+                    emailInputRef.current?.focus();
+                    console.debug('[DEV] Force focus email input');
+                  }}
+                >
+                  <Text style={styles.ghostButtonText}>Force Focus</Text>
+                </Pressable>
+              </View>
+            )}
+
             {error ? <Text style={styles.error}>{error}</Text> : null}
             <Pressable style={[styles.primaryButton, authBusy && styles.primaryButtonDisabled]} onPress={handleAuthSubmit} disabled={authBusy}>
               {authBusy ? (

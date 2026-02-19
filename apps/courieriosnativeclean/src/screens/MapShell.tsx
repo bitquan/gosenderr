@@ -169,6 +169,7 @@ export function MapShell({ onSignOut }: MapShellProps) {
   const [unlockedJobReservations, setUnlockedJobReservations] = useState<Record<string, string>>({});
   const tokenCheckoutFinalizeBusyRef = useRef(false);
   const appStateStatusRef = useRef<AppStateStatus>((AppState?.currentState as AppStateStatus) || 'active');
+  const locationPermissionRequestedRef = useRef(false);
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
@@ -604,15 +605,19 @@ export function MapShell({ onSignOut }: MapShellProps) {
     let isMounted = true;
     const enableLocation = async () => {
       try {
+        if (locationPermissionRequestedRef.current) return;
+        if (AppState?.currentState && AppState.currentState !== 'active') return;
+
         const locationManager = MapboxGL.locationManager as any;
+        if (!locationManager) return;
         if (locationManager && !Array.isArray(locationManager._listeners)) {
           locationManager._listeners = [];
         }
-        if (backgroundLocationEnabled) {
-          await (locationManager.requestAlwaysAuthorization?.() ?? locationManager.requestWhenInUseAuthorization?.());
-        } else {
-          await (locationManager.requestWhenInUseAuthorization?.() ?? locationManager.requestAlwaysAuthorization?.());
-        }
+
+        locationPermissionRequestedRef.current = true;
+
+        await (locationManager.requestWhenInUseAuthorization?.() ?? locationManager.requestAlwaysAuthorization?.());
+
         if (backgroundLocationEnabled) {
           locationManager.setAllowsBackgroundLocationUpdates?.(true);
           locationManager.setPausesLocationUpdatesAutomatically?.(false);
@@ -626,9 +631,13 @@ export function MapShell({ onSignOut }: MapShellProps) {
       }
     };
 
-    enableLocation();
+    const timer = setTimeout(() => {
+      void enableLocation();
+    }, 750);
+
     return () => {
       isMounted = false;
+      clearTimeout(timer);
     };
   }, [backgroundLocationEnabled]);
 

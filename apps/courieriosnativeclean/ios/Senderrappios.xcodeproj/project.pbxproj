@@ -117,6 +117,7 @@
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				E4CF99A6F3F2F5AF5151D538 /* [CP] Embed Pods Frameworks */,
 				F4A8D1C71B3E4F5A67890BCD /* Strip Bitcode (Release) */,
+				A1D2C3B4E5F6012345678901 /* Re-sign Modified Frameworks (Release) */,
 				383B8D81FEAA882DF52F80CC /* [CP] Copy Pods Resources */,
 				052F58A98EE4079F735C232B /* [CP-User] [RNFB] Core Configuration */,
 			);
@@ -189,7 +190,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -e\n\nDEFAULT_REACT_NATIVE_PATH=\"$SRCROOT/../../../node_modules/react-native\"\n\n# Resolve REACT_NATIVE_PATH fallback when env is missing or invalid (workspace hoisted node_modules)\nif [ -z \"$REACT_NATIVE_PATH\" ] || [ ! -f \"$REACT_NATIVE_PATH/scripts/xcode/with-environment.sh\" ]; then\n  REACT_NATIVE_PATH=\"$DEFAULT_REACT_NATIVE_PATH\"\nfi\n\nWITH_ENVIRONMENT=\"$REACT_NATIVE_PATH/scripts/xcode/with-environment.sh\"\nREACT_NATIVE_XCODE=\"$REACT_NATIVE_PATH/scripts/react-native-xcode.sh\"\n\nif [ -f \"$WITH_ENVIRONMENT\" ]; then\n  \"$WITH_ENVIRONMENT\" \"$REACT_NATIVE_XCODE\"\nelse\n  echo \"error: React Native packaging scripts not found at $REACT_NATIVE_PATH\"\n  exit 1\nfi\n";
+			shellScript = "set -e\n\nDEFAULT_REACT_NATIVE_PATH=\"$SRCROOT/../../../node_modules/react-native\"\n\n# Resolve REACT_NATIVE_PATH fallback when env is missing or invalid (workspace hoisted node_modules)\nif [ -z \"$REACT_NATIVE_PATH\" ] || [ ! -f \"$REACT_NATIVE_PATH/scripts/xcode/with-environment.sh\" ]; then\n  REACT_NATIVE_PATH=\"$DEFAULT_REACT_NATIVE_PATH\"\nfi\n\nWITH_ENVIRONMENT=\"$REACT_NATIVE_PATH/scripts/xcode/with-environment.sh\"\nREACT_NATIVE_XCODE=\"$REACT_NATIVE_PATH/scripts/react-native-xcode.sh\"\n\n# Xcode shells often miss Homebrew in PATH; resolve node robustly for fallback bundling.\nNODE_BINARY=\"${NODE_BINARY:-$(command -v node || true)}\"\nif [ -z \"$NODE_BINARY\" ]; then\n  for candidate in /opt/homebrew/bin/node /usr/local/bin/node /usr/bin/node; do\n    if [ -x \"$candidate\" ]; then\n      NODE_BINARY=\"$candidate\"\n      break\n    fi\n  done\nfi\n\n# Ensure Debug builds on physical devices bundle non-dev JS and avoid Metro reconnect loops.\nif [ \"${CONFIGURATION}\" = \"Debug\" ] && [ \"${PLATFORM_NAME}\" = \"iphoneos\" ]; then\n  export FORCE_BUNDLING=1\n  export SKIP_BUNDLING=0\n  export DEV=false\n  export RCT_NO_LAUNCH_PACKAGER=true\nfi\n\nif [ -f \"$WITH_ENVIRONMENT\" ]; then\n  \"$WITH_ENVIRONMENT\" \"$REACT_NATIVE_XCODE\"\nelse\n  echo \"error: React Native packaging scripts not found at $REACT_NATIVE_PATH\"\n  exit 1\nfi\n\n# Fallback: if Debug device build still missed bundle, generate it explicitly.\nif [ \"${CONFIGURATION}\" = \"Debug\" ] && [ \"${PLATFORM_NAME}\" = \"iphoneos\" ]; then\n  BUNDLE_OUTPUT=\"${CONFIGURATION_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/main.jsbundle\"\n  ASSETS_DEST=\"${CONFIGURATION_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}\"\n  ENTRY_FILE=\"${PROJECT_DIR}/../index.js\"\n  if [ ! -f \"$BUNDLE_OUTPUT\" ]; then\n    if [ -z \"$NODE_BINARY\" ]; then\n      echo \"error: node binary not found for fallback bundling\"\n      exit 1\n    fi\n    if [ ! -f \"$ENTRY_FILE\" ]; then\n      echo \"error: entry file not found at $ENTRY_FILE\"\n      exit 1\n    fi\n    echo \"warning: main.jsbundle missing after RN script, generating fallback bundle\"\n    \"$NODE_BINARY\" \"$REACT_NATIVE_PATH/cli.js\" bundle \\\n      --platform ios \\\n      --dev false \\\n      --entry-file \"$ENTRY_FILE\" \\\n      --bundle-output \"$BUNDLE_OUTPUT\" \\\n      --assets-dest \"$ASSETS_DEST\"\n  fi\nfi\n";
 		};
 		052F58A98EE4079F735C232B /* [CP-User] [RNFB] Core Configuration */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -220,6 +221,20 @@
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Senderrappios/Pods-Senderrappios-resources.sh\"\n";
 			showEnvVarsInLog = 0;
+		};
+		A1D2C3B4E5F6012345678901 /* Re-sign Modified Frameworks (Release) */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Re-sign Modified Frameworks (Release)";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "FRAMEWORKS_DIR=\"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}\"\nif [ \"${CODE_SIGNING_ALLOWED}\" != \"NO\" ] && [ -n \"${EXPANDED_CODE_SIGN_IDENTITY}\" ]; then\n  echo \"info: re-signing embedded frameworks\"\n  for FRAMEWORK in MapboxCommon.framework MapboxCoreMaps.framework MapboxMobileEvents.framework hermes.framework; do\n    BIN_PATH=\"${FRAMEWORKS_DIR}/${FRAMEWORK}/${FRAMEWORK%.framework}\"\n    if [ -f \"${BIN_PATH}\" ]; then\n      /usr/bin/codesign --force --sign \"${EXPANDED_CODE_SIGN_IDENTITY}\" --preserve-metadata=identifier,entitlements \"${BIN_PATH}\" || echo \"warning: codesign failed for ${BIN_PATH}\"\n    fi\n  done\nfi\n";
 		};
 		E3FDB19AE97360D828D69151 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -300,44 +315,9 @@
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CODE_SIGN_ENTITLEMENTS = Senderrappios/Senderrappios.entitlements;
-				CURRENT_PROJECT_VERSION = 4;
-				DEVELOPMENT_TEAM = G27DM624XF;
-				ENABLE_BITCODE = NO;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-				GCC_WARN_INHIBIT_ALL_WARNINGS = NO;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
-				INFOPLIST_FILE = Senderrappios/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					"-ObjC",
-					"-lc++",
-				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.gosenderr.courier;
-				PRODUCT_NAME = Senderr;
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_VERSION = 5.0;
-				VERSIONING_SYSTEM = "apple-generic";
-			};
-			name = Debug;
-		};
-		13B07F951A680F5B00A75B9A /* Release */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = DFA2AE9B04A7CBE7E007741A /* Pods-Senderrappios.release.xcconfig */;
-			buildSettings = {
-				APS_ENVIRONMENT = production;
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CLANG_ENABLE_MODULES = YES;
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
-				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CODE_SIGN_ENTITLEMENTS = Senderrappios/Senderrappios.entitlements;
-				CURRENT_PROJECT_VERSION = 4;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 5;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = G27DM624XF;
 				ENABLE_BITCODE = NO;
@@ -358,6 +338,48 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.gosenderr.courier;
 				PRODUCT_NAME = Senderr;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				VERSIONING_SYSTEM = "apple-generic";
+			};
+			name = Debug;
+		};
+		13B07F951A680F5B00A75B9A /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = DFA2AE9B04A7CBE7E007741A /* Pods-Senderrappios.release.xcconfig */;
+			buildSettings = {
+				APS_ENVIRONMENT = production;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_ENTITLEMENTS = Senderrappios/Senderrappios.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 5;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = G27DM624XF;
+				ENABLE_BITCODE = NO;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_INHIBIT_ALL_WARNINGS = NO;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				INFOPLIST_FILE = Senderrappios/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+					"-lc++",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.gosenderr.courier;
+				PRODUCT_NAME = Senderr;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
 			};
