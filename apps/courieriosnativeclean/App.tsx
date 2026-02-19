@@ -54,6 +54,7 @@ function App() {
 }
 
 function AppContent() {
+  const MIN_STARTUP_SPLASH_MS = 700;
   const safeAreaInsets = useSafeAreaInsets();
   const {user, loading: authLoading, signIn, signUp, signOut} = useAuth();
   const {flags, loading: flagsLoading} = useFeatureFlags();
@@ -65,6 +66,7 @@ function AppContent() {
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
   const [authBusy, setAuthBusy] = useState(false);
   const [authUiReady, setAuthUiReady] = useState(false);
+  const [startupSplashMinElapsed, setStartupSplashMinElapsed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [devOverride, setDevOverride] = useState(false);
 
@@ -107,6 +109,18 @@ function AppContent() {
     // mark unmounted to avoid setState in async handlers
     return () => {
       mountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (mountedRef.current) {
+        setStartupSplashMinElapsed(true);
+      }
+    }, MIN_STARTUP_SPLASH_MS);
+
+    return () => {
+      clearTimeout(timer);
     };
   }, []);
 
@@ -168,7 +182,8 @@ function AppContent() {
     isNativeEnabled &&
     courierStatus === 'pending';
 
-  const showStartupSplash = firebaseReady && (authLoading || flagsLoading);
+  const showStartupSplash =
+    firebaseReady && (!startupSplashMinElapsed || authLoading || flagsLoading);
 
   if (showStartupSplash) {
     return (
