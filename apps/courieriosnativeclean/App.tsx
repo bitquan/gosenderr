@@ -8,6 +8,7 @@
 import { Suspense, lazy, useEffect, useState, useRef } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -65,6 +66,7 @@ function AppContent() {
   const [authBusy, setAuthBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [devOverride, setDevOverride] = useState(false);
+  const [inputFallbackVisible, setInputFallbackVisible] = useState(false);
 
   // DEV: resilient input helpers to recover from device keyboard/session stalls
   const emailInputRef = useRef<TextInput | null>(null);
@@ -272,10 +274,12 @@ function AppContent() {
               onFocus={() => {
                 console.debug('[UI] Email input onFocus');
                 recentEmailChangeRef.current = false;
+                setInputFallbackVisible(false);
                 if (inputStallTimerRef.current) clearTimeout(inputStallTimerRef.current);
                 inputStallTimerRef.current = setTimeout(() => {
                   if (!recentEmailChangeRef.current) {
                     console.debug('[UI] Email input stalled — attempting blur/focus recovery');
+                    setInputFallbackVisible(true);
                     emailInputRef.current?.blur();
                     setTimeout(() => emailInputRef.current?.focus(), 200);
                   }
@@ -290,6 +294,7 @@ function AppContent() {
               }}
               onChangeText={(text) => {
                 recentEmailChangeRef.current = true;
+                setInputFallbackVisible(false);
                 console.debug('[UI] Email onChangeText', text?.slice(0,64));
                 setEmail(text);
               }}
@@ -314,6 +319,61 @@ function AppContent() {
               onChangeText={(text) => { console.debug('[UI] Password onChangeText len=', String(text?.length)); setPassword(text); }}
               onSubmitEditing={handleAuthSubmit}
             />
+
+            {inputFallbackVisible && Platform.OS === 'ios' && (
+              <View style={{ flexDirection: 'row', marginTop: 4, marginBottom: 8 }}>
+                <Pressable
+                  style={[styles.ghostButton, { marginRight: 8, marginTop: 0 }]}
+                  onPress={() => {
+                    Alert.prompt(
+                      'Enter email',
+                      undefined,
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        {
+                          text: 'Use',
+                          onPress: (value) => {
+                            if (typeof value === 'string') {
+                              setEmail(value.trim());
+                              setInputFallbackVisible(false);
+                            }
+                          },
+                        },
+                      ],
+                      'plain-text',
+                      email,
+                    );
+                  }}
+                >
+                  <Text style={styles.ghostButtonText}>Enter Email</Text>
+                </Pressable>
+
+                <Pressable
+                  style={[styles.ghostButton, { marginTop: 0 }]}
+                  onPress={() => {
+                    Alert.prompt(
+                      'Enter password',
+                      undefined,
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        {
+                          text: 'Use',
+                          onPress: (value) => {
+                            if (typeof value === 'string') {
+                              setPassword(value);
+                              setInputFallbackVisible(false);
+                            }
+                          },
+                        },
+                      ],
+                      'secure-text',
+                    );
+                  }}
+                >
+                  <Text style={styles.ghostButtonText}>Enter Password</Text>
+                </Pressable>
+              </View>
+            )}
 
             {/* DEV helpers: quick-fill + force-focus to bypass device keyboard stalls */}
             {__DEV__ && (
