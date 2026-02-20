@@ -43,6 +43,8 @@ import MarketplaceSellPage from './pages/marketplace/sell/page'
 import MyListingsPage from './pages/profile/listings/page'
 import SellerSettingsPage from './pages/profile/seller-settings/page'
 import StripeOnboardingPage from './pages/profile/stripe-onboarding/page'
+import FoodPickupsPage from './pages/food-pickups/page'
+import FoodPickupOrderPage from './pages/food-pickups/[restaurantId]/order'
 import OrderDetailPage from './pages/orders/[orderId]/page'
 import MessagesPage from './pages/messages/page'
 import ConversationPage from './pages/messages/[conversationId]/page'
@@ -169,6 +171,16 @@ function App() {
             <Route path="/favorite-couriers" element={
               <RoleGuard allowedRoles={['customer', 'buyer']}>
                 <FavoriteCouriersPage />
+              </RoleGuard>
+            } />
+            <Route path="food-pickups" element={
+              <RoleGuard allowedRoles={['customer', 'buyer', 'seller']}>
+                <FoodPickupsPage />
+              </RoleGuard>
+            } />
+            <Route path="food-pickups/:restaurantId/order" element={
+              <RoleGuard allowedRoles={['customer', 'buyer', 'seller']}>
+                <FoodPickupOrderPage />
               </RoleGuard>
             } />
             <Route path="/promo-codes" element={
