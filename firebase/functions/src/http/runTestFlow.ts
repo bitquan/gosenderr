@@ -1,5 +1,6 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
+import { grantSignupBonusTokens } from '../utils/signupBonus';
 
 interface RunTestFlowRequest {
   targetUserId: string;
@@ -107,6 +108,11 @@ export async function runTestFlowHandler(data: RunTestFlowRequest, context: func
       await log('Simulating Stripe onboarding (flag)');
       await userRef.set({ 'stripe.connected': true }, { merge: true });
       await log('Stripe simulated');
+    }
+
+    if (steps.length === 0 || steps.includes('signup_bonus')) {
+      const bonusResult = await grantSignupBonusTokens(targetUserId, 'runTestFlow');
+      await log('Signup bonus ensured', bonusResult);
     }
 
     // Finalize

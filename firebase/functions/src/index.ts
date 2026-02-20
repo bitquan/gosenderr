@@ -14,12 +14,15 @@ export { seedHubs } from "./triggers/seedHubs";
 export { buildLongHaulRoutes } from "./triggers/buildLongHaulRoutes";
 export { onAdminActionLog } from "./triggers/onAdminActionLog";
 export { onUserCreate } from "./triggers/onUserCreate";
+export { onAuthUserCreate } from "./triggers/onAuthUserCreate";
 
 // HTTP Callable Functions
 export { setPackageRunnerClaim } from "./http/setPackageRunnerClaim";
 export { setAdminClaim } from "./http/setAdminClaim";
 export { banUser } from "./http/banUser";
+export { deleteUserForAdmin } from "./http/deleteUserForAdmin";
 export { createUserForAdmin } from "./http/createUserForAdmin";
+export { createAdminJob } from "./http/createAdminJob";
 export { runTestFlow } from "./http/runTestFlow";
 export { getPublicConfig } from "./http/getPublicConfig";
 export { getPublicConfigHttp } from "./http/getPublicConfigHttp";

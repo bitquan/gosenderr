@@ -2,12 +2,17 @@ import * as functions from 'firebase-functions/v2';
 import Stripe from 'stripe';
 import * as admin from 'firebase-admin';
 import { getStripeClient } from './stripeSecrets';
+import { creditTokensFromCheckoutSession } from './tokenWallet';
 
 const db = admin.firestore();
 
 export const stripeWebhook = functions.https.onRequest(
   { 
     cors: true,
+    minInstances: 0,
+    maxInstances: 10,
+    memory: '256MiB',
+    cpu: 'gcf_gen1',
     // secrets: ['STRIPE_WEBHOOK_SECRET']
   },
   async (req, res) => {
@@ -81,6 +86,54 @@ export const stripeWebhook = functions.https.onRequest(
 
 async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
   console.log('Processing checkout.session.completed:', session.id);
+
+  const metadata = (session.metadata || {}) as Record<string, string>;
+  const purchaseType = metadata.purchaseType || '';
+  const idempotencyKey = metadata.idempotencyKey || '';
+
+  if (purchaseType === 'token_purchase') {
+    const paymentIntentId =
+      typeof session.payment_intent === 'string'
+        ? session.payment_intent
+        : session.payment_intent?.id || null;
+
+    await creditTokensFromCheckoutSession({
+      id: session.id,
+      metadata,
+      payment_intent: paymentIntentId,
+    });
+
+    if (idempotencyKey) {
+      await db.doc(`tokenCheckoutSessions/${idempotencyKey}`).set(
+        {
+          paymentStatus: 'paid',
+          paidAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      );
+    } else {
+      const sessionSnap = await db
+        .collection('tokenCheckoutSessions')
+        .where('stripeSessionId', '==', session.id)
+        .limit(1)
+        .get();
+
+      if (!sessionSnap.empty) {
+        await sessionSnap.docs[0].ref.set(
+          {
+            paymentStatus: 'paid',
+            paidAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          },
+          { merge: true },
+        );
+      }
+    }
+
+    console.log('Token checkout credited successfully:', session.id);
+    return;
+  }
 
   // Find the marketplace order by checkoutSessionId
   const ordersSnapshot = await db

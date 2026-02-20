@@ -57,6 +57,48 @@ Because deletions dominate, imports must be selective and additive-first.
 - Run branch checkpoint after each batch.
 - Keep each commit scoped to one batch.
 
+## 60-Minute Execution Phases (Ordered)
+
+### Phase 1 (0-15 min) — Tiny compatibility deltas
+- Goal: merge smallest safe runtime-compatibility edits first.
+- Files:
+  - `firebase/functions/src/http/logCommandFailure.ts`
+  - `firebase/functions/src/stripe/index.ts`
+- Accept criteria:
+  - command union includes `cancel`.
+  - Stripe index re-exports token wallet summary/adjust helpers.
+
+### Phase 2 (15-35 min) — Additive signup-bonus plumbing
+- Goal: import additive files and minimal wiring for signup bonus / admin operations.
+- Files:
+  - `firebase/functions/src/utils/signupBonus.ts`
+  - `firebase/functions/src/triggers/onAuthUserCreate.ts`
+  - `firebase/functions/src/http/createAdminJob.ts`
+  - `firebase/functions/src/http/deleteUserForAdmin.ts`
+  - `firebase/functions/src/http/createUserForAdmin.ts`
+  - `firebase/functions/src/http/runTestFlow.ts`
+  - `firebase/functions/src/index.ts` (export wiring only)
+- Accept criteria:
+  - no deletions/renames.
+  - additive endpoints/triggers exported.
+
+### Phase 3 (35-50 min) — Medium Stripe/function deltas (selective)
+- Goal: import only medium diffs that are additive-safe after per-file review.
+- Candidate files:
+  - `firebase/functions/src/stripe/marketplace.ts`
+  - `firebase/functions/src/stripe/webhook.ts`
+  - `firebase/functions/src/http/createPaymentIntentHttp.ts`
+  - `firebase/functions/src/http/sendTestPush.ts`
+- Accept criteria:
+  - no regressions to existing defaults/ops-critical behavior.
+  - skip any file that removes protective defaults.
+
+### Phase 4 (50-60 min) — Checkpoint + handoff
+- Goal: diagnostics, checkpoint commit, and explicit deferred list.
+- Accept criteria:
+  - branch-assist `status` + `save` run.
+  - deferred high-risk files listed for next wave.
+
 ## Current status
 - ✅ Unified worktree created and pushed.
 - ✅ Workflow/governance safe deltas imported.
@@ -98,3 +140,32 @@ Because deletions dominate, imports must be selective and additive-first.
     - `CourierProfile.acceptTokenPayoutJobs`
   - Deferred risky `firebase/functions` `M` files in this pass (behavior-changing logic in token wallet/notification/runtime command paths) for separate targeted review.
 - ⏭ Next: Phase C/R3 targeted functions `M`-file review (single-file micro-batches), starting with safest callable-surface compatibility deltas.
+
+## Hour-Mode Progress (2026-02-20)
+
+- ✅ Phase 1 complete:
+  - `firebase/functions/src/http/logCommandFailure.ts` (`cancel` command support)
+  - `firebase/functions/src/stripe/index.ts` (token wallet summary/adjust exports)
+- ✅ Phase 2 complete:
+  - Imported: `firebase/functions/src/utils/signupBonus.ts`
+  - Imported: `firebase/functions/src/triggers/onAuthUserCreate.ts`
+  - Imported: `firebase/functions/src/http/createAdminJob.ts`
+  - Imported: `firebase/functions/src/http/deleteUserForAdmin.ts`
+  - Updated: `firebase/functions/src/http/createUserForAdmin.ts`
+  - Updated: `firebase/functions/src/http/runTestFlow.ts`
+  - Updated: `firebase/functions/src/index.ts` export wiring for new trigger/callables
+- ✅ Phase 3 selective subset complete:
+  - Updated: `firebase/functions/src/http/createPaymentIntentHttp.ts`
+  - Updated: `firebase/functions/src/stripe/marketplace.ts`
+  - Updated: `firebase/functions/src/stripe/webhook.ts`
+  - Deferred intentionally: `firebase/functions/src/http/sendTestPush.ts` (would remove APNS fallback default)
+
+- ⏭ Remaining for next wave (still no-delete, higher risk):
+  - `firebase/functions/src/http/sendTestPush.ts`
+  - `firebase/functions/src/http/courierJobCommands.ts`
+  - `firebase/functions/src/http/tokenWalletCommands.ts`
+  - `firebase/functions/src/stripe/tokenWallet.ts`
+  - `firebase/functions/src/stripe/createMarketplaceOrder.ts`
+  - `firebase/functions/src/triggers/autoCancel.ts`
+  - `firebase/functions/src/triggers/notifications.ts`
+  - `firebase/functions/test/integration.spec.ts`
