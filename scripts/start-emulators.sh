@@ -1,5 +1,4 @@
 #!/bin/bash
-set -euo pipefail
 
 # Script to start Firebase emulators with proper cleanup on exit and auto-seed
 
@@ -28,16 +27,7 @@ trap cleanup EXIT INT TERM
 
 # Resolve script directory (so calling from subdirectories works)
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-cd "$REPO_ROOT"
 rm -f "$SEED_READY_FILE"
-
-echo "🧱 Preparing Firebase Functions dependencies and build..."
-echo "📦 Installing firebase/functions dependencies..."
-npm --prefix "$REPO_ROOT/firebase/functions" install
-
-echo "🔨 Building firebase/functions..."
-npm --prefix "$REPO_ROOT/firebase/functions" run build
 
 # Start emulators in background
 # Use docker-specific config when running inside the container (IN_DOCKER=1)
