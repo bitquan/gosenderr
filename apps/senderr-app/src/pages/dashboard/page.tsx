@@ -300,6 +300,15 @@ export default function CourierDashboardMobile() {
                 <button className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-semibold">
                   Contact Support
                 </button>
+                {process.env.NODE_ENV !== "production" && (
+                  <button
+                    onClick={() => navigate("/map-shell?dev_preview=1")}
+                    className="px-4 py-2 rounded-lg bg-white border border-gray-200 text-sm font-semibold"
+                    data-testid="preview-mapshell-button"
+                  >
+                    Preview MapShell
+                  </button>
+                )}
               </div>
             </div>
           </div>
