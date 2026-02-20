@@ -169,3 +169,10 @@ Because deletions dominate, imports must be selective and additive-first.
   - `firebase/functions/src/triggers/autoCancel.ts`
   - `firebase/functions/src/triggers/notifications.ts`
   - `firebase/functions/test/integration.spec.ts`
+
+## Deferred-Wave Micro-Batch Progress (2026-02-20)
+
+- ✅ Batch 1: `firebase/functions/test/integration.spec.ts` imported and checkpointed.
+- ✅ Batch 2: `firebase/functions/src/http/sendTestPush.ts` reviewed and intentionally **not imported**.
+  - Reason: source delta removes APNS topic fallback default path.
+  - Unified currently keeps fallback + retry behavior to avoid push regression.
