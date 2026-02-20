@@ -76,6 +76,20 @@ interface TokenCreateCheckoutSessionRequest {
   idempotencyKey?: string;
 }
 
+interface TokenFinalizeCheckoutSessionRequest {
+  idempotencyKey?: string;
+  stripeSessionId?: string;
+}
+
+interface AdminGetTokenWalletViewRequest {
+  uid?: string;
+}
+
+interface AdminListTokenLedgerRequest {
+  uid?: string;
+  limit?: number;
+}
+
 const DEFAULT_TOKEN_POLICY: TokenPolicy = {
   enabled: true,
   finalSale: true,
@@ -171,6 +185,20 @@ export const getTokenPolicy = functions.https.onCall(async (_data, context) => {
 });
 
 export const getTokenWalletSummary = functions.https.onCall(async (_data, context) => {
+  if (!context.auth?.uid) {
+    throw new functions.https.HttpsError(
+      'unauthenticated',
+      'Authentication required',
+    );
+  }
+
+  const uid = context.auth.uid;
+  const walletRef = admin.firestore().doc(`tokenWallets/${uid}`);
+  const walletSnap = await walletRef.get();
+  return walletFromSnapshot(uid, walletSnap);
+});
+
+export const getPayoutTokenWalletSummary = functions.https.onCall(async (_data, context) => {
   if (!context.auth?.uid) {
     throw new functions.https.HttpsError(
       'unauthenticated',
@@ -713,6 +741,222 @@ export const tokenCreateCheckoutSession = functions.https.onCall(
         url: emulatedUrl,
       };
     }
+  },
+);
+
+export const tokenFinalizeCheckoutSession = functions.https.onCall(
+  async (data: TokenFinalizeCheckoutSessionRequest, context) => {
+    if (!context.auth?.uid) {
+      throw new functions.https.HttpsError('unauthenticated', 'Authentication required');
+    }
+
+    const actorUid = context.auth.uid;
+    const lookupId = (data?.idempotencyKey || '').trim();
+    const lookupStripeSessionId = (data?.stripeSessionId || '').trim();
+
+    if (!lookupId && !lookupStripeSessionId) {
+      throw new functions.https.HttpsError(
+        'invalid-argument',
+        'idempotencyKey or stripeSessionId is required',
+      );
+    }
+
+    const db = admin.firestore();
+    let sessionRef = lookupId ? db.doc(`tokenCheckoutSessions/${lookupId}`) : null;
+    let sessionSnap = sessionRef ? await sessionRef.get() : null;
+
+    if ((!sessionSnap || !sessionSnap.exists) && lookupStripeSessionId) {
+      const querySnap = await db
+        .collection('tokenCheckoutSessions')
+        .where('stripeSessionId', '==', lookupStripeSessionId)
+        .limit(1)
+        .get();
+      if (!querySnap.empty) {
+        sessionSnap = querySnap.docs[0];
+        sessionRef = querySnap.docs[0].ref;
+      }
+    }
+
+    if (!sessionSnap || !sessionSnap.exists || !sessionRef) {
+      throw new functions.https.HttpsError('not-found', 'Checkout session not found');
+    }
+
+    const sessionData = sessionSnap.data() as {
+      uid?: string;
+      idempotencyKey?: string;
+      stripeSessionId?: string;
+      tokens?: number;
+      paymentStatus?: string;
+    };
+
+    const targetUid = (sessionData.uid || '').trim();
+    if (!targetUid) {
+      throw new functions.https.HttpsError('failed-precondition', 'Checkout session missing uid');
+    }
+
+    const isAdmin = await verifyAdmin(actorUid);
+    if (targetUid !== actorUid && !isAdmin) {
+      throw new functions.https.HttpsError('permission-denied', 'Checkout owner mismatch');
+    }
+
+    const tokens = normalizeNumber(sessionData.tokens);
+    if (tokens <= 0) {
+      throw new functions.https.HttpsError('failed-precondition', 'Checkout session missing tokens');
+    }
+
+    const stripeSessionId = (sessionData.stripeSessionId || lookupStripeSessionId).trim();
+    const terminalStates = new Set(['fulfilled', 'emulated_fulfilled']);
+    const currentStatus = (sessionData.paymentStatus || '').trim();
+
+    if (!terminalStates.has(currentStatus)) {
+      if (!isFunctionsEmulator && stripeSessionId && !stripeSessionId.startsWith('emulated_')) {
+        const stripe = await getStripeClient();
+        const stripeSession = await stripe.checkout.sessions.retrieve(stripeSessionId);
+        const isPaid = stripeSession.payment_status === 'paid' || stripeSession.status === 'complete';
+        if (!isPaid) {
+          throw new functions.https.HttpsError(
+            'failed-precondition',
+            'Checkout payment is not complete yet',
+          );
+        }
+      }
+
+      const idempotencyKey =
+        (sessionData.idempotencyKey || lookupId || stripeSessionId || '').trim() ||
+        `session_${sessionRef.id}`;
+      const walletRef = db.doc(`tokenWallets/${targetUid}`);
+      const txRef = db.doc(`tokenTransactions/${txDocId('purchase', idempotencyKey)}`);
+
+      await db.runTransaction(async (tx) => {
+        const [walletSnap, txSnap] = await Promise.all([tx.get(walletRef), tx.get(txRef)]);
+        if (!txSnap.exists) {
+          const currentWallet = walletFromSnapshot(targetUid, walletSnap);
+          tx.set(
+            walletRef,
+            {
+              available: currentWallet.available + tokens,
+              reserved: currentWallet.reserved,
+              lifetimePurchased: currentWallet.lifetimePurchased + tokens,
+              lifetimeSpent: currentWallet.lifetimeSpent,
+              lifetimeAdjusted: currentWallet.lifetimeAdjusted,
+              updatedAt: serverTimestamp(),
+            },
+            { merge: true },
+          );
+
+          tx.set(
+            txRef,
+            {
+              uid: targetUid,
+              type: 'purchase',
+              actorType: isAdmin ? 'admin' : 'courier',
+              action: 'token_purchase',
+              amount: tokens,
+              idempotencyKey,
+              metadata: {
+                stripeSessionId: stripeSessionId || null,
+                checkoutSessionId: sessionRef.id,
+              },
+              createdAt: serverTimestamp(),
+            },
+            { merge: true },
+          );
+        }
+
+        tx.set(
+          sessionRef,
+          {
+            paymentStatus: isFunctionsEmulator ? 'emulated_fulfilled' : 'fulfilled',
+            fulfilledAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true },
+        );
+      });
+    }
+
+    const walletSnap = await db.doc(`tokenWallets/${targetUid}`).get();
+    return {
+      status: isFunctionsEmulator ? 'emulated_fulfilled' : 'fulfilled',
+      wallet: walletFromSnapshot(targetUid, walletSnap),
+    };
+  },
+);
+
+export const adminGetTokenWalletView = functions.https.onCall(
+  async (data: AdminGetTokenWalletViewRequest, context) => {
+    if (!context.auth?.uid) {
+      throw new functions.https.HttpsError('unauthenticated', 'Authentication required');
+    }
+
+    const adminUid = context.auth.uid;
+    const isAdmin = await verifyAdmin(adminUid);
+    if (!isAdmin) {
+      throw new functions.https.HttpsError('permission-denied', 'Admin privileges required');
+    }
+
+    const targetUid = requireNonEmptyString(data?.uid, 'uid');
+    const db = admin.firestore();
+    const walletSnap = await db.doc(`tokenWallets/${targetUid}`).get();
+
+    const ledgerSnap = await db
+      .collection('tokenTransactions')
+      .where('uid', '==', targetUid)
+      .limit(100)
+      .get();
+
+    const ledger = ledgerSnap.docs
+      .map((doc) => ({ id: doc.id, ...(doc.data() as Record<string, unknown>) }))
+      .map((entry) => entry as Record<string, unknown> & { id: string; createdAt?: FirebaseFirestore.Timestamp })
+      .sort((a, b) => {
+        const aMs = a.createdAt?.toMillis?.() || 0;
+        const bMs = b.createdAt?.toMillis?.() || 0;
+        return bMs - aMs;
+      });
+
+    return {
+      wallet: walletFromSnapshot(targetUid, walletSnap),
+      ledger,
+    };
+  },
+);
+
+export const adminListTokenLedger = functions.https.onCall(
+  async (data: AdminListTokenLedgerRequest, context) => {
+    if (!context.auth?.uid) {
+      throw new functions.https.HttpsError('unauthenticated', 'Authentication required');
+    }
+
+    const adminUid = context.auth.uid;
+    const isAdmin = await verifyAdmin(adminUid);
+    if (!isAdmin) {
+      throw new functions.https.HttpsError('permission-denied', 'Admin privileges required');
+    }
+
+    const uid = (data?.uid || '').trim();
+    const limit = Math.max(1, Math.min(200, Math.floor(normalizeNumber(data?.limit) || 50)));
+    const db = admin.firestore();
+
+    const query = uid
+      ? db.collection('tokenTransactions').where('uid', '==', uid).limit(limit)
+      : db.collection('tokenTransactions').orderBy('createdAt', 'desc').limit(limit);
+
+    const snap = await query.get();
+    const entries = snap.docs
+      .map((doc) => ({ id: doc.id, ...(doc.data() as Record<string, unknown>) }))
+      .map((entry) => entry as Record<string, unknown> & { id: string; createdAt?: FirebaseFirestore.Timestamp })
+      .sort((a, b) => {
+        const aMs = a.createdAt?.toMillis?.() || 0;
+        const bMs = b.createdAt?.toMillis?.() || 0;
+        return bMs - aMs;
+      })
+      .slice(0, limit);
+
+    return {
+      entries,
+      count: entries.length,
+      uid: uid || null,
+    };
   },
 );
 

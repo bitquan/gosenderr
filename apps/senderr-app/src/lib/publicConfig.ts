@@ -13,7 +13,7 @@ function resolvePublicConfigUrl(): string {
   const explicitUrl = import.meta.env.VITE_PUBLIC_CONFIG_URL || ''
   if (explicitUrl) return explicitUrl
 
-  const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID || ''
+  const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID || import.meta.env.VITE_FIREBASE_PROJECT || ''
   if (!projectId) return ''
 
   return `https://us-central1-${projectId}.cloudfunctions.net/getPublicConfigHttp`

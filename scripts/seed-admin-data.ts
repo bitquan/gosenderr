@@ -1,9 +1,5 @@
 // Seed admin-specific data: categories, feature flags, platform settings
-const admin = require('firebase-admin');
-const path = require('path');
-
-// Use admin SDK from functions folder
-const adminModule = require(path.join(__dirname, '../firebase/functions/node_modules/firebase-admin'));
+const adminModule = require('./firebase-admin-wrapper');
 
 // Connect to emulator
 process.env.FIRESTORE_EMULATOR_HOST = '127.0.0.1:8080';
