@@ -191,3 +191,6 @@ Because deletions dominate, imports must be selective and additive-first.
 - ✅ Batch 5c: `firebase/functions/src/stripe/tokenWallet.ts` reviewed and intentionally **not imported**.
   - Reason: source delta migrates callable signatures and removes checkout-session status writeback path.
   - Unified retains current status writeback behavior used by token checkout tracking.
+- ✅ Batch 5d: `firebase/functions/src/stripe/createMarketplaceOrder.ts` imported (hotfix variant).
+  - Includes external payment rail support with token-policy-gated external rail charging path.
+  - Kept as single-file micro-batch with no-delete constraints.
