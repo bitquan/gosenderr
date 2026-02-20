@@ -4,10 +4,20 @@ import { getAuth, Auth, connectAuthEmulator } from 'firebase/auth'
 import { getStorage, FirebaseStorage, connectStorageEmulator } from 'firebase/storage'
 import { getFunctions, Functions, connectFunctionsEmulator } from 'firebase/functions'
 
+const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID || import.meta.env.VITE_FIREBASE_PROJECT || ''
+const isEmulatorMode =
+  import.meta.env.DEV && (
+    import.meta.env.VITE_USE_FIREBASE_EMULATORS === "true" ||
+    Boolean(import.meta.env.VITE_FIREBASE_AUTH_EMULATOR_HOST) ||
+    Boolean(import.meta.env.VITE_FIRESTORE_EMULATOR_HOST)
+  )
+
+const emulatorApiKeyFallback = 'AIzaSyA-LOCAL-EMULATOR-KEY-0000000000000000'
+
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || '',
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || import.meta.env.VITE_FIREBASE_PROJECT || '',
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || (isEmulatorMode ? emulatorApiKeyFallback : ''),
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || (projectId ? `${projectId}.firebaseapp.com` : ''),
+  projectId,
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || '',
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
   appId: import.meta.env.VITE_FIREBASE_APP_ID || '',
@@ -25,12 +35,7 @@ let authInstance: Auth | undefined
 let storageInstance: FirebaseStorage | undefined
 let functionsInstance: Functions | undefined
 
-const shouldUseEmulators =
-  import.meta.env.DEV && (
-    import.meta.env.VITE_USE_FIREBASE_EMULATORS === "true" ||
-    Boolean(import.meta.env.VITE_FIREBASE_AUTH_EMULATOR_HOST) ||
-    Boolean(import.meta.env.VITE_FIRESTORE_EMULATOR_HOST)
-  )
+const shouldUseEmulators = isEmulatorMode
 
 if (isValidConfig) {
   try {
