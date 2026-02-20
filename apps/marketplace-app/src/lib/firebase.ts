@@ -7,13 +7,17 @@ import { getFunctions, Functions, connectFunctionsEmulator } from 'firebase/func
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || '',
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || '',
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || import.meta.env.VITE_FIREBASE_PROJECT || '',
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || '',
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
   appId: import.meta.env.VITE_FIREBASE_APP_ID || '',
 }
 
-const isValidConfig = firebaseConfig.apiKey && firebaseConfig.apiKey.startsWith('AIza')
+const isValidConfig =
+  (firebaseConfig.apiKey && firebaseConfig.apiKey.startsWith('AIza')) ||
+  Boolean(import.meta.env.VITE_FIREBASE_AUTH_EMULATOR_HOST) ||
+  Boolean(import.meta.env.VITE_FIRESTORE_EMULATOR_HOST) ||
+  Boolean(firebaseConfig.projectId)
 
 let app: FirebaseApp | undefined
 let dbInstance: Firestore | undefined
@@ -22,7 +26,11 @@ let storageInstance: FirebaseStorage | undefined
 let functionsInstance: Functions | undefined
 
 const shouldUseEmulators =
-  import.meta.env.DEV && import.meta.env.VITE_USE_FIREBASE_EMULATORS === "true"
+  import.meta.env.DEV && (
+    import.meta.env.VITE_USE_FIREBASE_EMULATORS === "true" ||
+    Boolean(import.meta.env.VITE_FIREBASE_AUTH_EMULATOR_HOST) ||
+    Boolean(import.meta.env.VITE_FIRESTORE_EMULATOR_HOST)
+  )
 
 if (isValidConfig) {
   try {
@@ -35,10 +43,28 @@ if (isValidConfig) {
     // Connect to Firebase Emulators only when explicitly enabled
     if (shouldUseEmulators) {
       try {
-        connectFirestoreEmulator(dbInstance, '127.0.0.1', 8080)
-        connectAuthEmulator(authInstance, 'http://127.0.0.1:9099', { disableWarnings: true })
-        connectStorageEmulator(storageInstance, '127.0.0.1', 9199)
-        connectFunctionsEmulator(functionsInstance, '127.0.0.1', 5001)
+        const firestoreEmulator = (import.meta.env.VITE_FIRESTORE_EMULATOR_HOST || '').trim()
+        if (firestoreEmulator) {
+          const [host, portStr] = firestoreEmulator.split(':')
+          connectFirestoreEmulator(dbInstance, host, Number(portStr || 8080))
+        }
+
+        const authEmulator = (import.meta.env.VITE_FIREBASE_AUTH_EMULATOR_HOST || '').trim()
+        if (authEmulator) {
+          connectAuthEmulator(authInstance, `http://${authEmulator}`, { disableWarnings: true })
+        }
+
+        const storageEmulator = (import.meta.env.VITE_FIREBASE_STORAGE_EMULATOR_HOST || '').trim()
+        if (storageEmulator) {
+          const [host, portStr] = storageEmulator.split(':')
+          connectStorageEmulator(storageInstance, host, Number(portStr || 9199))
+        }
+
+        const functionsEmulator = (import.meta.env.VITE_FIREBASE_FUNCTIONS_EMULATOR_HOST || '').trim()
+        if (functionsEmulator) {
+          const [host, portStr] = functionsEmulator.split(':')
+          connectFunctionsEmulator(functionsInstance, host, Number(portStr || 5001))
+        }
         console.log('Connected to Firebase Emulators')
       } catch (emulatorError) {
         // Emulator already connected (ignore error on hot reload)
