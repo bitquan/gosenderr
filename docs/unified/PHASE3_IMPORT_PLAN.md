@@ -62,4 +62,11 @@ Because deletions dominate, imports must be selective and additive-first.
 - ✅ Workflow/governance safe deltas imported.
 - ✅ Admin navigation helper imported.
 - ✅ Admin navigation test imported.
-- ⏭ Next: Batch A additive senderr map-shell files (new files only).
+- ✅ Batch A additive senderr map-shell files imported.
+- ✅ Batch B additive marketplace/senderr food + navigation modules imported.
+- ✅ Phase C runtime wiring: `senderr-app` map-shell route + dashboard preview wired.
+- ✅ Phase C runtime wiring: `marketplace-app` food-pickup routes wired.
+- ✅ Phase C review: `courieriosnativeclean` examined; no safe minimal wiring import from smoke/local.
+  - Smoke `index.js` uses multi-name registration loop (regresses stabilized single-name registration).
+  - Smoke `AppDelegate.swift` is older/simpler and would regress current iOS startup hardening.
+- ⏭ Next: Phase C/R3 review for `firebase/functions` and `packages/shared` with explicit no-delete allowlist.
