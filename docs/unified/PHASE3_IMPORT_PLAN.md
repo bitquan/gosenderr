@@ -176,3 +176,6 @@ Because deletions dominate, imports must be selective and additive-first.
 - ✅ Batch 2: `firebase/functions/src/http/sendTestPush.ts` reviewed and intentionally **not imported**.
   - Reason: source delta removes APNS topic fallback default path.
   - Unified currently keeps fallback + retry behavior to avoid push regression.
+- ✅ Batch 3: `firebase/functions/src/triggers/autoCancel.ts` reviewed and intentionally **not imported**.
+  - Reason: source delta removes APNS notification payload and narrows FCM token resolution.
+  - Unified retains broader token lookup + APNS payload for cancellation delivery reliability.
