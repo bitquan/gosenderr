@@ -185,3 +185,6 @@ Because deletions dominate, imports must be selective and additive-first.
 - ✅ Batch 5a: `firebase/functions/src/http/courierJobCommands.ts` reviewed and intentionally **not imported**.
   - Reason: source delta removes idempotency receipt handling and token-payout protection logic.
   - Unified retains these safeguards for command reliability and payout safety.
+- ✅ Batch 5b: `firebase/functions/src/http/tokenWalletCommands.ts` reviewed and intentionally **not imported**.
+  - Reason: source delta removes substantial wallet-type/admin ledger functionality.
+  - Unified retains current expanded token wallet command surface to avoid functional regression.
