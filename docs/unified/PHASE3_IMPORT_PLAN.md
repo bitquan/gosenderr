@@ -69,4 +69,12 @@ Because deletions dominate, imports must be selective and additive-first.
 - ✅ Phase C review: `courieriosnativeclean` examined; no safe minimal wiring import from smoke/local.
   - Smoke `index.js` uses multi-name registration loop (regresses stabilized single-name registration).
   - Smoke `AppDelegate.swift` is older/simpler and would regress current iOS startup hardening.
-- ⏭ Next: Phase C/R3 review for `firebase/functions` and `packages/shared` with explicit no-delete allowlist.
+- ✅ Phase C/R3 additive import batch applied for `firebase/functions` and `packages/shared` (no-delete):
+  - `firebase/functions/src/http/logCommandFailure.ts`
+  - `firebase/functions/src/http/runSystemSimulation.ts`
+  - `firebase/functions/src/http/simulateRule.ts`
+  - `firebase/functions/test/tokenWallet.spec.ts`
+  - `packages/shared/src/types/foodPickup.ts`
+  - `packages/shared/src/types/tokenWallet.ts`
+  - `packages/shared/src/utils/featureFlags.ts`
+- ⏭ Next: Phase C/R3 existing-file wiring review (`firebase/functions/src/index.ts`, package exports, and any required route/export touchpoints), still no-delete.
