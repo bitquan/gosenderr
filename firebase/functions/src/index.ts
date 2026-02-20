@@ -25,6 +25,9 @@ export { getPublicConfig } from "./http/getPublicConfig";
 export { getPublicConfigHttp } from "./http/getPublicConfigHttp";
 export { createPaymentIntentHttp } from "./http/createPaymentIntentHttp";
 export { sendTestPush } from "./http/sendTestPush";
+export { logCommandFailure } from "./http/logCommandFailure";
+export { simulateRule } from "./http/simulateRule";
+export { runSystemSimulation } from "./http/runSystemSimulation";
 export {
 	claimCourierJob,
 	advanceCourierJobStatus,

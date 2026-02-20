@@ -77,4 +77,13 @@ Because deletions dominate, imports must be selective and additive-first.
   - `packages/shared/src/types/foodPickup.ts`
   - `packages/shared/src/types/tokenWallet.ts`
   - `packages/shared/src/utils/featureFlags.ts`
-- ⏭ Next: Phase C/R3 existing-file wiring review (`firebase/functions/src/index.ts`, package exports, and any required route/export touchpoints), still no-delete.
+- ✅ Phase C/R3 existing-file wiring review complete (no-delete):
+  - `firebase/functions/src/index.ts` now exports:
+    - `logCommandFailure`
+    - `simulateRule`
+    - `runSystemSimulation`
+  - `packages/shared/src/index.ts` now exports:
+    - `types/foodPickup`
+    - `types/tokenWallet`
+    - `utils/featureFlags`
+- ⏭ Next: Phase C/R3 selective existing-file modifications from source branches (`M` files) using per-file contract/runtime review, still no-delete.
