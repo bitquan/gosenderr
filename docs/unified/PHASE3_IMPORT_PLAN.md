@@ -194,3 +194,4 @@ Because deletions dominate, imports must be selective and additive-first.
 - ✅ Batch 5d: `firebase/functions/src/stripe/createMarketplaceOrder.ts` imported (hotfix variant).
   - Includes external payment rail support with token-policy-gated external rail charging path.
   - Kept as single-file micro-batch with no-delete constraints.
+- ✅ Batch 5e: `firebase/functions/src/stripe/webhook.ts` checked and already aligned (no change needed).
