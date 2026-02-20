@@ -1,0 +1,30 @@
+name: Nightly Emulator Integration Tests
+
+on:
+  schedule:
+    - cron: '0 3 * * *' # daily at 03:00 UTC
+  workflow_dispatch: {}
+
+jobs:
+  emulator-integration:
+    name: Emulator Integration (nightly)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Enable corepack and install pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@8.0.0 --activate
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run courier integration tests on emulator
+        run: pnpm exec firebase emulators:exec --project demo-senderr --only firestore,auth "pnpm --filter courieriosnativeclean test:integration"
