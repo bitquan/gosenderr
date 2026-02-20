@@ -179,3 +179,6 @@ Because deletions dominate, imports must be selective and additive-first.
 - ✅ Batch 3: `firebase/functions/src/triggers/autoCancel.ts` reviewed and intentionally **not imported**.
   - Reason: source delta removes APNS notification payload and narrows FCM token resolution.
   - Unified retains broader token lookup + APNS payload for cancellation delivery reliability.
+- ✅ Batch 4: `firebase/functions/src/triggers/notifications.ts` reviewed and intentionally **not imported**.
+  - Reason: source delta removes APNS payload and simplifies notification preference/token resolution in ways that can reduce delivery coverage.
+  - Unified retains current broader preference mapping + APNS notification payload.
