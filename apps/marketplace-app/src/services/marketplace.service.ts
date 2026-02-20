@@ -20,6 +20,12 @@ import {
   QueryConstraint
 } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
+import {
+  commitUtilityTokens,
+  getTokenPolicyForMarketplace,
+  releaseUtilityTokens,
+  reserveUtilityTokens,
+} from '@/services/tokenAds.service';
 import type {
   MarketplaceItem,
   CreateListingInput,
@@ -116,15 +122,34 @@ export class MarketplaceService {
     const docSnap = await getDoc(docRef);
     
     if (!docSnap.exists()) return null;
-    
-    // Increment view count
-    await updateDoc(docRef, {
-      views: (docSnap.data().views || 0) + 1
-    });
+
+    const itemData = docSnap.data();
+
+    // Increment view count as best-effort only.
+    // Listing reads should still succeed even if this write is blocked.
+    try {
+      await updateDoc(docRef, {
+        views: (itemData.views || 0) + 1,
+      });
+    } catch (error: any) {
+      const code = String(error?.code || '');
+      const message = String(error?.message || '');
+      if (code.includes('permission-denied') || message.includes('Missing or insufficient permissions')) {
+        console.warn('Skipping marketplace item view increment due to permission constraints', {
+          itemId,
+          code,
+        });
+      } else {
+        console.warn('Skipping marketplace item view increment after non-blocking write failure', {
+          itemId,
+          code,
+        });
+      }
+    }
     
     return {
       id: docSnap.id,
-      ...docSnap.data()
+      ...itemData,
     } as MarketplaceItem;
   }
   
@@ -157,6 +182,25 @@ export class MarketplaceService {
       throw new Error('Seller application must be approved before creating listings');
     }
     
+    const policy = await getTokenPolicyForMarketplace();
+    const listingPublishCost = policy.enabled
+      ? Math.max(Number(policy.costs?.listingPublish ?? 0), 0)
+      : 0;
+
+    let reservationId: string | null = null;
+
+    if (listingPublishCost > 0) {
+      const reservation = await reserveUtilityTokens({
+        action: 'listingPublish',
+        amount: listingPublishCost,
+        metadata: {
+          title: input.title,
+          category: input.category,
+        },
+      });
+      reservationId = reservation.reservationId;
+    }
+
     // Create listing
     const normalizeUrl = (url: string) => {
       if (!url) return url;
@@ -189,12 +233,39 @@ export class MarketplaceService {
       publishedAt: Timestamp.now()
     };
     
-    const docRef = await addDoc(collection(db, 'marketplaceItems'), listing);
-    
-    // Activate seller profile if needed
-    await this.activateSellerProfile(currentUser.uid, userData);
-    
-    return docRef.id;
+    try {
+      const docRef = await addDoc(collection(db, 'marketplaceItems'), listing);
+
+      if (reservationId) {
+        await commitUtilityTokens({
+          reservationId,
+          metadata: {
+            itemId: docRef.id,
+            action: 'listingPublish',
+          },
+        });
+      }
+
+      // Activate seller profile if needed
+      await this.activateSellerProfile(currentUser.uid, userData);
+
+      return docRef.id;
+    } catch (error) {
+      if (reservationId) {
+        try {
+          await releaseUtilityTokens({
+            reservationId,
+            reason: 'listing_publish_failed',
+            metadata: {
+              title: input.title,
+            },
+          });
+        } catch {
+          // no-op: best effort release
+        }
+      }
+      throw error;
+    }
   }
   
   /**

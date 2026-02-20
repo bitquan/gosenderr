@@ -75,6 +75,15 @@ interface CreateUserResult {
   uid?: string
 }
 
+interface DeleteUserForAdminRequest {
+  targetUserId: string
+}
+
+interface DeleteUserForAdminResult {
+  success: boolean
+  targetUserId: string
+}
+
 interface RunTestFlowRequest {
   targetUserId: string
   steps?: string[]
@@ -86,9 +95,35 @@ interface RunTestFlowResult {
   runLogId?: string
 }
 
+interface AdminJobLocationInput {
+  name?: string
+  address: string
+  lat: number
+  lng: number
+}
+
+interface CreateAdminJobRequest {
+  mode: 'test' | 'manual'
+  type: 'package' | 'food'
+  pickup: AdminJobLocationInput
+  dropoff: AdminJobLocationInput
+  estimatedFee: number
+  agreedFee?: number
+  description?: string
+  sourceJobId?: string
+}
+
+interface CreateAdminJobResult {
+  success: boolean
+  jobId: string
+  status: string
+}
+
 const createUserForAdminFn = httpsCallable<CreateUserRequest, CreateUserResult>(functions, 'createUserForAdmin')
+const deleteUserForAdminFn = httpsCallable<DeleteUserForAdminRequest, DeleteUserForAdminResult>(functions, 'deleteUserForAdmin')
 const diagnoseCreateUserCallFn = httpsCallable<Record<string, unknown>, any>(functions, 'diagnoseCreateUserCall')
 const runTestFlowFn = httpsCallable<RunTestFlowRequest, RunTestFlowResult>(functions, 'runTestFlow')
+const createAdminJobFn = httpsCallable<CreateAdminJobRequest, CreateAdminJobResult>(functions, 'createAdminJob')
 
 // Simulate Firestore rules for a given path under the emulator (admin-only)
 interface SimulateRuleRequest {
@@ -116,6 +151,73 @@ interface RunSystemSimulationResult {
   created?: any
 }
 const runSystemSimulationFn = httpsCallable<RunSystemSimulationRequest, RunSystemSimulationResult>(functions, 'runSystemSimulation')
+const adminGetTokenWalletViewFn = httpsCallable<AdminGetTokenWalletViewRequest, AdminGetTokenWalletViewResult>(
+  functions,
+  'adminGetTokenWalletView',
+)
+const adminListTokenLedgerFn = httpsCallable<AdminListTokenLedgerRequest, AdminListTokenLedgerResult>(
+  functions,
+  'adminListTokenLedger',
+)
+const adjustTokenWalletBalanceFn = httpsCallable<AdjustTokenWalletBalanceRequest, AdjustTokenWalletBalanceResult>(
+  functions,
+  'adjustTokenWalletBalance',
+)
+
+interface AdminGetTokenWalletViewRequest {
+  targetUid?: string
+  targetEmail?: string
+  walletType?: 'utility' | 'payout'
+}
+
+interface TokenWalletSummary {
+  uid: string
+  available: number
+  reserved: number
+  lifetimePurchased: number
+  lifetimeSpent: number
+  lifetimeAdjusted: number
+}
+
+interface AdminTokenTarget {
+  uid: string
+  email: string | null
+  displayName: string | null
+  role: string | null
+}
+
+interface AdminGetTokenWalletViewResult {
+  user: AdminTokenTarget
+  wallet: TokenWalletSummary
+  walletType?: 'utility' | 'payout'
+}
+
+interface AdminListTokenLedgerRequest {
+  targetUid?: string
+  targetEmail?: string
+  action?: string
+  type?: string
+  includeCashFeeOnly?: boolean
+  limit?: number
+  walletType?: 'utility' | 'payout'
+}
+
+interface AdminListTokenLedgerResult {
+  target: AdminTokenTarget | null
+  count: number
+  rows: Array<Record<string, unknown>>
+  walletType?: 'utility' | 'payout'
+}
+
+interface AdjustTokenWalletBalanceRequest {
+  targetUid: string
+  delta: number
+  reason: string
+  idempotencyKey: string
+  metadata?: Record<string, unknown>
+}
+
+interface AdjustTokenWalletBalanceResult extends TokenWalletSummary {}
 
 export async function simulateRule(data: SimulateRuleRequest): Promise<SimulateRuleResult> {
   try {
@@ -136,6 +238,42 @@ export async function runSystemSimulation(data: RunSystemSimulationRequest): Pro
     throw new Error(error.message || 'Failed to run system simulation')
   }
 }
+
+export async function adminGetTokenWalletView(
+  data: AdminGetTokenWalletViewRequest,
+): Promise<AdminGetTokenWalletViewResult> {
+  try {
+    const res = await adminGetTokenWalletViewFn(data)
+    return res.data
+  } catch (error: any) {
+    console.error('adminGetTokenWalletView error', error)
+    throw new Error(error.message || 'Failed to fetch token wallet')
+  }
+}
+
+export async function adminListTokenLedger(
+  data: AdminListTokenLedgerRequest,
+): Promise<AdminListTokenLedgerResult> {
+  try {
+    const res = await adminListTokenLedgerFn(data)
+    return res.data
+  } catch (error: any) {
+    console.error('adminListTokenLedger error', error)
+    throw new Error(error.message || 'Failed to fetch token ledger')
+  }
+}
+
+export async function adjustTokenWalletBalance(
+  data: AdjustTokenWalletBalanceRequest,
+): Promise<AdjustTokenWalletBalanceResult> {
+  try {
+    const res = await adjustTokenWalletBalanceFn(data)
+    return res.data
+  } catch (error: any) {
+    console.error('adjustTokenWalletBalance error', error)
+    throw new Error(error.message || 'Failed to adjust token wallet')
+  }
+}
 export async function createUserForAdmin(data: CreateUserRequest): Promise<CreateUserResult> {
   try {
     const res = await createUserForAdminFn(data)
@@ -146,6 +284,16 @@ export async function createUserForAdmin(data: CreateUserRequest): Promise<Creat
   }
 }
 
+export async function deleteUserForAdmin(data: DeleteUserForAdminRequest): Promise<DeleteUserForAdminResult> {
+  try {
+    const res = await deleteUserForAdminFn(data)
+    return res.data
+  } catch (error: any) {
+    console.error('deleteUserForAdmin error', error)
+    throw new Error(error.message || 'Failed to delete user')
+  }
+}
+
 export async function runTestFlow(data: RunTestFlowRequest): Promise<RunTestFlowResult> {
   try {
     const res = await runTestFlowFn(data)
@@ -153,6 +301,16 @@ export async function runTestFlow(data: RunTestFlowRequest): Promise<RunTestFlow
   } catch (error: any) {
     console.error('runTestFlow error', error)
     throw new Error(error.message || 'Failed to run test flow')
+  }
+}
+
+export async function createAdminJob(data: CreateAdminJobRequest): Promise<CreateAdminJobResult> {
+  try {
+    const res = await createAdminJobFn(data)
+    return res.data
+  } catch (error: any) {
+    console.error('createAdminJob error', error)
+    throw new Error(error.message || 'Failed to create admin job')
   }
 }
 

@@ -137,6 +137,7 @@ export default function PackageDetailsPage() {
           Tracking Number: {packageData.trackingNumber}
         </p>
       </div>
+
       {/* Status Card */}
       <GlassCard>
         <h2 className="text-xl font-semibold mb-4">Current Status</h2>
@@ -160,6 +161,7 @@ export default function PackageDetailsPage() {
           </Link>
         </div>
       </GlassCard>
+
       {/* Addresses */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <GlassCard>
@@ -175,6 +177,7 @@ export default function PackageDetailsPage() {
           </p>
         </GlassCard>
       </div>
+
       {/* Package Details */}
       <GlassCard>
         <h2 className="text-xl font-semibold mb-4">Package Information</h2>
@@ -205,6 +208,7 @@ export default function PackageDetailsPage() {
           </div>
         </div>
       </GlassCard>
+
       {/* Tracking & Delivery */}
       <GlassCard>
         <h2 className="text-xl font-semibold mb-4">Tracking & Delivery</h2>
@@ -292,6 +296,7 @@ export default function PackageDetailsPage() {
           </div>
         )}
       </GlassCard>
+
       {/* Pricing */}
       {packageData.pricing && (
         <GlassCard>
@@ -337,6 +342,7 @@ export default function PackageDetailsPage() {
           </div>
         </GlassCard>
       )}
+
       {/* Journey */}
       {packageData.journey && packageData.journey.length > 0 && (
         <GlassCard>

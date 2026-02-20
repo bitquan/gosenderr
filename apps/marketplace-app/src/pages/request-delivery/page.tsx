@@ -49,6 +49,8 @@ type DeliveryItem = Omit<MarketplaceItem, "pickupLocation"> & {
 export default function RequestDeliveryPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const requestedRail = (searchParams?.get("paymentRail") || searchParams?.get("externalProvider") || "").toLowerCase();
+  const requiresTokenPayoutOptIn = requestedRail === "external" || requestedRail.startsWith("external_") || requestedRail === "token";
   const { user, loading: authLoading } = useAuthUser();
   const { settings: platformSettings } = usePlatformSettings();
 
@@ -187,6 +189,7 @@ export default function RequestDeliveryPage() {
             : workModes?.packagesEnabled ?? true;
 
           if (!workModeEnabled) return;
+          if (requiresTokenPayoutOptIn && courier.courierProfile.acceptTokenPayoutJobs === false) return;
 
           // Check service radius
           if (!courier.courierProfile.currentLocation) return;
@@ -264,7 +267,7 @@ export default function RequestDeliveryPage() {
     );
 
     return () => unsubscribe();
-  }, [item, dropoffAddress, distance, estimatedMinutes, platformSettings]);
+  }, [item, dropoffAddress, distance, estimatedMinutes, platformSettings, requiresTokenPayoutOptIn]);
 
   const handleCourierSelect = (courier: CourierWithRate) => {
     setSelectedCourier(courier);

@@ -133,6 +133,14 @@ export interface MarketplaceItem {
   views: number;
   favorites: number;
   soldCount: number;
+
+  // Ads / boost
+  adBoost?: {
+    tier?: 'standard' | 'spotlight';
+    boostedUntil?: Timestamp;
+    lastBoostAt?: Timestamp;
+    totalSpentTokens?: number;
+  };
   
   // Timestamps
   createdAt: Timestamp;

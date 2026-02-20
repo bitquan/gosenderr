@@ -1,7 +1,6 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import { getStripeClient } from "../stripe/stripeSecrets";
-import { creditTokensFromCheckoutSession } from "../stripe/tokenWallet";
 import { logAdminAction, verifyAdmin } from "../utils/adminUtils";
 
 const serverTimestamp = (): Date => new Date();
@@ -33,26 +32,18 @@ interface TokenWalletSummary {
   updatedAt?: FirebaseFirestore.Timestamp | FirebaseFirestore.FieldValue | Date;
 }
 
-type WalletType = "utility" | "payout";
-
-interface WalletSummaryRequest {
-  walletType?: WalletType;
-}
-
 interface TokenReserveRequest {
   action?: string;
   amount?: number;
   idempotencyKey?: string;
   metadata?: Record<string, unknown>;
   targetUid?: string;
-  walletType?: WalletType;
 }
 
 interface TokenCommitRequest {
   reservationId?: string;
   idempotencyKey?: string;
   metadata?: Record<string, unknown>;
-  walletType?: WalletType;
 }
 
 interface TokenReleaseRequest {
@@ -60,7 +51,6 @@ interface TokenReleaseRequest {
   idempotencyKey?: string;
   reason?: string;
   metadata?: Record<string, unknown>;
-  walletType?: WalletType;
 }
 
 interface TokenRefundRequest {
@@ -69,7 +59,6 @@ interface TokenRefundRequest {
   idempotencyKey?: string;
   reason?: string;
   metadata?: Record<string, unknown>;
-  walletType?: WalletType;
 }
 
 interface AdjustTokenWalletBalanceRequest {
@@ -85,27 +74,6 @@ interface TokenCreateCheckoutSessionRequest {
   successUrl?: string;
   cancelUrl?: string;
   idempotencyKey?: string;
-}
-
-interface TokenFinalizeCheckoutSessionRequest {
-  idempotencyKey?: string;
-  sessionId?: string;
-}
-
-interface AdminGetTokenWalletViewRequest {
-  targetUid?: string;
-  targetEmail?: string;
-  walletType?: WalletType;
-}
-
-interface AdminListTokenLedgerRequest {
-  targetUid?: string;
-  targetEmail?: string;
-  action?: string;
-  type?: string;
-  includeCashFeeOnly?: boolean;
-  limit?: number;
-  walletType?: WalletType;
 }
 
 const DEFAULT_TOKEN_POLICY: TokenPolicy = {
@@ -146,30 +114,6 @@ function requireNonEmptyString(value: unknown, fieldName: string): string {
 function txDocId(type: string, idempotencyKey: string): string {
   const safe = idempotencyKey.replace(/[^a-zA-Z0-9_-]/g, "_");
   return `${type}_${safe}`;
-}
-
-function normalizeWalletType(value: unknown): WalletType {
-  return value === "payout" ? "payout" : "utility";
-}
-
-function getWalletCollections(walletType: WalletType): {
-  wallets: string;
-  reservations: string;
-  transactions: string;
-} {
-  if (walletType === "payout") {
-    return {
-      wallets: "payoutTokenWallets",
-      reservations: "payoutTokenReservations",
-      transactions: "payoutTokenTransactions",
-    };
-  }
-
-  return {
-    wallets: "tokenWallets",
-    reservations: "tokenReservations",
-    transactions: "tokenTransactions",
-  };
 }
 
 function walletFromSnapshot(
@@ -215,88 +159,6 @@ function ensureNonNegative(value: number, errorMessage: string): void {
   }
 }
 
-function timestampToMillis(value: unknown): number {
-  if (!value) return 0;
-
-  if (value instanceof Date) {
-    return value.getTime();
-  }
-
-  if (
-    typeof value === 'object' &&
-    value !== null &&
-    'toMillis' in (value as Record<string, unknown>) &&
-    typeof (value as { toMillis?: unknown }).toMillis === 'function'
-  ) {
-    return ((value as { toMillis: () => number }).toMillis() || 0);
-  }
-
-  if (
-    typeof value === 'object' &&
-    value !== null &&
-    'seconds' in (value as Record<string, unknown>)
-  ) {
-    const seconds = Number((value as { seconds?: unknown }).seconds || 0);
-    const nanos = Number((value as { nanoseconds?: unknown }).nanoseconds || 0);
-    return seconds * 1000 + Math.floor(nanos / 1_000_000);
-  }
-
-  const parsed = Date.parse(String(value));
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
-async function resolveAdminTarget(
-  targetUidRaw?: string,
-  targetEmailRaw?: string,
-): Promise<{ uid: string; email: string | null; displayName: string | null; role: string | null } | null> {
-  const targetUid = targetUidRaw?.trim();
-  const targetEmail = targetEmailRaw?.trim().toLowerCase();
-
-  if (!targetUid && !targetEmail) {
-    return null;
-  }
-
-  let uid = targetUid || '';
-  let authUser: admin.auth.UserRecord | null = null;
-
-  if (!uid && targetEmail) {
-    try {
-      authUser = await admin.auth().getUserByEmail(targetEmail);
-      uid = authUser.uid;
-    } catch (error: unknown) {
-      throw new functions.https.HttpsError('not-found', 'No user found for targetEmail');
-    }
-  }
-
-  if (!uid) {
-    throw new functions.https.HttpsError('invalid-argument', 'targetUid or targetEmail is required');
-  }
-
-  if (!authUser) {
-    try {
-      authUser = await admin.auth().getUser(uid);
-    } catch (error: unknown) {
-      throw new functions.https.HttpsError('not-found', 'No user found for targetUid');
-    }
-  }
-
-  const userDoc = await admin.firestore().doc(`users/${uid}`).get();
-  const userData = userDoc.exists ? (userDoc.data() as Record<string, unknown>) : {};
-
-  return {
-    uid,
-    email:
-      (typeof userData?.email === 'string' ? String(userData.email) : null) ||
-      authUser.email ||
-      null,
-    displayName:
-      (typeof userData?.fullName === 'string' ? String(userData.fullName) : null) ||
-      authUser.displayName ||
-      null,
-    role: typeof userData?.role === 'string' ? String(userData.role) : null,
-  };
-}
-
 export const getTokenPolicy = functions.https.onCall(async (_data, context) => {
   if (!context.auth?.uid) {
     throw new functions.https.HttpsError(
@@ -308,7 +170,7 @@ export const getTokenPolicy = functions.https.onCall(async (_data, context) => {
   return getTokenPolicyInternal();
 });
 
-export const getTokenWalletSummary = functions.https.onCall(async (data: WalletSummaryRequest, context) => {
+export const getTokenWalletSummary = functions.https.onCall(async (_data, context) => {
   if (!context.auth?.uid) {
     throw new functions.https.HttpsError(
       'unauthenticated',
@@ -317,151 +179,10 @@ export const getTokenWalletSummary = functions.https.onCall(async (data: WalletS
   }
 
   const uid = context.auth.uid;
-  const walletType = normalizeWalletType(data?.walletType);
-  const collections = getWalletCollections(walletType);
-  const walletRef = admin.firestore().doc(`${collections.wallets}/${uid}`);
+  const walletRef = admin.firestore().doc(`tokenWallets/${uid}`);
   const walletSnap = await walletRef.get();
-  const wallet = walletFromSnapshot(uid, walletSnap);
-
-  console.log("getTokenWalletSummary resolved", {
-    uid,
-    walletType,
-    walletPath: `${collections.wallets}/${uid}`,
-    available: wallet.available,
-    reserved: wallet.reserved,
-    lifetimePurchased: wallet.lifetimePurchased,
-  });
-
-  return {
-    ...wallet,
-    walletType,
-  };
+  return walletFromSnapshot(uid, walletSnap);
 });
-
-export const getPayoutTokenWalletSummary = functions.https.onCall(async (_data, context) => {
-  if (!context.auth?.uid) {
-    throw new functions.https.HttpsError(
-      'unauthenticated',
-      'Authentication required',
-    );
-  }
-
-  const uid = context.auth.uid;
-  const walletRef = admin.firestore().doc(`payoutTokenWallets/${uid}`);
-  const walletSnap = await walletRef.get();
-  return {
-    ...walletFromSnapshot(uid, walletSnap),
-    walletType: 'payout' as const,
-  };
-});
-
-export const adminGetTokenWalletView = functions.https.onCall(
-  async (data: AdminGetTokenWalletViewRequest, context) => {
-    if (!context.auth?.uid) {
-      throw new functions.https.HttpsError('unauthenticated', 'Authentication required');
-    }
-
-    const isAdmin = await verifyAdmin(context.auth.uid);
-    if (!isAdmin) {
-      throw new functions.https.HttpsError('permission-denied', 'Admin privileges required');
-    }
-
-    const target = await resolveAdminTarget(data?.targetUid, data?.targetEmail);
-    if (!target) {
-      throw new functions.https.HttpsError('invalid-argument', 'targetUid or targetEmail is required');
-    }
-
-    const walletType = normalizeWalletType(data?.walletType);
-    const collections = getWalletCollections(walletType);
-    const walletSnap = await admin.firestore().doc(`${collections.wallets}/${target.uid}`).get();
-    const wallet = walletFromSnapshot(target.uid, walletSnap);
-
-    console.log("adminGetTokenWalletView resolved", {
-      adminUid: context.auth.uid,
-      targetUid: target.uid,
-      walletType,
-      walletPath: `${collections.wallets}/${target.uid}`,
-      available: wallet.available,
-      reserved: wallet.reserved,
-      lifetimePurchased: wallet.lifetimePurchased,
-    });
-
-    return {
-      user: target,
-      wallet,
-      walletType,
-    };
-  },
-);
-
-export const adminListTokenLedger = functions.https.onCall(
-  async (data: AdminListTokenLedgerRequest, context) => {
-    if (!context.auth?.uid) {
-      throw new functions.https.HttpsError('unauthenticated', 'Authentication required');
-    }
-
-    const isAdmin = await verifyAdmin(context.auth.uid);
-    if (!isAdmin) {
-      throw new functions.https.HttpsError('permission-denied', 'Admin privileges required');
-    }
-
-    const requestedLimit = Math.floor(normalizeNumber(data?.limit));
-    const limitSize = Math.min(Math.max(requestedLimit || 100, 1), 300);
-    const fetchSize = Math.min(limitSize * 5, 500);
-
-    const actionFilter = typeof data?.action === 'string' ? data.action.trim() : '';
-    const typeFilter = typeof data?.type === 'string' ? data.type.trim() : '';
-    const includeCashFeeOnly = Boolean(data?.includeCashFeeOnly);
-    const walletType = normalizeWalletType(data?.walletType);
-    const collections = getWalletCollections(walletType);
-
-    const target = await resolveAdminTarget(data?.targetUid, data?.targetEmail);
-    const db = admin.firestore();
-
-    let queryRef: FirebaseFirestore.Query = db.collection(collections.transactions).limit(fetchSize);
-    if (target?.uid) {
-      queryRef = db
-        .collection(collections.transactions)
-        .where('uid', '==', target.uid)
-        .limit(fetchSize);
-    }
-
-    const snap = await queryRef.get();
-    const filtered = snap.docs
-      .map((doc): Record<string, unknown> => ({ id: doc.id, ...(doc.data() as Record<string, unknown>) }))
-      .filter((row) => {
-        const rowAction = String((row as { action?: unknown }).action || '');
-        const rowType = String((row as { type?: unknown }).type || '');
-
-        if (includeCashFeeOnly && rowAction !== 'cash_fee') {
-          return false;
-        }
-
-        if (actionFilter && rowAction !== actionFilter) {
-          return false;
-        }
-
-        if (typeFilter && rowType !== typeFilter) {
-          return false;
-        }
-
-        return true;
-      })
-      .sort(
-        (left, right) =>
-          timestampToMillis((right as { createdAt?: unknown }).createdAt) -
-          timestampToMillis((left as { createdAt?: unknown }).createdAt),
-      )
-      .slice(0, limitSize);
-
-    return {
-      target: target || null,
-      count: filtered.length,
-      rows: filtered,
-      walletType,
-    };
-  },
-);
 
 export const tokenReserve = functions.https.onCall(
   async (data: TokenReserveRequest, context) => {
@@ -474,17 +195,15 @@ export const tokenReserve = functions.https.onCall(
     const action = requireNonEmptyString(data?.action, 'action');
     const amount = normalizeNumber(data?.amount);
     const targetUid = data?.targetUid?.trim() || actorUid;
-    const walletType = normalizeWalletType(data?.walletType);
-    const collections = getWalletCollections(walletType);
 
     if (!Number.isFinite(amount) || amount <= 0) {
       throw new functions.https.HttpsError('invalid-argument', 'amount must be a positive number');
     }
 
     const db = admin.firestore();
-    const reservationRef = db.doc(`${collections.reservations}/${idempotencyKey}`);
-    const txRef = db.doc(`${collections.transactions}/${txDocId('reserve', idempotencyKey)}`);
-    const walletRef = db.doc(`${collections.wallets}/${targetUid}`);
+    const reservationRef = db.doc(`tokenReservations/${idempotencyKey}`);
+    const txRef = db.doc(`tokenTransactions/${txDocId('reserve', idempotencyKey)}`);
+    const walletRef = db.doc(`tokenWallets/${targetUid}`);
 
     let wallet: TokenWalletSummary = {
       uid: targetUid,
@@ -529,7 +248,6 @@ export const tokenReserve = functions.https.onCall(
 
       tx.set(reservationRef, {
         uid: targetUid,
-        walletType,
         action,
         amount,
         status: 'reserved',
@@ -542,7 +260,6 @@ export const tokenReserve = functions.https.onCall(
 
       tx.set(txRef, {
         uid: targetUid,
-        walletType,
         type: 'reserve',
         actorType: 'courier',
         action,
@@ -556,7 +273,6 @@ export const tokenReserve = functions.https.onCall(
 
     return {
       reservationId: idempotencyKey,
-      walletType,
       wallet,
     };
   },
@@ -571,12 +287,10 @@ export const tokenCommit = functions.https.onCall(
     const actorUid = context.auth.uid;
     const reservationId = requireNonEmptyString(data?.reservationId, 'reservationId');
     const idempotencyKey = requireNonEmptyString(data?.idempotencyKey, 'idempotencyKey');
-    const walletType = normalizeWalletType(data?.walletType);
-    const collections = getWalletCollections(walletType);
 
     const db = admin.firestore();
-    const reservationRef = db.doc(`${collections.reservations}/${reservationId}`);
-    const txRef = db.doc(`${collections.transactions}/${txDocId('commit', idempotencyKey)}`);
+    const reservationRef = db.doc(`tokenReservations/${reservationId}`);
+    const txRef = db.doc(`tokenTransactions/${txDocId('commit', idempotencyKey)}`);
 
     let resultWallet: TokenWalletSummary | null = null;
 
@@ -589,7 +303,7 @@ export const tokenCommit = functions.https.onCall(
       if (txSnap.exists) {
         const existingReservation = await tx.get(reservationRef);
         const uid = (existingReservation.data()?.uid as string) || actorUid;
-        const existingWallet = await tx.get(db.doc(`${collections.wallets}/${uid}`));
+        const existingWallet = await tx.get(db.doc(`tokenWallets/${uid}`));
         resultWallet = walletFromSnapshot(uid, existingWallet);
         return;
       }
@@ -603,7 +317,6 @@ export const tokenCommit = functions.https.onCall(
         amount: number;
         action: string;
         status: string;
-        walletType?: WalletType;
       };
 
       if (reservation.uid !== actorUid) {
@@ -617,7 +330,7 @@ export const tokenCommit = functions.https.onCall(
         );
       }
 
-      const walletRef = db.doc(`${collections.wallets}/${reservation.uid}`);
+      const walletRef = db.doc(`tokenWallets/${reservation.uid}`);
       const walletSnap = await tx.get(walletRef);
       const current = walletFromSnapshot(reservation.uid, walletSnap);
       const nextReserved = current.reserved - reservation.amount;
@@ -650,7 +363,6 @@ export const tokenCommit = functions.https.onCall(
 
       tx.set(txRef, {
         uid: reservation.uid,
-        walletType,
         type: 'commit',
         actorType: 'courier',
         action: reservation.action,
@@ -664,7 +376,6 @@ export const tokenCommit = functions.https.onCall(
 
     return {
       reservationId,
-      walletType,
       wallet: resultWallet,
     };
   },
@@ -679,12 +390,10 @@ export const tokenRelease = functions.https.onCall(
     const actorUid = context.auth.uid;
     const reservationId = requireNonEmptyString(data?.reservationId, 'reservationId');
     const idempotencyKey = requireNonEmptyString(data?.idempotencyKey, 'idempotencyKey');
-    const walletType = normalizeWalletType(data?.walletType);
-    const collections = getWalletCollections(walletType);
 
     const db = admin.firestore();
-    const reservationRef = db.doc(`${collections.reservations}/${reservationId}`);
-    const txRef = db.doc(`${collections.transactions}/${txDocId('release', idempotencyKey)}`);
+    const reservationRef = db.doc(`tokenReservations/${reservationId}`);
+    const txRef = db.doc(`tokenTransactions/${txDocId('release', idempotencyKey)}`);
 
     let resultWallet: TokenWalletSummary | null = null;
 
@@ -707,7 +416,6 @@ export const tokenRelease = functions.https.onCall(
         amount: number;
         action: string;
         status: string;
-        walletType?: WalletType;
       };
 
       if (reservation.uid !== actorUid) {
@@ -724,7 +432,7 @@ export const tokenRelease = functions.https.onCall(
         );
       }
 
-      const walletRef = db.doc(`${collections.wallets}/${reservation.uid}`);
+      const walletRef = db.doc(`tokenWallets/${reservation.uid}`);
       const walletSnap = await tx.get(walletRef);
       const current = walletFromSnapshot(reservation.uid, walletSnap);
 
@@ -759,7 +467,6 @@ export const tokenRelease = functions.https.onCall(
 
       tx.set(txRef, {
         uid: reservation.uid,
-        walletType,
         type: 'release',
         actorType: 'courier',
         action: reservation.action,
@@ -773,7 +480,6 @@ export const tokenRelease = functions.https.onCall(
 
     return {
       reservationId,
-      walletType,
       wallet: resultWallet,
     };
   },
@@ -788,8 +494,6 @@ export const tokenRefund = functions.https.onCall(
     const actorUid = context.auth.uid;
     const idempotencyKey = requireNonEmptyString(data?.idempotencyKey, 'idempotencyKey');
     const reservationId = requireNonEmptyString(data?.reservationId, 'reservationId');
-    const walletType = normalizeWalletType(data?.walletType);
-    const collections = getWalletCollections(walletType);
 
     const policy = await getTokenPolicyInternal();
     const isAdmin = await verifyAdmin(actorUid);
@@ -801,8 +505,8 @@ export const tokenRefund = functions.https.onCall(
     }
 
     const db = admin.firestore();
-    const txRef = db.doc(`${collections.transactions}/${txDocId('refund', idempotencyKey)}`);
-    const reservationRef = db.doc(`${collections.reservations}/${reservationId}`);
+    const txRef = db.doc(`tokenTransactions/${txDocId('refund', idempotencyKey)}`);
+    const reservationRef = db.doc(`tokenReservations/${reservationId}`);
 
     let walletResult: TokenWalletSummary | null = null;
 
@@ -815,7 +519,7 @@ export const tokenRefund = functions.https.onCall(
       if (existingRefundSnap.exists) {
         const reservationData = reservationSnap.data() as { uid?: string } | undefined;
         const uid = reservationData?.uid || actorUid;
-        const walletSnap = await tx.get(db.doc(`${collections.wallets}/${uid}`));
+        const walletSnap = await tx.get(db.doc(`tokenWallets/${uid}`));
         walletResult = walletFromSnapshot(uid, walletSnap);
         return;
       }
@@ -844,7 +548,7 @@ export const tokenRefund = functions.https.onCall(
 
       const amount = data?.amount && data.amount > 0 ? data.amount : reservation.amount;
 
-      const walletRef = db.doc(`${collections.wallets}/${reservation.uid}`);
+      const walletRef = db.doc(`tokenWallets/${reservation.uid}`);
       const walletSnap = await tx.get(walletRef);
       const current = walletFromSnapshot(reservation.uid, walletSnap);
 
@@ -874,7 +578,6 @@ export const tokenRefund = functions.https.onCall(
 
       tx.set(txRef, {
         uid: reservation.uid,
-        walletType,
         type: 'refund',
         actorType: isAdmin ? 'admin' : 'courier',
         action: reservation.action,
@@ -889,7 +592,6 @@ export const tokenRefund = functions.https.onCall(
 
     return {
       reservationId,
-      walletType,
       wallet: walletResult,
     };
   },
@@ -1011,132 +713,6 @@ export const tokenCreateCheckoutSession = functions.https.onCall(
         url: emulatedUrl,
       };
     }
-  },
-);
-
-export const tokenFinalizeCheckoutSession = functions.https.onCall(
-  async (data: TokenFinalizeCheckoutSessionRequest, context) => {
-    if (!context.auth?.uid) {
-      throw new functions.https.HttpsError("unauthenticated", "Authentication required");
-    }
-
-    const uid = context.auth.uid;
-    const idempotencyKey = typeof data?.idempotencyKey === "string" ? data.idempotencyKey.trim() : "";
-    const directSessionId = typeof data?.sessionId === "string" ? data.sessionId.trim() : "";
-
-    if (!idempotencyKey && !directSessionId) {
-      throw new functions.https.HttpsError(
-        "invalid-argument",
-        "idempotencyKey or sessionId is required",
-      );
-    }
-
-    const db = admin.firestore();
-    let sessionRef: FirebaseFirestore.DocumentReference | null = null;
-    let sessionSnap: FirebaseFirestore.DocumentSnapshot | null = null;
-
-    if (idempotencyKey) {
-      sessionRef = db.doc(`tokenCheckoutSessions/${idempotencyKey}`);
-      sessionSnap = await sessionRef.get();
-    }
-
-    if ((!sessionSnap || !sessionSnap.exists) && directSessionId) {
-      const querySnap = await db
-        .collection("tokenCheckoutSessions")
-        .where("stripeSessionId", "==", directSessionId)
-        .limit(1)
-        .get();
-      if (!querySnap.empty) {
-        sessionSnap = querySnap.docs[0];
-        sessionRef = querySnap.docs[0].ref;
-      }
-    }
-
-    if (!sessionSnap || !sessionSnap.exists || !sessionRef) {
-      throw new functions.https.HttpsError("not-found", "Checkout session not found");
-    }
-
-    const checkoutData = sessionSnap.data() as {
-      uid?: string;
-      stripeSessionId?: string;
-      paymentStatus?: string;
-    };
-
-    if (checkoutData.uid !== uid) {
-      throw new functions.https.HttpsError("permission-denied", "Checkout session owner mismatch");
-    }
-
-    const stripeSessionId = String(checkoutData.stripeSessionId || directSessionId || "").trim();
-    if (!stripeSessionId) {
-      throw new functions.https.HttpsError("failed-precondition", "Stripe session id missing");
-    }
-
-    if (checkoutData.paymentStatus === "paid") {
-      const walletSnap = await db.doc(`tokenWallets/${uid}`).get();
-      const wallet = walletFromSnapshot(uid, walletSnap);
-      return {
-        finalized: true,
-        credited: true,
-        paymentStatus: "paid",
-        sessionId: stripeSessionId,
-        wallet,
-      };
-    }
-
-    const stripe = await getStripeClient();
-    const stripeSession = await stripe.checkout.sessions.retrieve(stripeSessionId, {
-      expand: ["payment_intent"],
-    });
-
-    const isPaid =
-      stripeSession.payment_status === "paid" ||
-      (stripeSession.status === "complete" && !!stripeSession.payment_intent);
-
-    if (!isPaid) {
-      await sessionRef.set(
-        {
-          paymentStatus: "pending",
-          updatedAt: serverTimestamp(),
-        },
-        { merge: true },
-      );
-
-      return {
-        finalized: false,
-        credited: false,
-        paymentStatus: stripeSession.payment_status || "pending",
-        sessionId: stripeSession.id,
-      };
-    }
-
-    await creditTokensFromCheckoutSession({
-      id: stripeSession.id,
-      metadata: (stripeSession.metadata || {}) as Record<string, unknown>,
-      payment_intent:
-        typeof stripeSession.payment_intent === "string"
-          ? stripeSession.payment_intent
-          : stripeSession.payment_intent?.id || null,
-    });
-
-    await sessionRef.set(
-      {
-        paymentStatus: "paid",
-        paidAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      },
-      { merge: true },
-    );
-
-    const walletSnap = await db.doc(`tokenWallets/${uid}`).get();
-    const wallet = walletFromSnapshot(uid, walletSnap);
-
-    return {
-      finalized: true,
-      credited: true,
-      paymentStatus: "paid",
-      sessionId: stripeSession.id,
-      wallet,
-    };
   },
 );
 

@@ -23,6 +23,7 @@ import MarketplacePage from './pages/Marketplace'
 import MarketplaceOrdersPage from './pages/MarketplaceOrders'
 import OrderDetailPage from './pages/OrderDetail'
 import UserDetailPage from './pages/UserDetail'
+import JobDetailPage from './pages/JobDetail'
 import ItemDetailPage from './pages/ItemDetail'
 import FlaggedContentPage from './pages/FlaggedContent'
 import CategoriesPage from './pages/Categories'
@@ -31,7 +32,7 @@ import SystemCheckPage from './pages/SystemCheck'
 import RateCardsComparison from './pages/RateCardsComparison'
 import AdminFlowLogsPage from './pages/AdminFlowLogs'
 import SecretsPage from './pages/Secrets'
-import { useFeatureFlags } from './hooks/useFeatureFlags'
+import TokenOperationsPage from './pages/TokenOperations'
 import { StripeModeBanner } from './components/StripeModeBanner'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -51,32 +52,6 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 function AdminWebAccessGate({ children }: { children: React.ReactNode }) {
-  const { flags, loading } = useFeatureFlags()
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-[#F8F9FF]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
-    )
-  }
-
-  const webPortalEnabled = flags?.admin?.webPortalEnabled ?? false
-
-  if (!webPortalEnabled) {
-    return (
-      <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center px-6">
-        <div className="max-w-lg text-center bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-          <div className="text-5xl mb-4">🔒</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Admin Web Portal Disabled</h1>
-          <p className="text-gray-600">
-            Access is currently restricted. Please use the Admin Desktop app to enable web access.
-          </p>
-        </div>
-      </div>
-    )
-  }
-
   return <>{children}</>
 }
 
@@ -102,11 +77,13 @@ function App() {
                       <Route path="/users" element={<UsersPage />} />
                       <Route path="/users/:userId" element={<UserDetailPage />} />
                       <Route path="/jobs" element={<JobsPage />} />
+                      <Route path="/jobs/:jobId" element={<JobDetailPage />} />
                       <Route path="/rate-cards-comparison" element={<RateCardsComparison />} />
                       <Route path="/disputes" element={<DisputesPage />} />
                       <Route path="/courier-approval" element={<CourierApprovalPage />} />
                       <Route path="/seller-approval" element={<SellerApprovalPage />} />
                       <Route path="/revenue" element={<RevenuePage />} />
+                      <Route path="/tokens" element={<TokenOperationsPage />} />
                       <Route path="/messaging" element={<MessagingPage />} />
                       <Route path="/marketplace" element={<MarketplacePage />} />
                       <Route path="/marketplace/:itemId" element={<ItemDetailPage />} />

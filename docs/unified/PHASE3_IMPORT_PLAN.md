@@ -195,3 +195,19 @@ Because deletions dominate, imports must be selective and additive-first.
   - Includes external payment rail support with token-policy-gated external rail charging path.
   - Kept as single-file micro-batch with no-delete constraints.
 - ✅ Batch 5e: `firebase/functions/src/stripe/webhook.ts` checked and already aligned (no change needed).
+
+## Full Consolidation Sweep (2026-02-20)
+
+- ✅ Objective executed: pull all working app/web + support file deltas into `V1-unified-local` to centralize active project work.
+- ✅ Imported in bulk (no-delete):
+  - Hotfix allowlist: 233 files (`A/M/R` only, excludes generated/vendor/build artifacts).
+  - Smoke-only remainder allowlist: 13 files.
+  - Total sweep imports: 246 files across `apps`, `firebase`, `packages`, `scripts`, `docs`, `.github`, and root manifests.
+- ✅ Safety-preserved overrides intentionally retained:
+  - `firebase/functions/src/http/sendTestPush.ts`
+  - `firebase/functions/src/triggers/autoCancel.ts`
+  - `firebase/functions/src/triggers/notifications.ts`
+  - These remain divergent from hotfix on purpose to keep APNS + broader notification/token handling behavior.
+
+- ⚠️ Remaining drift still includes branch-specific deletes/renames and source-branch-only artifacts not required for runtime.
+  - Next cleanup wave should focus on explicit old-worktree retirement checklist and file ownership mapping before deleting old trees.

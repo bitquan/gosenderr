@@ -24,8 +24,6 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
-	<key>FirebaseAppDelegateProxyEnabled</key>
-	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>MBXAccessToken</key>
@@ -43,39 +41,16 @@
 	<string>Senderr needs background location access to track deliveries in progress and update your location for customers.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Senderr needs your location to show nearby delivery jobs and navigate to pickup/dropoff locations.</string>
-	<key>NSLocalNetworkUsageDescription</key>
-	<string>Senderr uses your local network during development to connect to Metro for debug builds.</string>
-	<key>NSBonjourServices</key>
-	<array>
-		<string>_http._tcp</string>
-	</array>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Senderr needs photo library access to save delivery proof photos.</string>
 	<key>RCTNewArchEnabled</key>
-	<false/>
+	<true/>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>
 		<string>fetch</string>
 		<string>remote-notification</string>
 	</array>
-	<key>UIApplicationSceneManifest</key>
-	<dict>
-		<key>UIApplicationSupportsMultipleScenes</key>
-		<false/>
-		<key>UISceneConfigurations</key>
-		<dict>
-			<key>UIWindowSceneSessionRoleApplication</key>
-			<array>
-				<dict>
-					<key>UISceneConfigurationName</key>
-					<string>Default Configuration</string>
-					<key>UISceneDelegateClassName</key>
-					<string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
-				</dict>
-			</array>
-		</dict>
-	</dict>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIRequiredDeviceCapabilities</key>

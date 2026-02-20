@@ -83,9 +83,17 @@ export default function CustomerDashboardNew() {
   }, [navigate]);
 
   useEffect(() => {
+    let cleanup = () => {};
+
     if (currentUser) {
-      loadDashboardData();
+      void loadDashboardData().then((fn) => {
+        if (typeof fn === "function") {
+          cleanup = fn;
+        }
+      });
     }
+
+    return () => cleanup();
   }, [currentUser]);
 
   useEffect(() => {
@@ -93,21 +101,30 @@ export default function CustomerDashboardNew() {
   }, [packages, jobs, orders]);
 
   const loadDashboardData = async () => {
+    let unsubscribePackages = () => {};
+    let unsubscribeJobs = () => {};
+    let unsubscribeOrders = () => {};
+
     try {
-      const addressesQuery = query(
-        collection(db, "savedAddresses"),
-        where("userId", "==", currentUser.uid),
-      );
-      const addressSnapshot = await getDocs(addressesQuery);
-      const addressData = addressSnapshot.docs.map((docSnap) => {
-        const data = docSnap.data() as { label?: string; address?: string };
-        return {
-          id: docSnap.id,
-          label: data.label || "",
-          address: data.address || "",
-        };
-      });
-      setSavedAddresses(addressData);
+      try {
+        const addressesQuery = query(
+          collection(db, "savedAddresses"),
+          where("userId", "==", currentUser.uid),
+        );
+        const addressSnapshot = await getDocs(addressesQuery);
+        const addressData = addressSnapshot.docs.map((docSnap) => {
+          const data = docSnap.data() as { label?: string; address?: string };
+          return {
+            id: docSnap.id,
+            label: data.label || "",
+            address: data.address || "",
+          };
+        });
+        setSavedAddresses(addressData);
+      } catch (error) {
+        console.warn("Saved addresses unavailable; continuing dashboard load", error);
+        setSavedAddresses([]);
+      }
 
       const packagesQuery = query(
         collection(db, "packages"),
@@ -116,7 +133,7 @@ export default function CustomerDashboardNew() {
         limit(5),
       );
 
-      const unsubscribePackages = onSnapshot(
+      unsubscribePackages = onSnapshot(
         packagesQuery,
         (snapshot: QuerySnapshot<DocumentData>) => {
           const packagesData = snapshot.docs.map((doc) => ({
@@ -124,6 +141,10 @@ export default function CustomerDashboardNew() {
             ...doc.data(),
           }));
           setPackages(packagesData);
+        },
+        (error: Error) => {
+          console.warn("Packages unavailable; continuing dashboard load", error);
+          setPackages([]);
         },
       );
 
@@ -134,7 +155,7 @@ export default function CustomerDashboardNew() {
         limit(5),
       );
 
-      const unsubscribeJobs = onSnapshot(
+      unsubscribeJobs = onSnapshot(
         jobsQuery,
         (snapshot: QuerySnapshot<DocumentData>) => {
           const jobsData = snapshot.docs.map((doc) => ({
@@ -144,7 +165,8 @@ export default function CustomerDashboardNew() {
           setJobs(jobsData);
         },
         (error: Error) => {
-          console.error("Error loading jobs:", error);
+          console.warn("Jobs unavailable; continuing dashboard load", error);
+          setJobs([]);
         },
       );
 
@@ -155,7 +177,7 @@ export default function CustomerDashboardNew() {
         limit(5),
       );
 
-      const unsubscribeOrders = onSnapshot(
+      unsubscribeOrders = onSnapshot(
         ordersQuery,
         (snapshot: QuerySnapshot<DocumentData>) => {
           const ordersData = snapshot.docs.map((doc) => ({
@@ -165,21 +187,23 @@ export default function CustomerDashboardNew() {
           setOrders(ordersData);
         },
         (error: Error) => {
-          console.error("Error loading orders:", error);
+          console.warn("Orders unavailable; continuing dashboard load", error);
+          setOrders([]);
         },
       );
 
       setLoading(false);
 
-      return () => {
-        unsubscribePackages();
-        unsubscribeJobs();
-        unsubscribeOrders();
-      };
     } catch (error) {
       console.error("Error loading dashboard:", error);
       setLoading(false);
     }
+
+    return () => {
+      unsubscribePackages();
+      unsubscribeJobs();
+      unsubscribeOrders();
+    };
   };
 
   const handleAddAddress = async () => {

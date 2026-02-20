@@ -96,6 +96,7 @@ export function useNavigation() {
     startNavigation: startNavigationForJob,
     stopNavigation,
     goToNextStep: context.goToNextStep,
+    updateCurrentStep: context.updateCurrentStep,
     toggleCameraMode: context.toggleCameraMode,
     updateDistance: context.updateDistance,
     updateETA: context.updateETA,

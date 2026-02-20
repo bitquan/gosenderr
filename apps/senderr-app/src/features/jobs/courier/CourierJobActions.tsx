@@ -1,10 +1,10 @@
 
 import { Job } from '../shared/types';
-import { claimJob, updateJobStatus } from '@/lib/v2/jobs';
+import { claimJob, submitCourierJobProof, updateJobStatus } from '@/lib/v2/jobs';
 import { captureGPSPhoto } from '@/lib/gpsPhoto';
 import { calcMiles } from '@/lib/v2/pricing';
 import { db } from '@/lib/firebase';
-import { doc, updateDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import type { JobStatus } from '../shared/types';
 
 interface CourierJobActionsProps {
@@ -12,17 +12,25 @@ interface CourierJobActionsProps {
   courierUid: string;
   estimatedFee?: number;
   onJobUpdated?: () => void;
+  onProcessingChange?: (processing: boolean) => void;
 }
 
-export function CourierJobActions({ job, courierUid, estimatedFee, onJobUpdated }: CourierJobActionsProps) {
+export function CourierJobActions({
+  job,
+  courierUid,
+  estimatedFee,
+  onJobUpdated,
+  onProcessingChange,
+}: CourierJobActionsProps) {
   const isAssignedToCourier = job.courierUid === courierUid;
-  const canAccept = job.status === 'open' && !job.courierUid;
+  const canAccept = (job.status === 'open' || job.status === 'pending') && !job.courierUid;
   const MAX_DISTANCE_MILES = 0.2; // ~320 meters
   const MAX_ACCURACY_METERS = 100;
   
   // Define valid status transitions for courier
   const getNextStatus = (currentStatus: JobStatus): JobStatus | null => {
     const transitions: Record<JobStatus, JobStatus | null> = {
+      pending: null,
       open: null,
       assigned: 'enroute_pickup',
       enroute_pickup: 'arrived_pickup',
@@ -47,39 +55,60 @@ export function CourierJobActions({ job, courierUid, estimatedFee, onJobUpdated 
       return;
     }
 
+    onProcessingChange?.(true);
     try {
-      await claimJob(job.id, courierUid, estimatedFee);
-      alert('Job accepted successfully!');
+      const result = await claimJob(job.id, courierUid, estimatedFee);
+      alert(result.queued ? 'Job accept queued (offline). It will sync automatically.' : 'Job accepted successfully!');
       onJobUpdated?.();
     } catch (error) {
       console.error('Failed to accept job:', error);
       alert('Failed to accept job. It may have been claimed by another courier.');
+    } finally {
+      onProcessingChange?.(false);
     }
   };
 
   const handleUpdateStatus = async () => {
-    if (!nextStatus) return;
+    if (!isAssignedToCourier) return;
 
-    if (job.paymentStatus !== 'authorized') {
+    const latestJobSnap = await getDoc(doc(db, 'jobs', job.id));
+    const latestJobData = latestJobSnap.exists() ? (latestJobSnap.data() as { status?: JobStatus; paymentStatus?: string }) : null;
+    const currentStatus = latestJobData?.status ?? job.status;
+    const currentPaymentStatus = latestJobData?.paymentStatus ?? job.paymentStatus;
+    const resolvedNextStatus = getNextStatus(currentStatus);
+
+    if (!resolvedNextStatus) {
+      alert('This job is not in a state that can be advanced right now. Please refresh.');
+      onJobUpdated?.();
+      return;
+    }
+
+    if (currentPaymentStatus !== 'authorized') {
       alert('Payment not authorized yet. Please wait for customer payment before starting this trip.');
       return;
     }
 
+    onProcessingChange?.(true);
     try {
-      if (nextStatus === 'picked_up') {
+      if (resolvedNextStatus === 'picked_up') {
         await handleProofCapture('pickup');
       }
 
-      if (nextStatus === 'completed') {
+      if (resolvedNextStatus === 'completed') {
         await handleProofCapture('dropoff');
       }
 
-      await updateJobStatus(job.id, nextStatus);
+      const result = await updateJobStatus(job.id, resolvedNextStatus);
+      if (result.queued) {
+        alert('Status update queued (offline). It will sync automatically.');
+      }
       onJobUpdated?.();
     } catch (error) {
       console.error('Failed to update job status:', error);
       const message = error instanceof Error ? error.message : 'Failed to update job status. Please try again.';
       alert(message);
+    } finally {
+      onProcessingChange?.(false);
     }
   };
 
@@ -100,19 +129,11 @@ export function CourierJobActions({ job, courierUid, estimatedFee, onJobUpdated 
       throw new Error('You must be at the delivery location to take this photo.');
     }
 
-    const proofPayload = {
-      url: proof.url,
-      location: {
-        lat: proof.coordinates.latitude,
-        lng: proof.coordinates.longitude,
-      },
-      accuracy: proof.coordinates.accuracy,
-      timestamp: Timestamp.fromDate(proof.timestamp),
-    };
-
-    await updateDoc(doc(db, 'jobs', job.id), {
-      ...(type === 'pickup' ? { pickupProof: proofPayload } : { dropoffProof: proofPayload }),
-      updatedAt: serverTimestamp(),
+    await submitCourierJobProof({
+      jobId: job.id,
+      type,
+      photoUrl: proof.url,
+      coordinates: proof.coordinates,
     });
   };
 
@@ -129,6 +150,7 @@ export function CourierJobActions({ job, courierUid, estimatedFee, onJobUpdated 
 
   if (nextStatus) {
     const statusLabels: Record<JobStatus, string> = {
+      pending: 'Pending',
       open: 'Open',
       assigned: '▶️ Start Heading to Pickup',
       enroute_pickup: '📍 Mark Arrived at Pickup',
@@ -144,6 +166,7 @@ export function CourierJobActions({ job, courierUid, estimatedFee, onJobUpdated 
     };
 
     const buttonColors: Record<JobStatus, string> = {
+      pending: 'bg-gray-500',
       open: 'bg-gray-500',
       assigned: 'bg-blue-600',
       enroute_pickup: 'bg-orange-600',

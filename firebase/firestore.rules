@@ -68,9 +68,27 @@ service cloud.firestore {
       
       // Users can create their own document (but NOT with admin role)
       allow create: if isSelf(uid) && validNonAdminRole(request.resource.data.role);
+
+      function approvedBeforeOnline() {
+        return !(
+          (
+            request.resource.data.get('courierProfile', {}).get('isOnline', false) == true
+            && resource.data.get('courierProfile', {}).get('isOnline', false) != true
+          )
+          ||
+          (
+            request.resource.data.get('courierProfile', {}).get('online', false) == true
+            && resource.data.get('courierProfile', {}).get('online', false) != true
+          )
+        ) || request.resource.data
+          .get('courierProfile', {})
+          .get('status', resource.data.get('courierProfile', {}).get('status', '')) == 'approved';
+      }
       
       // Users can update their own document (but cannot change role to admin)
-      allow update: if isSelf(uid) && (!('role' in request.resource.data) || validNonAdminRole(request.resource.data.role));
+      allow update: if isSelf(uid)
+        && (!('role' in request.resource.data) || validNonAdminRole(request.resource.data.role))
+        && approvedBeforeOnline();
 
       // Allow rating writers to update seller rating stats only
       allow update: if signedIn()
@@ -212,7 +230,7 @@ service cloud.firestore {
       }
 
       function isJobCourier() {
-        return signedIn() && resource.data.get('courierUid', null) == request.auth.uid;
+        return signedIn() && resource.data.get('courierId', null) == request.auth.uid;
       }
       
       function courierHasRequiredEquipment() {
@@ -242,7 +260,7 @@ service cloud.firestore {
       allow create: if signedIn()
         && ((('customerId' in request.resource.data && request.resource.data.customerId == request.auth.uid) || ('sellerId' in request.resource.data && request.resource.data.sellerId == request.auth.uid)))
         && request.resource.data.status == 'open'
-        && request.resource.data.get('courierUid', null) == null
+        && request.resource.data.get('courierId', null) == null
         && validJobStatus(request.resource.data.status)
         && request.resource.data.jobType in ['package', 'food'];
       
@@ -258,8 +276,8 @@ service cloud.firestore {
         // 2) Any courier with proper equipment can claim an open job
         (
           resource.data.status == 'open'
-          && resource.data.get('courierUid', null) == null
-          && request.resource.data.courierUid == request.auth.uid
+          && resource.data.get('courierId', null) == null
+          && request.resource.data.courierId == request.auth.uid
           && request.resource.data.status == 'assigned'
           && isCourier()
           && courierHasRequiredEquipment()
@@ -485,7 +503,7 @@ service cloud.firestore {
     // ========== ROUTES (Local Delivery Routes) ==========
     match /routes/{routeId} {
       function isCourier() {
-        return signedIn() && resource.data.get('courierUid', null) == request.auth.uid;
+        return signedIn() && resource.data.get('courierId', null) == request.auth.uid;
       }
       
       // Any authenticated courier can view available routes
@@ -629,10 +647,10 @@ service cloud.firestore {
     // ========== EQUIPMENT SUBMISSIONS ==========
     match /equipmentSubmissions/{submissionId} {
       // Couriers can read their own submissions
-      allow read: if signedIn() && resource.data.courierUid == request.auth.uid;
+      allow read: if signedIn() && resource.data.courierId == request.auth.uid;
       
       // Couriers can create equipment submissions
-      allow create: if signedIn() && request.resource.data.courierUid == request.auth.uid;
+      allow create: if signedIn() && request.resource.data.courierId == request.auth.uid;
       
       // Only admins can update/delete equipment submissions
       allow update, delete: if isAdmin();
@@ -665,8 +683,9 @@ service cloud.firestore {
 
     // ========== MARKETPLACE ITEMS ==========
     match /marketplaceItems/{itemId} {
-      // Public can read active items
-      allow read: if resource.data.isActive == true && resource.data.status == 'active';
+      // Public can read active items (including legacy "available" status)
+      allow read: if (!('isActive' in resource.data) || resource.data.isActive == true)
+        && (resource.data.status == 'active' || resource.data.status == 'available');
 
       // Sellers can read their own items (including draft/inactive)
       allow read: if signedIn() && request.auth.uid == resource.data.sellerId;
@@ -701,6 +720,29 @@ service cloud.firestore {
 
       // Sellers can delete their own items
       allow delete: if signedIn() && request.auth.uid == resource.data.sellerId;
+
+      // Admins can delete any marketplace item
+      allow delete: if isAdmin();
+    }
+
+    // ========== FOOD PICKUP RESTAURANTS ==========
+    match /foodPickupRestaurants/{restaurantId} {
+      // Public restaurants are readable by anyone; private records are owner/admin only
+      allow read: if resource.data.isPublic == true
+        || (signedIn() && (
+          isAdmin()
+          || request.auth.uid == resource.data.courierId
+        ));
+
+      // Courier can create their own restaurant records
+      allow create: if signedIn()
+        && request.resource.data.courierId == request.auth.uid;
+
+      // Courier owner or admin can update/delete
+      allow update, delete: if signedIn() && (
+        isAdmin()
+        || request.auth.uid == resource.data.courierId
+      );
     }
 
     // ========== ORDERS ==========
@@ -711,7 +753,7 @@ service cloud.firestore {
         (('buyerId' in resource.data) && request.auth.uid == resource.data.buyerId) ||
         (('customerId' in resource.data) && request.auth.uid == resource.data.customerId) ||
         (('sellerId' in resource.data) && request.auth.uid == resource.data.sellerId) ||
-        (('courierUid' in resource.data) && request.auth.uid == resource.data.courierUid)
+        (('courierId' in resource.data) && request.auth.uid == resource.data.courierId)
       );
       
       // Allow buyer to create order (dev/mock flow)
@@ -755,6 +797,23 @@ service cloud.firestore {
       
       // Only admins can write categories
       allow write: if isAdmin();
+    }
+
+    // ========== SAVED ADDRESSES ==========
+    match /savedAddresses/{addressId} {
+      // Users can manage their own saved addresses
+      allow read: if signedIn() && resource.data.userId == request.auth.uid;
+
+      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+
+      allow update: if signedIn()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == resource.data.userId;
+
+      allow delete: if signedIn() && resource.data.userId == request.auth.uid;
+
+      // Admins can view/manage for support operations
+      allow read, write: if isAdmin();
     }
 
     // ========== SECRETS (Admin-only) ==========
@@ -816,6 +875,20 @@ service cloud.firestore {
       
       // Only admins can create/update payouts
       allow create, update: if isAdmin();
+    }
+
+    // ========== PAYMENT METHODS ==========
+    match /paymentMethods/{methodId} {
+      allow read: if signedIn() && (
+        isAdmin() || request.auth.uid == resource.data.userId
+      );
+
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid;
+
+      allow update, delete: if signedIn() && (
+        isAdmin() || request.auth.uid == resource.data.userId
+      );
     }
 
 

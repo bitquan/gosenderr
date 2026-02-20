@@ -9,13 +9,14 @@ interface ItemCardProps {
     average: number
     count: number
   }
+  isSponsored?: boolean
 }
 
 /**
  * ItemCard - Display a marketplace item in card format
  * Phase 2: Shows seller info (unified user model)
  */
-export function ItemCard({ item, sellerBadges = [], sellerRating }: ItemCardProps) {
+export function ItemCard({ item, sellerBadges = [], sellerRating, isSponsored = false }: ItemCardProps) {
   const normalizeUrl = (url?: string) => {
     if (!url) return ''
     if (typeof window !== 'undefined' && window.location.protocol === 'https:' && url.startsWith('http://')) {
@@ -58,7 +59,7 @@ export function ItemCard({ item, sellerBadges = [], sellerRating }: ItemCardProp
   return (
     <Link
       to={`/marketplace/${item.id}`}
-      className="group block bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden"
+      className="group block rounded-3xl bg-slate-950/80 text-white shadow-xl transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-2xl overflow-hidden border border-white/15"
     >
       {/* Image */}
       <div className="relative aspect-square overflow-hidden bg-gray-100">
@@ -75,6 +76,14 @@ export function ItemCard({ item, sellerBadges = [], sellerRating }: ItemCardProp
           </span>
         </div>
 
+        {isSponsored && (
+          <div className="absolute top-3 right-3">
+            <span className="rounded-full bg-yellow-400/95 px-2 py-1 text-[11px] font-semibold text-yellow-950">
+              Sponsored
+            </span>
+          </div>
+        )}
+
         {/* Out of stock overlay */}
         {isOutOfStock && (
           <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
@@ -88,25 +97,25 @@ export function ItemCard({ item, sellerBadges = [], sellerRating }: ItemCardProp
       {/* Content */}
       <div className="p-4">
         {/* Title */}
-        <h3 className="font-semibold text-gray-900 line-clamp-2 group-hover:text-blue-600 transition-colors mb-2">
+        <h3 className="font-semibold text-white line-clamp-2 transition-colors mb-2">
           {item.title}
         </h3>
 
         {/* Category */}
-        <p className="text-sm text-gray-500 mb-3 capitalize">{item.category}</p>
+        <p className="text-sm text-purple-200 mb-3 capitalize">{item.category}</p>
 
         {/* Price and quantity */}
         <div className="flex items-center justify-between mb-3">
-          <div className="text-2xl font-bold text-gray-900">
+          <div className="text-2xl font-bold text-white">
             {formatPrice(item.price)}
           </div>
-          <div className="text-xs text-gray-500">
+          <div className="text-xs text-purple-200">
             {item.quantity} available
           </div>
         </div>
 
         {/* Seller info */}
-        <div className="pt-3 border-t border-gray-100">
+        <div className="pt-3 border-t border-white/10">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               {item.sellerPhotoURL ? (
@@ -120,9 +129,9 @@ export function ItemCard({ item, sellerBadges = [], sellerRating }: ItemCardProp
                   {item.sellerName?.charAt(0).toUpperCase() || 'S'}
                 </div>
               )}
-              <span className="text-sm text-gray-600">{item.sellerName || 'Seller'}</span>
+              <span className="text-sm text-purple-100">{item.sellerName || 'Seller'}</span>
             </div>
-            <div className="text-xs text-gray-500">
+            <div className="text-xs text-purple-200">
               {sellerRating && sellerRating.count > 0 ? (
                 <span>⭐ {sellerRating.average.toFixed(1)} ({sellerRating.count})</span>
               ) : (

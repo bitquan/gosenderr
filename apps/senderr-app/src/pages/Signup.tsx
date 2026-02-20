@@ -49,6 +49,7 @@ export default function SignupPage() {
         createdAt: new Date(),
         courierProfile: {
           isOnline: false,
+          acceptTokenPayoutJobs: true,
           workModes: {
             packagesEnabled: false,
             foodEnabled: false,

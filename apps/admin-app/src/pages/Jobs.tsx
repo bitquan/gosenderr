@@ -8,6 +8,7 @@ import { formatCurrency, formatDate } from '../lib/utils'
 import { getFunctions, httpsCallable } from 'firebase/functions'
 import { exportToCSV, formatJobsForExport } from '../lib/csvExport'
 import { CreateJobModal } from '../components/CreateJobModal'
+import { createAdminJob } from '../lib/cloudFunctions'
 
 interface Job {
   id: string
@@ -79,6 +80,84 @@ export default function AdminJobsPage() {
     } catch (error: any) {
       console.error('Error cancelling job:', error)
       alert(`Failed to cancel job: ${error.message}`)
+    } finally {
+      setProcessing(null)
+    }
+  }
+
+  const handleReorderJob = async (job: Job) => {
+    setProcessing(job.id)
+    try {
+      const source = job as Job & {
+        type?: string
+        pickup?: { label?: string; address?: string; lat?: number; lng?: number }
+        dropoff?: { label?: string; address?: string; lat?: number; lng?: number }
+        estimatedFee?: number
+        agreedFee?: number
+        vehicleType?: string
+        description?: string
+        manualOrder?: boolean
+        testRecord?: boolean
+      }
+
+      const pickupLat = source.pickup?.lat
+      const pickupLng = source.pickup?.lng
+      const dropoffLat = source.dropoff?.lat
+      const dropoffLng = source.dropoff?.lng
+
+      if (
+        typeof pickupLat !== 'number' ||
+        typeof pickupLng !== 'number' ||
+        typeof dropoffLat !== 'number' ||
+        typeof dropoffLng !== 'number'
+      ) {
+        throw new Error('This job is missing pickup/dropoff coordinates and cannot be reordered')
+      }
+
+      const defaultFee = source.estimatedFee ?? source.agreedFee ?? 0
+      const agreedFee = source.agreedFee ?? defaultFee
+
+      if (!defaultFee || defaultFee <= 0) {
+        throw new Error('This job has no valid fee to reuse')
+      }
+
+      const pickupAddress =
+        source.pickupAddress ||
+        source.pickup?.address ||
+        source.pickup?.label ||
+        'Pickup address'
+      const deliveryAddress =
+        source.deliveryAddress ||
+        source.dropoff?.address ||
+        source.dropoff?.label ||
+        'Dropoff address'
+
+      await createAdminJob({
+        mode: source.manualOrder ? 'manual' : 'test',
+        type: source.type === 'food' ? 'food' : 'package',
+        pickup: {
+          name: source.pickup?.label || pickupAddress,
+          address: source.pickup?.address || pickupAddress,
+          lat: pickupLat,
+          lng: pickupLng,
+        },
+        dropoff: {
+          name: source.dropoff?.label || deliveryAddress,
+          address: source.dropoff?.address || deliveryAddress,
+          lat: dropoffLat,
+          lng: dropoffLng,
+        },
+        estimatedFee: defaultFee,
+        agreedFee,
+        description: source.description || '',
+        sourceJobId: source.id,
+      })
+
+      alert('Job reordered successfully')
+      loadJobs()
+    } catch (error: any) {
+      console.error('Error reordering job:', error)
+      alert(`Failed to reorder job: ${error.message}`)
     } finally {
       setProcessing(null)
     }
@@ -288,8 +367,15 @@ export default function AdminJobsPage() {
                   </div>
 
                   {/* Admin Actions */}
-                  {!['completed', 'cancelled'].includes(job.status) && (
-                    <div className="mt-3 pt-3 border-t border-gray-100 flex gap-2" onClick={(e) => e.stopPropagation()}>
+                  <div className="mt-3 pt-3 border-t border-gray-100 flex gap-2" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      onClick={() => handleReorderJob(job)}
+                      disabled={processing === job.id}
+                      className="flex-1 py-2 px-4 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50"
+                    >
+                      🔁 Reorder
+                    </button>
+                    {!['completed', 'cancelled'].includes(job.status) && (
                       <button
                         onClick={() => {
                           setCancellingJobId(job.id)
@@ -300,8 +386,8 @@ export default function AdminJobsPage() {
                       >
                         🚫 Force Cancel
                       </button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             ))}

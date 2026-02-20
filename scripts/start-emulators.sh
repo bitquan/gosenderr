@@ -60,6 +60,10 @@ done
 
 echo "🌱 Seeding demo users and seller marketplace data..."
 FIREBASE_PROJECT_ID=gosenderr-6773f node "$SCRIPT_DIR/seed-role-simulation.js"
+echo "🌱 Seeding Senderrplace admin data..."
+npx --yes tsx "$SCRIPT_DIR/seed-admin-data.ts"
+echo "🌱 Ensuring feature flag config exists..."
+ENABLE_ADMIN_WEB=1 npx --yes tsx "$SCRIPT_DIR/init-feature-flags.ts"
 touch "$SEED_READY_FILE"
 
 echo ""
@@ -69,6 +73,7 @@ echo ""
 echo "👤 Demo Users:"
 echo "   customer@example.com / DemoPass123!"
 echo "   seller@example.com / DemoPass123!"
+echo "   admin@example.com / DemoPass123!"
 echo ""
 
 # Wait for emulator process

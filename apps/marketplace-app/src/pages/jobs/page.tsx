@@ -5,13 +5,75 @@ import { getRoleDisplay } from "@gosenderr/shared";
 import { JobSummaryCard } from "@/features/jobs/shared/JobSummaryCard";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { db } from "@/lib/firebase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Avatar } from "@/components/ui/Avatar";
+import { useState } from "react";
 
 export default function CustomerJobs() {
   const navigate = useNavigate();
   const { uid } = useAuthUser();
   const { jobs, loading } = useCustomerJobs(uid || null);
+  const [reorderingId, setReorderingId] = useState<string | null>(null);
+
+  const handleReorder = async (job: any) => {
+    if (!uid) return;
+
+    setReorderingId(job.id);
+    try {
+      const pickupLat = job?.pickup?.lat;
+      const pickupLng = job?.pickup?.lng;
+      const dropoffLat = job?.dropoff?.lat;
+      const dropoffLng = job?.dropoff?.lng;
+
+      if (
+        typeof pickupLat !== "number" ||
+        typeof pickupLng !== "number" ||
+        typeof dropoffLat !== "number" ||
+        typeof dropoffLng !== "number"
+      ) {
+        throw new Error("This send is missing pickup/dropoff coordinates and cannot be reordered.");
+      }
+
+      const newJobRef = await addDoc(collection(db, "jobs"), {
+        createdByUid: uid,
+        status: "open",
+        pickup: {
+          lat: pickupLat,
+          lng: pickupLng,
+          label: job?.pickup?.label || "Pickup",
+        },
+        dropoff: {
+          lat: dropoffLat,
+          lng: dropoffLng,
+          label: job?.dropoff?.label || "Dropoff",
+        },
+        package: job?.package || { size: "medium", flags: {} },
+        photos: Array.isArray(job?.photos) ? job.photos : [],
+        preferredCourierUid: null,
+        offerCourierUid: null,
+        offerQueue: [],
+        offerStatus: "open",
+        offerExpiresAt: null,
+        pricing: job?.pricing || undefined,
+        paymentStatus: "pending",
+        paymentIntentId: null,
+        courierUid: null,
+        agreedFee: null,
+        reorderedFromJobId: job.id,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+
+      navigate(`/jobs/${newJobRef.id}`);
+    } catch (error: any) {
+      console.error("Failed to reorder send:", error);
+      alert(error?.message || "Failed to reorder send. Please try again.");
+    } finally {
+      setReorderingId(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -84,6 +146,15 @@ export default function CustomerJobs() {
                     canSeeExactAddresses={true}
                     onClick={() => navigate(`/jobs/${job.id}`)}
                   />
+                  <div className="mt-3 pt-3 border-t border-gray-100" onClick={(event) => event.stopPropagation()}>
+                    <button
+                      onClick={() => handleReorder(job)}
+                      disabled={reorderingId === job.id}
+                      className="w-full py-2 px-4 bg-purple-600 text-white rounded-lg text-sm font-semibold hover:bg-purple-700 transition-colors disabled:opacity-50"
+                    >
+                      {reorderingId === job.id ? "Reordering..." : "🔁 Reorder"}
+                    </button>
+                  </div>
                 </CardContent>
               </Card>
             ))}

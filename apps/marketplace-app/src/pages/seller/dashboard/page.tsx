@@ -177,10 +177,10 @@ export default function SellerDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="min-h-screen bg-slate-950 pb-24 text-white">
       {/* Header */}
-      <div className="bg-gradient-to-br from-blue-600 to-purple-600 text-white p-6">
-        <div className="max-w-6xl mx-auto">
+      <div className="mx-auto w-full max-w-[560px] md:max-w-4xl lg:max-w-6xl rounded-b-3xl bg-gradient-to-br from-blue-600 to-purple-600 p-6 text-white shadow-2xl">
+        <div>
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-3xl font-bold mb-2">Seller Dashboard</h1>
@@ -198,6 +198,12 @@ export default function SellerDashboard() {
                 className="px-6 py-3 bg-white/20 text-white rounded-xl font-semibold hover:bg-white/30 transition-all"
               >
                 Reviews
+              </Link>
+              <Link
+                to="/seller/ads"
+                className="px-6 py-3 bg-white/20 text-white rounded-xl font-semibold hover:bg-white/30 transition-all"
+              >
+                Ad Dashboard
               </Link>
               <Link
                 to="/seller/items/new"
@@ -248,7 +254,7 @@ export default function SellerDashboard() {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 py-6">
+      <div className="mx-auto w-full max-w-[560px] md:max-w-4xl lg:max-w-6xl px-4 py-6">
         {/* Low Stock Alert */}
         {lowStockItems.length > 0 && (
           <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded-r">
@@ -282,8 +288,8 @@ export default function SellerDashboard() {
         )}
 
         {/* Sales Analytics Chart */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Sales Overview (Last 7 Days)</h2>
+        <div className="mb-6 rounded-2xl border border-white/10 bg-slate-900/70 p-6 shadow-xl">
+          <h2 className="mb-4 text-xl font-semibold text-white">Sales Overview (Last 7 Days)</h2>
           <SalesChart data={salesData} />
         </div>
 

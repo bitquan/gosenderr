@@ -21,14 +21,11 @@ type JobStatus =
 interface ClaimCourierJobRequest {
   jobId: string;
   agreedFee: number;
-  idempotencyKey?: string;
-  reservationId?: string;
 }
 
 interface AdvanceCourierJobStatusRequest {
   jobId: string;
   nextStatus: JobStatus;
-  idempotencyKey?: string;
 }
 
 interface SubmitCourierJobProofRequest {
@@ -63,7 +60,6 @@ interface CancelCourierJobAdminRequest {
 
 interface CancelCourierJobRequest {
   jobId: string;
-  idempotencyKey?: string;
 }
 
 interface SubmitCourierJobDisputeRequest {
@@ -81,34 +77,6 @@ interface RejectRunnerJobRequest {
   jobId: string;
   reasonLabel: string;
   notes?: string;
-}
-
-const IDEMPOTENCY_KEY_PATTERN = /^[a-zA-Z0-9:_-]{8,120}$/;
-
-function sanitizeIdPart(value: string): string {
-  return value.replace(/[^a-zA-Z0-9_-]/g, "_");
-}
-
-function normalizeIdempotencyKey(raw?: string): string | null {
-  const candidate = typeof raw === "string" ? raw.trim() : "";
-  if (!candidate) return null;
-  if (!IDEMPOTENCY_KEY_PATTERN.test(candidate)) {
-    throw new functions.https.HttpsError(
-      "invalid-argument",
-      "idempotencyKey must be 8-120 chars using letters, numbers, colons, underscores, or hyphens",
-    );
-  }
-  return candidate;
-}
-
-function commandReceiptRef(
-  uid: string,
-  command: string,
-  jobId: string,
-  idempotencyKey: string,
-): admin.firestore.DocumentReference {
-  const docId = `${sanitizeIdPart(uid)}_${sanitizeIdPart(command)}_${sanitizeIdPart(jobId)}_${sanitizeIdPart(idempotencyKey)}`;
-  return admin.firestore().doc(`courierCommandReceipts/${docId}`);
 }
 
 function toRad(value: number): number {
@@ -152,103 +120,6 @@ function getExpectedNextStatus(currentStatus: JobStatus): JobStatus | null {
   };
 
   return transitions[currentStatus] ?? null;
-}
-
-function isExternalRailValue(value: unknown): boolean {
-  const normalized = String(value || "").trim().toLowerCase();
-  if (!normalized) return false;
-  if (normalized === "external" || normalized.startsWith("external_")) return true;
-  return ["cash", "cash_app", "cashapp", "venmo", "zelle", "paypal", "apple_cash"].includes(normalized);
-}
-
-function toPositiveNumber(value: unknown): number {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
-}
-
-function resolveTokenClaimCost(
-  tokenPolicy: Record<string, unknown> | undefined,
-  jobData: Record<string, unknown>,
-): { amount: number; action: string } {
-  const policyEnabled = tokenPolicy?.enabled !== false;
-  if (!policyEnabled) {
-    return { amount: 0, action: "jobUnlockStandard" };
-  }
-
-  const costs = (tokenPolicy?.costs || {}) as Record<string, unknown>;
-  const standard = toPositiveNumber(costs.jobUnlockStandard || costs.claimJob || 0);
-  const priority = toPositiveNumber(costs.jobUnlockPriority || standard);
-  const heavy = toPositiveNumber(costs.jobUnlockHeavy || priority || standard);
-
-  const packageData = (jobData.package || {}) as {
-    size?: unknown;
-    flags?: {
-      needsSuvVan?: unknown;
-      heavyTwoPerson?: unknown;
-      oversized?: unknown;
-    };
-  };
-
-  const size = String(packageData.size || "").trim().toLowerCase();
-  const flags = packageData.flags || {};
-  const isHeavy =
-    size === "xl" ||
-    flags.needsSuvVan === true ||
-    flags.heavyTwoPerson === true ||
-    flags.oversized === true;
-
-  if (isHeavy) {
-    return {
-      amount: heavy,
-      action: "jobUnlockHeavy",
-    };
-  }
-
-  if (size === "large") {
-    return {
-      amount: priority,
-      action: "jobUnlockPriority",
-    };
-  }
-
-  return {
-    amount: standard,
-    action: "jobUnlockStandard",
-  };
-}
-
-function requiresTokenPayoutOptIn(
-  jobData: Record<string, unknown>,
-  marketplaceOrderData?: Record<string, unknown>,
-): boolean {
-  if (jobData.tokenPayoutRequired === true) return true;
-  if (marketplaceOrderData?.tokenPayoutRequired === true) return true;
-
-  const directRailSignals = [
-    jobData.paymentRail,
-    jobData.externalPaymentProvider,
-    jobData.paymentMethodId,
-    jobData.deliveryFeeRail,
-    jobData.payoutRail,
-    marketplaceOrderData?.paymentRail,
-    marketplaceOrderData?.externalPaymentProvider,
-    marketplaceOrderData?.paymentMethodId,
-    marketplaceOrderData?.deliveryFeeRail,
-    marketplaceOrderData?.payoutRail,
-  ];
-
-  if (directRailSignals.some((value) => isExternalRailValue(value))) {
-    return true;
-  }
-
-  const tokensCharged = Number(
-    jobData.tokensCharged ||
-      marketplaceOrderData?.tokensCharged ||
-      marketplaceOrderData?.deliveryFeeTokensCharged ||
-      0,
-  );
-
-  return Number.isFinite(tokensCharged) && tokensCharged > 0;
 }
 
 async function isAdminCaller(uid: string, token: Record<string, unknown> = {}): Promise<boolean> {
@@ -363,8 +234,6 @@ export const claimCourierJob = functions.https.onCall(
     }
 
     const { jobId, agreedFee } = data || ({} as ClaimCourierJobRequest);
-    const idempotencyKey = normalizeIdempotencyKey(data?.idempotencyKey);
-    const reservationId = typeof data?.reservationId === "string" ? data.reservationId.trim() : "";
 
     if (!jobId || typeof jobId !== "string") {
       throw new functions.https.HttpsError(
@@ -384,35 +253,6 @@ export const claimCourierJob = functions.https.onCall(
     const db = admin.firestore();
     const jobRef = db.doc(`jobs/${jobId}`);
     const userRef = db.doc(`users/${courierUid}`);
-    const receiptRef =
-      idempotencyKey
-        ? commandReceiptRef(courierUid, "claim", jobId, idempotencyKey)
-        : null;
-
-    if (receiptRef) {
-      const receiptSnap = await receiptRef.get();
-      if (receiptSnap.exists) {
-        const receiptData = receiptSnap.data() as
-          | {
-              result?: {
-                success?: boolean;
-                jobId?: string;
-                courierUid?: string;
-                status?: JobStatus;
-              };
-            }
-          | undefined;
-        if (receiptData?.result?.success) {
-          return {
-            success: true,
-            jobId: receiptData.result.jobId || jobId,
-            courierUid: receiptData.result.courierUid || courierUid,
-            status: receiptData.result.status || "assigned",
-            idempotentReplay: true,
-          };
-        }
-      }
-    }
 
     try {
       await db.runTransaction(async (tx) => {
@@ -429,11 +269,7 @@ export const claimCourierJob = functions.https.onCall(
           throw new functions.https.HttpsError("failed-precondition", "Courier profile not found");
         }
 
-        const jobData = jobSnap.data() as {
-          status?: JobStatus;
-          courierUid?: string | null;
-          marketplaceOrderId?: string;
-        } & Record<string, unknown>;
+        const jobData = jobSnap.data() as { status?: JobStatus; courierUid?: string | null };
         const status = jobData?.status;
 
         if (!status || !(status === "open" || status === "pending")) {
@@ -450,10 +286,7 @@ export const claimCourierJob = functions.https.onCall(
           );
         }
 
-        const userData = userSnap.data() as {
-          role?: string;
-          courierProfile?: { status?: string; acceptTokenPayoutJobs?: boolean };
-        };
+        const userData = userSnap.data() as { role?: string; courierProfile?: { status?: string } };
         const isCourierRole = userData?.role === "courier" || context.auth?.token?.courier === true;
         const isApprovedCourier = userData?.courierProfile?.status === "approved";
 
@@ -461,143 +294,6 @@ export const claimCourierJob = functions.https.onCall(
           throw new functions.https.HttpsError(
             "permission-denied",
             "Courier approval required to claim jobs",
-          );
-        }
-
-        const marketplaceOrderId =
-          typeof jobData.marketplaceOrderId === "string"
-            ? jobData.marketplaceOrderId
-            : "";
-        const marketplaceOrderData = marketplaceOrderId
-          ? ((await tx.get(db.doc(`marketplaceOrders/${marketplaceOrderId}`))).data() as
-              | Record<string, unknown>
-              | undefined)
-          : undefined;
-
-        const jobRequiresTokenPayoutOptIn = requiresTokenPayoutOptIn(
-          jobData,
-          marketplaceOrderData,
-        );
-        const allowsTokenPayoutJobs =
-          userData?.courierProfile?.acceptTokenPayoutJobs !== false;
-
-        if (jobRequiresTokenPayoutOptIn && !allowsTokenPayoutJobs) {
-          throw new functions.https.HttpsError(
-            "failed-precondition",
-            "This job requires token payout settlement. Enable token-payout jobs in Settings to claim it.",
-          );
-        }
-
-        const tokenPolicySnap = await tx.get(db.doc("platformSettings/tokenPolicy"));
-        const tokenPolicyData = tokenPolicySnap.exists
-          ? (tokenPolicySnap.data() as Record<string, unknown>)
-          : undefined;
-        const claimCost = resolveTokenClaimCost(tokenPolicyData, jobData);
-
-        if (claimCost.amount > 0) {
-          if (!reservationId) {
-            throw new functions.https.HttpsError(
-              "failed-precondition",
-              `Token unlock required. Reserve ${claimCost.amount} token${claimCost.amount === 1 ? "" : "s"} before claiming this job.`,
-            );
-          }
-
-          const reservationRef = db.doc(`tokenReservations/${reservationId}`);
-          const reservationSnap = await tx.get(reservationRef);
-          if (!reservationSnap.exists) {
-            throw new functions.https.HttpsError("failed-precondition", "Token reservation not found");
-          }
-
-          const reservation = reservationSnap.data() as {
-            uid?: string;
-            amount?: number;
-            status?: string;
-            action?: string;
-          };
-
-          if (reservation.uid !== courierUid) {
-            throw new functions.https.HttpsError("permission-denied", "Token reservation owner mismatch");
-          }
-
-          if (reservation.status !== "reserved") {
-            throw new functions.https.HttpsError(
-              "failed-precondition",
-              `Token reservation is ${reservation.status || "unknown"}; expected reserved`,
-            );
-          }
-
-          const reservedAmount = Number(reservation.amount || 0);
-          if (!Number.isFinite(reservedAmount) || reservedAmount < claimCost.amount) {
-            throw new functions.https.HttpsError(
-              "failed-precondition",
-              `Reserved tokens (${reservedAmount}) are less than required (${claimCost.amount})`,
-            );
-          }
-
-          const walletRef = db.doc(`tokenWallets/${courierUid}`);
-          const walletSnap = await tx.get(walletRef);
-          const walletData = walletSnap.exists ? (walletSnap.data() || {}) : {};
-          const currentAvailable = Number(walletData.available || 0);
-          const currentReserved = Number(walletData.reserved || 0);
-          const currentPurchased = Number(walletData.lifetimePurchased || 0);
-          const currentSpent = Number(walletData.lifetimeSpent || 0);
-          const currentAdjusted = Number(walletData.lifetimeAdjusted || 0);
-          const nextReserved = currentReserved - reservedAmount;
-
-          if (!Number.isFinite(nextReserved) || nextReserved < 0) {
-            throw new functions.https.HttpsError(
-              "failed-precondition",
-              "Reserved token balance underflow",
-            );
-          }
-
-          tx.set(
-            walletRef,
-            {
-              available: currentAvailable,
-              reserved: nextReserved,
-              lifetimePurchased: currentPurchased,
-              lifetimeSpent: currentSpent + claimCost.amount,
-              lifetimeAdjusted: currentAdjusted,
-              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            },
-            { merge: true },
-          );
-
-          tx.set(
-            reservationRef,
-            {
-              status: "committed",
-              committedAt: admin.firestore.FieldValue.serverTimestamp(),
-              commitIdempotencyKey: idempotencyKey || `claim_${jobId}_${Date.now()}`,
-              metadata: {
-                ...(reservationSnap.data()?.metadata || {}),
-                jobId,
-                claimAction: claimCost.action,
-              },
-              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            },
-            { merge: true },
-          );
-
-          const commitTxId = `commit_claim_${sanitizeIdPart(reservationId)}_${sanitizeIdPart(jobId)}`;
-          tx.set(
-            db.doc(`tokenTransactions/${commitTxId}`),
-            {
-              uid: courierUid,
-              type: "commit",
-              actorType: "courier",
-              action: claimCost.action,
-              amount: claimCost.amount,
-              idempotencyKey: idempotencyKey || commitTxId,
-              reservationId,
-              metadata: {
-                jobId,
-                source: "claimCourierJob",
-              },
-              createdAt: admin.firestore.FieldValue.serverTimestamp(),
-            },
-            { merge: true },
           );
         }
 
@@ -609,29 +305,12 @@ export const claimCourierJob = functions.https.onCall(
         });
       });
 
-      const result = {
+      return {
         success: true,
         jobId,
         courierUid,
         status: "assigned",
       };
-
-      if (receiptRef && idempotencyKey) {
-        await receiptRef.set(
-          {
-            uid: courierUid,
-            command: "claim",
-            jobId,
-            idempotencyKey,
-            result,
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          },
-          { merge: true },
-        );
-      }
-
-      return result;
     } catch (error) {
       if (error instanceof functions.https.HttpsError) {
         throw error;
@@ -653,7 +332,6 @@ export const advanceCourierJobStatus = functions.https.onCall(
     }
 
     const { jobId, nextStatus } = data || ({} as AdvanceCourierJobStatusRequest);
-    const idempotencyKey = normalizeIdempotencyKey(data?.idempotencyKey);
 
     if (!jobId || typeof jobId !== "string") {
       throw new functions.https.HttpsError(
@@ -672,33 +350,6 @@ export const advanceCourierJobStatus = functions.https.onCall(
     const courierUid = context.auth.uid;
     const db = admin.firestore();
     const jobRef = db.doc(`jobs/${jobId}`);
-    const receiptRef =
-      idempotencyKey
-        ? commandReceiptRef(courierUid, "advance", jobId, idempotencyKey)
-        : null;
-
-    if (receiptRef) {
-      const receiptSnap = await receiptRef.get();
-      if (receiptSnap.exists) {
-        const receiptData = receiptSnap.data() as
-          | {
-              result?: {
-                success?: boolean;
-                jobId?: string;
-                status?: JobStatus;
-              };
-            }
-          | undefined;
-        if (receiptData?.result?.success) {
-          return {
-            success: true,
-            jobId: receiptData.result.jobId || jobId,
-            status: receiptData.result.status || nextStatus,
-            idempotentReplay: true,
-          };
-        }
-      }
-    }
 
     try {
       await db.runTransaction(async (tx) => {
@@ -740,28 +391,11 @@ export const advanceCourierJobStatus = functions.https.onCall(
         });
       });
 
-      const result = {
+      return {
         success: true,
         jobId,
         status: nextStatus,
       };
-
-      if (receiptRef && idempotencyKey) {
-        await receiptRef.set(
-          {
-            uid: courierUid,
-            command: "advance",
-            jobId,
-            idempotencyKey,
-            result,
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          },
-          { merge: true },
-        );
-      }
-
-      return result;
     } catch (error) {
       if (error instanceof functions.https.HttpsError) {
         throw error;
@@ -981,7 +615,10 @@ export const declineCourierJobOffer = functions.https.onCall(
       const isInQueue = offerQueue.includes(courierUid);
       const isCurrentOffer = jobData?.offerCourierUid === courierUid;
       if (!isInQueue && !isCurrentOffer) {
-        return;
+        throw new functions.https.HttpsError(
+          "permission-denied",
+          "Courier is not part of this offer queue",
+        );
       }
 
       const remaining = offerQueue.filter((uid) => uid !== courierUid);
@@ -1084,7 +721,6 @@ export const cancelCourierJob = functions.https.onCall(
     }
 
     const { jobId } = data || ({} as CancelCourierJobRequest);
-    const idempotencyKey = normalizeIdempotencyKey(data?.idempotencyKey);
     if (!jobId || typeof jobId !== "string") {
       throw new functions.https.HttpsError("invalid-argument", "jobId is required");
     }
@@ -1092,33 +728,6 @@ export const cancelCourierJob = functions.https.onCall(
     const callerUid = context.auth.uid;
     const db = admin.firestore();
     const jobRef = db.doc(`jobs/${jobId}`);
-    const receiptRef =
-      idempotencyKey
-        ? commandReceiptRef(callerUid, "cancel", jobId, idempotencyKey)
-        : null;
-
-    if (receiptRef) {
-      const receiptSnap = await receiptRef.get();
-      if (receiptSnap.exists) {
-        const receiptData = receiptSnap.data() as
-          | {
-              result?: {
-                success?: boolean;
-                jobId?: string;
-                status?: JobStatus;
-              };
-            }
-          | undefined;
-        if (receiptData?.result?.success) {
-          return {
-            success: true,
-            jobId: receiptData.result.jobId || jobId,
-            status: receiptData.result.status || "cancelled",
-            idempotentReplay: true,
-          };
-        }
-      }
-    }
 
     await db.runTransaction(async (tx) => {
       const jobSnap = await tx.get(jobRef);
@@ -1154,25 +763,6 @@ export const cancelCourierJob = functions.https.onCall(
     });
 
     await refundTokenCommitForJob(jobId, "job_cancelled", callerUid);
-
-    if (receiptRef && idempotencyKey) {
-      await receiptRef.set(
-        {
-          uid: callerUid,
-          command: "cancel",
-          jobId,
-          idempotencyKey,
-          result: {
-            success: true,
-            jobId,
-            status: "cancelled",
-          },
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        },
-        { merge: true },
-      );
-    }
 
     return { success: true, jobId, status: "cancelled" };
   },

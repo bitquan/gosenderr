@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { addDoc, collection, query, onSnapshot, doc, updateDoc } from 'firebase/firestore'
-import { db } from '../lib/firebase'
+import { getDownloadURL, ref } from 'firebase/storage'
+import { db, storage } from '../lib/firebase'
 import { Card, CardContent } from '../components/Card'
 import { StatusBadge } from '../components/Badge'
 import { Avatar } from '../components/Avatar'
@@ -30,13 +31,19 @@ interface Courier {
     rejectionReason?: string
     documents?: Array<{
       label: string
-      url: string
+      url?: string
       name: string
       contentType: string
+      downloadUrl?: string
+      fileUrl?: string
+      storagePath?: string
+      path?: string
       uploadedAt?: any
     }>
   }
 }
+
+type CourierDocument = NonNullable<NonNullable<Courier['courierProfile']>['documents']>[number]
 
 export default function CourierApprovalPage() {
   const { user } = useAuth()
@@ -49,6 +56,14 @@ export default function CourierApprovalPage() {
   const [showRejectModal, setShowRejectModal] = useState(false)
   const [rejectingCourierId, setRejectingCourierId] = useState<string | null>(null)
   const [rejectionReason, setRejectionReason] = useState('')
+  const [previewDocument, setPreviewDocument] = useState<{
+    label: string
+    name: string
+    contentType: string
+    objectUrl?: string
+    textContent?: string
+  } | null>(null)
+  const [previewLoading, setPreviewLoading] = useState(false)
 
   useEffect(() => {
     const usersQuery = query(collection(db, 'users'))
@@ -56,7 +71,12 @@ export default function CourierApprovalPage() {
     const unsubscribe = onSnapshot(usersQuery, (snapshot) => {
       const couriersData = snapshot.docs
         .map(doc => ({ id: doc.id, ...doc.data() } as Courier))
-        .filter(user => user.role === 'courier' && user.courierProfile)
+        .filter((user) => {
+          const status = user.courierProfile?.status
+          const hasApplicationStatus =
+            status === 'pending' || status === 'approved' || status === 'rejected'
+          return Boolean(user.courierProfile) && (user.role === 'courier' || hasApplicationStatus)
+        })
       
       setCouriers(couriersData)
       setLoading(false)
@@ -64,6 +84,26 @@ export default function CourierApprovalPage() {
 
     return () => unsubscribe()
   }, [])
+
+  useEffect(() => {
+    return () => {
+      if (previewDocument?.objectUrl) {
+        URL.revokeObjectURL(previewDocument.objectUrl)
+      }
+    }
+  }, [previewDocument])
+
+  const inferContentType = (fileName: string) => {
+    const lower = fileName.toLowerCase()
+    if (lower.endsWith('.pdf')) return 'application/pdf'
+    if (lower.endsWith('.png')) return 'image/png'
+    if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg'
+    if (lower.endsWith('.webp')) return 'image/webp'
+    if (lower.endsWith('.gif')) return 'image/gif'
+    if (lower.endsWith('.txt')) return 'text/plain'
+    if (lower.endsWith('.json')) return 'application/json'
+    return 'application/octet-stream'
+  }
 
   const logAdminAction = async (action: string, courierId: string, payload?: Record<string, any>) => {
     await addDoc(collection(db, 'adminLogs'), {
@@ -158,6 +198,78 @@ export default function CourierApprovalPage() {
         courier.courierProfile?.phone?.includes(q)
       )
     })
+
+  const openDocument = async (docItem: CourierDocument) => {
+    setPreviewLoading(true)
+    try {
+      const candidateUrl =
+        docItem.url?.trim() ||
+        docItem.downloadUrl?.trim() ||
+        docItem.fileUrl?.trim() ||
+        ''
+
+      const isPlaceholderUrl =
+        candidateUrl.includes('example.test') || candidateUrl.includes('example.com')
+
+      let resolvedUrl =
+        candidateUrl && !isPlaceholderUrl
+          ? candidateUrl
+          : ''
+
+      if (!resolvedUrl) {
+        const storagePath = docItem.storagePath?.trim() || docItem.path?.trim() || ''
+        if (storagePath) {
+          resolvedUrl = await getDownloadURL(ref(storage, storagePath))
+        }
+      }
+
+      if (!resolvedUrl) {
+        alert('Document URL is missing for this file. Ask courier to re-upload this document.')
+        return
+      }
+
+      const response = await fetch(resolvedUrl)
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`)
+      }
+
+      const headerContentType = response.headers.get('content-type')?.split(';')[0]?.trim() || ''
+      const fallbackContentType = docItem.contentType || inferContentType(docItem.name)
+      const resolvedContentType = headerContentType || fallbackContentType
+
+      if (resolvedContentType.startsWith('text/') || resolvedContentType.includes('json')) {
+        const textContent = await response.text()
+        setPreviewDocument({
+          label: docItem.label,
+          name: docItem.name,
+          contentType: resolvedContentType,
+          textContent,
+        })
+        return
+      }
+
+      let fileBlob = await response.blob()
+      if ((!fileBlob.type || fileBlob.type === 'application/octet-stream') && fallbackContentType) {
+        const buffer = await fileBlob.arrayBuffer()
+        fileBlob = new Blob([buffer], { type: fallbackContentType })
+      }
+
+      const objectUrl = URL.createObjectURL(fileBlob)
+
+      setPreviewDocument({
+        label: docItem.label,
+        name: docItem.name,
+        contentType: fileBlob.type || resolvedContentType,
+        objectUrl,
+      })
+      return
+    } catch (error) {
+      console.error('Failed to open document', error)
+      alert('Unable to open this document. Please try again.')
+    } finally {
+      setPreviewLoading(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -348,19 +460,17 @@ export default function CourierApprovalPage() {
                       <div className="p-3 bg-white border border-gray-200 rounded-xl mb-4">
                         <p className="text-xs text-gray-500 mb-2">Uploaded Documents</p>
                         <div className="space-y-2">
-                          {profile.documents.map((docItem) => (
-                            <div key={docItem.url} className="flex items-center justify-between text-sm">
+                          {profile.documents.map((docItem, index) => (
+                            <div key={`${docItem.label}-${docItem.name}-${index}`} className="flex items-center justify-between text-sm">
                               <span className="text-gray-700">
                                 {docItem.label}: {docItem.name}
                               </span>
-                              <a
-                                href={docItem.url}
-                                target="_blank"
-                                rel="noreferrer"
+                              <button
+                                onClick={() => openDocument(docItem)}
                                 className="text-indigo-600 hover:underline"
                               >
                                 View
-                              </a>
+                              </button>
                             </div>
                           ))}
                         </div>
@@ -447,6 +557,57 @@ export default function CourierApprovalPage() {
               >
                 Reject Application
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Document Preview Modal */}
+      {previewDocument && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-5xl h-[85vh] flex flex-col">
+            <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">{previewDocument.label}</h2>
+                <p className="text-sm text-gray-500">{previewDocument.name}</p>
+              </div>
+              <button
+                onClick={() => {
+                  if (previewDocument.objectUrl) {
+                    URL.revokeObjectURL(previewDocument.objectUrl)
+                  }
+                  setPreviewDocument(null)
+                }}
+                className="px-3 py-1.5 text-sm text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="flex-1 bg-gray-50 overflow-auto">
+              {previewLoading ? (
+                <div className="h-full flex items-center justify-center text-gray-600">Loading document...</div>
+              ) : previewDocument.textContent !== undefined ? (
+                <pre className="whitespace-pre-wrap break-words p-4 text-sm text-gray-800">{previewDocument.textContent}</pre>
+              ) : previewDocument.contentType.startsWith('image/') && previewDocument.objectUrl ? (
+                <div className="h-full flex items-center justify-center p-4">
+                  <img
+                    src={previewDocument.objectUrl}
+                    alt={previewDocument.name}
+                    className="max-h-full max-w-full object-contain"
+                  />
+                </div>
+              ) : previewDocument.objectUrl ? (
+                <iframe
+                  src={previewDocument.objectUrl}
+                  title={`Preview ${previewDocument.name}`}
+                  className="w-full h-full border-0"
+                />
+              ) : (
+                <div className="h-full flex items-center justify-center text-gray-600">
+                  Unable to preview this file type.
+                </div>
+              )}
             </div>
           </div>
         </div>

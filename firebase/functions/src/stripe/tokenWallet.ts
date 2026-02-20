@@ -1,4 +1,4 @@
-import * as functions from 'firebase-functions'
+import * as functions from 'firebase-functions/v2'
 import * as admin from 'firebase-admin'
 import { logAdminAction, verifyAdmin } from '../utils/adminUtils'
 
@@ -110,12 +110,12 @@ export async function applyTokenWalletDelta(
   return nextSummary
 }
 
-export const getTokenWalletSummary = functions.https.onCall(async (_data, context) => {
-  if (!context.auth?.uid) {
+export const getTokenWalletSummary = functions.https.onCall(async (request) => {
+  if (!request.auth?.uid) {
     throw new functions.https.HttpsError('unauthenticated', 'Authentication required')
   }
 
-  const userSnap = await admin.firestore().doc(`users/${context.auth.uid}`).get()
+  const userSnap = await admin.firestore().doc(`users/${request.auth.uid}`).get()
   if (!userSnap.exists) {
     throw new functions.https.HttpsError('not-found', 'User not found')
   }
@@ -124,19 +124,19 @@ export const getTokenWalletSummary = functions.https.onCall(async (_data, contex
 })
 
 export const adjustTokenWalletBalance = functions.https.onCall(
-  async (data: AdjustTokenWalletRequest, context: functions.https.CallableContext) => {
-    if (!context.auth?.uid) {
+  async (request: functions.https.CallableRequest<AdjustTokenWalletRequest>) => {
+    if (!request.auth?.uid) {
       throw new functions.https.HttpsError('unauthenticated', 'Authentication required')
     }
 
-    const isAdmin = await verifyAdmin(context.auth.uid)
+    const isAdmin = await verifyAdmin(request.auth.uid)
     if (!isAdmin) {
       throw new functions.https.HttpsError('permission-denied', 'Admin privileges required')
     }
 
-    const targetUid = data?.targetUid?.trim()
-    const reason = data?.reason?.trim() || 'admin_adjustment'
-    const delta = toNumber(data?.delta)
+    const targetUid = request.data?.targetUid?.trim()
+    const reason = request.data?.reason?.trim() || 'admin_adjustment'
+    const delta = toNumber(request.data?.delta)
 
     if (!targetUid) {
       throw new functions.https.HttpsError('invalid-argument', 'targetUid is required')
@@ -151,14 +151,14 @@ export const adjustTokenWalletBalance = functions.https.onCall(
       delta,
       reason,
       metadata: {
-        actorUid: context.auth.uid,
+        actorUid: request.auth.uid,
         source: 'adjustTokenWalletBalance',
-        ...(data?.metadata || {}),
+        ...(request.data?.metadata || {}),
       },
     })
 
     await logAdminAction({
-      adminId: context.auth.uid,
+      adminId: request.auth.uid,
       action: 'adjust_token_wallet_balance',
       targetUserId: targetUid,
       metadata: {
@@ -254,20 +254,4 @@ export async function creditTokensFromCheckoutSession(session: CheckoutSessionLi
       { merge: true },
     )
   })
-
-  const sessionMetadataForStatus = (session?.metadata || {}) as Record<string, unknown>
-  const idempotencyKey =
-    typeof sessionMetadataForStatus.idempotencyKey === 'string'
-      ? sessionMetadataForStatus.idempotencyKey.trim()
-      : ''
-  if (idempotencyKey) {
-    await db.doc(`tokenCheckoutSessions/${idempotencyKey}`).set(
-      {
-        paymentStatus: 'paid',
-        paidAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      },
-      { merge: true },
-    )
-  }
 }

@@ -1,33 +1,28 @@
 # App Docs Registry
 
-This file maps each active app to its canonical documentation location.
+This file maps each app to its canonical documentation location.
 
-## Active apps (single source of truth)
+> Doc metadata
+> - Owner: `@bitquan`
+> - Last verified: `2026-02-07`
+> - Review cadence: `monthly`
 
-- Marketplace Web:
+## Canonical app docs
+
+- Marketplace:
   - `apps/marketplace-app/README.md`
   - `apps/marketplace-app/copilot-instructions.md`
 - Senderr Web:
   - `apps/senderr-app/README.md`
   - `apps/senderr-app/copilot-instructions.md`
-- Senderr iOS Native (single canonical native app):
+- Courier iOS Native:
   - `apps/courieriosnativeclean/README.md`
-  - iOS project: `apps/courieriosnativeclean/ios/Senderrappios.xcworkspace`
-  - scheme: `Senderr`
-  - template source: `templates/ios/*`
-  - bootstrap command: `pnpm run ios:bootstrap`
-  - structure check: `pnpm run ios:check`
 - Admin Web:
   - `apps/admin-app/README.md`
 - Admin Desktop:
   - `apps/admin-desktop/README.md`
-- Landing Web:
+- Landing:
   - `apps/landing/README.md`
-
-## Archived duplicates
-
-Legacy iOS workspace-only duplicates are archived under:
-- `apps/_archive/legacy-ios-workspaces/`
 
 ## Rule
 

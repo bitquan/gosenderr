@@ -6,13 +6,20 @@ import { useAuthUser } from "@/hooks/v2/useAuthUser";
 export function RoleSwitcher() {
   const navigate = useNavigate();
   const { uid } = useAuthUser();
-  const { role } = useUserRole();
+  const { role, userDoc } = useUserRole();
   const [isOpen, setIsOpen] = useState(false);
 
-  // All logged-in users can access both customer and seller roles
+  const rolesFromDoc = Array.isArray((userDoc as any)?.roles) ? ((userDoc as any).roles as string[]) : [];
+  const hasSellerAccess =
+    role === "seller" ||
+    rolesFromDoc.includes("seller") ||
+    (userDoc as any)?.sellerApplication?.status === "approved";
+
   const roles = [
     { value: "customer", label: "Customer", icon: "👤", route: "/dashboard" },
-    { value: "seller", label: "Seller", icon: "🏪", route: "/seller/dashboard" },
+    ...(hasSellerAccess
+      ? [{ value: "seller", label: "Seller", icon: "🏪", route: "/seller/dashboard" }]
+      : []),
   ];
 
   const currentRole = roles.find((r) => r.value === role) || roles[0];

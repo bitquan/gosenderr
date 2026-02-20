@@ -7,17 +7,18 @@ export default function MapShellPage() {
   const location = useLocation();
   const params = new URLSearchParams(location.search);
   const devPreview = params.get("dev_preview") === "1";
+  const isDev = import.meta.env.DEV;
 
   const { flags, loading } = useFeatureFlags();
 
-  if (loading) return null;
+  if (loading && !isDev) return null;
 
   const flagEnabled = flags?.delivery?.mapShell === true;
 
-  if (!devPreview && !flagEnabled) {
+  if (!isDev && !devPreview && !flagEnabled) {
     // Not allowed: redirect to dashboard
     return <Navigate to="/dashboard" replace />;
   }
 
-  return <MapShellScreen devPreview={devPreview} />;
+  return <MapShellScreen devPreview={isDev || devPreview} />;
 }

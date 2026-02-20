@@ -7,7 +7,6 @@ import * as functions from 'firebase-functions/v2';
 import * as admin from 'firebase-admin';
 import type Stripe from 'stripe';
 import { getStripeClient } from './stripeSecrets';
-import { creditTokensFromCheckoutSession } from './tokenWallet';
 
 // ============================================================================
 // CREATE CONNECT ACCOUNT
@@ -327,24 +326,6 @@ export const stripeWebhooks = functions.https.onRequest(async (req, res) => {
     console.log('Stripe webhook event:', event.type);
 
     switch (event.type) {
-      case 'checkout.session.completed': {
-        const session = event.data.object as Stripe.Checkout.Session;
-        const metadata = (session.metadata || {}) as Record<string, string>;
-        if ((metadata.purchaseType || '') === 'token_purchase') {
-          const paymentIntentId =
-            typeof session.payment_intent === 'string'
-              ? session.payment_intent
-              : session.payment_intent?.id || null;
-
-          await creditTokensFromCheckoutSession({
-            id: session.id,
-            metadata,
-            payment_intent: paymentIntentId,
-          });
-        }
-        break;
-      }
-
       case 'payment_intent.succeeded':
         await handlePaymentSuccess(event.data.object as Stripe.PaymentIntent);
         break;

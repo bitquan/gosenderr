@@ -48,10 +48,7 @@ export const adminNavGroups: AdminNavGroup[] = [
   },
   {
     title: 'Finance',
-    items: [
-      { label: 'Revenue', path: '/revenue', icon: '💰' },
-      { label: 'Tokens', path: '/tokens', icon: '🪙' },
-    ],
+    items: [{ label: 'Revenue', path: '/revenue', icon: '💰' }],
   },
   {
     title: 'System',
@@ -62,7 +59,6 @@ export const adminNavGroups: AdminNavGroup[] = [
       { label: 'Secrets', path: '/settings/secrets', icon: '🔑' },
       { label: 'Admin Flow Logs', path: '/admin-flow-logs', icon: '🧪' },
       { label: 'Settings', path: '/settings', icon: '⚙️' },
-      { label: 'Payment Settings', path: '/settings/payment', icon: '💳' },
     ],
   },
 ]

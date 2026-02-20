@@ -7,7 +7,7 @@
 
 set -u
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-IOS_DIR="${IOS_DIR:-$REPO_ROOT/apps/courieriosnativeclean/ios}"
+IOS_DIR="$REPO_ROOT/apps/courier-ios-native/ios"
 PODS_PROJECT="$IOS_DIR/Pods/Pods.xcodeproj"
 WORKSPACE="$IOS_DIR/Senderrappios.xcworkspace"
 RESULTS_DIR="/tmp/pods-target-test-$(date +%s)"

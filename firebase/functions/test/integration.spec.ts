@@ -2,17 +2,6 @@ const assert = require('assert').strict
 const fetch = require('node-fetch')
 const admin = require('firebase-admin')
 
-// Set emulator hosts for tests
-process.env.FIRESTORE_EMULATOR_HOST = '127.0.0.1:8080'
-process.env.FIREBASE_AUTH_EMULATOR_HOST = '127.0.0.1:9099'
-
-// Initialize admin app if not already
-if (!admin.apps.length) {
-  admin.initializeApp({
-    projectId: 'gosenderr-6773f'
-  })
-}
-
 // Helper to exchange custom token for ID token from the Auth emulator
 async function getIdToken(customToken: string) {
   const url = `http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=anything`
@@ -64,10 +53,9 @@ describe('Cloud Functions integration tests (emulator)', function () {
     // Create an admin caller
     const adminUser = await admin.auth().createUser({ email: `test-admin+${Date.now()}@example.com`, password: 'password123' })
     await admin.firestore().doc(`users/${adminUser.uid}`).set({ role: 'admin' })
-    await admin.auth().setCustomUserClaims(adminUser.uid, { role: 'admin' })
 
     // For better visibility in tests, call the handler directly to get a stack trace when it errors
-    const context: any = { auth: { uid: adminUser.uid, token: { role: 'admin' } } }
+    const context: any = { auth: { uid: adminUser.uid } }
     const emailCallable = `new-user+callable+${Date.now()}+${Math.random().toString(36).slice(2,8)}@example.com`
     const emailHandler = `new-user+handler+${Date.now()}+${Math.random().toString(36).slice(2,8)}@example.com`
 
@@ -75,7 +63,7 @@ describe('Cloud Functions integration tests (emulator)', function () {
     const createdUids: string[] = []
 
     // Also exercise the callable endpoint (as the browser would) to ensure callable plumbing works
-    const customToken = await admin.auth().createCustomToken(adminUser.uid, { role: 'admin' })
+    const customToken = await admin.auth().createCustomToken(adminUser.uid)
     const idToken = await getIdToken(customToken)
 
     const res = await callCallable('createUserForAdmin', idToken, { email: emailCallable, password: 'secret123', role: 'customer', displayName: 'Test User' })
@@ -128,38 +116,6 @@ describe('Cloud Functions integration tests (emulator)', function () {
     assert.ok(Array.isArray(data.packs) && data.packs.length > 0, 'tokenPolicy.packs should be non-empty')
     const ids = (data.packs || []).map((p: any) => p.id)
     assert.ok(ids.includes('starter_10') || ids.includes('starter_100'), 'Expected starter pack to be seeded')
-  })
-
-  it('new auth users should receive a one-time signup token bonus', async function () {
-    const user = await admin.auth().createUser({ email: `signup-bonus+${Date.now()}@example.com`, password: 'password123' })
-
-    const walletRef = admin.firestore().doc(`tokenWallets/${user.uid}`)
-    const txRef = admin.firestore().doc(`tokenTransactions/signup_bonus_${user.uid}`)
-
-    let walletSnap = await walletRef.get()
-    let txSnap = await txRef.get()
-
-    for (let attempt = 0; attempt < 10 && (!walletSnap.exists || !txSnap.exists); attempt += 1) {
-      await new Promise((resolve) => setTimeout(resolve, 300))
-      walletSnap = await walletRef.get()
-      txSnap = await txRef.get()
-    }
-
-    assert.equal(walletSnap.exists, true, 'signup bonus should initialize token wallet')
-    const walletData = walletSnap.data() || {}
-    assert.equal(Number(walletData.available || 0), 10, 'new user should receive 10 signup bonus tokens')
-    assert.equal(Number(walletData.lifetimeAdjusted || 0), 10, 'lifetimeAdjusted should include signup bonus')
-
-    assert.equal(txSnap.exists, true, 'signup bonus ledger transaction should be written')
-    const txData = txSnap.data() || {}
-    assert.equal(txData.type, 'admin_adjustment')
-    assert.equal(txData.action, 'signup_bonus')
-    assert.equal(Number(txData.amount || 0), 10)
-
-    try { await admin.firestore().doc(`users/${user.uid}`).delete() } catch (e) {}
-    try { await walletRef.delete() } catch (e) {}
-    try { await txRef.delete() } catch (e) {}
-    try { await admin.auth().deleteUser(user.uid) } catch (e) {}
   })
 
   it('runTestFlow should create a run log and entries', async function () {

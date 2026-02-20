@@ -12,18 +12,30 @@ interface ItemGridProps {
  * ItemGrid - Display marketplace items in a responsive grid
  */
 export function ItemGrid({ items, loading, sellerBadgesMap = {}, sellerRatingsMap = {} }: ItemGridProps) {
+  const isSponsored = (item: MarketplaceItem) => {
+    const boostedUntil = item.adBoost?.boostedUntil as any
+    const boostDate = boostedUntil?.toDate?.() ?? (boostedUntil ? new Date(boostedUntil) : null)
+    return Boolean(boostDate && boostDate.getTime() > Date.now())
+  }
+
+  const sortedItems = [...items].sort((a, b) => {
+    const aSponsored = isSponsored(a) ? 1 : 0
+    const bSponsored = isSponsored(b) ? 1 : 0
+    return bSponsored - aSponsored
+  })
+
   if (loading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div key={i} className="bg-slate-900/80 rounded-lg shadow-sm overflow-hidden border border-white/10">
             {/* Image skeleton */}
-            <div className="aspect-square bg-gray-200 animate-pulse" />
+            <div className="aspect-square bg-slate-800 animate-pulse" />
             {/* Content skeleton */}
             <div className="p-4 space-y-3">
-              <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4" />
-              <div className="h-3 bg-gray-200 rounded animate-pulse w-1/2" />
-              <div className="h-6 bg-gray-200 rounded animate-pulse w-1/3" />
+              <div className="h-4 bg-slate-700 rounded animate-pulse w-3/4" />
+              <div className="h-3 bg-slate-700 rounded animate-pulse w-1/2" />
+              <div className="h-6 bg-slate-700 rounded animate-pulse w-1/3" />
             </div>
           </div>
         ))}
@@ -35,20 +47,21 @@ export function ItemGrid({ items, loading, sellerBadgesMap = {}, sellerRatingsMa
     return (
       <div className="text-center py-12">
         <div className="text-6xl mb-4">📦</div>
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">No items found</h3>
-        <p className="text-gray-600">Try adjusting your filters or search term</p>
+        <h3 className="text-xl font-semibold text-white mb-2">No items found</h3>
+        <p className="text-purple-200">Try adjusting your filters or search term</p>
       </div>
     )
   }
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      {items.map((item) => (
+      {sortedItems.map((item) => (
         <ItemCard 
           key={item.id} 
           item={item} 
           sellerBadges={sellerBadgesMap[item.sellerId] || []}
           sellerRating={sellerRatingsMap[item.sellerId]}
+          isSponsored={isSponsored(item)}
         />
       ))}
     </div>

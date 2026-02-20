@@ -8,6 +8,7 @@ import { StatusBadge } from '../components/Badge'
 import { Avatar } from '../components/Avatar'
 import { formatCurrency, formatDate } from '../lib/utils'
 import { useNavigate, Link } from 'react-router-dom'
+import { maskAddress } from '@/features/jobs/shared/privacy'
 
 interface Job {
   id: string
@@ -26,6 +27,8 @@ interface Job {
 
 interface CourierProfile {
   online: boolean
+  isOnline?: boolean
+  status?: string
   vehicleType?: string
   currentLocation?: { lat: number; lng: number }
 }
@@ -67,12 +70,29 @@ export default function CourierDashboardPage() {
       (snapshot) => {
         if (snapshot.exists()) {
           const data = snapshot.data()
+          const courierStatus = data.courierProfile?.status || 'none'
+          const approved = courierStatus === 'approved'
+          const storedOnline = Boolean(data.courierProfile?.isOnline ?? data.courierProfile?.online)
+          const effectiveOnline = approved && storedOnline
+
           setProfile({
-            online: data.courierProfile?.online || false,
+            online: effectiveOnline,
+            isOnline: effectiveOnline,
+            status: courierStatus,
             vehicleType: data.courierProfile?.vehicleType,
             currentLocation: data.location
           })
-          setIsOnline(data.courierProfile?.online || false)
+          setIsOnline(effectiveOnline)
+
+          if (!approved && storedOnline) {
+            updateDoc(doc(db, 'users', user.uid), {
+              'courierProfile.isOnline': false,
+              'courierProfile.online': false,
+              'courierProfile.lastOnlineAt': new Date()
+            }).catch((error) => {
+              console.error('Failed to reset online status for unapproved courier', error)
+            })
+          }
         }
         setLoading(false)
       }
@@ -162,9 +182,14 @@ export default function CourierDashboardPage() {
   const handleToggleOnline = async () => {
     if (!user || updatingStatus) return
 
+    const newStatus = !isOnline
+    if (newStatus && profile?.status !== 'approved') {
+      alert('Your courier profile must be approved before going online')
+      return
+    }
+
     setUpdatingStatus(true)
     try {
-      const newStatus = !isOnline
       await updateDoc(doc(db, 'users', user.uid), {
         'courierProfile.online': newStatus,
         'courierProfile.lastOnlineAt': new Date()
@@ -213,12 +238,12 @@ export default function CourierDashboardPage() {
             {!isAdmin && (
               <button
                 onClick={handleToggleOnline}
-                disabled={updatingStatus}
+                disabled={updatingStatus || profile?.status !== 'approved'}
                 className={`px-6 py-3 rounded-full font-semibold text-lg transition-all duration-300 flex items-center gap-2 ${
                   isOnline
                     ? 'bg-green-500 hover:bg-green-600 shadow-lg hover:shadow-xl hover:scale-105'
                     : 'bg-gray-400 hover:bg-gray-500'
-                } ${updatingStatus ? 'opacity-50 cursor-not-allowed' : ''}`}
+                } ${updatingStatus || profile?.status !== 'approved' ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 <span className={`w-3 h-3 rounded-full ${isOnline ? 'bg-white animate-pulse' : 'bg-gray-200'}`} />
                 {updatingStatus ? 'Updating...' : isOnline ? 'Online' : 'Offline'}
@@ -724,7 +749,7 @@ export default function CourierDashboardPage() {
                           <div className="flex-1 min-w-0">
                             <p className="text-xs text-gray-500 mb-1">Pickup</p>
                             <p className="font-medium text-gray-900 text-sm break-words">
-                              {job.pickupAddress || 'Address not provided'}
+                              {job.pickupAddress ? maskAddress(job.pickupAddress) : 'Approximate location'}
                             </p>
                           </div>
                         </div>
@@ -737,7 +762,7 @@ export default function CourierDashboardPage() {
                           <div className="flex-1 min-w-0">
                             <p className="text-xs text-gray-500 mb-1">Delivery</p>
                             <p className="font-medium text-gray-900 text-sm break-words">
-                              {job.deliveryAddress || 'Address not provided'}
+                              {job.deliveryAddress ? maskAddress(job.deliveryAddress) : 'Approximate location'}
                             </p>
                           </div>
                         </div>

@@ -5,35 +5,14 @@
   "scripts": {
     "android": "react-native run-android",
     "ios": "react-native run-ios",
-    "ios:prod-plist-install": "bash ../../scripts/swap-google-plist.sh install",
-    "ios:prod-plist-restore": "bash ../../scripts/swap-google-plist.sh restore",
-    "ios:prod-run": "xcodebuild -workspace ios/Senderrappios.xcworkspace -scheme \"Senderr (Production)\" -configuration Release -sdk iphoneos clean build",
-    "ios:pods:hermes-on": "cd ios && USE_HERMES=1 HERMES_ENABLED=1 pod install",
-    "ios:pods:hermes-off": "cd ios && USE_HERMES=0 HERMES_ENABLED=0 pod install",
-    "ios:prod-run:hermes-on": "cd ios && USE_HERMES=1 HERMES_ENABLED=1 xcodebuild -workspace Senderrappios.xcworkspace -scheme \"Senderr (Production)\" -configuration Release -sdk iphoneos clean build",
-    "ios:prod-run:hermes-off": "cd ios && USE_HERMES=0 HERMES_ENABLED=0 xcodebuild -workspace Senderrappios.xcworkspace -scheme \"Senderr (Production)\" -configuration Release -sdk iphoneos clean build",
-    "verify:xcode-scripts": "bash ../../scripts/verify-xcode-script-outputpaths.sh",
     "lint": "eslint .",
     "start": "react-native start",
     "test": "jest"
   },
   "dependencies": {
-    "@gosenderr/shared": "workspace:*",
-    "@react-native-async-storage/async-storage": "1.24.0",
-    "@react-native-firebase/app": "19.3.0",
-    "@react-native-firebase/auth": "19.3.0",
-    "@react-native-firebase/messaging": "19.3.0",
-    "@react-navigation/native": "7.0.13",
-    "@react-navigation/stack": "7.2.2",
-    "@rnmapbox/maps": "10.1.30",
     "@babel/runtime": "^7.25.0",
-    "firebase": "^10.13.0",
     "react": "18.3.1",
-    "react-native": "0.76.5",
-    "react-native-gesture-handler": "2.20.2",
-    "react-native-image-picker": "7.1.2",
-    "react-native-safe-area-context": "4.12.0",
-    "react-native-screens": "4.3.0"
+    "react-native": "0.76.5"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

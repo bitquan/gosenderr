@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '../../lib/firebase/client'
 import { marketplaceService } from '../../services/marketplace.service'
@@ -31,6 +32,16 @@ export default function MarketplaceHome() {
       verifiedOnly: false
     }
   })
+
+  const isSponsored = (item: MarketplaceItem) => {
+    const boostedUntil = item.adBoost?.boostedUntil as any
+    const boostDate = boostedUntil?.toDate?.() ?? (boostedUntil ? new Date(boostedUntil) : null)
+    return Boolean(boostDate && boostDate.getTime() > Date.now())
+  }
+
+  const sponsoredItems = items
+    .filter(isSponsored)
+    .slice(0, 6)
 
   const categories: ItemCategory[] = [
     ItemCategory.ELECTRONICS,
@@ -136,19 +147,45 @@ export default function MarketplaceHome() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-purple-950 to-slate-950 text-white">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">
+      <div className="mx-auto w-full max-w-[560px] md:max-w-4xl lg:max-w-6xl bg-gradient-to-r from-blue-700 via-blue-600 to-purple-600 text-white rounded-b-3xl shadow-2xl border-b border-white/20">
+        <div className="px-4 py-8 sm:px-6">
+          <h1 className="text-3xl md:text-4xl font-bold mb-3">
             GoSenderr Marketplace
           </h1>
-          <p className="text-xl text-blue-100 mb-8">
+          <p className="text-base text-blue-100 mb-5">
             Buy and sell anything, delivered by trusted couriers
           </p>
+
+          {/* Ad Showcase Bar */}
+          <div className="mb-5">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-sm font-semibold text-white/95">Sponsored listings</span>
+              <span className="text-xs text-blue-100">Boosted by sellers</span>
+            </div>
+            {sponsoredItems.length > 0 ? (
+              <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+                {sponsoredItems.map((item) => (
+                  <Link
+                    key={item.id}
+                    to={`/marketplace/${item.id}`}
+                    className="min-w-[180px] rounded-2xl border border-white/30 bg-white/15 px-3 py-2 backdrop-blur"
+                  >
+                    <div className="line-clamp-1 text-sm font-semibold">{item.title}</div>
+                    <div className="mt-1 text-xs text-blue-100">Sponsored</div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-white/20 bg-white/10 px-3 py-2 text-xs text-blue-100">
+                No boosted listings yet.
+              </div>
+            )}
+          </div>
           
           {/* Search Bar */}
-          <div className="max-w-2xl">
+          <div>
             <SearchBar
               onSearch={handleSearch}
               placeholder="Search for items..."
@@ -166,7 +203,7 @@ export default function MarketplaceHome() {
       />
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mx-auto w-full max-w-[560px] md:max-w-4xl lg:max-w-6xl px-4 py-6 sm:px-6">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Filters - Desktop */}
           <aside className="hidden lg:block w-64 flex-shrink-0">
@@ -177,7 +214,7 @@ export default function MarketplaceHome() {
           <div className="lg:hidden">
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg flex items-center justify-center space-x-2 hover:bg-gray-50 transition-colors"
+              className="w-full px-4 py-2 bg-slate-900/80 border border-white/10 rounded-lg flex items-center justify-center space-x-2 text-white hover:bg-slate-800/90 transition-colors"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
@@ -192,9 +229,9 @@ export default function MarketplaceHome() {
 
             {/* Mobile Filter Sidebar */}
             {showFilters && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 z-50" onClick={() => setShowFilters(false)}>
+              <div className="fixed inset-0 bg-black/70 z-50" onClick={() => setShowFilters(false)}>
                 <div
-                  className="absolute right-0 top-0 bottom-0 w-80 bg-white shadow-xl overflow-y-auto"
+                  className="absolute right-0 top-0 bottom-0 w-80 bg-slate-950 border-l border-white/10 shadow-2xl overflow-y-auto"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="p-4">
@@ -212,10 +249,10 @@ export default function MarketplaceHome() {
           {/* Items Grid */}
           <div className="flex-1">
             <div className="mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">
+              <h2 className="text-xl font-bold text-white">
                 {selectedCategory || 'All Items'}
               </h2>
-              <p className="text-gray-600 mt-1">
+              <p className="text-purple-200 mt-1">
                 {loading ? 'Loading...' : `${items.length} items found`}
               </p>
             </div>
