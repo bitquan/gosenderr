@@ -182,3 +182,6 @@ Because deletions dominate, imports must be selective and additive-first.
 - ✅ Batch 4: `firebase/functions/src/triggers/notifications.ts` reviewed and intentionally **not imported**.
   - Reason: source delta removes APNS payload and simplifies notification preference/token resolution in ways that can reduce delivery coverage.
   - Unified retains current broader preference mapping + APNS notification payload.
+- ✅ Batch 5a: `firebase/functions/src/http/courierJobCommands.ts` reviewed and intentionally **not imported**.
+  - Reason: source delta removes idempotency receipt handling and token-payout protection logic.
+  - Unified retains these safeguards for command reliability and payout safety.
