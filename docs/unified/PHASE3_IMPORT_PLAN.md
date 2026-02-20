@@ -86,4 +86,15 @@ Because deletions dominate, imports must be selective and additive-first.
     - `types/foodPickup`
     - `types/tokenWallet`
     - `utils/featureFlags`
-- ⏭ Next: Phase C/R3 selective existing-file modifications from source branches (`M` files) using per-file contract/runtime review, still no-delete.
+- ✅ Phase C/R3 selective `M`-file import pass (no-delete) completed for shared contracts:
+  - Imported safe additive updates in:
+    - `packages/shared/src/types/firestore.ts`
+    - `packages/shared/src/types/marketplace.ts`
+  - Included additive contract fields/defaults for:
+    - `FeatureFlags.delivery.mapShell`
+    - `FeatureFlags.senderrplaceV2`
+    - `DEFAULT_FEATURE_FLAGS`
+    - `SellerProfile.paymentLinks`
+    - `CourierProfile.acceptTokenPayoutJobs`
+  - Deferred risky `firebase/functions` `M` files in this pass (behavior-changing logic in token wallet/notification/runtime command paths) for separate targeted review.
+- ⏭ Next: Phase C/R3 targeted functions `M`-file review (single-file micro-batches), starting with safest callable-surface compatibility deltas.
