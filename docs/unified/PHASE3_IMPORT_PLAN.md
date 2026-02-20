@@ -188,3 +188,6 @@ Because deletions dominate, imports must be selective and additive-first.
 - ✅ Batch 5b: `firebase/functions/src/http/tokenWalletCommands.ts` reviewed and intentionally **not imported**.
   - Reason: source delta removes substantial wallet-type/admin ledger functionality.
   - Unified retains current expanded token wallet command surface to avoid functional regression.
+- ✅ Batch 5c: `firebase/functions/src/stripe/tokenWallet.ts` reviewed and intentionally **not imported**.
+  - Reason: source delta migrates callable signatures and removes checkout-session status writeback path.
+  - Unified retains current status writeback behavior used by token checkout tracking.
